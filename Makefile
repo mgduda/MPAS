@@ -1,5 +1,5 @@
 #MODEL_FORMULATION = -DNCAR_FORMULATION
-MODEL_FORMULATION = -DLANL_FORMULATION
+MODEL_FORMULATION = -DLANL_FORMULATION -DSINGLE_PRECISION
 
 
 dummy:
@@ -42,10 +42,10 @@ pgi:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = pgf90" \
 	"CC_SERIAL = pgcc" \
-	"FFLAGS_OPT = -r8 -O3 -byteswapio -Mfree" \
+	"FFLAGS_OPT = -O3 -byteswapio -Mfree" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
+	"FFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CFLAGS_DEBUG = -O0 -g -traceback" \
 	"LDFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CORE = $(CORE)" \
