@@ -235,6 +235,13 @@ module mpas_io_input
         domain % blocklist % mesh % sphere_radius = r_sphere_radius
       end if
 
+#ifdef SINGLE_PRECISION
+      ! There are still bugs to be worked out in reading/writing
+      ! single-precision attributes to netCDF files, so for now we have to
+      ! manually set the Earth's radius
+      domain % blocklist % mesh % sphere_radius = 6371229.0
+#endif
+
       call MPAS_readStreamAtt(input_obj % io_stream, 'on_a_sphere', c_on_a_sphere, ierr)
       if (ierr /= MPAS_STREAM_NOERR) then
         write(stderrUnit,*) 'Warning: Attribute on_a_sphere not found in '//trim(input_obj % filename)
