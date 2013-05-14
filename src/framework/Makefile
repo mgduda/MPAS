@@ -22,7 +22,9 @@ OBJS = mpas_kind_types.o \
        mpas_io_input.o \
        mpas_io_output.o \
        mpas_io_units.o \
-       streams.o
+       mpas_debugging.o \
+       streams.o \
+       nan_check.o 
 
 all: framework $(DEPS)
 
@@ -73,6 +75,8 @@ mpas_io_input.o: mpas_grid_types.o mpas_dmpar.o mpas_block_decomp.o mpas_block_c
 mpas_io_output.o: mpas_grid_types.o mpas_dmpar.o mpas_sort.o mpas_configure.o mpas_io_streams.o mpas_io_units.o $(DEPS)
 
 mpas_io_units.o:
+
+mpas_debugging.o: mpas_grid_types.o nan_check.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libframework.a

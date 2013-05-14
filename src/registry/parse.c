@@ -72,6 +72,7 @@ int main(int argc, char ** argv)
    gen_reads(groups, vars, dims);
    gen_writes(groups, vars, dims, nls);
    gen_packages(pkgs);
+   gen_debugging(groups, vars);
 
    free(modelname);
    free(corename);

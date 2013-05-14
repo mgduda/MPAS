@@ -1727,3 +1727,209 @@ void gen_writes(struct group_list * groups, struct variable * vars, struct dimen
    fclose(fd);
 
 }
+
+void gen_debugging(struct group_list * groups, struct variable * vars)
+{
+   struct variable_list * var_list_ptr;
+   struct variable * var_ptr;
+   struct dimension_list * dimlist_ptr;
+   struct group_list * group_ptr;
+   char vtype[5];
+   char fname[32];
+   char struct_deref[1024];
+   char var_array[1024];
+   char ptrname[32];
+   FILE * fd;
+   int i;
+
+   fd = fopen("nan_checks.inc", "w");
+
+   fortprintf(fd, "   integer function mpas_fpcheck(block_ptr, be_quiet, exclude_halos");
+
+   /* optional arguments to control checks for individual variable groups */
+   group_ptr = groups;
+   while (group_ptr) {
+      fortprintf(fd, ", check_%s", group_ptr->name);
+      group_ptr = group_ptr->next;
+   }
+   fortprintf(fd, ")\n");
+   fortprintf(fd, "\n");
+   fortprintf(fd, "      implicit none\n");
+   fortprintf(fd, "\n");
+
+   /* declare arguments */
+   fortprintf(fd, "      type (block_type), pointer :: block_ptr\n");
+   fortprintf(fd, "      logical, intent(in), optional :: be_quiet\n");
+   fortprintf(fd, "      logical, intent(in), optional :: exclude_halos\n");
+   group_ptr = groups;
+   while (group_ptr) {
+      fortprintf(fd, "      logical, intent(in), optional :: check_%s\n", group_ptr->name);
+      group_ptr = group_ptr->next;
+   }
+   fortprintf(fd, "\n");
+   fortprintf(fd, "\n");
+
+   fortprintf(fd, "      integer, external :: nan_check\n");
+   fortprintf(fd, "\n");
+   fortprintf(fd, "\n");
+
+   /* local variables */
+   fortprintf(fd, "      logical :: local_be_quiet\n");
+   fortprintf(fd, "      logical :: local_exclude_halos\n");
+   group_ptr = groups;
+   while (group_ptr) {
+      fortprintf(fd, "      logical :: local_check_%s\n", group_ptr->name);
+      group_ptr = group_ptr->next;
+   }
+   fortprintf(fd, "\n");
+   fortprintf(fd, "      integer :: i, j, idx\n");
+   fortprintf(fd, "      integer, dimension(1) :: dims1, indices1\n");
+   fortprintf(fd, "      integer, dimension(2) :: dims2, indices2\n");
+   fortprintf(fd, "      integer, dimension(3) :: dims3, indices3\n");
+   fortprintf(fd, "      integer, dimension(4) :: dims4, indices4\n");
+   fortprintf(fd, "      integer, dimension(5) :: dims5, indices5\n");
+   fortprintf(fd, "      integer :: nvals\n");
+   fortprintf(fd, "\n");
+   fortprintf(fd, "      type (field0DReal),    pointer :: r0_ptr\n");
+   fortprintf(fd, "      type (field1DReal),    pointer :: r1_ptr\n");
+   fortprintf(fd, "      type (field2DReal),    pointer :: r2_ptr\n");
+   fortprintf(fd, "      type (field3DReal),    pointer :: r3_ptr\n");
+   fortprintf(fd, "\n");
+   fortprintf(fd, "\n");
+
+   fortprintf(fd, "      mpas_fpcheck = 0\n");
+   fortprintf(fd, "\n");
+
+   /* initialize local variables based on optional arguments */
+   fortprintf(fd, "      if (present(be_quiet)) then\n");
+   fortprintf(fd, "         local_be_quiet = be_quiet\n");
+   fortprintf(fd, "      else\n");
+   fortprintf(fd, "         local_be_quiet = .false.\n");
+   fortprintf(fd, "      end if\n");
+
+   fortprintf(fd, "      if (present(exclude_halos)) then\n");
+   fortprintf(fd, "         local_exclude_halos = exclude_halos\n");
+   fortprintf(fd, "      else\n");
+   fortprintf(fd, "         local_exclude_halos = .false.\n");
+   fortprintf(fd, "      end if\n");
+
+   group_ptr = groups;
+   while (group_ptr) {
+      fortprintf(fd, "      if (present(check_%s)) then\n", group_ptr->name);
+      fortprintf(fd, "         local_check_%s = check_%s\n", group_ptr->name, group_ptr->name);
+      fortprintf(fd, "      else\n");
+      fortprintf(fd, "         local_check_%s = .false.\n", group_ptr->name);
+      fortprintf(fd, "      end if\n");
+      fortprintf(fd, "\n");
+      group_ptr = group_ptr->next;
+   }
+   fortprintf(fd, "\n");
+
+   group_ptr = groups;
+   while (group_ptr) {
+      var_list_ptr = group_ptr->vlist;
+
+      fortprintf(fd, "      if (local_check_%s) then\n", group_ptr->name);
+
+      while (var_list_ptr) {
+         var_ptr = var_list_ptr->var;
+
+         /* don't do anything for character, logical, or integer variables */
+         /* TODO: this code may not be sufficient for super-arrays; combine with code below for super-arrays? */
+         if (var_ptr->vtype == CHARACTER || var_ptr->vtype == LOGICAL || var_ptr->vtype == INTEGER) {
+            if (var_list_ptr) var_list_ptr = var_list_ptr->next;
+            continue;
+         }
+
+         /* This variable is NOT part of a super-array */
+         if (!strncmp(var_ptr->var_array, "-", 1024)) {
+            i = 0;
+            snprintf(var_array, 1024, "%s", var_ptr->name_in_code);
+         }
+         /* This variable is part of a super-array */
+         else {
+            i = 1;
+            snprintf(var_array, 1024, "%s", var_ptr->var_array);
+            while (var_list_ptr->next && !strncmp(var_list_ptr->next->var->var_array, var_list_ptr->var->var_array, 1024)) var_list_ptr = var_list_ptr->next;
+         }
+
+         /* we may need to loop over multiple time levels */
+         if (group_ptr->ntime_levs > 1) {
+            fortprintf(fd, "         do i=1,%i\n", group_ptr->ntime_levs);
+            snprintf(struct_deref, 1024, "%s %% time_levs(i) %% %s", group_ptr->name, group_ptr->name);
+         }
+         else {
+            snprintf(struct_deref, 1024, "%s", group_ptr->name);
+         }
+
+         /* set up the name of the pointer to be used for this field */
+         snprintf(ptrname, 32, "r%i_ptr", var_ptr->ndims + i); 
+
+         /* loop over all blocks for the field */
+         fortprintf(fd, "         %s => block_ptr %% %s %% %s\n", ptrname, struct_deref, var_array);  /* NB: var_array may be a var_array or variable name here */
+         fortprintf(fd, "         nvals = 1\n");
+         fortprintf(fd, "         do while (associated(%s))\n", ptrname);
+         if ((var_ptr->ndims + i) > 0) {
+            fortprintf(fd, "            if (local_exclude_halos) then\n");
+            fortprintf(fd, "               do j=1,%i\n", var_ptr->ndims + i);
+            fortprintf(fd, "                  if (trim(%s %% dimNames(j)) == \'nCells\') then \n", ptrname);
+            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nCellsSolve\n", ptrname);
+            fortprintf(fd, "                  else if (trim(%s %% dimNames(j)) == \'nEdges\') then \n", ptrname);
+            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nEdgesSolve\n", ptrname);
+            fortprintf(fd, "                  else if (trim(%s %% dimNames(j)) == \'nVertices\') then \n", ptrname);
+            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nVerticesSolve\n", ptrname);
+            fortprintf(fd, "                  else\n");
+            fortprintf(fd, "                     nvals = nvals * %s %% dimSizes(j)\n", ptrname);
+            fortprintf(fd, "                  end if\n");
+            fortprintf(fd, "                  dims%i(j) = %s %% dimSizes(j)\n", var_ptr->ndims+i, ptrname);
+            fortprintf(fd, "               end do\n");
+            fortprintf(fd, "            else\n");
+            fortprintf(fd, "               do j=1,%i\n", var_ptr->ndims + i);
+            fortprintf(fd, "                  nvals = nvals * %s %% dimSizes(j)\n", ptrname);
+            fortprintf(fd, "                  dims%i(j) = %s %% dimSizes(j)\n", var_ptr->ndims+i, ptrname);
+            fortprintf(fd, "               end do\n");
+            fortprintf(fd, "            end if\n");
+            fortprintf(fd, "\n");
+            fortprintf(fd, "!            write(0,*) \'Checking %s %% %s\', nvals\n", struct_deref, var_array);
+            fortprintf(fd, "            idx = nan_check(%s %% array, nvals)\n", ptrname);
+            fortprintf(fd, "            if (idx /= 0) then\n", ptrname);
+            fortprintf(fd, "               if (.not. local_be_quiet) then\n");
+            fortprintf(fd, "                  call get_indices(idx, dims%i, indices%i)\n", var_ptr->ndims+i, var_ptr->ndims+i);
+            fortprintf(fd, "                  write(0,\'(a)\',advance=\'no\') \'NaN or Inf detected in %s %% %s\'\n", struct_deref, var_array);
+            fortprintf(fd, "                  write(0,\'(a)\',advance=\'no\') \' at index (\'\n", struct_deref, var_array);
+            if ((var_ptr->ndims + i) > 1) {
+               fortprintf(fd, "                  do j=1,%i\n", var_ptr->ndims + i - 1);
+               fortprintf(fd, "                     write(0,\'(i9,a)\',advance=\'no\') indices%i(j), \',\'\n", var_ptr->ndims+i);
+               fortprintf(fd, "                  end do\n");
+            }
+            fortprintf(fd, "                  write(0,\'(i9,a)\') indices%i(%i), \')\'\n", var_ptr->ndims+i, var_ptr->ndims+i);
+            fortprintf(fd, "               end if\n");
+            fortprintf(fd, "               mpas_fpcheck = mpas_fpcheck + 1\n");
+            fortprintf(fd, "            end if\n", ptrname);
+         }
+         else {
+            fortprintf(fd, "!            write(0,*) \'Checking %s %% %s\', nvals\n", struct_deref, var_array);
+            fortprintf(fd, "            if (nan_check(%s %% scalar, nvals) /= 0) then\n", ptrname);
+            fortprintf(fd, "               if (.not. local_be_quiet) write(0,\'(a)\') \'NaN or Inf detected in %s %% %s\'\n", struct_deref, var_array);
+            fortprintf(fd, "               mpas_fpcheck = mpas_fpcheck + 1\n");
+            fortprintf(fd, "            end if\n", ptrname);
+         }
+         fortprintf(fd, "            %s => %s %% next\n", ptrname, ptrname);
+         fortprintf(fd, "         end do\n");
+         if (group_ptr->ntime_levs > 1) fortprintf(fd, "         end do\n");
+         fortprintf(fd, "\n");
+
+   
+         if (var_list_ptr) var_list_ptr = var_list_ptr->next;
+      }
+
+      fortprintf(fd, "      end if\n");
+      fortprintf(fd, "\n");
+
+      group_ptr = group_ptr->next;
+   }
+
+   fortprintf(fd, "   end function mpas_fpcheck\n");
+
+   fclose(fd);
+}
