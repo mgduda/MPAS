@@ -1738,7 +1738,6 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
    char fname[32];
    char struct_deref[1024];
    char var_array[1024];
-   char ptrname[32];
    FILE * fd;
    int i;
 
@@ -1758,7 +1757,7 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
    fortprintf(fd, "\n");
 
    /* declare arguments */
-   fortprintf(fd, "      type (block_type), pointer :: block_ptr\n");
+   fortprintf(fd, "      type (block_type), intent(in) :: block_ptr\n");
    fortprintf(fd, "      logical, intent(in), optional :: be_quiet\n");
    fortprintf(fd, "      logical, intent(in), optional :: exclude_halos\n");
    group_ptr = groups;
@@ -1769,31 +1768,15 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
    fortprintf(fd, "\n");
    fortprintf(fd, "\n");
 
-   fortprintf(fd, "      integer, external :: nan_check\n");
-   fortprintf(fd, "\n");
-   fortprintf(fd, "\n");
-
    /* local variables */
-   fortprintf(fd, "      logical :: local_be_quiet\n");
-   fortprintf(fd, "      logical :: local_exclude_halos\n");
    group_ptr = groups;
    while (group_ptr) {
       fortprintf(fd, "      logical :: local_check_%s\n", group_ptr->name);
       group_ptr = group_ptr->next;
    }
    fortprintf(fd, "\n");
-   fortprintf(fd, "      integer :: i, j, idx\n");
-   fortprintf(fd, "      integer, dimension(1) :: dims1, indices1\n");
-   fortprintf(fd, "      integer, dimension(2) :: dims2, indices2\n");
-   fortprintf(fd, "      integer, dimension(3) :: dims3, indices3\n");
-   fortprintf(fd, "      integer, dimension(4) :: dims4, indices4\n");
-   fortprintf(fd, "      integer, dimension(5) :: dims5, indices5\n");
-   fortprintf(fd, "      integer :: nvals\n");
-   fortprintf(fd, "\n");
-   fortprintf(fd, "      type (field0DReal),    pointer :: r0_ptr\n");
-   fortprintf(fd, "      type (field1DReal),    pointer :: r1_ptr\n");
-   fortprintf(fd, "      type (field2DReal),    pointer :: r2_ptr\n");
-   fortprintf(fd, "      type (field3DReal),    pointer :: r3_ptr\n");
+   fortprintf(fd, "      integer :: i\n");
+   fortprintf(fd, "      character(len=StrKIND) :: field_deref\n");
    fortprintf(fd, "\n");
    fortprintf(fd, "\n");
 
@@ -1801,18 +1784,6 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
    fortprintf(fd, "\n");
 
    /* initialize local variables based on optional arguments */
-   fortprintf(fd, "      if (present(be_quiet)) then\n");
-   fortprintf(fd, "         local_be_quiet = be_quiet\n");
-   fortprintf(fd, "      else\n");
-   fortprintf(fd, "         local_be_quiet = .false.\n");
-   fortprintf(fd, "      end if\n");
-
-   fortprintf(fd, "      if (present(exclude_halos)) then\n");
-   fortprintf(fd, "         local_exclude_halos = exclude_halos\n");
-   fortprintf(fd, "      else\n");
-   fortprintf(fd, "         local_exclude_halos = .false.\n");
-   fortprintf(fd, "      end if\n");
-
    group_ptr = groups;
    while (group_ptr) {
       fortprintf(fd, "      if (present(check_%s)) then\n", group_ptr->name);
@@ -1857,68 +1828,18 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
          if (group_ptr->ntime_levs > 1) {
             fortprintf(fd, "         do i=1,%i\n", group_ptr->ntime_levs);
             snprintf(struct_deref, 1024, "%s %% time_levs(i) %% %s", group_ptr->name, group_ptr->name);
+            fortprintf(fd, "         write(field_deref,\'(a,i1,a)\') \'%s %% time_levs(\', i ,\') %% %s %% \'\n", group_ptr->name, group_ptr->name);
          }
          else {
             snprintf(struct_deref, 1024, "%s", group_ptr->name);
+            fortprintf(fd, "         write(field_deref,\'(a)\') \'%s %% \'\n", struct_deref);
          }
 
-         /* set up the name of the pointer to be used for this field */
-         snprintf(ptrname, 32, "r%i_ptr", var_ptr->ndims + i); 
+         /* call field-specific checking routines */
+         /* NB: var_array may be a var_array or variable name here */
+         fortprintf(fd, "         mpas_fpcheck = mpas_fpcheck + mpas_fpcheck_field(block_ptr %% %s %% %s, be_quiet, exclude_halos, field_deref)\n", struct_deref, var_array);  
 
-         /* loop over all blocks for the field */
-         fortprintf(fd, "         %s => block_ptr %% %s %% %s\n", ptrname, struct_deref, var_array);  /* NB: var_array may be a var_array or variable name here */
-         fortprintf(fd, "         nvals = 1\n");
-         fortprintf(fd, "         do while (associated(%s))\n", ptrname);
-         if ((var_ptr->ndims + i) > 0) {
-            fortprintf(fd, "            if (local_exclude_halos) then\n");
-            fortprintf(fd, "               do j=1,%i\n", var_ptr->ndims + i);
-            fortprintf(fd, "                  if (trim(%s %% dimNames(j)) == \'nCells\') then \n", ptrname);
-            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nCellsSolve\n", ptrname);
-            fortprintf(fd, "                  else if (trim(%s %% dimNames(j)) == \'nEdges\') then \n", ptrname);
-            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nEdgesSolve\n", ptrname);
-            fortprintf(fd, "                  else if (trim(%s %% dimNames(j)) == \'nVertices\') then \n", ptrname);
-            fortprintf(fd, "                     nvals = nvals * %s %% block %% mesh %% nVerticesSolve\n", ptrname);
-            fortprintf(fd, "                  else\n");
-            fortprintf(fd, "                     nvals = nvals * %s %% dimSizes(j)\n", ptrname);
-            fortprintf(fd, "                  end if\n");
-            fortprintf(fd, "                  dims%i(j) = %s %% dimSizes(j)\n", var_ptr->ndims+i, ptrname);
-            fortprintf(fd, "               end do\n");
-            fortprintf(fd, "            else\n");
-            fortprintf(fd, "               do j=1,%i\n", var_ptr->ndims + i);
-            fortprintf(fd, "                  nvals = nvals * %s %% dimSizes(j)\n", ptrname);
-            fortprintf(fd, "                  dims%i(j) = %s %% dimSizes(j)\n", var_ptr->ndims+i, ptrname);
-            fortprintf(fd, "               end do\n");
-            fortprintf(fd, "            end if\n");
-            fortprintf(fd, "\n");
-            fortprintf(fd, "!            write(0,*) \'Checking %s %% %s\', nvals\n", struct_deref, var_array);
-            fortprintf(fd, "            idx = nan_check(%s %% array, nvals)\n", ptrname);
-            fortprintf(fd, "            if (idx /= 0) then\n", ptrname);
-            fortprintf(fd, "               if (.not. local_be_quiet) then\n");
-            fortprintf(fd, "                  call get_indices(idx, dims%i, indices%i)\n", var_ptr->ndims+i, var_ptr->ndims+i);
-            fortprintf(fd, "                  write(0,\'(a)\',advance=\'no\') \'NaN or Inf detected in %s %% %s\'\n", struct_deref, var_array);
-            fortprintf(fd, "                  write(0,\'(a)\',advance=\'no\') \' at index (\'\n", struct_deref, var_array);
-            if ((var_ptr->ndims + i) > 1) {
-               fortprintf(fd, "                  do j=1,%i\n", var_ptr->ndims + i - 1);
-               fortprintf(fd, "                     write(0,\'(i9,a)\',advance=\'no\') indices%i(j), \',\'\n", var_ptr->ndims+i);
-               fortprintf(fd, "                  end do\n");
-            }
-            fortprintf(fd, "                  write(0,\'(i9,a)\') indices%i(%i), \')\'\n", var_ptr->ndims+i, var_ptr->ndims+i);
-            fortprintf(fd, "               end if\n");
-            fortprintf(fd, "               mpas_fpcheck = mpas_fpcheck + 1\n");
-            fortprintf(fd, "            end if\n", ptrname);
-         }
-         else {
-            fortprintf(fd, "!            write(0,*) \'Checking %s %% %s\', nvals\n", struct_deref, var_array);
-            fortprintf(fd, "            if (nan_check(%s %% scalar, nvals) /= 0) then\n", ptrname);
-            fortprintf(fd, "               if (.not. local_be_quiet) write(0,\'(a)\') \'NaN or Inf detected in %s %% %s\'\n", struct_deref, var_array);
-            fortprintf(fd, "               mpas_fpcheck = mpas_fpcheck + 1\n");
-            fortprintf(fd, "            end if\n", ptrname);
-         }
-         fortprintf(fd, "            %s => %s %% next\n", ptrname, ptrname);
-         fortprintf(fd, "         end do\n");
          if (group_ptr->ntime_levs > 1) fortprintf(fd, "         end do\n");
-         fortprintf(fd, "\n");
-
    
          if (var_list_ptr) var_list_ptr = var_list_ptr->next;
       }
@@ -1930,6 +1851,112 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
    }
 
    fortprintf(fd, "   end function mpas_fpcheck\n");
+   fortprintf(fd, "\n");
+   fortprintf(fd, "\n");
+
+
+   /* Generate routines to perform floating-point checking for individual fields */
+   for (i=0; i<=5; i++) {
+      fortprintf(fd, "   integer function mpas_fpcheck_field_%idreal(field, be_quiet, exclude_halos, field_deref)\n", i);
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      implicit none\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      type (field%iDReal), intent(in), target :: field\n", i);
+      fortprintf(fd, "      logical, intent(in), optional :: be_quiet\n");
+      fortprintf(fd, "      logical, intent(in), optional :: exclude_halos\n");
+      fortprintf(fd, "      character(len=*), intent(in), optional :: field_deref\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      integer, external :: nan_check\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      logical :: local_be_quiet\n");
+      fortprintf(fd, "      logical :: local_exclude_halos\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      type (field%iDReal), pointer :: field_ptr\n", i);
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      integer :: nvals, idx, iblock, j\n");
+      if (i > 0) fortprintf(fd, "      integer, dimension(%i) :: dims, indices\n", i);
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      mpas_fpcheck_field_%idreal = 0\n", i);
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      if (present(be_quiet)) then\n");
+      fortprintf(fd, "         local_be_quiet = be_quiet\n");
+      fortprintf(fd, "      else\n");
+      fortprintf(fd, "         local_be_quiet = .false.\n");
+      fortprintf(fd, "      end if\n");
+      fortprintf(fd, "      if (present(exclude_halos)) then\n");
+      fortprintf(fd, "         local_exclude_halos = exclude_halos\n");
+      fortprintf(fd, "      else\n");
+      fortprintf(fd, "         local_exclude_halos = .false.\n");
+      fortprintf(fd, "      end if\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      field_ptr => field\n");
+      fortprintf(fd, "      iblock = 1\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "      nvals = 1\n");
+      fortprintf(fd, "      do while (associated(field_ptr))\n");
+      if (i > 0) {
+         fortprintf(fd, "         if (local_exclude_halos) then\n");
+         fortprintf(fd, "            do j=1,%i\n", i);
+         fortprintf(fd, "               if (trim(field_ptr %% dimNames(j)) == \'nCells\') then \n");
+         fortprintf(fd, "                  nvals = nvals * field_ptr %% block %% mesh %% nCellsSolve\n");
+         fortprintf(fd, "               else if (trim(field_ptr %% dimNames(j)) == \'nEdges\') then \n");
+         fortprintf(fd, "                  nvals = nvals * field_ptr %% block %% mesh %% nEdgesSolve\n");
+         fortprintf(fd, "               else if (trim(field_ptr %% dimNames(j)) == \'nVertices\') then \n");
+         fortprintf(fd, "                  nvals = nvals * field_ptr %% block %% mesh %% nVerticesSolve\n");
+         fortprintf(fd, "               else\n");
+         fortprintf(fd, "                  nvals = nvals * field_ptr %% dimSizes(j)\n");
+         fortprintf(fd, "               end if\n");
+         fortprintf(fd, "               dims(j) = field_ptr %% dimSizes(j)\n");
+         fortprintf(fd, "            end do\n");
+         fortprintf(fd, "         else\n");
+         fortprintf(fd, "            do j=1,%i\n", i);
+         fortprintf(fd, "               nvals = nvals * field_ptr %% dimSizes(j)\n");
+         fortprintf(fd, "               dims(j) = field_ptr %% dimSizes(j)\n");
+         fortprintf(fd, "            end do\n");
+         fortprintf(fd, "         end if\n");
+         fortprintf(fd, "\n");
+         fortprintf(fd, "         idx = nan_check(field_ptr %% array, nvals)\n");
+         fortprintf(fd, "         if (idx /= 0) then\n");
+         fortprintf(fd, "            if (.not. local_be_quiet) then\n");
+         fortprintf(fd, "               call get_indices(idx, dims, indices)\n");
+         fortprintf(fd, "               if (.not. local_be_quiet) then\n");
+         fortprintf(fd, "                  if (present(field_deref)) then\n");
+         fortprintf(fd, "                     write(0,\'(a)\',advance=\'no\') \'NaN or Inf detected in \'//trim(field_deref)//\' \'//trim(field_ptr %% fieldName) \n");
+         fortprintf(fd, "                  else\n");
+         fortprintf(fd, "                     write(0,\'(a)\',advance=\'no\') \'NaN or Inf detected in \'//trim(field_ptr %% fieldName) \n");
+         fortprintf(fd, "                  end if\n");
+         fortprintf(fd, "               end if\n");
+         fortprintf(fd, "               write(0,\'(a)\',advance=\'no\') \' at index (\'\n");
+         if (i > 1) {
+            fortprintf(fd, "               do j=1,%i\n", i - 1);
+            fortprintf(fd, "                  write(0,\'(i9,a)\',advance=\'no\') indices(j), \',\'\n");
+            fortprintf(fd, "               end do\n");
+         }
+         fortprintf(fd, "               write(0,\'(i9,a,i3)\') indices(%i), \') in block \', iblock\n", i);
+         fortprintf(fd, "            end if\n");
+         fortprintf(fd, "            mpas_fpcheck_field_%idreal = mpas_fpcheck_field_%idreal + 1\n", i, i);
+         fortprintf(fd, "         end if\n");
+      }
+      else {
+         fortprintf(fd, "         if (nan_check(field_ptr %% scalar, nvals) /= 0) then\n");
+         fortprintf(fd, "            if (.not. local_be_quiet) then\n");
+         fortprintf(fd, "               if (present(field_deref)) then\n");
+         fortprintf(fd, "                  write(0,\'(a,i3)\') \'NaN or Inf detected in \'//trim(field_deref)//\' \'//trim(field_ptr %% fieldName)//\' at block \', iblock\n");
+         fortprintf(fd, "               else\n");
+         fortprintf(fd, "                  write(0,\'(a,i3)\') \'NaN or Inf detected in \'//trim(field_ptr %% fieldName)//\' in block \', iblock\n");
+         fortprintf(fd, "               end if\n");
+         fortprintf(fd, "            end if\n");
+         fortprintf(fd, "            mpas_fpcheck_field_%idreal = mpas_fpcheck_field_%idreal + 1\n", i, i);
+         fortprintf(fd, "         end if\n");
+      }
+      fortprintf(fd, "         iblock = iblock + 1\n");
+      fortprintf(fd, "         field_ptr => field_ptr %% next\n");
+      fortprintf(fd, "      end do\n");
+      fortprintf(fd, "\n");
+      fortprintf(fd, "   end function mpas_fpcheck_field_%idreal\n", i);
+      fortprintf(fd, "\n");
+      fortprintf(fd, "\n");
+   }
 
    fclose(fd);
 }

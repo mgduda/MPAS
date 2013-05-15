@@ -2,7 +2,22 @@ module mpas_debugging
 
    use mpas_grid_types
 
+   public :: mpas_fpcheck, mpas_fpcheck_field
+
+   interface mpas_fpcheck_field
+      module procedure mpas_fpcheck_field_0dreal
+      module procedure mpas_fpcheck_field_1dreal
+      module procedure mpas_fpcheck_field_2dreal
+      module procedure mpas_fpcheck_field_3dreal
+      module procedure mpas_fpcheck_field_4dreal
+      module procedure mpas_fpcheck_field_5dreal
+   end interface mpas_fpcheck_field
+
+   private
+
+
    contains
+
 
    subroutine get_indices(ioffset, dims, indices)
 
@@ -12,7 +27,7 @@ module mpas_debugging
       integer, dimension(:), intent(in) :: dims
       integer, dimension(:), intent(inout) :: indices
 
-      integer :: i, j, m
+      integer :: i, j
 
       ! Convert offset to 0-based indexing
       i = ioffset - 1
