@@ -1802,6 +1802,17 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
 
       fortprintf(fd, "      if (local_check_%s) then\n", group_ptr->name);
 
+      /* we may need to loop over multiple time levels */
+      if (group_ptr->ntime_levs > 1) {
+         fortprintf(fd, "         do i=1,%i\n", group_ptr->ntime_levs);
+         snprintf(struct_deref, 1024, "%s %% time_levs(i) %% %s", group_ptr->name, group_ptr->name);
+         fortprintf(fd, "         write(field_deref,\'(a,i1,a)\') \'%s %% time_levs(\', i ,\') %% %s %% \'\n", group_ptr->name, group_ptr->name);
+      }
+      else {
+         snprintf(struct_deref, 1024, "%s", group_ptr->name);
+         fortprintf(fd, "         write(field_deref,\'(a)\') \'%s %% \'\n", struct_deref);
+      }
+
       while (var_list_ptr) {
          var_ptr = var_list_ptr->var;
 
@@ -1824,25 +1835,14 @@ void gen_debugging(struct group_list * groups, struct variable * vars)
             while (var_list_ptr->next && !strncmp(var_list_ptr->next->var->var_array, var_list_ptr->var->var_array, 1024)) var_list_ptr = var_list_ptr->next;
          }
 
-         /* we may need to loop over multiple time levels */
-         if (group_ptr->ntime_levs > 1) {
-            fortprintf(fd, "         do i=1,%i\n", group_ptr->ntime_levs);
-            snprintf(struct_deref, 1024, "%s %% time_levs(i) %% %s", group_ptr->name, group_ptr->name);
-            fortprintf(fd, "         write(field_deref,\'(a,i1,a)\') \'%s %% time_levs(\', i ,\') %% %s %% \'\n", group_ptr->name, group_ptr->name);
-         }
-         else {
-            snprintf(struct_deref, 1024, "%s", group_ptr->name);
-            fortprintf(fd, "         write(field_deref,\'(a)\') \'%s %% \'\n", struct_deref);
-         }
-
          /* call field-specific checking routines */
          /* NB: var_array may be a var_array or variable name here */
          fortprintf(fd, "         mpas_fpcheck = mpas_fpcheck + mpas_fpcheck_field(block_ptr %% %s %% %s, be_quiet, exclude_halos, field_deref)\n", struct_deref, var_array);  
-
-         if (group_ptr->ntime_levs > 1) fortprintf(fd, "         end do\n");
    
          if (var_list_ptr) var_list_ptr = var_list_ptr->next;
       }
+
+      if (group_ptr->ntime_levs > 1) fortprintf(fd, "         end do\n");
 
       fortprintf(fd, "      end if\n");
       fortprintf(fd, "\n");
