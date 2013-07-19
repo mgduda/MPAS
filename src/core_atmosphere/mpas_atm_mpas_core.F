@@ -626,28 +626,33 @@ module mpas_core
       type (mpas_pool_type), pointer :: diag
       type (mpas_pool_type), pointer :: diag_physics
       logical, pointer :: on_a_sphere
-      real (kind=RKIND), pointer :: sphere_radius
-      character (len=StrKIND), pointer :: modelName, coreName, modelVersion
       type (field0DChar), pointer :: xtime
       type (field1DReal), pointer :: olrtoa, rainc, rainnc, refl10cm_max, precipw
       type (field1DReal), pointer :: temperature_200hPa
       type (field1DReal), pointer :: temperature_500hPa
+      type (field1DReal), pointer :: temperature_700hPa
       type (field1DReal), pointer :: temperature_850hPa
       type (field1DReal), pointer :: height_200hPa
       type (field1DReal), pointer :: height_500hPa
+      type (field1DReal), pointer :: height_700hPa
       type (field1DReal), pointer :: height_850hPa
       type (field1DReal), pointer :: uzonal_200hPa
       type (field1DReal), pointer :: uzonal_500hPa
+      type (field1DReal), pointer :: uzonal_700hPa
       type (field1DReal), pointer :: uzonal_850hPa
       type (field1DReal), pointer :: umeridional_200hPa
       type (field1DReal), pointer :: umeridional_500hPa
+      type (field1DReal), pointer :: umeridional_700hPa
       type (field1DReal), pointer :: umeridional_850hPa
       type (field1DReal), pointer :: w_200hPa
       type (field1DReal), pointer :: w_500hPa
+      type (field1DReal), pointer :: w_700hPa
       type (field1DReal), pointer :: w_850hPa
       type (field1DReal), pointer :: vorticity_200hPa
       type (field1DReal), pointer :: vorticity_500hPa
+      type (field1DReal), pointer :: vorticity_700hPa
       type (field1DReal), pointer :: vorticity_850hPa
+      type (field1DReal), pointer :: mslp
 
 
       call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE_CDF2, 1, ierr)
@@ -660,15 +665,10 @@ module mpas_core
          call MPAS_writeStreamAtt(hifreq_stream, 'on_a_sphere', 'NO              ', ierr)
       end if
 
-      call mpas_pool_get_config(block_ptr % configs, 'sphere_radius', sphere_radius)
-      call mpas_pool_get_config(block_ptr % configs, 'modelName', modelName)
-      call mpas_pool_get_config(block_ptr % configs, 'coreName', coreName)
-      call mpas_pool_get_config(block_ptr % configs, 'modelVersion', modelVersion)
-
-      call MPAS_writeStreamAtt(hifreq_stream, 'sphere_radius', sphere_radius, ierr)
-      call MPAS_writeStreamAtt(hifreq_stream, 'model_name', modelName, ierr)
-      call MPAS_writeStreamAtt(hifreq_stream, 'core_name', coreName, ierr)
-      call MPAS_writeStreamAtt(hifreq_stream, 'model_version', modelVersion, ierr)
+      call MPAS_writeStreamAtt(hifreq_stream, 'sphere_radius', block_ptr % domain % sphere_radius, ierr)
+      call MPAS_writeStreamAtt(hifreq_stream, 'model_name', block_ptr % domain % modelName, ierr)
+      call MPAS_writeStreamAtt(hifreq_stream, 'core_name', block_ptr % domain % coreName, ierr)
+      call MPAS_writeStreamAtt(hifreq_stream, 'model_version', block_ptr % domain % modelVersion, ierr)
       call MPAS_writeStreamAtt(hifreq_stream, 'source', 'MPAS', ierr)
       call MPAS_writeStreamAtt(hifreq_stream, 'Conventions', 'MPAS', ierr)
 
@@ -682,23 +682,30 @@ module mpas_core
       call mpas_pool_get_field(diag_physics, 'rainnc', rainnc)
       call mpas_pool_get_field(diag_physics, 'refl10cm_max', refl10cm_max)
       call mpas_pool_get_field(diag_physics, 'precipw', precipw)
+      call mpas_pool_get_field(diag, 'mslp', mslp)
       call mpas_pool_get_field(diag, 'temperature_200hPa', temperature_200hPa)
       call mpas_pool_get_field(diag, 'temperature_500hPa', temperature_500hPa)
+      call mpas_pool_get_field(diag, 'temperature_700hPa', temperature_700hPa)
       call mpas_pool_get_field(diag, 'temperature_850hPa', temperature_850hPa)
       call mpas_pool_get_field(diag, 'height_200hPa', height_200hPa)
       call mpas_pool_get_field(diag, 'height_500hPa', height_500hPa)
+      call mpas_pool_get_field(diag, 'height_700hPa', height_700hPa)
       call mpas_pool_get_field(diag, 'height_850hPa', height_850hPa)
       call mpas_pool_get_field(diag, 'uzonal_200hPa', uzonal_200hPa)
       call mpas_pool_get_field(diag, 'uzonal_500hPa', uzonal_500hPa)
+      call mpas_pool_get_field(diag, 'uzonal_700hPa', uzonal_700hPa)
       call mpas_pool_get_field(diag, 'uzonal_850hPa', uzonal_850hPa)
       call mpas_pool_get_field(diag, 'umeridional_200hPa', umeridional_200hPa)
       call mpas_pool_get_field(diag, 'umeridional_500hPa', umeridional_500hPa)
+      call mpas_pool_get_field(diag, 'umeridional_700hPa', umeridional_700hPa)
       call mpas_pool_get_field(diag, 'umeridional_850hPa', umeridional_850hPa)
       call mpas_pool_get_field(diag, 'w_200hPa', w_200hPa)
       call mpas_pool_get_field(diag, 'w_500hPa', w_500hPa)
+      call mpas_pool_get_field(diag, 'w_700hPa', w_700hPa)
       call mpas_pool_get_field(diag, 'w_850hPa', w_850hPa)
       call mpas_pool_get_field(diag, 'vorticity_200hPa', vorticity_200hPa)
       call mpas_pool_get_field(diag, 'vorticity_500hPa', vorticity_500hPa)
+      call mpas_pool_get_field(diag, 'vorticity_700hPa', vorticity_700hPa)
       call mpas_pool_get_field(diag, 'vorticity_850hPa', vorticity_850hPa)
 
       call MPAS_streamAddField(hifreq_stream, xtime, ierr)
@@ -707,23 +714,30 @@ module mpas_core
       call MPAS_streamAddField(hifreq_stream, rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, refl10cm_max, ierr)
       call MPAS_streamAddField(hifreq_stream, precipw, ierr)
+      call MPAS_streamAddField(hifreq_stream, mslp, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, temperature_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, height_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, uzonal_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, uzonal_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, uzonal_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, uzonal_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, umeridional_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, umeridional_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, umeridional_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, umeridional_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, w_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, w_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, w_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, w_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, vorticity_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, vorticity_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, vorticity_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, vorticity_850hPa, ierr)
       call MPAS_writeStream(hifreq_stream, 1, ierr)
       call MPAS_closeStream(hifreq_stream, ierr)

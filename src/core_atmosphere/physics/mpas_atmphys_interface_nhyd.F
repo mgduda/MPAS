@@ -178,7 +178,6 @@
 
 !local variables:
  integer:: i,k,j
-
  real(kind=RKIND):: z0,z1,z2,w1,w2
  real(kind=RKIND):: rho_a,rho1,rho2,tem1,tem2
 

@@ -621,6 +621,7 @@
 			<var name="theta_base"/>
 			<var name="kdiff"/>
 			<var name="surface_pressure"/>
+			<var name="mslp"/>
 			<var name="temperature_200hPa"/>
 			<var name="temperature_500hPa"/>
 			<var name="temperature_700hPa"/>
@@ -1095,6 +1096,7 @@
                 <var name="kdiff"                   type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <var name="surface_pressure"        type="real"     dimensions="nCells Time"/>
+                <var name="mslp"                    type="real"     dimensions="nCells Time"/>
 
                 <var name="temperature_200hPa"     type="real"     dimensions="nCells Time"/>
                 <var name="temperature_500hPa"     type="real"     dimensions="nCells Time"/>
@@ -1297,9 +1299,9 @@
                 <var name="exch_h"        type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- TEMPORARY: -->
-		<var name="kzh"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzm"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzq"                               type="real"     dimensions="nVertLevels nCells Time"/>
+		<var name="kzh"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+		<var name="kzm"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+		<var name="kzq"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
 
 
                 <!-- ================================================================================================== -->
