@@ -2510,6 +2510,7 @@ module init_atm_cases
       integer, dimension(:), pointer :: mask_array
       integer, dimension(nEdges), target :: edge_mask
       character (len=StrKIND) :: fname
+      logical :: is_sfc_field
 
       real (kind=RKIND) :: flux, fluxk, lat1, lat2, eta_v, r_pert, u_pert, lat_pert, lon_pert, r
       real (kind=RKIND) :: lat, lon, x, y
@@ -2582,6 +2583,9 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: uReconstructMeridional
 
       real (kind=RKIND), dimension(:), pointer :: psfc
+      real (kind=RKIND), dimension(:), pointer :: t2m
+      real (kind=RKIND), dimension(:), pointer :: q2
+      real (kind=RKIND), dimension(:), pointer :: rh2
       real (kind=RKIND), dimension(:), pointer :: skintemp
       real (kind=RKIND), dimension(:), pointer :: snow
       real (kind=RKIND), dimension(:), pointer :: snowc
@@ -2684,6 +2688,9 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'st_fg', st_fg)
       call mpas_pool_get_array(fg, 'sm_fg', sm_fg)
       call mpas_pool_get_array(fg, 'psfc', psfc)
+      call mpas_pool_get_array(fg, 't2m', t2m)
+      call mpas_pool_get_array(fg, 'q2', q2)
+      call mpas_pool_get_array(fg, 'rh2', rh2)
       call mpas_pool_get_array(fg, 'skintemp', skintemp)
       call mpas_pool_get_array(fg, 'snow', snow)
       call mpas_pool_get_array(fg, 'snowc', snowc)
@@ -3773,6 +3780,57 @@ write(0,*) 'Interpolating SKINTEMP'
                end if
             end do
 
+            !
+            ! In addition to interpolating wind fields to cell edges, we should
+            ! also intperolate to cell centers at the surface in order to
+            ! produce U10 and V10 fields
+            !
+            is_sfc_field = .false.
+            mask_array => landmask
+            if (index(field % field, 'UU') /= 0 .and. vert_level(k) == 200100.0) then
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'u10', destField1d)
+               ndims = 1
+               is_sfc_field = .true.
+            else if (index(field % field, 'VV') /= 0 .and. vert_level(k) == 200100.0) then
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'v10', destField1d)
+               ndims = 1
+               is_sfc_field = .true.
+            else if (index(field % field, 'TT') /= 0 .and. vert_level(k) == 200100.0) then
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 't2m', destField1d)
+               ndims = 1
+               is_sfc_field = .true.
+            else if (index(field % field, 'RH') /= 0 .and. vert_level(k) == 200100.0) then
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'rh2', destField1d)
+               ndims = 1
+               is_sfc_field = .true.
+            end if
+
+            if (is_sfc_field) then
+               do i=1,nInterpPoints
+                  lat = latPoints(i)*DEG_PER_RAD
+                  lon = lonPoints(i)*DEG_PER_RAD
+                  call latlon_to_ij(proj, lat, lon, x, y)
+                  if (x < 0.5) then
+                     lon = lon + 360.0
+                     call latlon_to_ij(proj, lat, lon, x, y)
+                  end if
+                  destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, &
+                                                   msgval, interp_list, 1, maskval=maskval, mask_array=maskslab)
+               end do
+            end if
+
             deallocate(rslab)
      
          end if
@@ -4113,9 +4171,16 @@ write(0,*) 'PROCESSING SEAICE'
 
       !
       ! Diagnose fields needed in initial conditions file (u, w, rho, theta, scalars)
-      ! NB: At this point, "rho_zz" is simple dry density, and "theta_m" is regular potential temperature
+      ! NB: At this point, "rho_zz" is simple dry density, and "theta_m" is regular temperature
       !
       do iCell=1,nCells
+
+         ! Q2
+         es = 6.112 * exp((17.27*(t2m(iCell) - 273.16))/(t2m(iCell) - 35.86))
+         rs = 0.622 * es * 100. / (psfc(iCell) - es * 100.)
+         q2(iCell) = 0.01 * rs * rh2(iCell)
+    
+
          do k=1,nVertLevels
 
             ! QV
