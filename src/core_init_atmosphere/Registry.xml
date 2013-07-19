@@ -255,6 +255,14 @@
                 <var name="vegfra"                            type="real"     dimensions="nCells Time"                 streams="io"/>
                 <var name="sfc_albbck"                        type="real"     dimensions="nCells Time"                 streams="io"/>
                 <var name="xland"                             type="real"     dimensions="nCells Time"                 streams="io"/>
+
+                <!-- diagnostic fields that we get from first-guess data, and which we want to have at model initial output time -->
+                <var name="u10"                               type="real"     dimensions="nCells Time"                 streams="o"/>
+                <var name="v10"                               type="real"     dimensions="nCells Time"                 streams="o"/>
+                <var name="q2"                                type="real"     dimensions="nCells Time"                 streams="o"/>
+                <var name="t2m"                               type="real"     dimensions="nCells Time"                 streams="o"/>
+                <var name="rh2"                               type="real"     dimensions="nCells Time"                 streams="-"/>
+ 
         </var_struct>
 
         <var_struct name="diag" time_levs="1">

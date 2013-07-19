@@ -601,10 +601,10 @@
                 <var name="fm"            type="real"     dimensions="nCells Time"                 streams="ro"/>
 
                 <!-- DIAGNOSTICS: -->
-                <var name="u10"           type="real"     dimensions="nCells Time"                 streams="ro"/>
-                <var name="v10"           type="real"     dimensions="nCells Time"                 streams="ro"/>
-                <var name="q2"            type="real"     dimensions="nCells Time"                 streams="ro"/>
-                <var name="t2m"           type="real"     dimensions="nCells Time"                 streams="ro"/>
+                <var name="u10"           type="real"     dimensions="nCells Time"                 streams="iro"/>
+                <var name="v10"           type="real"     dimensions="nCells Time"                 streams="iro"/>
+                <var name="q2"            type="real"     dimensions="nCells Time"                 streams="iro"/>
+                <var name="t2m"           type="real"     dimensions="nCells Time"                 streams="iro"/>
                 <var name="th2m"          type="real"     dimensions="nCells Time"                 streams="ro"/>
 
 
