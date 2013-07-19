@@ -323,6 +323,7 @@
                 <var name="kdiff"                   type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
 
                 <var name="surface_pressure"        type="real"     dimensions="nCells Time"                 streams="iro"/>
+                <var name="mslp"                    type="real"     dimensions="nCells Time"                 streams="o"/>
 
                 <var name="temperature_200hPa"     type="real"     dimensions="nCells Time"                 streams="o"/>
                 <var name="temperature_500hPa"     type="real"     dimensions="nCells Time"                 streams="o"/>
@@ -523,9 +524,9 @@
                 <var name="exch_h"        type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
 
                 <!-- TEMPORARY: -->
-		<var name="kzh"                               type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
-		<var name="kzm"                               type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
-		<var name="kzq"                               type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+		<var name="kzh"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+		<var name="kzm"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+		<var name="kzq"           type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
 
 
                 <!-- ================================================================================================== -->
