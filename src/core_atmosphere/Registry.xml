@@ -212,6 +212,10 @@
 			<var name="seaice"/>
 			<var name="xice"/>
 			<var name="xland"/>
+			<var name="u10"/>
+			<var name="v10"/>
+			<var name="q2"/>
+			<var name="t2m"/>
 			<var name="dzs"/>
 			<var name="sh2o"/>
 			<var name="smois"/>
@@ -392,6 +396,7 @@
 			<var name="v10"/>
 			<var name="q2"/>
 			<var name="t2m"/>
+			<var name="th2m"/>
 			<var name="th2m"/>
 			<var name="dusfcg"/>
 			<var name="dvsfcg"/>
@@ -714,6 +719,7 @@
 			<var name="v10"/>
 			<var name="q2"/>
 			<var name="t2m"/>
+			<var name="th2m"/>
 			<var name="th2m"/>
 			<var name="dusfcg"/>
 			<var name="dvsfcg"/>
