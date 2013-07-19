@@ -155,7 +155,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=RKIND),dimension(:,:),pointer:: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer:: rho_zz,theta_m,qv,pressure_p,u,v,w
- real(kind=RKIND),dimension(:,:),pointer:: qvs,rh
+ real(kind=RKIND),dimension(:,:),pointer:: qvs
 
  real(kind=RKIND):: rho_a,rho1,rho2,tem1,tem2
 
@@ -383,7 +383,7 @@
 
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=RKIND),dimension(:,:),pointer:: zz,exner,pressure_b,rtheta_p,rtheta_b
- real(kind=RKIND),dimension(:,:),pointer:: rho_zz,theta_m,qv,rh,pressure_p
+ real(kind=RKIND),dimension(:,:),pointer:: rho_zz,theta_m,qv,pressure_p
  real(kind=RKIND),dimension(:,:),pointer:: rt_diabatic_tend
 
 !--------------------------------------------------------------------------------------------------
@@ -403,7 +403,6 @@
  
  rho_zz     => state % rho_zz % array
  theta_m    => state % theta_m % array
- rh         => diag % rh % array
 
  rt_diabatic_tend => tend % rt_diabatic_tend % array
 
