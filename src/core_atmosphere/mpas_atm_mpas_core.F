@@ -624,14 +624,31 @@ module mpas_core
       type (mpas_pool_type), pointer :: mesh
       type (mpas_pool_type), pointer :: state
       type (mpas_pool_type), pointer :: diag
+      type (mpas_pool_type), pointer :: sfc_input
       type (mpas_pool_type), pointer :: diag_physics
       logical, pointer :: on_a_sphere
       type (field0DChar), pointer :: xtime
       type (field1DReal), pointer :: olrtoa, rainc, rainnc, refl10cm_max, precipw
+      type (field1DReal), pointer :: hfx
+      type (field1DReal), pointer :: lh
+      type (field1DReal), pointer :: swdnb
+      type (field1DReal), pointer :: gsw
+      type (field1DReal), pointer :: glw
+      type (field1DReal), pointer :: u10
+      type (field1DReal), pointer :: v10
+      type (field1DReal), pointer :: t2m
+      type (field1DReal), pointer :: q2
+      type (field1DReal), pointer :: cd
+      type (field1DReal), pointer :: ck
+      type (field1DReal), pointer :: skintemp
       type (field1DReal), pointer :: temperature_200hPa
       type (field1DReal), pointer :: temperature_500hPa
       type (field1DReal), pointer :: temperature_700hPa
       type (field1DReal), pointer :: temperature_850hPa
+      type (field1DReal), pointer :: relhum_200hPa
+      type (field1DReal), pointer :: relhum_500hPa
+      type (field1DReal), pointer :: relhum_700hPa
+      type (field1DReal), pointer :: relhum_850hPa
       type (field1DReal), pointer :: height_200hPa
       type (field1DReal), pointer :: height_500hPa
       type (field1DReal), pointer :: height_700hPa
@@ -653,6 +670,7 @@ module mpas_core
       type (field1DReal), pointer :: vorticity_700hPa
       type (field1DReal), pointer :: vorticity_850hPa
       type (field1DReal), pointer :: mslp
+      type (field1DReal), pointer :: surface_pressure
 
 
       call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE_CDF2, 1, ierr)
@@ -675,6 +693,7 @@ module mpas_core
       call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
       call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
       call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
+      call mpas_pool_get_subpool(block_ptr % structs, 'sfc_input', sfc_input)
 
       call mpas_pool_get_field(state, 'xtime', xtime, 1)
       call mpas_pool_get_field(diag_physics, 'olrtoa', olrtoa)
@@ -682,11 +701,28 @@ module mpas_core
       call mpas_pool_get_field(diag_physics, 'rainnc', rainnc)
       call mpas_pool_get_field(diag_physics, 'refl10cm_max', refl10cm_max)
       call mpas_pool_get_field(diag_physics, 'precipw', precipw)
+      call mpas_pool_get_field(diag_physics, 'hfx', hfx)
+      call mpas_pool_get_field(diag_physics, 'lh', lh)
+      call mpas_pool_get_field(diag_physics, 'swdnb', swdnb)
+      call mpas_pool_get_field(diag_physics, 'gsw', gsw)
+      call mpas_pool_get_field(diag_physics, 'glw', glw)
+      call mpas_pool_get_field(diag_physics, 'u10', u10)
+      call mpas_pool_get_field(diag_physics, 'v10', v10)
+      call mpas_pool_get_field(diag_physics, 't2m', t2m)
+      call mpas_pool_get_field(diag_physics, 'q2', q2)
+      call mpas_pool_get_field(diag_physics, 'cd', cd)
+      call mpas_pool_get_field(diag_physics, 'ck', ck)
       call mpas_pool_get_field(diag, 'mslp', mslp)
+      call mpas_pool_get_field(diag, 'surface_pressure', surface_pressure)
+      call mpas_pool_get_field(sfc_input, 'skintemp', skintemp)
       call mpas_pool_get_field(diag, 'temperature_200hPa', temperature_200hPa)
       call mpas_pool_get_field(diag, 'temperature_500hPa', temperature_500hPa)
       call mpas_pool_get_field(diag, 'temperature_700hPa', temperature_700hPa)
       call mpas_pool_get_field(diag, 'temperature_850hPa', temperature_850hPa)
+      call mpas_pool_get_field(diag, 'relhum_200hPa', relhum_200hPa)
+      call mpas_pool_get_field(diag, 'relhum_500hPa', relhum_500hPa)
+      call mpas_pool_get_field(diag, 'relhum_700hPa', relhum_700hPa)
+      call mpas_pool_get_field(diag, 'relhum_850hPa', relhum_850hPa)
       call mpas_pool_get_field(diag, 'height_200hPa', height_200hPa)
       call mpas_pool_get_field(diag, 'height_500hPa', height_500hPa)
       call mpas_pool_get_field(diag, 'height_700hPa', height_700hPa)
@@ -714,11 +750,28 @@ module mpas_core
       call MPAS_streamAddField(hifreq_stream, rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, refl10cm_max, ierr)
       call MPAS_streamAddField(hifreq_stream, precipw, ierr)
+      call MPAS_streamAddField(hifreq_stream, hfx, ierr)
+      call MPAS_streamAddField(hifreq_stream, lh, ierr)
+      call MPAS_streamAddField(hifreq_stream, swdnb, ierr)
+      call MPAS_streamAddField(hifreq_stream, gsw, ierr)
+      call MPAS_streamAddField(hifreq_stream, glw, ierr)
+      call MPAS_streamAddField(hifreq_stream, u10, ierr)
+      call MPAS_streamAddField(hifreq_stream, v10, ierr)
+      call MPAS_streamAddField(hifreq_stream, t2m, ierr)
+      call MPAS_streamAddField(hifreq_stream, q2, ierr)
+      call MPAS_streamAddField(hifreq_stream, cd, ierr)
+      call MPAS_streamAddField(hifreq_stream, ck, ierr)
       call MPAS_streamAddField(hifreq_stream, mslp, ierr)
+      call MPAS_streamAddField(hifreq_stream, skintemp, ierr)
+      call MPAS_streamAddField(hifreq_stream, surface_pressure, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_500hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_700hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_850hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, relhum_200hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, relhum_500hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, relhum_700hPa, ierr)
+      call MPAS_streamAddField(hifreq_stream, relhum_850hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_500hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, height_700hPa, ierr)
