@@ -2323,6 +2323,7 @@ module init_atm_cases
       real (kind=RKIND) :: dlat
       real (kind=RKIND) :: z_edge, z_edge3, d2fdx2_cell1, d2fdx2_cell2
 
+      real (kind=RKIND) :: alt, als, zetal, zl
 
       block => grid % block
       parinfo => block % parinfo
@@ -2511,13 +2512,33 @@ module init_atm_cases
 
 !     Metrics for hybrid coordinate and vertical stretching
 
-      str = 1.5
-!      str = 1.
+!     str = 1.5
+!     str = 1.
+! suggested by Joe
+      str = 1.7
       zt = config_ztop
       dz = zt/float(nz1)
 
+!     do k=1,nz
+!        zw(k) = (real(k-1)/real(nz1))**str*zt
+!        if (k > 1) dzw(k-1) = zw(k)-zw(k-1)
+!     end do
+
+! new eqn from Joe
+      als   =  .075
+      alt   = 1.23
+      zetal =  .31
       do k=1,nz
-         zw(k) = (real(k-1)/real(nz1))**str*zt
+         zl = 1.-alt*(1.-zetal)
+         if ((real(k-1)/real(nz1)).LT.zetal) then
+              zw(k) =              (als*real(K-1)/real(nz1)      &
+    &             +(3.*(1.-alt)+2.*(alt-als)*zetal)              &
+    &                             *((K-1)*dz/(zt*zetal))**2      &
+    &             -(2.*(1.-alt) +  (alt-als)*zetal)              &
+    &                             *(real(k-1)*dz/(zt*zetal))**3) * zt
+         else
+              zw(K) = (zl+alt*(real(K-1)/real(nz1)-zetal))*zt
+         end if
          if (k > 1) dzw(k-1) = zw(k)-zw(k-1)
       end do
 
