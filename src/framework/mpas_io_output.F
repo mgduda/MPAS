@@ -359,7 +359,11 @@ module mpas_io_output
           write(runCmd,'(a,i0,a,a,a)') 'mpirun -n ',domain % dminfo % nProcs, ' ', trim(domain % coreName), '_model; '
       end if
  
-      call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, nferr)
+      if (trim(config_pio_format) == 'pnetcdf') then
+         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, nferr)
+      else
+         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_NETCDF, MPAS_IO_WRITE, 1, nferr)
+      end if
 
 #include "add_output_fields.inc"
 

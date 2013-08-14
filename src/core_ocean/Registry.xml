@@ -115,6 +115,10 @@
 					description="Integer specifying the stride of each IO task."
 					possible_values="Any positive integer value greater than 0."
 		/>
+		<nml_option name="config_pio_format" type="character" default_value="pnetcdf" units="unitless"
+		            description="String specifying the underlying I/O library to be used by PIO."
+		            possible_values="Either 'pnetcdf' or 'netcdf'"
+		/>
 	</nml_record>
 	<nml_record name="time_integration">
 		<nml_option name="config_dt" type="real" default_value="300.0" units="s"
