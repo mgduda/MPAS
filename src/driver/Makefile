@@ -1,11 +1,14 @@
 .SUFFIXES: .F .o
 
 OBJS = mpas_subdriver.o \
+       mpas_cam_interface.o \
        mpas.o
 
 all: $(OBJS)
 
 mpas_subdriver.o: 
+
+mpas_cam_interface.o: 
 
 mpas.o: mpas_subdriver.o
 
