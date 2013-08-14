@@ -123,6 +123,7 @@ module mpas_timekeeping
       implicit none
 
       character (len=*), intent(in) :: calendar 
+      type (ESMF_CalendarType) :: defcal
 
 #ifndef MPAS_CESM
       if (trim(calendar) == 'gregorian') then
