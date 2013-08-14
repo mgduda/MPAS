@@ -504,11 +504,13 @@ module mpas_core
       call MPAS_writeStreamAtt(hifreq_stream, 'Conventions', 'MPAS', ierr)
 
       call MPAS_streamAddField(hifreq_stream, block_ptr % state % time_levs(1) % state % xtime, ierr)
+#ifndef CAM_DYCORE
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % olrtoa, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % rainc, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % refl10cm_max, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % precipw, ierr)
+#endif
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag % temperature_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag % temperature_500hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag % temperature_850hPa, ierr)

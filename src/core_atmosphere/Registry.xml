@@ -19,6 +19,7 @@
                 <dim name="R3"                 definition="3"/>
                 <dim name="nVertLevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
+#ifndef CAM_DYCORE
                 <dim name="nMonths"            definition="namelist:months"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
                 <dim name="nLags"              definition="namelist:input_soil_temperature_lag"/>
@@ -26,6 +27,7 @@
                 <dim name="nAerLevels"         definition="namelist:naerlev"/>
                 <dim name="cam_dim1"           definition="namelist:camdim1"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"/>
+#endif
         </dims>
 
 
@@ -204,8 +206,10 @@
                 <var name="east"                      type="real"     dimensions="R3 nCells"                   streams="r"/>
                 <var name="north"                     type="real"     dimensions="R3 nCells"                   streams="r"/>
 
+#ifndef CAM_DYCORE
                 <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
                 <var name="m_hybi"                    type="real"     dimensions="nAerLevels nCells"/>
+#endif
         </var_struct>
 
         <var_struct name="state" time_levs="2">
@@ -222,11 +226,14 @@
                         <var name="qv"      array_group="moist"       streams="iro"/>
                         <var name="qc"      array_group="moist"       streams="iro"/>
                         <var name="qr"      array_group="moist"       streams="iro"/>
+#ifndef CAM_DYCORE
                         <var name="qi"      array_group="moist"       streams="iro"/>
                         <var name="qs"      array_group="moist"       streams="iro"/>
                         <var name="qg"      array_group="moist"       streams="iro"/>
+#endif
                 </var_array>
 
+#ifndef CAM_DYCORE
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
                         <var name="sul"     array_group="aer_cam"/>
                         <var name="sslt"    array_group="aer_cam"/>
@@ -241,6 +248,7 @@
                         <var name="bg"      array_group="aer_cam"/>
                         <var name="volc"    array_group="aer_cam"/>
                 </var_array>
+#endif
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
@@ -371,9 +379,11 @@
                         <var name="tend_qv"    name_in_code="qv"        array_group="moist"       streams="o"/>
                         <var name="tend_qc"    name_in_code="qc"        array_group="moist"       streams="o"/>
                         <var name="tend_qr"    name_in_code="qr"        array_group="moist"       streams="o"/>
+#ifndef CAM_DYCORE
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"       streams="o"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"       streams="o"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"       streams="o"/>
+#endif
                 </var_array>
         </var_struct>
 
@@ -385,6 +395,7 @@
 <!-- ================================================================================================== -->
 
 
+#ifndef CAM_DYCORE
         <nml_record name="physics">
                 <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
                 <nml_option name="input_landuse_data"                type="character"     default_value="USGS"/>
@@ -1014,4 +1025,28 @@
 		<var name="ol3"                               type="real"     dimensions="nCells"                      streams="iro"/>
 		<var name="ol4"                               type="real"     dimensions="nCells"                      streams="iro"/>
         </var_struct>
+#endif
+
+#ifdef CAM_DYCORE
+        <var_struct name="diag_physics" time_levs="1">
+                <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"     streams="o"/>
+        </var_struct>
+
+        <var_struct name="tend_physics" time_levs="1">
+                <!-- ================================================================================================== -->
+                <!--  Tendency arrays for CAM phys                                                                      -->
+                <!-- ================================================================================================== -->
+                <var name="u_cam_tend"      name_in_code="u"       type="real"   dimensions="nVertLevels nEdges Time" streams="ro" />
+                <var name="ux_cam_tend"     name_in_code="ux"      type="real"   dimensions="nVertLevels nCells Time" streams="ro" />
+                <var name="uy_cam_tend"     name_in_code="uy"      type="real"   dimensions="nVertLevels nCells Time" streams="ro" />
+                <var name="theta_cam_tend"  name_in_code="theta"   type="real"   dimensions="nVertLevels nCells Time" streams="ro" />
+                <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
+                        <var name="qv_cam_tend"     name_in_code="qv"   array_group="moist" streams="o" />
+                        <var name="qc_cam_tend"     name_in_code="qc"   array_group="moist" streams="o" />
+                        <var name="qr_cam_tend"     name_in_code="qr"   array_group="moist" streams="o" />
+                </var_array>
+        </var_struct>
+
+#endif
+
 </registry>

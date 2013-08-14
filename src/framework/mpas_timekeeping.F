@@ -1630,6 +1630,7 @@ module mpas_timekeeping
 end module mpas_timekeeping
 
 
+#ifndef CAM_DYCORE
 subroutine wrf_error_fatal(msg)
 
    implicit none
@@ -1641,3 +1642,4 @@ subroutine wrf_error_fatal(msg)
    stop
 
 end subroutine wrf_error_fatal
+#endif

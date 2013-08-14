@@ -185,6 +185,18 @@ module atm_time_integration
          end do
          if (debug) write(0,*) ' finished add physics tendencies '
 #endif
+#ifdef CAM_DYCORE
+        write(0,*) 'Adding physics tendencies from CAM'
+        block => domain % blocklist
+        call cam_addtend( block % mesh, &
+                     block % state % time_levs(1) % state, &
+                     block % diag, &
+                     block % tend, &
+                     block % tend_physics, &
+                     block % state % time_levs(2) % state % rho_zz % array(:,:), &
+                     block % diag % rho_edge % array(:,:) )
+        write(0,*) 'Finished adding physics tendencies from CAM'
+#endif
 
          !***********************************
          !  need tendencies at all edges of owned cells -
@@ -1262,7 +1274,9 @@ module atm_time_integration
       zgrid        => grid % zgrid % array
 
 #ifndef DO_PHYSICS
+#ifndef CAM_DYCORE
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
+#endif
 #endif
 
       !
@@ -1518,7 +1532,9 @@ module atm_time_integration
       zgrid        => grid % zgrid % array
 
 #ifndef DO_PHYSICS
+#ifndef CAM_DYCORE
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
+#endif
 #endif
 
       !  for positive-definite or monotonic option, we first update scalars using the tendency from sources other than
@@ -3418,5 +3434,93 @@ module atm_time_integration
 
    end subroutine atm_init_coupled_diagnostics
 
+
+#ifdef CAM_DYCORE
+   subroutine cam_addtend(mesh, state, diag, tend, tend_physics, mass, mass_edge)
+  
+!      use mpas_atmphys_constants, only: R_d,R_v,degrad
+      real (kind=RKIND), parameter :: R_d=287.0_RKIND, R_v=461.6_RKIND, degrad=3.14159265359_RKIND/180.0_RKIND
+
+      type (mesh_type), intent(in) :: mesh
+      type (state_type), intent(in) :: state
+      type (diag_type), intent(in) :: diag
+      type (tend_physics_type), intent(inout) :: tend_physics
+      real (kind=RKIND), dimension(:,:), intent(in) :: mass
+      real (kind=RKIND), dimension(:,:), intent(in) :: mass_edge
+      type (tend_type), intent(inout) :: tend
+     
+     
+      type (block_type), pointer :: block
+     
+      integer:: i, iCell, k, n, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertLevels
+     
+      real (kind=RKIND), dimension(:,:), pointer :: theta_m, qv
+      
+      real (kind=RKIND), dimension(:,:), pointer   :: tend_theta, tend_u, cam_theta, cam_u
+      real (kind=RKIND), dimension(:,:,:), pointer :: tend_scalars, cam_scalars
+     
+     
+      real (kind=RKIND), dimension(:,:), allocatable :: theta, tend_th
+     
+      block => mesh % block
+      
+      nCells      = mesh % nCells
+      nEdges      = mesh % nEdges
+      nCellsSolve = mesh % nCellsSolve
+      nEdgesSolve = mesh % nEdgesSolve
+      nVertLevels = mesh % nVertLevels
+     
+      theta_m => state % theta_m % array
+      qv      => state % scalars % array(state%index_qv,:,:)
+     
+      cam_u       => tend_physics % u       % array
+      cam_theta   => tend_physics % theta   % array
+      cam_scalars => tend_physics % scalars % array
+     
+      tend_u       => tend % u % array
+      tend_theta   => tend % theta_m % array
+      tend_scalars => tend % scalars % array
+     
+      !
+      ! initialize the tendency for the potential temperature and all scalars
+      !
+      allocate(theta(nVertLevels,nCellsSolve)  )
+      allocate(tend_th(nVertLevels,nCellsSolve))
+      tend_th      = 0.
+      tend_scalars = 0.
+     
+      do i = 1, nEdgesSolve
+         do k = 1, nVertLevels
+            tend_u(k,i)=tend_u(k,i)+cam_u(k,i)*mass_edge(k,i)
+         end do
+      end do
+     
+      do i = 1, nCellsSolve
+         do k = 1, nVertLevels
+            tend_th(k,i)=tend_th(k,i)+cam_theta(k,i)*mass(k,i)
+            tend_scalars(tend%index_qv,k,i)=tend_scalars(tend%index_qv,k,i)+cam_scalars(1,k,i)*mass(k,i)
+            tend_scalars(tend%index_qc,k,i)=tend_scalars(tend%index_qc,k,i)+cam_scalars(2,k,i)*mass(k,i)
+            tend_scalars(tend%index_qr,k,i)=tend_scalars(tend%index_qr,k,i)+cam_scalars(3,k,i)*mass(k,i)
+         end do
+      end do
+     
+     
+      !
+      ! convert the tendency for the potential temperature to a tendency for modified potential temperature
+      !
+      do i = 1, nCellsSolve
+         do k = 1, nVertLevels
+            theta(k,i) = theta_m(k,i) / (1. + R_v/R_d * qv(k,i))
+            tend_th(k,i) = (1. + R_v/R_d * qv(k,i)) * tend_th(k,i) &
+                            + R_v/R_d * theta(k,i) * tend_scalars(tend%index_qv,k,i)
+            tend_theta(k,i) = tend_theta(k,i) + tend_th(k,i)
+         end do
+      end do
+
+      deallocate(theta)
+      deallocate(tend_th)
+     
+   end subroutine cam_addtend
+#endif
 
 end module atm_time_integration
