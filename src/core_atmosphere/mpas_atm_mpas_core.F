@@ -253,7 +253,12 @@ module mpas_core
                                                   maxval(mesh % meshScalingDel4 % array(1:mesh%nEdges))
 
       call atm_adv_coef_compression(mesh)
-   
+
+      !
+      ! Calculate initial Psfc field
+      !
+      call atm_update_psfc(mesh, block % state % time_levs(1) % state, block % diag)   
+
    end subroutine atm_mpas_init_block
    
    

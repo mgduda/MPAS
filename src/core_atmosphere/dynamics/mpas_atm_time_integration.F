@@ -363,6 +363,14 @@ module atm_time_integration
       end do
 #endif
 
+#ifdef CAM_DYCORE
+      ! 
+      ! Update surface_pressure field
+      ! 
+      block => domain % blocklist
+      call atm_update_psfc(block % mesh, block % state % time_levs(2) % state, block % diag)
+#endif
+
       102 format(' global min, max scalar',i4,2(1x,e17.10))
       write(0,*)
       block => domain % blocklist
@@ -3438,8 +3446,11 @@ module atm_time_integration
 #ifdef CAM_DYCORE
    subroutine cam_addtend(mesh, state, diag, tend, tend_physics, mass, mass_edge)
   
-!      use mpas_atmphys_constants, only: R_d,R_v,degrad
-      real (kind=RKIND), parameter :: R_d=287.0_RKIND, R_v=461.6_RKIND, degrad=3.14159265359_RKIND/180.0_RKIND
+!      use mpas_atmphys_constants, only: R_d, R_v
+
+      implicit none
+
+      real (kind=RKIND), parameter :: R_d=287.0_RKIND, R_v=461.6_RKIND
 
       type (mesh_type), intent(in) :: mesh
       type (state_type), intent(in) :: state
@@ -3521,6 +3532,47 @@ module atm_time_integration
       deallocate(tend_th)
      
    end subroutine cam_addtend
+
+
+   subroutine atm_update_psfc(mesh, state, diag)
+
+      implicit none
+
+      type (mesh_type), intent(in) :: mesh
+      type (state_type), intent(in) :: state
+      type (diag_type), intent(inout) :: diag
+
+      integer :: index_qv
+      integer :: iCell
+      real (kind=RKIND) :: dz1, dz2
+      real (kind=RKIND) :: rho1, rho2
+      real (kind=RKIND), dimension(:), pointer :: surface_pressure
+      real (kind=RKIND), dimension(:,:), pointer :: zgrid, zz
+      real (kind=RKIND), dimension(:,:), pointer :: rho_zz
+      real (kind=RKIND), dimension(:,:), pointer :: pressure_p, pressure_base
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+
+      surface_pressure => diag % surface_pressure % array
+      pressure_p => diag % pressure_p % array
+      pressure_base => diag % pressure_base % array
+      zgrid => mesh % zgrid % array
+      zz => mesh % zz % array
+      rho_zz => state % rho_zz % array
+      scalars => state % scalars % array
+
+      index_qv = state % index_qv
+
+      do iCell = 1, mesh%nCells
+         dz1 = zgrid(2,iCell) - zgrid(1,iCell)
+         dz2 = zgrid(3,iCell) - zgrid(2,iCell)
+         rho1 = rho_zz(1,iCell) * zz(1,iCell) * (1.0 + scalars(index_qv,1,iCell))
+         rho2 = rho_zz(2,iCell) * zz(2,iCell) * (1.0 + scalars(index_qv,2,iCell))
+         surface_pressure(iCell) = 0.5*gravity*(zgrid(2,iCell)-zgrid(1,iCell)) * (rho1 + 0.5*(rho2 - rho1) * dz1/(dz1+dz2))
+         surface_pressure(iCell) = surface_pressure(iCell) + pressure_p(1,iCell) + pressure_base(1,iCell)
+      end do
+
+   end subroutine atm_update_psfc
+
 #endif
 
 end module atm_time_integration
