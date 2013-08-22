@@ -2273,8 +2273,9 @@ module init_atm_cases
       type (field1DReal), pointer :: tempField
       type (field1DReal), target :: tempFieldTarget
 
-      real(kind=RKIND), dimension(:), pointer :: hs, hs1
-      real(kind=RKIND) :: hm, hm_global, zh, dzmin, dzmina, dzmina_global, dzminf, sm
+      real(kind=RKIND), dimension(:), pointer :: hs, hs1, sm0
+      real(kind=RKIND) :: hm, hm_global, zh, dzmin, dzmina, dzmina_global, dzminf, dzminf_global, sm
+      real(kind=RKIND) :: dcsum
       integer :: nsmterrain, kz, sfc_k
       logical :: hybrid, smooth
 
@@ -2518,7 +2519,6 @@ write(0,*) 'USING ECMWF TERRAIN...'
                                           * (hs(cellsOnCell(j,iCell))-hs(iCell))
                end do
             endif
-!           ter(iCell) = hs(iCell) - 0.25*ter(iCell)
             ter(iCell) = hs(iCell) - 0.125*ter(iCell)
          end do
 
@@ -2645,22 +2645,31 @@ write(0,*) 'USING ECMWF TERRAIN...'
 !     Smoothing algorithm for coordinate surfaces 
 
       smooth = config_smooth_surfaces
-!      smooth = .false.
 
       if (smooth) then
 
-         dzmin = 0.5
+         dzmin = config_dzmin
+
+         allocate(sm0(grid%nCells+1))
+
+         do iCell=1,grid % nCells
+            dcsum = 0.0
+            do j=1,nEdgesOnCell(iCell)
+               dcsum = dcsum + dcEdge(edgesOnCell(j,iCell))
+            end do
+            dcsum = dcsum / real(nEdgesOnCell(iCell))
+            sm0(iCell) = max(0.01_RKIND, 0.25 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
+         end do
 
          do k=2,kz-1
             hx(k,:) = hx(k-1,:)
             dzminf = zw(k)-zw(k-1)
 
-!            dzmin = max(0.5_RKIND,1.-.5*zw(k)/hm)
-
-            sm = .02*min(0.5_RKIND*zw(k)/hm,1.0_RKIND)
-          
-            do i=1,30
+            do i=1,config_nsm + k
                do iCell=1,grid % nCells
+
+                  sm = sm0(iCell) * min((3.0*zw(k)/zt)**2.0, 1.0_RKIND)
+
                   hs1(iCell) = 0.
                   do j = 1,nEdgesOnCell(iCell)
 
@@ -2692,23 +2701,25 @@ write(0,*) 'USING ECMWF TERRAIN...'
 
                call mpas_dmpar_exch_halo_field(tempField)
 
-             !  dzmina = minval(hs(:)-hx(k-1,:))
-               dzmina = minval(zw(k)+ah(k)*hs(1:nCellsSolve)-zw(k-1)-ah(k-1)*hx(k-1,1:nCellsSolve))
-               call mpas_dmpar_min_real(dminfo, dzmina, dzmina_global)
-             !  write(0,*) ' k,i, dzmina, dzmin, zw(k)-zw(k-1) ', k,i, dzmina, dzmin, zw(k)-zw(k-1)
-               if (dzmina_global >= dzmin*(zw(k)-zw(k-1))) then
-                  hx(k,:)=hs(:)
-                  dzminf = dzmina_global
-               else
-                  exit
-               end if
+               do iCell=1,grid % nCells
+                  dzmina = (zw(k) + ah(k)*hs(iCell)) - (zw(k-1) + ah(k-1)*hx(k-1,iCell))
+                  if (dzmina > dzmin*(zw(k)-zw(k-1))) then
+                     hx(k,iCell) = hs(iCell)
+                     if (dzmina < dzminf) dzminf = dzmina
+                  end if 
+               end do
+
             end do
-            write(0,*) k,i,sm,dzminf/(zw(k)-zw(k-1)),dzmina/(zw(k)-zw(k-1))
+            call mpas_dmpar_min_real(dminfo, dzminf, dzminf_global)
+            write(0,*) k,i,sm,dzminf_global/(zw(k)-zw(k-1))
          end do
+
+         deallocate(sm0)
 
          do k=kz,nz
                hx(k,:) = 0.
          end do
+
       else
 
          do k=2,nz1
@@ -2749,14 +2760,6 @@ write(0,*) 'USING ECMWF TERRAIN...'
            end if
          end do
       enddo
-
-!      do k=1,nz1
-!         write(0,*) ' k, zgrid(k,1),hx(k,1) ',k,zgrid(k,1),hx(k,1)
-!      enddo
-
-!      do k=1,nz1
-!         write(0,*) ' k, zx(k,1) ',k,zx(k,1)
-!      enddo
 
 
       ! For z-metric term in omega equation
