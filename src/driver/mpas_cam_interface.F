@@ -529,6 +529,61 @@ module mpas_cam_interface
 #endif
    
    end subroutine cam_restart_to_mpas
+
+
+   subroutine mpas_get_pref_profile(pref_edge, pref_mid)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_GET_PREF_PROFILE
+   !
+   ! Returns reference profiles for pressure at layer interfaces and layer
+   !    midpoints. Pressures should be in ascending order, i.e., from the top of
+   !    the atmosphere downward.
+   !
+   ! Output: pref_edge - reference pressure at layer interfaces (vertical edges)
+   !         pref_mid - reference pressure at layer midpoints
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      implicit none
+
+      real (kind=RKIND), dimension(:), intent(out) :: pref_edge
+      real (kind=RKIND), dimension(:), intent(out) :: pref_mid
+
+
+      integer :: k, nVertLevels, nCellsSolve
+      real (kind=RKIND), dimension(:), pointer :: temp
+      real (kind=RKIND), dimension(:), pointer :: fzm, fzp
+
+      nVertLevels = domain % blocklist % mesh % nVertLevels
+      nCellsSolve = domain % blocklist % mesh % nCellsSolve
+
+      fzm => domain % blocklist % mesh % fzm % array
+      fzp => domain % blocklist % mesh % fzp % array
+
+      allocate(temp(nVertLevels))
+
+      !
+      ! Take layer midpoint pressures directly from pressure_base
+      !
+      do k=1,nVertLevels
+         temp(nVertLevels-k+1) = maxval(domain % blocklist % diag % pressure_base % array(k,1:nCellsSolve))
+      end do
+
+      call mpas_dmpar_max_real_array(domain % dminfo, nVertLevels, temp, pref_mid)
+
+      deallocate(temp)
+
+      !
+      ! Interpolate interface pressure for interior edges, and extrapolate for
+      !    top and bottom pressure
+      !
+      do k=2,nVertLevels
+         pref_edge(k) = fzm(k)*pref_mid(k) + fzp(k)*pref_mid(k-1)
+      end do
+      pref_edge(1) = pref_mid(1) + pref_mid(1) - pref_edge(2)
+      pref_edge(nVertLevels+1) = pref_mid(nVertLevels) + pref_mid(nVertLevels) - pref_edge(nVertLevels)
+
+   end subroutine mpas_get_pref_profile
    
    
    subroutine mpas_init2()
