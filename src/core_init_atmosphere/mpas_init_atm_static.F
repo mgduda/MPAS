@@ -11,6 +11,7 @@
  use atm_advection
 ! use mpas_configure
  use mpas_dmpar
+ use mpas_init_atm_static_gfs
  use init_atm_hinterp
  use init_atm_llxy
 
@@ -185,6 +186,60 @@
  call atm_initialize_advection_rk(mesh, nCells, nEdges, maxEdges, on_a_sphere, sphere_radius) 
  call atm_initialize_deformation_weights(mesh, nCells, on_a_sphere, sphere_radius) 
 
+
+#ifdef DO_PHYSICS
+!
+! Interpolate the static fields using the WPS data base:
+!
+ call init_atm_static_fields(mesh)
+ call init_atm_static_orogwd(mesh)
+
+#elif DO_PHYSICS_GFS
+!
+! Interpolate the static fields using the GFS physics data base:
+!
+ call init_atm_static_fields_forGFS(mesh)
+
+#endif
+
+ end subroutine init_atm_static
+
+!==================================================================================================
+ subroutine init_atm_static_fields(mesh)
+!==================================================================================================
+
+!inout arguments:
+ type(mesh_type),intent(inout):: mesh
+
+!local variables:
+ type(proj_info):: proj
+ type(dm_info),pointer :: dminfo
+
+ character(len=StrKIND):: fname
+
+ integer:: nx,ny,nz
+ integer:: endian,isigned,istatus,wordsize
+ integer:: i,j,k
+ integer:: iCell,iEdge,iVtx,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
+ integer,dimension(5) :: interp_list
+ integer,dimension(:),allocatable  :: nhs
+ integer,dimension(:,:),allocatable:: ncat
+
+ real(kind=4):: scalefactor
+ real(kind=4),dimension(:,:,:),allocatable:: rarray
+
+ real(kind=RKIND):: lat,lon,x,y
+ real(kind=RKIND):: lat_pt,lon_pt
+ real(kind=RKIND),dimension(:,:),allocatable  :: soiltemp_1deg
+ real(kind=RKIND),dimension(:,:),allocatable  :: maxsnowalb
+ real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
+
+!--------------------------------------------------------------------------------------------------
+
+ dminfo => mesh % block % domain % dminfo
+
+ write(0,*)
+ write(0,*) '--- enter subroutine init_atm_static_fields:'
 
 !
 ! Interpolate HGT
@@ -745,7 +800,7 @@
  write(0,*) '--- end interpolate ALBEDO12M'
 
 
- end subroutine init_atm_static
+ end subroutine init_atm_static_fields
 
 !==================================================================================================
  subroutine init_atm_static_orogwd(mesh, dims, configs)

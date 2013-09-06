@@ -1946,7 +1946,7 @@ MODULE init_atm_llxy
          PRINT '(A,F8.3,A)','The input data gave the starting latitude as ',proj%lat1,'.'
          PRINT '(A,F8.3,A)','This routine computed the starting latitude as +-',ABS(proj%gauss_lat(1)),'.'
          PRINT '(A,F8.3,A)','The difference is larger than 0.01 degrees, which is not expected.'
-         CALL llxy_error_fatal ( 'Gaussian_latitude_computation' )
+         !CALL llxy_error_fatal ( 'Gaussian_latitude_computation' )
       END IF
  
    END SUBROUTINE set_gauss

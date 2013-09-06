@@ -23,6 +23,7 @@
                 <dim name="nFGSoilLevels"      definition="namelist:config_nfgsoillevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
                 <dim name="nMonths"            definition="namelist:config_months"/>
+                <dim name="nSeasons"           definition="namelist:config_seasons"/>
         </dims>
 
 
@@ -46,6 +47,7 @@
                 <nml_option name="config_nfglevels"             type="integer"       default_value="38"/>
                 <nml_option name="config_nfgsoillevels"         type="integer"       default_value="4"/>
                 <nml_option name="config_months"                type="integer"       default_value="12"      in_defaults="false"/>
+                <nml_option name="config_seasons"               type="integer"       default_value="4"/>
         </nml_record>
 
         <nml_record name="data_sources" in_defaults="true">
@@ -445,6 +447,14 @@
                 <var name="ol2"                                  type="real"     dimensions="nCells"/>
                 <var name="ol3"                                  type="real"     dimensions="nCells"/>
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
+
+                <!-- static terrrestrial fields only needed for the GFS physics -->
+                <var name="facsf"                                type="real"     dimensions="nCells"              streams="io"/>
+                <var name="facwf"                                type="real"     dimensions="nCells"              streams="io"/>
+                <var name="alnsf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alnwf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alvsf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alvwf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="hx"                         type="real"     dimensions="nVertLevelsP1 nCells"/>
