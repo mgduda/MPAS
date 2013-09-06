@@ -7,6 +7,11 @@
 !
 module mpas_io
 
+#ifdef MPAS_CESM
+! Needed for now, until we get access to a newer version of PIO in CESM?
+#define PIO_OFFSET 4
+#endif
+
    use mpas_dmpar_types
    use mpas_dmpar
    use mpas_io_units
