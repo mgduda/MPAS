@@ -93,8 +93,8 @@ module mpas_cam_interface
    end subroutine mpas_init1
    
    
-   subroutine cam_inidat_to_mpas(Numcols, MaxEdges, Plev, Pcnst, Pref, Ptop, &
-                                 Ae, Be, Ac, Bc, Psd, Phis, Theta, U, Tracer)
+   subroutine cam_inidat_to_mpas(Numcols, MaxEdges, Plev, Pcnst, &
+                                 Psd, Phis, Theta, U, Tracer)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! SUBROUTINE CAM_INIDAT_TO_MPAS
    !
@@ -102,10 +102,6 @@ module mpas_cam_interface
    !        MaxEdges - maximum number of edges per cell
    !        Plev - number of vertical levels
    !        Pcnst - number of tracers
-   !        Pref - reference surface pressure (Pa)
-   !        Ptop - pressure at top of model (Pa)
-   !        Ae, Be - A and B arrays at vertical edges
-   !        Ac, Bc - A and B arrays at vertical centers
    !        Psd - dry surface pressure (Pa)
    !        Phis - surface geopotential (m^2/s^2)
    !        Theta - potential temperature (K)
@@ -120,10 +116,6 @@ module mpas_cam_interface
       integer, intent(in) :: MaxEdges
       integer, intent(in) :: Plev
       integer, intent(in) :: Pcnst
-      real (kind=RKIND), intent(in) :: Pref
-      real (kind=RKIND), intent(in) :: Ptop
-      real (kind=RKIND), dimension(Plev+1), intent(in) :: Ae, Be
-      real (kind=RKIND), dimension(Plev), intent(in) :: Ac, Bc
       real (kind=RKIND), dimension(Numcols), intent(in) :: Psd
       real (kind=RKIND), dimension(Numcols), intent(in) :: Phis
       real (kind=RKIND), dimension(Numcols,Plev), intent(in) :: Theta
@@ -141,7 +133,9 @@ module mpas_cam_interface
    
       write(0,*) 'Called CAM_INIDAT_TO_MPAS'
 
-      p0 = Pref    !MGD this also appears below...
+      p0 = 1.0E5    ! This should be consistent with the value used in MPAS to
+                    !    originally compute theta from temperature
+
 #if 0
       block => domain % blocklist
 
@@ -437,8 +431,8 @@ module mpas_cam_interface
    end subroutine mpas_restart_to_cam
    
    
-   subroutine cam_restart_to_mpas(Numcols, MaxEdges, Plev, Pcnst, Pref, Ptop, &
-                                  Ae, Be, Ac, Bc, Psd, Phis, Theta, U, W, Tracer)
+   subroutine cam_restart_to_mpas(Numcols, MaxEdges, Plev, Pcnst, &
+                                  Theta, U, W, Tracer)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! SUBROUTINE CAM_RESTART_TO_MPAS
    !
@@ -446,12 +440,6 @@ module mpas_cam_interface
    !        MaxEdges - maximum number of edges per cell
    !        Plev - number of vertical levels
    !        Pcnst - number of tracers
-   !        Pref - reference surface pressure (Pa)
-   !        Ptop - pressure at top of model (Pa)
-   !        Ae, Be - A and B arrays at vertical edges
-   !        Ac, Bc - A and B arrays at vertical centers
-   !        Psd - dry surface pressure (Pa)
-   !        Phis - surface geopotential (m^2/s^2)
    !        Theta - potential temperature (K)
    !        U - normal velocity at edges (m/s)
    !        W - vertical velocity (Pa/s)
@@ -464,12 +452,6 @@ module mpas_cam_interface
       integer, intent(in) :: MaxEdges
       integer, intent(in) :: Plev
       integer, intent(in) :: Pcnst
-      real (kind=RKIND), intent(in) :: Pref
-      real (kind=RKIND), intent(in) :: Ptop
-      real (kind=RKIND), dimension(Plev+1), intent(in) :: Ae, Be
-      real (kind=RKIND), dimension(Plev), intent(in) :: Ac, Bc
-      real (kind=RKIND), dimension(Numcols), intent(in) :: Psd
-      real (kind=RKIND), dimension(Numcols), intent(in) :: Phis
       real (kind=RKIND), dimension(Numcols,Plev), intent(in) :: Theta
       real (kind=RKIND), dimension(Numcols,MaxEdges,Plev), intent(in) :: U
       real (kind=RKIND), dimension(Numcols,Plev+1), intent(in) :: W
@@ -506,8 +488,8 @@ module mpas_cam_interface
       ! Fill in MPAS fields in block % state % time_levs(1) % state arrays from arguments 
       ! Initialize most variables using cam_inidat_to_mpas
       !
-      call cam_inidat_to_mpas(Numcols, MaxEdges, Plev, Pcnst, Pref, Ptop, &
-                              Ae, Be, Ac, Bc, Psd, Phis, Theta, U, Tracer)
+      call cam_inidat_to_mpas(Numcols, MaxEdges, Plev, Pcnst, &
+                              Psd, Phis, Theta, U, Tracer)
 
       do iCell=1,Numcols
          do k=1,Plev+1
@@ -700,6 +682,7 @@ module mpas_cam_interface
       integer :: index_qv
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
       real (kind=RKIND), dimension(:,:), pointer :: theta, pressure_base, pressure_p, ww, uReconstZonal, uReconstMeridional, east, north
+      real (kind=RKIND), dimension(:,:), pointer :: w, rho_p, rho_base, zz
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
       type (block_type), pointer :: block
 
@@ -733,6 +716,10 @@ module mpas_cam_interface
       theta => block % diag % theta % array
       pressure_base => block % diag % pressure_base % array
       pressure_p => block % diag % pressure_p % array
+      w => block % state % time_levs(1) % state % w % array
+      zz => block % mesh % zz % array
+      rho_p => block % diag % rho_p % array
+      rho_base => block % diag % rho_base % array
 
       !
       ! Fill in CAM arrays from block % state % time_levs(1) % state arrays
@@ -755,7 +742,7 @@ module mpas_cam_interface
             Zmid(iCell,k) = 0.5*(block % mesh % zgrid % array(k,iCell) + block % mesh % zgrid % array(k+1,iCell))
 
 !            Omega(iCell,k) = 0.5*(ww(k,iCell) + ww(k+1,iCell))
-            Omega(iCell,k) = 0.0   !MGD NEEDS FIXING
+            Omega(iCell,k) = -1.0 * gravity * (rho_p(k,iCell)+rho_base(k,iCell)) * zz(k,iCell) * (w(k,iCell)+w(k+1,iCell))
             !
             ! NOTE: Eventually, we need to ensure that the moisture variables we return to CAM
             !       are what CAM expects, rather than simply what we have in our scalars array
