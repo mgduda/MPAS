@@ -111,7 +111,9 @@ module mpas_io_streams
 contains
 
 
-   subroutine MPAS_createStream(stream, fileName, ioFormat, ioDirection, framesPerFile, ierr)
+   subroutine MPAS_createStream(stream, fileName, ioFormat, ioDirection, framesPerFile, PIOFileDesc, ierr)
+
+      use pio_types
 
       implicit none
 
@@ -120,13 +122,14 @@ contains
       integer, intent(in) :: ioFormat
       integer, intent(in) :: ioDirection
       integer, intent(in) :: framesPerFile
+      type (file_desc_t), intent(in), optional :: PIOFileDesc 
       integer, intent(out), optional :: ierr
 
       integer :: io_err
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
-      stream % fileHandle = MPAS_io_open(fileName, ioDirection, ioFormat, io_err) 
+      stream % fileHandle = MPAS_io_open(fileName, ioDirection, ioFormat, file_desc=PIOFileDesc, ierr=io_err) 
       call MPAS_io_err_mesg(io_err, .false.)
       if (io_err /= MPAS_IO_NOERR) then
          if (present(ierr)) ierr = MPAS_IO_ERR

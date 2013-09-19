@@ -127,9 +127,9 @@ module mpas_io_input
          input_obj % stream = STREAM_INPUT
       end if
       if (trim(config_pio_format) == 'pnetcdf') then
-         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_PNETCDF, ierr)
+         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_PNETCDF, ierr=ierr)
       else
-         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_NETCDF, ierr)
+         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_NETCDF, ierr=ierr)
       end if
       if (ierr /= MPAS_IO_NOERR) then
         write(stderrUnit,*) ' '
@@ -425,9 +425,9 @@ module mpas_io_input
       integer :: nferr
  
       if (trim(config_pio_format) == 'pnetcdf') then
-         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, nferr)
+         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, ierr=nferr)
       else
-         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_NETCDF, MPAS_IO_READ, 1, nferr)
+         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_NETCDF, MPAS_IO_READ, 1, ierr=nferr)
       end if
       if (nferr /= MPAS_STREAM_NOERR) then
          write(stderrUnit,*) ' '

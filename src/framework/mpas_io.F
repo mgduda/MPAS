@@ -71,6 +71,7 @@ module mpas_io
       logical :: initialized = .false.
       logical :: data_mode = .false.
       type (file_desc_t) :: pio_file
+      logical :: external_file_desc = .false.
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
@@ -291,13 +292,14 @@ module mpas_io
       master_pio_iotype = -999
    end subroutine MPAS_io_unset_iotype
    
-   type (MPAS_IO_Handle_type) function MPAS_io_open(filename, mode, ioformat, ierr)
+   type (MPAS_IO_Handle_type) function MPAS_io_open(filename, mode, ioformat, file_desc, ierr)
 
       implicit none
 
       character (len=*), intent(in) :: filename
       integer, intent(in) :: mode
       integer, intent(in) :: ioformat
+      type (file_desc_t), intent(in), optional :: file_desc
       integer, intent(out), optional :: ierr
 
       integer :: pio_ierr, pio_iotype
@@ -326,26 +328,33 @@ module mpas_io
       MPAS_io_open % iomode   = mode
       MPAS_io_open % ioformat = ioformat
 
-      if (master_pio_iotype /= -999) then
-         pio_iotype = master_pio_iotype
-      else
-         if (ioformat == MPAS_IO_PNETCDF) then
-            pio_iotype = PIO_iotype_pnetcdf
-         else
-            pio_iotype = PIO_iotype_netcdf
+      if (.not. present(file_desc)) then
+         if (master_pio_iotype /= -999) then
+            pio_iotype = master_pio_iotype
+         else 
+            if (ioformat == MPAS_IO_PNETCDF) then
+               pio_iotype = PIO_iotype_pnetcdf
+            else
+               pio_iotype = PIO_iotype_netcdf
+            end if
          end if
-      end if
 
-      if (mode == MPAS_IO_WRITE) then
+         if (mode == MPAS_IO_WRITE) then
 !write(stderrUnit,*) 'MGD PIO_createfile'
-         pio_ierr = PIO_createfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_64BIT_OFFSET)
-      else
+            pio_ierr = PIO_createfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_64BIT_OFFSET)
+         else
 !write(stderrUnit,*) 'MGD PIO_openfile'
-         pio_ierr = PIO_openfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
-      endif
-      if (pio_ierr /= PIO_noerr) then
-         if (present(ierr)) ierr = MPAS_IO_ERR_PIO
-         return
+            pio_ierr = PIO_openfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
+         endif
+         if (pio_ierr /= PIO_noerr) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_PIO
+            return
+         end if
+   
+         MPAS_io_open % external_file_desc = .false.
+      else
+         MPAS_io_open % pio_file = file_desc
+         MPAS_io_open % external_file_desc = .true.
       end if
 
       if (mode == MPAS_IO_READ) then
@@ -3440,8 +3449,10 @@ module mpas_io
 
       handle % initialized = .false.
 
-!write(stderrUnit,*) 'MGD PIO_closefile'
-      call PIO_closefile(handle % pio_file)
+      if (.not. handle % external_file_desc) then
+!write(0,*) 'MGD PIO_closefile'
+         call PIO_closefile(handle % pio_file)
+      end if
 
    end subroutine MPAS_io_close
 
