@@ -254,10 +254,12 @@ module mpas_core
 
       call atm_adv_coef_compression(mesh)
 
+#ifdef CAM_DYCORE
       !
       ! Calculate initial Psfc field
       !
       call atm_update_psfc(mesh, block % state % time_levs(1) % state, block % diag)   
+#endif
 
    end subroutine atm_mpas_init_block
    
