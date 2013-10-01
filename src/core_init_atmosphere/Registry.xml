@@ -428,6 +428,7 @@
                 <var name="ivgtyp"   name_in_code="lu_index"     type="integer"  dimensions="nCells"/>
                 <var name="isltyp"   name_in_code="soilcat_top"  type="integer"  dimensions="nCells"/>
                 <var name="soilcat_bot"                          type="integer"  dimensions="nCells"/>
+                <var name="slope"                                type="real"     dimensions="nCells"/>
                 <var name="snoalb"                               type="real"     dimensions="nCells"/>
                 <var name="soiltemp"                             type="real"     dimensions="nCells"/>
                 <var name="greenfrac"                            type="real"     dimensions="nMonths nCells"/>
@@ -449,6 +450,7 @@
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
 
                 <!-- static terrrestrial fields only needed for the GFS physics -->
+                <var name="zorl"                                 type="real"     dimensions="nMonths nCells"      streams="io"/>
                 <var name="facsf"                                type="real"     dimensions="nCells"              streams="io"/>
                 <var name="facwf"                                type="real"     dimensions="nCells"              streams="io"/>
                 <var name="alnsf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>

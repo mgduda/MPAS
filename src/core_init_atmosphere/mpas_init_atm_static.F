@@ -12,6 +12,7 @@
 ! use mpas_configure
  use mpas_dmpar
  use mpas_init_atm_static_gfs
+ use mpas_init_atm_utilities
  use init_atm_hinterp
  use init_atm_llxy
 
@@ -238,7 +239,6 @@
 
  dminfo => mesh % block % domain % dminfo
 
- write(0,*)
  write(0,*) '--- enter subroutine init_atm_static_fields:'
 
 !
