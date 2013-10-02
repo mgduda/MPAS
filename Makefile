@@ -42,9 +42,11 @@ pgi:
 	"FC_SERIAL = pgf90" \
 	"CC_SERIAL = pgcc" \
 	"FFLAGS_OPT = -r8 -O3 -byteswapio -Mfree" \
+	"FFLAGS77_OPT = -r8 -O3 -byteswapio -Mfixed" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"FFLAGS_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
+	"FFLAGS77_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfixed -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CFLAGS_DEBUG = -O0 -g -traceback" \
 	"LDFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CORE = $(CORE)" \
@@ -121,9 +123,11 @@ gfortran:
 	"FC_SERIAL = gfortran" \
 	"CC_SERIAL = gcc" \
 	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form" \
+	"FFLAGS77_OPT = -O3 -m64 -ffree-line-length-none -fdefault-real-8 -fconvert=big-endian -ffixed-form" \
 	"CFLAGS_OPT = -O3 -m64" \
 	"LDFLAGS_OPT = -O3 -m64" \
 	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"FFLAGS77_DEBUG = -g -m64 -ffree-line-length-none -fdefault-real-8 -fconvert=big-endian -ffixed-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
 	"CFLAGS_DEBUG = -g -m64" \
 	"LDFLAGS_DEBUG = -g -m64" \
 	"CORE = $(CORE)" \
