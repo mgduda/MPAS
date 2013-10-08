@@ -13,6 +13,7 @@ module init_atm_cases
    use mpas_dmpar
    use atm_advection
    use mpas_atmphys_initialize_real
+   use mpas_atmphys_gfs_initialize_real
    use mpas_RBF_interpolation
    use mpas_vector_reconstruction
    use mpas_timer
@@ -194,12 +195,16 @@ module init_atm_cases
                   call mpas_dmpar_abort(domain % dminfo)
                end if
 
+<<<<<<< HEAD
                call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
-               call init_atm_static_orogwd(mesh, block_ptr % dimensions, block_ptr % configs)
             end if
             call init_atm_case_gfs(block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
                                    diag, diag_physics, config_init_case, block_ptr % dimensions, block_ptr % configs)
+#ifdef DO_PHYSICS
             if (config_met_interp) call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
+#elif DO_PHYSICS_GFS
+            if (config_met_interp) call physics_gfs_initialize_real(block_ptr % mesh, block_ptr % fg, domain % dminfo)
+#endif
 
             block_ptr => block_ptr % next
          end do

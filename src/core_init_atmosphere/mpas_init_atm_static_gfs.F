@@ -1,4 +1,4 @@
-! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS) (LA-CC-13-047)
+!Copyright (c) 2013,  Los Alamos National Security, LLC (LANS) (LA-CC-13-047)
 ! and the University Corporation for Atmospheric Research (UCAR).
 !
 ! Unless noted otherwise source code is licensed under the BSD license.
@@ -42,7 +42,7 @@
  character(len=StrKIND):: fname
  character(len=StrKIND):: dir_gwdo
 
- integer:: i,iz,j
+ integer:: i,iiy,ix,iy,iz,j
  integer:: nx,ny,nz
  integer:: endian,isigned,istatus,wordsize
  integer:: iCell
@@ -61,7 +61,7 @@
 
 !--------------------------------------------------------------------------------------------------
 
- dminfo => mesh % block % domain % dminfo
+ dminfo => mesh%block%domain%dminfo
 
  write(0,*) '--- enter subroutine init_atm_static_fields_forGFS:'
 
@@ -110,17 +110,19 @@
  interp_list(3) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-    lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
-    mesh % ter % array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                       0.0_RKIND,interp_list,1)
+    if(x .gt. nx) x = dble(nx)
+    mesh%ter%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                   -1.e30_RKIND,interp_list,1)
+    if(mesh%ter%array(iCell) .eq. -1.e30_RKIND) &
+       write(0,101) iCell,lat,y,lon,x,mesh%ter%array(iCell) 
  enddo
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate TER'
  write(0,*)
-!go to 100
 
 
 !
@@ -166,8 +168,8 @@
  interp_list(2) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-    lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
     if(y < dble(1) ) y = dble(1)
     if(y > dble(ny)) y = dble(ny)
@@ -181,7 +183,7 @@
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate lu_index'
+ write(0,*) '--- end interpolate LU_INDEX'
  write(0,*)
 
 
@@ -239,8 +241,8 @@
  interp_list(2) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-    lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
     if(y < dble(1) ) y = dble(1)
     if(y > dble(ny)) y = dble(ny)
@@ -254,7 +256,7 @@
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate soilcat_top'
+ write(0,*) '--- end interpolate SOILCAT_TOP'
  write(0,*)
 
 
@@ -312,7 +314,12 @@
  call read_geogrid(fname,len_trim(fname),rarray,nx,ny,nz,isigned,endian, &
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname,dminfo)
- xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
+ do ix = 1,nx
+ do iy = 1,ny
+    iiy = ny-iy+1
+    xarray(ix,iy) = rarray(ix,iiy,1)
+ enddo
+ enddo
  write(0,*) '... max soiltemp  = ',maxval(xarray(1:nx,1:ny))
  write(0,*) '... min soiltemp  = ',minval(xarray(1:nx,1:ny))
 
@@ -331,8 +338,8 @@
  interp_list(5) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-    lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
     if(y < dble(1) ) y = dble(1 )
     if(y > dble(ny)) y = dble(ny) 
@@ -390,7 +397,6 @@
  interp_list(4) = SEARCH
  interp_list(5) = 0
 
-
  do iCell = 1,mesh%nCells
     if(mesh%landmask%array(iCell) == 1) then
        lat = mesh%latCell%array(iCell)*DEG_PER_RAD
@@ -403,7 +409,8 @@
        if(y < dble(1) ) y = dble(1 )
        if(y > dble(ny)) y = dble(ny) 
        mesh%snoalb%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                         -1.e30_RKIND,interp_list,1)
+                                         0._RKIND,interp_list,1)
+       mesh%snoalb%array(iCell) = mesh%snoalb%array(iCell)*0.01_RKIND
     endif
  enddo
  deallocate(rarray)
@@ -430,7 +437,7 @@
  mesh%greenfrac%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'vegfrac/',1,'-',nx,'.',1,'-',ny
+             'vegfrac12m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -460,8 +467,8 @@
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh % latCell % array(iCell) * DEG_PER_RAD
-       lon = mesh % lonCell % array(iCell) * DEG_PER_RAD
+       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
        if(x < 0.5) then
           lon = lon + 360.0
@@ -472,8 +479,8 @@
        end if
        if (y < 1.0) y = 1.0
        if (y > 1249.0) y = 1249.0
-       mesh % greenfrac % array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                                   -1.e30_RKIND,interp_list,1)
+       mesh%greenfrac%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                               -1.e30_RKIND,interp_list,1)
     enddo
  enddo
  deallocate(rarray)
@@ -528,8 +535,8 @@
  interp_list(5) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh % latCell % array(iCell) * DEG_PER_RAD
-    lon = mesh % lonCell % array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj, lat, lon, x, y)
     if(x < 0.5) then
        lon = lon + 360.0
@@ -540,8 +547,9 @@
     end if
     if (y < 1.0) y = 1.0
     if (y > 1249.0) y = 1249.0
-    mesh % shdmax % array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                          -1.e30_RKIND,interp_list,1)
+    mesh%shdmax%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                      -1.e30_RKIND,interp_list,1)
+    mesh%shdmax%array(iCell) = mesh%shdmax%array(iCell)*0.01_RKIND
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -595,8 +603,8 @@
  interp_list(5) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh % latCell % array(iCell) * DEG_PER_RAD
-    lon = mesh % lonCell % array(iCell) * DEG_PER_RAD
+    lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+    lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj, lat, lon, x, y)
     if(x < 0.5) then
        lon = lon + 360.0
@@ -607,8 +615,9 @@
     end if
     if (y < 1.0) y = 1.0
     if (y > 1249.0) y = 1249.0
-    mesh % shdmin % array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                          -1.e30_RKIND,interp_list,1)
+    mesh%shdmin%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                      -1.e30_RKIND,interp_list,1)
+    mesh%shdmin%array(iCell) = mesh%shdmin%array(iCell)*0.01_RKIND
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -655,22 +664,21 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(2) = FOUR_POINT
- interp_list(3) = AVERAGE4
- interp_list(1) = SEARCH
- interp_list(4) = 0
- interp_list(5) = 0 
+ interp_list(1) = N_NEIGHBOR
+ interp_list(2) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh % latCell % array(iCell) * DEG_PER_RAD
-    lon = mesh % lonCell % array(iCell) * DEG_PER_RAD
-    call latlon_to_ij(proj, lat, lon, x, y)
-    y = 180._RKIND-y
-    if(y < 1._RKIND)   y = 1._RKIND
-    if(y > 180._RKIND) y = 180._RKIND
-    mesh % facsf % array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                         -1.e30_RKIND,interp_list,1)
-!write(0,101) iCell,lat,lon,y,x,mesh%facsf%array(iCell)
+    if(mesh%landmask%array(iCell) == 1) then
+       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+       call latlon_to_ij(proj, lat, lon, x, y)
+       y = 180._RKIND-y
+       if(y < 1._RKIND)   y = 1._RKIND
+       if(y > 180._RKIND) y = 180._RKIND
+       mesh%facsf%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                        0._RKIND,interp_list,1)
+       mesh%facsf%array(iCell) = mesh%facsf%array(iCell)*0.01_RKIND
+    endif
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -717,22 +725,21 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(2) = FOUR_POINT
- interp_list(3) = AVERAGE4
- interp_list(1) = SEARCH
- interp_list(4) = 0
+ interp_list(4) = N_NEIGHBOR
  interp_list(5) = 0 
 
  do iCell = 1,mesh%nCells
-    lat = mesh % latCell % array(iCell) * DEG_PER_RAD
-    lon = mesh % lonCell % array(iCell) * DEG_PER_RAD
-    call latlon_to_ij(proj, lat, lon, x, y)
-    y = 180._RKIND-y
-    if(y < 1._RKIND)   y = 1._RKIND
-    if(y > 180._RKIND) y = 180._RKIND
-    mesh % facwf % array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                         -1.e30_RKIND,interp_list,1)
-!write(0,101) iCell,lat,lon,y,x,mesh%facwf%array(iCell)
+    if(mesh%landmask%array(iCell) == 1) then
+       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+       call latlon_to_ij(proj, lat, lon, x, y)
+       y = 180._RKIND-y
+       if(y < 1._RKIND)   y = 1._RKIND
+       if(y > 180._RKIND) y = 180._RKIND
+       mesh%facwf%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                        0._RKIND,interp_list,1)
+       mesh%facwf%array(iCell) = mesh%facwf%array(iCell)*0.01_RKIND
+    endif
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -741,7 +748,7 @@
 
 
 !
-! Interpolate ALNSF4:
+! Interpolate ALNSF4M:
 !
  nx = 360
  ny = 180
@@ -756,10 +763,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alnsf4%array(:,:) = 0._RKIND
+ mesh%alnsf4m%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alnsf/',1,'-',nx,'.',1,'-',ny
+             'alnsf4m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -776,37 +783,37 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(1) = FOUR_POINT
- interp_list(2) = W_AVERAGE4
- interp_list(3) = W_AVERAGE16
- interp_list(4) = SEARCH
- interp_list(5) = 0
+ interp_list(1) = N_NEIGHBOR
+ interp_list(2) = 0
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnsf4  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnsf4  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alnsf4m  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alnsf4m  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
-       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
-       call latlon_to_ij(proj,lat,lon,x,y)
-       y = dble(ny)-y
-       if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
-       mesh%alnsf4%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                            -1.e30_RKIND,interp_list,1)
+       if(mesh%landmask%array(iCell) == 1) then
+          lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+          lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+          call latlon_to_ij(proj,lat,lon,x,y)
+          y = dble(ny)-y
+          if(y < dble(1) ) y = dble(1)
+          if(y > dble(ny)) y = dble(ny)
+          mesh%alnsf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                                0._RKIND,interp_list,1)
+          mesh%alnsf4m%array(iz,iCell) = mesh%alnsf4m%array(iz,iCell)*0.01_RKIND
+       endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALNSF4'
+ write(0,*) '--- end interpolate ALNSF4M'
  write(0,*)
 
 
 !
-! Interpolate ALNWF4:
+! Interpolate ALNWF4M:
 !
  nx = 360
  ny = 180
@@ -821,10 +828,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alnwf4%array(:,:) = 0._RKIND
+ mesh%alnwf4m%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alnwf/',1,'-',nx,'.',1,'-',ny
+             'alnwf4m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -841,37 +848,37 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(1) = FOUR_POINT
- interp_list(2) = W_AVERAGE4
- interp_list(3) = W_AVERAGE16
- interp_list(4) = SEARCH
- interp_list(5) = 0
+ interp_list(1) = N_NEIGHBOR
+ interp_list(2) = 0
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnwf4  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnwf4  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alnwf4m  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alnwf4m  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
-       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
-       call latlon_to_ij(proj,lat,lon,x,y)
-       y = dble(ny)-y
-       if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
-       mesh%alnwf4%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                            -1.e30_RKIND,interp_list,1)
+       if(mesh%landmask%array(iCell) == 1) then
+          lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+          lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+          call latlon_to_ij(proj,lat,lon,x,y)
+          y = dble(ny)-y
+          if(y < dble(1) ) y = dble(1)
+          if(y > dble(ny)) y = dble(ny)
+          mesh%alnwf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                                0._RKIND,interp_list,1)
+          mesh%alnwf4m%array(iz,iCell) = mesh%alnwf4m%array(iz,iCell)*0.01_RKIND
+       endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALNWF4'
+ write(0,*) '--- end interpolate ALNWF4M'
  write(0,*)
 
 
 !
-! Interpolate ALVSF4:
+! Interpolate ALVSF4M:
 !
  nx = 360
  ny = 180
@@ -886,10 +893,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alvsf4%array(:,:) = 0._RKIND
+ mesh%alvsf4m%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alvsf/',1,'-',nx,'.',1,'-',ny
+             'alvsf4m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -906,37 +913,37 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(1) = FOUR_POINT
- interp_list(2) = W_AVERAGE4
- interp_list(3) = W_AVERAGE16
- interp_list(4) = SEARCH
- interp_list(5) = 0
+ interp_list(1) = N_NEIGHBOR
+ interp_list(2) = 0
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvsf4  = ',maxval(rarray(1:nx,1:ny))
-    write(0,*) '... min alvsf4  = ',minval(rarray(1:nx,1:ny))
+    write(0,*) '... max alvsf4m  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alvsf4m  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
-       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
-       call latlon_to_ij(proj,lat,lon,x,y)
-       y = dble(ny)-y
-       if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
-       mesh%alvsf4%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                            -1.e30_RKIND,interp_list,1)
+       if(mesh%landmask%array(iCell) == 1) then
+          lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+          lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+          call latlon_to_ij(proj,lat,lon,x,y)
+          y = dble(ny)-y
+          if(y < dble(1) ) y = dble(1)
+          if(y > dble(ny)) y = dble(ny)
+          mesh%alvsf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                                0._RKIND,interp_list,1)
+          mesh%alvsf4m%array(iz,iCell) = mesh%alvsf4m%array(iz,iCell)*0.01_RKIND
+       endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALVSF4'
+ write(0,*) '--- end interpolate ALVSF4M'
  write(0,*)
 
 
 !
-! Interpolate ALVWF4:
+! Interpolate ALVWF4M:
 !
  nx = 360
  ny = 180
@@ -951,10 +958,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alvwf4%array(:,:) = 0._RKIND
+ mesh%alvwf4m%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alvwf/',1,'-',nx,'.',1,'-',ny
+             'alvwf4m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -971,32 +978,32 @@
               lat1   = known_lat,   &
               lon1   = known_lon)
 
- interp_list(1) = FOUR_POINT
- interp_list(2) = W_AVERAGE4
- interp_list(3) = W_AVERAGE16
- interp_list(4) = SEARCH
- interp_list(5) = 0
+ interp_list(1) = N_NEIGHBOR
+ interp_list(2) = 0
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvwf4  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alvwf4  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alvwf4m  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alvwf4m  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
-       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
-       call latlon_to_ij(proj,lat,lon,x,y)
-       y = dble(ny)-y
-       if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
-       mesh%alvwf4%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                            -1.e30_RKIND,interp_list,1)
+       if(mesh%landmask%array(iCell) == 1) then
+          lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+          lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
+          call latlon_to_ij(proj,lat,lon,x,y)
+          y = dble(ny)-y
+          if(y < dble(1) ) y = dble(1)
+          if(y > dble(ny)) y = dble(ny)
+          mesh%alvwf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                                0._RKIND,interp_list,1)
+          mesh%alvwf4m%array(iz,iCell) = mesh%alvwf4m%array(iz,iCell)*0.01_RKIND
+       endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALVWF4'
+ write(0,*) '--- end interpolate ALVWF4M'
  write(0,*)
 
 
@@ -1046,17 +1053,19 @@
  interp_list(5) = 0
 
  do iCell = 1,mesh%nCells
-    lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-    lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
-    call latlon_to_ij(proj,lat,lon,x,y)
-    if(y < dble(1) ) y = dble(1)
-    if(y > dble(ny)) y = dble(ny)
-    if(lon > 180._RKIND) then
-       lon = lon - 360._RKIND
+    if(mesh%landmask%array(iCell) == 1) then
+       lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+       lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj,lat,lon,x,y)
+       if(lon > 180._RKIND) then
+          lon = lon - 360._RKIND
+          call latlon_to_ij(proj,lat,lon,x,y)
+       endif
+       if(y < dble(1) ) y = dble(1)
+       if(y > dble(ny)) y = dble(ny)
+       mesh%slope%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                        0._RKIND,interp_list,1)
     endif
-    mesh%slope%array(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                     -1.e30_RKIND,interp_list,1)
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -1064,7 +1073,7 @@
  write(0,*)
 
 !
-! Interpolate ZORL:
+! Interpolate ZORL12M:
 !
  nx = 360
  ny = 180
@@ -1079,10 +1088,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     = -179.5_RKIND
- mesh%zorl%array(:,:) = 10._RKIND
+ mesh%zorl12m%array(:,:) = 10._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'zorl/',1,'-',nx,'.',1,'-',ny
+             'zorl12m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  call map_set(PROJ_LATLON, proj,    &
@@ -1107,29 +1116,29 @@
 
  do iz = 1,nz
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max zorl = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min zorl = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max zorl12m = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min zorl12m = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
-       lat = mesh%latCell%array(iCell) * DEG_PER_RAD
-       lon = mesh%lonCell%array(iCell) * DEG_PER_RAD
-       call latlon_to_ij(proj,lat,lon,x,y)
-!      if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
-       if(lon > 180._RKIND) then
-          lon = lon - 360._RKIND
+       if(mesh%landmask%array(iCell) == 1) then
+          lat = mesh%latCell%array(iCell)*DEG_PER_RAD
+          lon = mesh%lonCell%array(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
+          if(lon > 180._RKIND) then
+             lon = lon - 360._RKIND
+             call latlon_to_ij(proj,lat,lon,x,y)
+          endif
+          if(y < dble(1) ) y = dble(1)
+          if(y > dble(ny)) y = dble(ny)
+          mesh%zorl12m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+                                                10._RKIND,interp_list,1)
        endif
-       mesh%zorl%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
-                                          1.e20_RKIND,interp_list,1)
-       if(mesh%zorl%array(iz,iCell) .eq. 1.e20_RKIND) &
-          write(0,103) iz,iCell,lat,y,lon,x,mesh%zorl%array(iz,iCell)
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ZORL'
+ write(0,*) '--- end interpolate ZORL12M'
  write(0,*)
 
  101 format(i9,8(1x,e15.8))

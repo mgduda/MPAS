@@ -450,13 +450,13 @@
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
 
                 <!-- static terrrestrial fields only needed for the GFS physics -->
-                <var name="zorl"                                 type="real"     dimensions="nMonths nCells"      streams="io"/>
                 <var name="facsf"                                type="real"     dimensions="nCells"              streams="io"/>
                 <var name="facwf"                                type="real"     dimensions="nCells"              streams="io"/>
-                <var name="alnsf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
-                <var name="alnwf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
-                <var name="alvsf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
-                <var name="alvwf4"                               type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alnsf4m"                              type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alnwf4m"                              type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alvsf4m"                              type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="alvwf4m"                              type="real"     dimensions="nSeasons nCells"     streams="io"/>
+                <var name="zorl12m"                              type="real"     dimensions="nMonths nCells"      streams="io"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="hx"                         type="real"     dimensions="nVertLevelsP1 nCells"/>
@@ -542,6 +542,13 @@
                 <var name="vegfra"                            type="real"     dimensions="nCells Time"/>
                 <var name="sfc_albbck"                        type="real"     dimensions="nCells Time"/>
                 <var name="xland"                             type="real"     dimensions="nCells Time"/>
+
+                <!-- horizontally interpolated from first-guess data, only needed for the GFS physics, and should be read in by model -->
+                <var name="alnsf"                             type="real"     dimensions="nCells"/>
+                <var name="alnwf"                             type="real"     dimensions="nCells"/>
+                <var name="alvsf"                             type="real"     dimensions="nCells"/>
+                <var name="alvwf"                             type="real"     dimensions="nCells"/>
+                <var name="zorl"                              type="real"     dimensions="nCells"/>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">

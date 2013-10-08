@@ -19,7 +19,9 @@ OBJS = mpas_init_atm_mpas_core.o \
        read_geogrid.o \
        mpas_atmphys_date_time.o \
        mpas_atmphys_initialize_real.o \
-       mpas_atmphys_utilities.o
+       mpas_atmphys_utilities.o \
+       mpas_atmphys_gfs_date_time.o \
+       mpas_atmphys_gfs_initialize_real.o
 
 all: core_hyd
 
@@ -37,7 +39,8 @@ mpas_init_atm_cases.o: \
 	mpas_init_atm_hinterp.o \
 	mpas_init_atm_static.o \
 	mpas_init_atm_surface.o \
-	mpas_atmphys_initialize_real.o
+	mpas_atmphys_initialize_real.o \
+	mpas_atmphys_gfs_initialize_real.o
 
 mpas_init_atm_hinterp.o: mpas_init_atm_queue.o mpas_init_atm_bitarray.o
 
@@ -74,6 +77,14 @@ mpas_atmphys_initialize_real.o:  \
 	mpas_init_atm_surface.o  \
 	mpas_atmphys_date_time.o \
 	mpas_atmphys_utilities.o
+
+mpas_atmphys_gfs_date_time.o: \
+	mpas_atmphys_date_time.o
+
+mpas_atmphys_gfs_initialize_real.o: \
+	mpas_atmphys_date_time.o \
+	mpas_atmphys_gfs_date_time.o \
+	mpas_atmphys_gfs_date_time.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libdycore.a

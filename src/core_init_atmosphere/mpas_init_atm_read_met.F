@@ -103,7 +103,12 @@ module init_atm_read_met
       character (len=8) :: startloc
   
       istatus = 1
-  
+      fg_data % dx = 0.
+      fg_data % dy = 0.
+      fg_data % xlonc    = 0.
+      fg_data % startlon = 0.
+      fg_data % startlat = 0.
+
       !  1) READ FORMAT VERSION
       read(unit=input_unit,err=1001,end=1001) fg_data % version
   
