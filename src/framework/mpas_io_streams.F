@@ -7,6 +7,12 @@
 !
 module mpas_io_streams
 
+#ifdef SINGLE_PRECISION
+#define REAL_IO_TYPE MPAS_IO_REAL
+#else
+#define REAL_IO_TYPE MPAS_IO_DOUBLE
+#endif
+
    use mpas_attlist
    use mpas_grid_types
    use mpas_timekeeping
@@ -680,7 +686,7 @@ contains
       globalDimSize = 0
       totalDimSize = 0
 
-      call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, dimNames, dimSizes, &
+      call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , dimNames, dimSizes, &
                                        field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
 
       deallocate(indices)
@@ -762,7 +768,7 @@ contains
          allocate(isAvailable(size(field % constituentNames)))
          isAvailable(:) = .false.
          do i=1,size(field % constituentNames)
-            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), MPAS_IO_REAL, dimNames0, &
+            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), REAL_IO_TYPE , dimNames0, &
                                              dimSizes0, field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, &
                                              indices, io_err)
             if (io_err == MPAS_STREAM_NOERR) then
@@ -772,7 +778,7 @@ contains
          end do
       else
          nullify(isAvailable)
-         call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, field % dimNames, field % dimSizes, &
+         call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , field % dimNames, field % dimSizes, &
                                           field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
          if (io_err == MPAS_STREAM_NOERR) then
             any_success = .true.
@@ -861,7 +867,7 @@ contains
          allocate(isAvailable(size(field % constituentNames)))
          isAvailable(:) = .false.
          do i=1,size(field % constituentNames)
-            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), MPAS_IO_REAL, field % dimNames(2:ndims), &
+            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), REAL_IO_TYPE , field % dimNames(2:ndims), &
                                              field % dimSizes(2:ndims), field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, &
                                              indices, io_err)
             if (io_err == MPAS_STREAM_NOERR) then
@@ -871,7 +877,7 @@ contains
          end do
       else
          nullify(isAvailable)
-         call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, field % dimNames, field % dimSizes, &
+         call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , field % dimNames, field % dimSizes, &
                                           field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
          if (io_err == MPAS_STREAM_NOERR) then
             any_success = .true.
@@ -961,7 +967,7 @@ contains
          allocate(isAvailable(size(field % constituentNames)))
          isAvailable(:) = .false.
          do i=1,size(field % constituentNames)
-            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), MPAS_IO_REAL, field % dimNames(2:ndims), &
+            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), REAL_IO_TYPE , field % dimNames(2:ndims), &
                                              field % dimSizes(2:ndims), field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, &
                                              indices, io_err)
             if (io_err == MPAS_STREAM_NOERR) then
@@ -971,7 +977,7 @@ contains
          end do
       else
          nullify(isAvailable)
-         call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, field % dimNames, field % dimSizes, &
+         call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , field % dimNames, field % dimSizes, &
                                           field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
          if (io_err == MPAS_STREAM_NOERR) then
             any_success = .true.
@@ -1062,7 +1068,7 @@ contains
          allocate(isAvailable(size(field % constituentNames)))
          isAvailable(:) = .false.
          do i=1,size(field % constituentNames)
-            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), MPAS_IO_REAL, field % dimNames(2:ndims), &
+            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), REAL_IO_TYPE , field % dimNames(2:ndims), &
                                              field % dimSizes(2:ndims), field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, &
                                              indices, io_err)
             if (io_err == MPAS_STREAM_NOERR) then
@@ -1072,7 +1078,7 @@ contains
          end do
       else
          nullify(isAvailable)
-         call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, field % dimNames, field % dimSizes, &
+         call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , field % dimNames, field % dimSizes, &
                                           field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
          if (io_err == MPAS_STREAM_NOERR) then
             any_success = .true.
@@ -1163,7 +1169,7 @@ contains
          allocate(isAvailable(size(field % constituentNames)))
          isAvailable(:) = .false.
          do i=1,size(field % constituentNames)
-            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), MPAS_IO_REAL, field % dimNames(2:ndims), &
+            call MPAS_streamAddField_generic(stream, trim(field % constituentNames(i)), REAL_IO_TYPE , field % dimNames(2:ndims), &
                                              field % dimSizes(2:ndims), field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, &
                                              indices, io_err)
             if (io_err == MPAS_STREAM_NOERR) then
@@ -1173,7 +1179,7 @@ contains
          end do
       else
          nullify(isAvailable)
-         call MPAS_streamAddField_generic(stream, trim(field % fieldName), MPAS_IO_REAL, field % dimNames, field % dimSizes, &
+         call MPAS_streamAddField_generic(stream, trim(field % fieldName), REAL_IO_TYPE , field % dimNames, field % dimSizes, &
                                           field % hasTimeDimension, isDecomposed, totalDimSize, globalDimSize, indices, io_err)
          if (io_err == MPAS_STREAM_NOERR) then
             any_success = .true.
