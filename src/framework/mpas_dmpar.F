@@ -139,11 +139,9 @@ include 'mpif.h'
       write(stderrUnit,'(a,i5,a,i5,a)') 'task ', mpi_rank, ' of ', mpi_size, &
         ' is running'
 
-#ifndef MPAS_CESM
-      call open_streams(dminfo % my_proc_id)
-#endif
-
       dminfo % info = MPI_INFO_NULL
+
+      call open_streams(dminfo % my_proc_id)
 #else
       dminfo % comm = 0
       dminfo % my_proc_id = IO_NODE

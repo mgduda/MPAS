@@ -61,6 +61,7 @@ module mpas_cam_interface
       n_subcycle_steps = ceiling(dt_physics / config_dt)
 
 
+!!!!! MGD IO -- maybe split everything from here down into init/restart data and mpas_init2()
 
       !
       ! Read initial conditions
@@ -180,6 +181,8 @@ module mpas_cam_interface
          call mpas_core_init(domain, initialTimeStamp)
          block => block % next
       end do
+
+!!!!! MGD IO -- maybe we don't need to do anything for output here, as we will be able to do this later?
 
       output_frame = 1
       if(config_frames_per_outfile > 0) then
