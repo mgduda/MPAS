@@ -200,7 +200,7 @@
 ! Interpolate the static fields using the GFS physics data base:
 !
  call init_atm_static_fields_forGFS(mesh)
-
+ call init_atm_static_orogwd_forGFS(mesh)
 #endif
 
  end subroutine init_atm_static

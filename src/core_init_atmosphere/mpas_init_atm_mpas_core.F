@@ -41,6 +41,7 @@ module mpas_core
          domain % sphere_radius = a      ! Appears in output files
          sphere_radius = a               ! Used in setting up test cases
 
+         block % mesh % initial_date % scalar = startTimeStamp
          block => block % next
       end do 
 

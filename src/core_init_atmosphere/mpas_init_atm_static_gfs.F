@@ -15,7 +15,8 @@
 
  implicit none
  private
- public:: init_atm_static_fields_forGFS
+ public:: init_atm_static_fields_forGFS, &
+          init_atm_static_orogwd_forGFS
 
  integer, parameter :: R4KIND = selected_real_kind(6)
 
@@ -27,6 +28,54 @@
 
 
  contains
+
+!==================================================================================================
+ subroutine init_atm_static_orogwd_forGFS(mesh)
+!==================================================================================================
+
+!inout arguments:
+ type(mesh_type),intent(inout):: mesh
+
+!local variables:
+ character(len=StrKIND):: fname
+
+ integer,parameter:: nlon = 1760
+ integer,parameter:: nlat =  880
+ integer:: iCell
+ integer:: ierr,ilat,ilon,nm
+
+ real(kind=4),dimension(:,:,:),allocatable:: hprime
+
+!--------------------------------------------------------------------------------------------------
+
+ write(0,*) '--- enter subroutine init_atm_static_orogwd_forGFS:'
+
+ write(fname,'(a)') trim(config_geog_data_path)//'mtnvariance/global_mtnvar.t574.f77'
+ write(0,*) trim(fname)
+ open(unit=11,file=fname,form='unformatted',status='old',action='read',iostat=ierr)
+
+!open(unit=11,file='/Users/LAURA/DATA/GFS_static/mntvariance/global_mtnvar.t574.f77', &
+!     form='unformatted',status='old',action='read',iostat=ierr)
+ if(.not.allocated(hprime)) allocate(hprime(nlon,nlat,mesh%nMtvr))
+ read(11) hprime
+
+ do iCell = 1,mesh%nCells
+    ilon = min(1.0*nlon,nlon/2+0.5*nlon/mesh%nCells*(iCell-1))
+    ilat = min(1.0*nlat,nlat/4+0.5*nlat/mesh%nCells*(iCell-1))
+    do nm = 1,mesh%nMtvr
+       mesh%orogwd%array(nm,iCell) = hprime(ilon,ilat,nm)
+    enddo
+ enddo 
+
+ do nm = 1,mesh%nMtvr
+    where(mesh%landmask%array(:) .eq. 0) mesh%orogwd%array(nm,:) = 0_RKIND 
+    write(0,201) nm,maxval(mesh%orogwd%array(nm,:)),minval(mesh%orogwd%array(nm,:))
+ enddo
+ 201 format(' ... nm = ',i3,'  max = ',e15.8,'  min = ',e15.8)
+
+ write(0,*) '--- end subroutine init_atm_static_orogwd_forGFS'
+
+ end subroutine init_atm_static_orogwd_forGFS
 
 !==================================================================================================
  subroutine init_atm_static_fields_forGFS(mesh)
@@ -748,7 +797,7 @@
 
 
 !
-! Interpolate ALNSF4M:
+! Interpolate ALNSF4S:
 !
  nx = 360
  ny = 180
@@ -763,10 +812,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alnsf4m%array(:,:) = 0._RKIND
+ mesh%alnsf4s%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alnsf4m/',1,'-',nx,'.',1,'-',ny
+             'alnsf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -788,8 +837,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnsf4m  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnsf4m  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alnsf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alnsf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
@@ -800,20 +849,20 @@
           y = dble(ny)-y
           if(y < dble(1) ) y = dble(1)
           if(y > dble(ny)) y = dble(ny)
-          mesh%alnsf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+          mesh%alnsf4s%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                                 0._RKIND,interp_list,1)
-          mesh%alnsf4m%array(iz,iCell) = mesh%alnsf4m%array(iz,iCell)*0.01_RKIND
+          mesh%alnsf4s%array(iz,iCell) = mesh%alnsf4s%array(iz,iCell)*0.01_RKIND
        endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALNSF4M'
+ write(0,*) '--- end interpolate ALNSF4s'
  write(0,*)
 
 
 !
-! Interpolate ALNWF4M:
+! Interpolate ALNWF4S:
 !
  nx = 360
  ny = 180
@@ -828,10 +877,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alnwf4m%array(:,:) = 0._RKIND
+ mesh%alnwf4s%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alnwf4m/',1,'-',nx,'.',1,'-',ny
+             'alnwf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -853,8 +902,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnwf4m  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnwf4m  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alnwf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alnwf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
@@ -865,20 +914,20 @@
           y = dble(ny)-y
           if(y < dble(1) ) y = dble(1)
           if(y > dble(ny)) y = dble(ny)
-          mesh%alnwf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+          mesh%alnwf4s%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                                 0._RKIND,interp_list,1)
-          mesh%alnwf4m%array(iz,iCell) = mesh%alnwf4m%array(iz,iCell)*0.01_RKIND
+          mesh%alnwf4s%array(iz,iCell) = mesh%alnwf4s%array(iz,iCell)*0.01_RKIND
        endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALNWF4M'
+ write(0,*) '--- end interpolate ALNWF4S'
  write(0,*)
 
 
 !
-! Interpolate ALVSF4M:
+! Interpolate ALVSF4S:
 !
  nx = 360
  ny = 180
@@ -893,10 +942,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alvsf4m%array(:,:) = 0._RKIND
+ mesh%alvsf4s%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alvsf4m/',1,'-',nx,'.',1,'-',ny
+             'alvsf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -918,8 +967,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvsf4m  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alvsf4m  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alvsf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alvsf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
@@ -930,20 +979,20 @@
           y = dble(ny)-y
           if(y < dble(1) ) y = dble(1)
           if(y > dble(ny)) y = dble(ny)
-          mesh%alvsf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+          mesh%alvsf4s%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                                 0._RKIND,interp_list,1)
-          mesh%alvsf4m%array(iz,iCell) = mesh%alvsf4m%array(iz,iCell)*0.01_RKIND
+          mesh%alvsf4s%array(iz,iCell) = mesh%alvsf4s%array(iz,iCell)*0.01_RKIND
        endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALVSF4M'
+ write(0,*) '--- end interpolate ALVSF4S'
  write(0,*)
 
 
 !
-! Interpolate ALVWF4M:
+! Interpolate ALVWF4S:
 !
  nx = 360
  ny = 180
@@ -958,10 +1007,10 @@
  known_y       = 1.0_RKIND
  known_lat     = -89.5_RKIND
  known_lon     =   0.5_RKIND
- mesh%alvwf4m%array(:,:) = 0._RKIND
+ mesh%alvwf4s%array(:,:) = 0._RKIND
 
  write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
-             'alvwf4m/',1,'-',nx,'.',1,'-',ny
+             'alvwf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
  allocate(xarray(nx,ny))
@@ -983,8 +1032,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvwf4m  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alvwf4m  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '... max alvwf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '... min alvwf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,mesh%nCells
@@ -995,15 +1044,15 @@
           y = dble(ny)-y
           if(y < dble(1) ) y = dble(1)
           if(y > dble(ny)) y = dble(ny)
-          mesh%alvwf4m%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
+          mesh%alvwf4s%array(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                                 0._RKIND,interp_list,1)
-          mesh%alvwf4m%array(iz,iCell) = mesh%alvwf4m%array(iz,iCell)*0.01_RKIND
+          mesh%alvwf4s%array(iz,iCell) = mesh%alvwf4s%array(iz,iCell)*0.01_RKIND
        endif
     enddo
  enddo
  deallocate(rarray)
  deallocate(xarray)
- write(0,*) '--- end interpolate ALVWF4M'
+ write(0,*) '--- end interpolate ALVWF4S'
  write(0,*)
 
 
