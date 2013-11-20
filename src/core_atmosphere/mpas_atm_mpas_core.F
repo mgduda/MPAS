@@ -924,8 +924,8 @@ module mpas_core
 !  routine mpas_core_setup_packages
 !
 !> \brief   Pacakge setup routine
-!> \author  Doug Jacobsen
-!> \date    September 2011
+!> \author  Michael Duda
+!> \date    November 2013
 !> \details 
 !>  This routine is intended to correctly configure the packages for this MPAS
 !>   core. It can use any Fortran logic to properly configure packages, and it
@@ -936,10 +936,19 @@ module mpas_core
    subroutine mpas_core_setup_packages(ierr)!{{{
 
       use mpas_packages
+      use mpas_configure
 
       implicit none
 
       integer, intent(out) :: ierr
+
+#ifdef CAM_DYCORE
+      if (trim(config_cam_physics) == 'cam5') then
+         cam5Active = .true.
+      else
+         cam5Active = .false.
+      end if
+#endif
 
       ierr = 0
 

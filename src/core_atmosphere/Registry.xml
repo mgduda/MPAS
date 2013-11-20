@@ -34,6 +34,16 @@
 <!-- **************************************************************************************** -->
 <!-- ************************************** Namelists *************************************** -->
 <!-- **************************************************************************************** -->
+#ifdef CAM_DYCORE
+        <packages>
+                <package  name="cam5"  description="CAM5 physics"/>
+        </packages>
+#endif
+
+
+<!-- **************************************************************************************** -->
+<!-- ************************************** Namelists *************************************** -->
+<!-- **************************************************************************************** -->
 
         <nml_record name="nhyd_model">
                 <nml_option name="config_time_integration"           type="character"     default_value="SRK3"/>
@@ -105,6 +115,12 @@
                 <nml_option name="config_do_restart"                 type="logical"       default_value="false"/>
                 <nml_option name="config_do_DAcycling"               type="logical"       default_value="false"/>
         </nml_record>
+
+#ifdef CAM_DYCORE
+        <nml_record name="physics">
+                <nml_option name="config_cam_physics"                type="character"     default_value="cam5"/>
+        </nml_record>
+#endif
 
 
 <!-- **************************************************************************************** -->
@@ -230,6 +246,31 @@
                         <var name="qi"      array_group="moist"       streams="iro"/>
                         <var name="qs"      array_group="moist"       streams="iro"/>
                         <var name="qg"      array_group="moist"       streams="iro"/>
+#endif
+
+#ifdef CAM_DYCORE
+                        <var name="qnr"     array_group="conc"       streams="iro"    packages="cam5"/>
+                        <var name="qni"     array_group="conc"       streams="iro"    packages="cam5"/>
+                        <var name="aer1"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer2"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer3"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer4"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer5"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer6"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer7"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer8"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer9"    array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer10"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer11"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer12"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer13"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer14"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer15"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer16"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer17"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer18"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer19"   array_group="aerosol"    streams="iro"    packages="cam5"/>
+                        <var name="aer20"   array_group="aerosol"    streams="iro"    packages="cam5"/>
 #endif
                 </var_array>
 
@@ -383,6 +424,31 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"       streams="o"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"       streams="o"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"       streams="o"/>
+#endif
+
+#ifdef CAM_DYCORE
+                        <var name="tend_qnr"    name_in_code="qnr"      array_group="conc"       streams="o"    packages="cam5"/>
+                        <var name="tend_qni"    name_in_code="qni"      array_group="conc"       streams="o"    packages="cam5"/>
+                        <var name="tend_aer1"   name_in_code="aer1"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer2"   name_in_code="aer2"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer3"   name_in_code="aer3"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer4"   name_in_code="aer4"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer5"   name_in_code="aer5"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer6"   name_in_code="aer6"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer7"   name_in_code="aer7"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer8"   name_in_code="aer8"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer9"   name_in_code="aer9"     array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer10"  name_in_code="aer10"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer11"  name_in_code="aer11"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer12"  name_in_code="aer12"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer13"  name_in_code="aer13"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer14"  name_in_code="aer14"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer15"  name_in_code="aer15"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer16"  name_in_code="aer16"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer17"  name_in_code="aer17"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer18"  name_in_code="aer18"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer19"  name_in_code="aer19"    array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="tend_aer20"  name_in_code="aer20"    array_group="aerosol"    streams="o"    packages="cam5"/>
 #endif
                 </var_array>
         </var_struct>

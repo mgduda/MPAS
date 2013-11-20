@@ -42,13 +42,14 @@ module mpas_cam_interface
       integer, intent(in) :: mpi_comm
       real (kind=RKIND), intent(in) :: phys_dt
 
-      integer :: iCell, iEdge, j
+      integer :: iCell, iEdge, j, ierr
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
       real (kind=RKIND), dimension(:,:), pointer :: east, north
 
       write(0,*) 'Called MPAS_INIT1'
 
       call mpas_framework_init(dminfo, domain, mpi_comm)
+      call mpas_core_setup_packages(ierr)
 
       itimestep = 1
       restart_run = .false.    ! If a restart run, this will be set to true in cam_restart_to_mpas
