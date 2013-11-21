@@ -30,8 +30,11 @@
  contains
 
 !==================================================================================================
- subroutine init_atm_static_orogwd_forGFS(mesh)
+ subroutine init_atm_static_orogwd_forGFS(mesh,geog_data_path)
 !==================================================================================================
+
+!input arguments:
+ character(len=*),intent(in):: geog_data_path
 
 !inout arguments:
  type(mesh_type),intent(inout):: mesh
@@ -50,7 +53,7 @@
 
  write(0,*) '--- enter subroutine init_atm_static_orogwd_forGFS:'
 
- write(fname,'(a)') trim(config_geog_data_path)//'mtnvariance/global_mtnvar.t574.f77'
+ write(fname,'(a)') trim(geog_data_path)//'mtnvariance/global_mtnvar.t574.f77'
  write(0,*) trim(fname)
  open(unit=11,file=fname,form='unformatted',status='old',action='read',iostat=ierr)
 
@@ -78,8 +81,11 @@
  end subroutine init_atm_static_orogwd_forGFS
 
 !==================================================================================================
- subroutine init_atm_static_fields_forGFS(mesh)
+ subroutine init_atm_static_fields_forGFS(mesh,geog_data_path)
 !==================================================================================================
+
+!input arguments:
+ character(len=*),intent(in):: geog_data_path
 
 !inout arguments:
  type(mesh_type),intent(inout):: mesh
@@ -132,7 +138,7 @@
  known_lon   = 0.05859375
  mesh%ter%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'orography/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -192,7 +198,7 @@
  known_lon     = -179.5_RKIND
  mesh%lu_index%array(:) = 0
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'vegtype/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -254,7 +260,7 @@
  known_lon     = -179.5_RKIND
  mesh%soilcat_top%array(:) = 0
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'soiltype/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -354,7 +360,7 @@
  known_lon     =   1.30436_RKIND
  mesh%soiltemp%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'tg3/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -419,7 +425,7 @@
  known_lon     = -179.5_RKIND
  mesh%snoalb%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'snoalb/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -485,7 +491,7 @@
  known_lon     = -179.928_RKIND
  mesh%greenfrac%array(:,:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'vegfrac12m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -556,7 +562,7 @@
  known_lon     = -180.00_RKIND
  mesh%shdmax%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'shdmax/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -624,7 +630,7 @@
  known_lon     = -180.00_RKIND
  mesh%shdmin%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'shdmin/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -692,7 +698,7 @@
  known_lon     =   0.5_RKIND
  mesh%facsf%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'facsf/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -753,7 +759,7 @@
  known_lon     =   0.5_RKIND
  mesh%facwf%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'facwf/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -814,7 +820,7 @@
  known_lon     =   0.5_RKIND
  mesh%alnsf4s%array(:,:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'alnsf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -879,7 +885,7 @@
  known_lon     =   0.5_RKIND
  mesh%alnwf4s%array(:,:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'alnwf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -944,7 +950,7 @@
  known_lon     =   0.5_RKIND
  mesh%alvsf4s%array(:,:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'alvsf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -1009,7 +1015,7 @@
  known_lon     =   0.5_RKIND
  mesh%alvwf4s%array(:,:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'alvwf4s/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -1074,7 +1080,7 @@
  known_lon     = -179.5_RKIND
  mesh%slope%array(:) = 0._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'slope/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
@@ -1139,7 +1145,7 @@
  known_lon     = -179.5_RKIND
  mesh%zorl12m%array(:,:) = 10._RKIND
 
- write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(config_geog_data_path)// &
+ write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
              'zorl12m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 

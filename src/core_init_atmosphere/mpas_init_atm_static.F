@@ -187,27 +187,39 @@
  call atm_initialize_advection_rk(mesh, nCells, nEdges, maxEdges, on_a_sphere, sphere_radius) 
  call atm_initialize_deformation_weights(mesh, nCells, on_a_sphere, sphere_radius) 
 
+!
+! Define path to the static fields for the WPS and GFS physics static fields:
+!
+ write(geog_data_path, '(a)') config_geog_data_path
+ i = len_trim(geog_data_path)
+ if (geog_data_path(i:i) /= '/') then
+    geog_data_path(i+1:i+1) = '/'
+ end if
+
 
 #ifdef DO_PHYSICS
 !
 ! Interpolate the static fields using the WPS data base:
 !
- call init_atm_static_fields(mesh)
- call init_atm_static_orogwd(mesh)
+ call init_atm_static_fields(mesh,geog_data_path)
+ call init_atm_static_orogwd(mesh,geog_data_path)
 
 #elif DO_PHYSICS_GFS
 !
 ! Interpolate the static fields using the GFS physics data base:
 !
- call init_atm_static_fields_forGFS(mesh)
- call init_atm_static_orogwd_forGFS(mesh)
+ call init_atm_static_fields_forGFS(mesh,geog_data_path)
+ call init_atm_static_orogwd_forGFS(mesh,geog_data_path)
 #endif
 
  end subroutine init_atm_static
 
 !==================================================================================================
- subroutine init_atm_static_fields(mesh)
+ subroutine init_atm_static_fields(mesh,geog_data_path)
 !==================================================================================================
+
+!input arguments:
+ character(len=*),intent(in):: geog_data_path
 
 !inout arguments:
  type(mesh_type),intent(inout):: mesh
@@ -236,10 +248,9 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
 
 !--------------------------------------------------------------------------------------------------
+ write(0,*) '--- enter subroutine init_atm_static_fields:'
 
  dminfo => mesh % block % domain % dminfo
-
- write(0,*) '--- enter subroutine init_atm_static_fields:'
 
 !
 ! Interpolate HGT
@@ -805,6 +816,9 @@
 !==================================================================================================
  subroutine init_atm_static_orogwd(mesh, dims, configs)
 !==================================================================================================
+
+!input arguments:
+ character(len=*),intent(in):: geog_data_path
 
 !inout arguments:
  type (mpas_pool_type), intent(inout) :: mesh
