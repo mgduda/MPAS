@@ -97,6 +97,67 @@ module mpas_cam_interface
    
    end subroutine mpas_init1
    
+
+   subroutine mpas_decomp(nCellsGlobal, npes, ncells_per_proc, global_cell_owner, global_to_local_cell)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_DECOMP
+   !
+   ! Returns information on the parallel decomposition used by the dynamical core.
+   !
+   ! Input: nCellsGlobal - global (i.e., total) number of grid columns in the mesh
+   !        npes - number of MPI tasks to be used by the dynamical core
+   !
+   ! Output: ncells_per_proc - number of columns owned by each task
+   !         global_cell_owner - task ID that owns each column
+   !         global_to_local_cell - maps global indices to local indices for columns
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      implicit none
+
+      integer, intent(in) :: nCellsGlobal
+      integer, intent(in) :: npes
+      integer, dimension(npes), intent(out) :: ncells_per_proc
+      integer, dimension(nCellsGlobal), intent(out) :: global_cell_owner
+      integer, dimension(nCellsGlobal), intent(out) :: global_to_local_cell
+
+      integer :: i
+      integer, dimension(:), allocatable :: temp
+
+      write(0,*) 'Called MPAS_DECOMP()'
+
+      !
+      !  Perform basic sanity check on expected and available field dimensions
+      !
+      if (npes /= domain % dminfo % nprocs ) then
+         write(0,*) 'Error: mismatch between npes and nprocs: ', npes, domain % dminfo % nprocs
+         return
+      end if
+
+      allocate(temp(npes))
+      temp(:) = -1
+      temp(domain % dminfo % my_proc_id + 1) = domain % blocklist % mesh % nCellsSolve
+      call mpas_dmpar_max_int_array(domain % dminfo, npes, temp, ncells_per_proc)
+      deallocate(temp)
+
+      allocate(temp(nCellsGlobal))
+      temp(:) = -1
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         temp(domain % blocklist % mesh % indexToCellID % array(i)) = domain % dminfo % my_proc_id + 1
+      end do
+      call mpas_dmpar_max_int_array(domain % dminfo, nCellsGlobal, temp, global_cell_owner)
+      deallocate(temp)
+
+      allocate(temp(nCellsGlobal))
+      temp(:) = -1
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         temp(domain % blocklist % mesh % indexToCellID % array(i)) = i
+      end do
+      call mpas_dmpar_max_int_array(domain % dminfo, nCellsGlobal, temp, global_to_local_cell)
+      deallocate(temp)
+
+   end subroutine mpas_decomp
+
    
    subroutine mpas_get_pref_profile(pref_edge, pref_mid)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
