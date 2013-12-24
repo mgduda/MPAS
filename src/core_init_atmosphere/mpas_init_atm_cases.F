@@ -2543,6 +2543,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(nlat) :: lat_2d
       real (kind=RKIND) :: dlat
       real (kind=RKIND) :: z_edge, z_edge3, d2fdx2_cell1, d2fdx2_cell2
+      real (kind=RKIND) :: alt, als, zetal, zl
 
       character (len=StrKIND), pointer :: config_met_prefix
       character (len=StrKIND), pointer :: config_start_time
@@ -2598,6 +2599,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: p_fg
       real (kind=RKIND), dimension(:,:), pointer :: st_fg
       real (kind=RKIND), dimension(:,:), pointer :: sm_fg
+      real (kind=RKIND), dimension(:), pointer :: soilz
 
       call mpas_pool_get_config(configs, 'config_met_prefix', config_met_prefix)
       call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
@@ -2610,7 +2612,6 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_smooth_surfaces', config_smooth_surfaces)
       call mpas_pool_get_config(configs, 'config_theta_adv_order', config_theta_adv_order)
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', config_coef_3rd_order)
-      real (kind=RKIND) :: alt, als, zetal, zl
 
       parinfo => block % parinfo
       dminfo => block % domain % dminfo
@@ -2739,6 +2740,13 @@ module init_atm_cases
       do while (istatus == 0)
          if (index(field % field, 'SOILHGT') /= 0) then
 
+
+write(0,*) 'USING ECMWF TERRAIN...'
+
+            interp_list(1) = FOUR_POINT
+            interp_list(2) = SEARCH
+            interp_list(3) = 0
+
             !
             ! Set up projection
             !
@@ -2763,6 +2771,15 @@ module init_atm_cases
                ndims = 1
             end if
 
+            allocate(rslab(-2:field % nx+3, field % ny))
+            rslab(1:field % nx, 1:field % ny) = field % slab(1:field % nx, 1:field % ny)
+            rslab(0, 1:field % ny)  = field % slab(field % nx, 1:field % ny)
+            rslab(-1, 1:field % ny) = field % slab(field % nx-1, 1:field % ny)
+            rslab(-2, 1:field % ny) = field % slab(field % nx-2, 1:field % ny)
+            rslab(field % nx+1, 1:field % ny) = field % slab(1, 1:field % ny)
+            rslab(field % nx+2, 1:field % ny) = field % slab(2, 1:field % ny)
+            rslab(field % nx+3, 1:field % ny) = field % slab(3, 1:field % ny)
+
             do i=1,nInterpPoints
                lat = latPoints(i)*DEG_PER_RAD
                lon = lonPoints(i)*DEG_PER_RAD
@@ -2770,13 +2787,23 @@ module init_atm_cases
                if (x < 0.5) then
                   lon = lon + 360.0
                   call latlon_to_ij(proj, lat, lon, x, y)
+               else if (x >= real(field%nx)+0.5) then
+                  lon = lon - 360.0
+                  call latlon_to_ij(proj, lat, lon, x, y)
+               end if
+               if (y < 0.5) then
+                  y = 1.0
+               else if (y >= real(field%ny)+0.5) then
+                  y = real(field%ny)
                end if
                if (ndims == 1) then
-                  destField1d(i) = interp_sequence(x, y, 1, field % slab, 1, field % nx, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
+                  destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
                else if (ndims == 2) then
-                  destField2d(k,i) = interp_sequence(x, y, 1, field % slab, 1, field % nx, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
+                  destField2d(k,i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
                end if
             end do
+
+            deallocate(rslab)
          end if
    
          deallocate(field % slab)
@@ -3786,6 +3813,14 @@ write(0,*) 'Interpolating SKINTEMP'
                   if (x < 0.5) then
                      lon = lon + 360.0
                      call latlon_to_ij(proj, lat, lon, x, y)
+                  else if (x >= real(field%nx)+0.5) then
+                     lon = lon - 360.0
+                     call latlon_to_ij(proj, lat, lon, x, y)
+                  end if
+                  if (y < 0.5) then
+                     y = 1.0
+                  else if (y >= real(field%ny)+0.5) then
+                     y = real(field%ny)
                   end if
                   if (ndims == 1) then
                      destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1, maskval=maskval, mask_array=maskslab)
@@ -3863,13 +3898,22 @@ write(0,*) 'Interpolating SKINTEMP'
       call read_met_close()
 
       ! Fix for isobaric data
-      if (minval(p_fg(:,:)) == 0.0) then
+      if (minval(p_fg(:,:)) == 0.0 .and. &
+          maxval(p_fg(:,:)) == 0.0) then
          write(0,*) 'Setting pressure field for isobaric data'
          do k=1,config_nfglevels
             if (vert_level(k) /= 200100.0) then
                p_fg(k,:) = vert_level(k)
             else
                p_fg(k,:) = psfc(:)
+            end if
+         end do
+      else
+         call mpas_pool_get_array(fg, 'z', z_fg)
+         call mpas_pool_get_array(fg, 'soilz', soilz)
+         do k=1,config_nfglevels
+            if (vert_level(k) == 200100.0) then
+               z_fg(k,:) = soilz(:)
             end if
          end do
       end if
@@ -3896,7 +3940,10 @@ do iCell=1,nCells
       end do
 
       do k = 1, config_nfgsoillevels
-         if (sm_fg(k,iCell) <= 0.0) write(0,*) 'Bad sm_fg ', k, iCell
+         if (sm_fg(k,iCell) <= 0.0) then
+            write(0,*) 'Bad sm_fg ', k, iCell
+            sm_fg(k,iCell) = 0.01
+         end if
       end do
       !LDF end.
 
@@ -3965,6 +4012,14 @@ write(0,*) 'PROCESSING SEAICE'
                      if (x < 0.5) then
                         lon = lon + 360.0
                         call latlon_to_ij(proj, lat, lon, x, y)
+                     else if (x >= real(field%nx)+0.5) then
+                        lon = lon - 360.0
+                        call latlon_to_ij(proj, lat, lon, x, y)
+                     end if
+                     if (y < 0.5) then
+                        y = 1.0
+                     else if (y >= real(field%ny)+0.5) then
+                        y = real(field%ny)
                      end if
                      if (ndims == 1) then
                         destField1d(i) = interp_sequence(x, y, 1, rslab, 1, field % nx, 1, field % ny, 1, 1, msgval, interp_list, 1)
