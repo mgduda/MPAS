@@ -2405,6 +2405,13 @@ module init_atm_cases
       do while (istatus == 0)
          if (index(field % field, 'SOILHGT') /= 0) then
 
+
+write(0,*) 'USING ECMWF TERRAIN...'
+
+            interp_list(1) = FOUR_POINT
+            interp_list(2) = SEARCH
+            interp_list(3) = 0
+
             !
             ! Set up projection
             !
@@ -2429,6 +2436,15 @@ module init_atm_cases
                ndims = 1
             end if
 
+            allocate(rslab(-2:field % nx+3, field % ny))
+            rslab(1:field % nx, 1:field % ny) = field % slab(1:field % nx, 1:field % ny)
+            rslab(0, 1:field % ny)  = field % slab(field % nx, 1:field % ny)
+            rslab(-1, 1:field % ny) = field % slab(field % nx-1, 1:field % ny)
+            rslab(-2, 1:field % ny) = field % slab(field % nx-2, 1:field % ny)
+            rslab(field % nx+1, 1:field % ny) = field % slab(1, 1:field % ny)
+            rslab(field % nx+2, 1:field % ny) = field % slab(2, 1:field % ny)
+            rslab(field % nx+3, 1:field % ny) = field % slab(3, 1:field % ny)
+
             do i=1,nInterpPoints
                lat = latPoints(i)*DEG_PER_RAD
                lon = lonPoints(i)*DEG_PER_RAD
@@ -2436,13 +2452,23 @@ module init_atm_cases
                if (x < 0.5) then
                   lon = lon + 360.0
                   call latlon_to_ij(proj, lat, lon, x, y)
+               else if (x >= real(field%nx)+0.5) then
+                  lon = lon - 360.0
+                  call latlon_to_ij(proj, lat, lon, x, y)
+               end if
+               if (y < 0.5) then
+                  y = 1.0
+               else if (y >= real(field%ny)+0.5) then
+                  y = real(field%ny)
                end if
                if (ndims == 1) then
-                  destField1d(i) = interp_sequence(x, y, 1, field % slab, 1, field % nx, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
+                  destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
                else if (ndims == 2) then
-                  destField2d(k,i) = interp_sequence(x, y, 1, field % slab, 1, field % nx, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
+                  destField2d(k,i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, -1.e30_RKIND, interp_list, 1)
                end if
             end do
+
+            deallocate(rslab)
          end if
    
          deallocate(field % slab)
@@ -3456,6 +3482,14 @@ write(0,*) 'Interpolating SKINTEMP'
                   if (x < 0.5) then
                      lon = lon + 360.0
                      call latlon_to_ij(proj, lat, lon, x, y)
+                  else if (x >= real(field%nx)+0.5) then
+                     lon = lon - 360.0
+                     call latlon_to_ij(proj, lat, lon, x, y)
+                  end if
+                  if (y < 0.5) then
+                     y = 1.0
+                  else if (y >= real(field%ny)+0.5) then
+                     y = real(field%ny)
                   end if
                   if (ndims == 1) then
                      destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1, maskval=maskval, mask_array=maskslab)
@@ -3544,13 +3578,20 @@ write(0,*) 'Interpolating SKINTEMP'
       call read_met_close()
 
       ! Fix for isobaric data
-      if (minval(fg % p % array(:,:)) == 0.0) then
+      if (minval(fg % p % array(:,:)) == 0.0 .and. &
+          maxval(fg % p % array(:,:)) == 0.0) then
          write(0,*) 'Setting pressure field for isobaric data'
          do k=1,config_nfglevels
             if (vert_level(k) /= 200100.0) then
                fg % p % array(k,:) = vert_level(k)
             else
                fg % p % array(k,:) = fg % psfc % array(:)
+            end if
+         end do
+      else
+         do k=1,config_nfglevels
+            if (vert_level(k) == 200100.0) then
+               fg % z % array(k,:) = fg % soilz % array(:)
             end if
          end do
       end if
@@ -3577,7 +3618,10 @@ do iCell=1,grid%nCells
       enddo
 
       do k = 1, config_nfgsoillevels
-         if (fg % sm_fg % array(k,iCell) <= 0.0) write(0,*) 'Bad sm_fg ', k, iCell
+         if (fg % sm_fg % array(k,iCell) <= 0.0) then
+            write(0,*) 'Bad sm_fg ', k, iCell
+            fg % sm_fg % array(k,iCell) = 0.01
+         end if
       enddo
       !LDF end.
 
@@ -3646,6 +3690,14 @@ write(0,*) 'PROCESSING SEAICE'
                      if (x < 0.5) then
                         lon = lon + 360.0
                         call latlon_to_ij(proj, lat, lon, x, y)
+                     else if (x >= real(field%nx)+0.5) then
+                        lon = lon - 360.0
+                        call latlon_to_ij(proj, lat, lon, x, y)
+                     end if
+                     if (y < 0.5) then
+                        y = 1.0
+                     else if (y >= real(field%ny)+0.5) then
+                        y = real(field%ny)
                      end if
                      if (ndims == 1) then
                         destField1d(i) = interp_sequence(x, y, 1, rslab, 1, field % nx, 1, field % ny, 1, 1, msgval, interp_list, 1)
