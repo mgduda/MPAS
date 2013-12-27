@@ -1626,11 +1626,21 @@ module mpas_io
       if (.not. handle % data_mode) then
          handle % data_mode = .true.
 
+#ifdef CAM_DYCORE
+         if (.not. handle % external_file_desc) then
+            pio_ierr = PIO_enddef(handle % pio_file)
+            if (pio_ierr /= PIO_noerr) then
+               if (present(ierr)) ierr = MPAS_IO_ERR_PIO
+               return
+            end if
+         end if
+#else
          pio_ierr = PIO_enddef(handle % pio_file)
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
          end if
+#endif
       end if
 
 !      write(stderrUnit,*) 'Writing ', trim(fieldname)

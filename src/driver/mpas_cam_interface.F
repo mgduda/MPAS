@@ -15,6 +15,8 @@ module mpas_cam_interface
    real (kind=RKIND) :: dt_dynamics, dt_physics, p0
    integer :: itimestep, n_subcycle_steps
    type (io_output_object), save :: output_obj
+   type (io_output_object), save :: cam_restart_obj
+   type(iosystem_desc_t), pointer :: pio_subsystem
    logical :: restart_run
    integer :: output_frame
 #endif
@@ -24,7 +26,7 @@ module mpas_cam_interface
 
 
 #ifdef CAM_DYCORE
-   subroutine mpas_init1(mpi_comm, phys_dt)
+   subroutine mpas_init1(mpi_comm, phys_dt, PIOFileDesc)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! SUBROUTINE MPAS_INIT1
    !
@@ -36,11 +38,14 @@ module mpas_cam_interface
    ! Input: mpi_comm - an MPI communicator supplied by CAM to be used by MPAS
    !
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      use shr_pio_mod, only : shr_pio_getiosys
    
       implicit none
 
       integer, intent(in) :: mpi_comm
       real (kind=RKIND), intent(in) :: phys_dt
+      type (file_desc_t), intent(inout), optional :: PIOFileDesc
 
       integer :: iCell, iEdge, j, ierr
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
@@ -48,7 +53,9 @@ module mpas_cam_interface
 
       write(0,*) 'Called MPAS_INIT1'
 
-      call mpas_framework_init(dminfo, domain, mpi_comm)
+      pio_subsystem => shr_pio_getiosys('ATM')
+
+      call mpas_framework_init(dminfo, domain, mpi_comm, io_system=pio_subsystem)
       call mpas_core_setup_packages(ierr)
 
       itimestep = 1
@@ -67,7 +74,7 @@ module mpas_cam_interface
       !
       ! Read initial conditions
       !
-      call mpas_input_state_for_domain(domain)
+      call mpas_input_state_for_domain(domain, PIOFileDesc)
 
       latCell => domain % blocklist % mesh % latCell % array
       lonCell => domain % blocklist % mesh % lonCell % array
@@ -381,19 +388,57 @@ module mpas_cam_interface
          end do
       end do 
 
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX uReconstructZonal=', minval(Ux), maxval(Ux)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX uReconstructMeridional=', minval(Uy), maxval(Uy)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Psd=', minval(Psd), maxval(Psd)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Phis=', minval(Phis), maxval(Phis)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Pint=', minval(Pint), maxval(Pint)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Pmid=', minval(Pmid), maxval(Pmid)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Zint=', minval(Zint), maxval(Zint)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Zmid=', minval(Zmid), maxval(Zmid)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX T=', minval(T), maxval(T)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Omega=', minval(Omega), maxval(Omega)
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Tracer1=', minval(Tracer(:,:,1)), maxval(Tracer(:,:,1))
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Tracer2=', minval(Tracer(:,:,2)), maxval(Tracer(:,:,2))
-write(0,*) '<- MPAS DEBUGGING: MIN/MAX Tracer3=', minval(Tracer(:,:,3)), maxval(Tracer(:,:,3))
+write(0,*) '<- MPAS DEBUGGING: MIN  uReconstructZonal=', minval(Ux)
+write(0,*) '<- MPAS DEBUGGING: MAX  uReconstructZonal=', maxval(Ux)
+write(0,*) '<- MPAS DEBUGGING: MEAN uReconstructZonal=', sum(Ux)/real(size(UX))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  uReconstructMeridional=', minval(Uy)
+write(0,*) '<- MPAS DEBUGGING: MAX  uReconstructMeridional=', maxval(Uy)
+write(0,*) '<- MPAS DEBUGGING: MEAN uReconstructMeridional=', sum(Uy)/real(size(Uy))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Psd=', minval(Psd)
+write(0,*) '<- MPAS DEBUGGING: MAX  Psd=', maxval(Psd)
+write(0,*) '<- MPAS DEBUGGING: MEAN Psd=', sum(Psd)/real(size(Psd))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Phis=', minval(Phis)
+write(0,*) '<- MPAS DEBUGGING: MAX  Phis=', maxval(Phis)
+write(0,*) '<- MPAS DEBUGGING: MEAN Phis=', sum(Phis)/real(size(Phis))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Pint=', minval(Pint)
+write(0,*) '<- MPAS DEBUGGING: MAX  Pint=', maxval(Pint)
+write(0,*) '<- MPAS DEBUGGING: MEAN Pint=', sum(Pint)/real(size(Pint))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Pmid=', minval(Pmid)
+write(0,*) '<- MPAS DEBUGGING: MAX  Pmid=', maxval(Pmid)
+write(0,*) '<- MPAS DEBUGGING: MEAN Pmid=', sum(Pmid)/real(size(Pmid))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Zint=', minval(Zint)
+write(0,*) '<- MPAS DEBUGGING: MAX  Zint=', maxval(Zint)
+write(0,*) '<- MPAS DEBUGGING: MEAN Zint=', sum(Zint)/real(size(Zint))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Zmid=', minval(Zmid)
+write(0,*) '<- MPAS DEBUGGING: MAX  Zmid=', maxval(Zmid)
+write(0,*) '<- MPAS DEBUGGING: MEAN Zmid=', sum(Zmid)/real(size(Zmid))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  T=', minval(T)
+write(0,*) '<- MPAS DEBUGGING: MAX  T=', maxval(T)
+write(0,*) '<- MPAS DEBUGGING: MEAN T=', sum(T)/real(size(T))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Omega=', minval(Omega)
+write(0,*) '<- MPAS DEBUGGING: MAX  Omega=', maxval(Omega)
+write(0,*) '<- MPAS DEBUGGING: MEAN Omega=', sum(Omega)/real(size(Omega))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Tracer1=', minval(Tracer(:,:,1))
+write(0,*) '<- MPAS DEBUGGING: MAX  Tracer1=', maxval(Tracer(:,:,1))
+write(0,*) '<- MPAS DEBUGGING: MEAN Tracer1=', sum(Tracer(:,:,1))/real(size(Tracer(:,:,1)))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Tracer2=', minval(Tracer(:,:,2))
+write(0,*) '<- MPAS DEBUGGING: MAX  Tracer2=', maxval(Tracer(:,:,2))
+write(0,*) '<- MPAS DEBUGGING: MEAN Tracer2=', sum(Tracer(:,:,2))/real(size(Tracer(:,:,2)))
+
+write(0,*) '<- MPAS DEBUGGING: MIN  Tracer3=', minval(Tracer(:,:,3))
+write(0,*) '<- MPAS DEBUGGING: MAX  Tracer3=', maxval(Tracer(:,:,3))
+write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Tracer(:,:,3)))
 
    end subroutine mpas_to_cam
    
@@ -530,11 +575,25 @@ write(0,*) '<- MPAS DEBUGGING: MIN/MAX Tracer3=', minval(Tracer(:,:,3)), maxval(
       call mpas_dmpar_exch_halo_field(block % tend_physics % u)
       call mpas_dmpar_exch_halo_field(block % tend_physics % scalars)
 
-write(0,*) '-> MPAS DEBUGGING: MIN/MAX u_tend=', minval(u_tend(:,1:block % mesh % nEdges)),maxval(u_tend(:,1:block % mesh % nEdges))
-write(0,*) '-> MPAS DEBUGGING: MIN/MAX theta_tend=', minval(theta_tend(:,1:block % mesh % nCells)),maxval(theta_tend(:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MIN/MAX qv_tend=', minval(scalars_tend(1,:,1:block % mesh % nCells)),maxval(scalars_tend(1,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MIN/MAX qc_tend=', minval(scalars_tend(2,:,1:block % mesh % nCells)),maxval(scalars_tend(2,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MIN/MAX qr_tend=', minval(scalars_tend(3,:,1:block % mesh % nCells)),maxval(scalars_tend(3,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MIN  u_tend=', minval(u_tend(:,1:block % mesh % nEdges))
+write(0,*) '-> MPAS DEBUGGING: MAX  u_tend=', maxval(u_tend(:,1:block % mesh % nEdges))
+write(0,*) '-> MPAS DEBUGGING: MEAN u_tend=', sum(u_tend(:,1:block % mesh % nEdges))/real(size(u_tend))
+
+write(0,*) '-> MPAS DEBUGGING: MIN  theta_tend=', minval(theta_tend(:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MAX  theta_tend=', maxval(theta_tend(:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MEAN theta_tend=', sum(theta_tend(:,1:block % mesh % nCells))/real(size(theta_tend))
+
+write(0,*) '-> MPAS DEBUGGING: MIN  qv_tend=', minval(scalars_tend(1,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MAX  qv_tend=', maxval(scalars_tend(1,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MEAN qv_tend=', sum(scalars_tend(1,:,1:block % mesh % nCells))/real(size(scalars_tend(1,:,1:block % mesh % nCells)))
+
+write(0,*) '-> MPAS DEBUGGING: MIN  qc_tend=', minval(scalars_tend(2,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MAX  qc_tend=', maxval(scalars_tend(2,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MEAN qc_tend=', sum(scalars_tend(2,:,1:block % mesh % nCells))/real(size(scalars_tend(2,:,1:block % mesh % nCells)))
+
+write(0,*) '-> MPAS DEBUGGING: MIN  qr_tend=', minval(scalars_tend(3,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MAX  qr_tend=', maxval(scalars_tend(3,:,1:block % mesh % nCells))
+write(0,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % mesh % nCells))/real(size(scalars_tend(3,:,1:block % mesh % nCells)))
    
    end subroutine cam_to_mpas
    
@@ -606,24 +665,65 @@ write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
             call atm_write_output_frame(output_obj, output_frame, domain)
          end if
          
-         if (mpas_is_alarm_ringing(clock, restartAlarmID, ierr=ierr)) then
-            call mpas_reset_clock_alarm(clock, restartAlarmID, ierr=ierr)
-            
-            block_ptr => domain % blocklist
-            do while (associated(block_ptr))
-               call atm_compute_restart_diagnostics(block_ptr % state % time_levs(1) % state, block_ptr % diag, block_ptr % mesh)
-               block_ptr => block_ptr % next
-            end do
-
-            ! Write one restart time per file
-            call mpas_output_state_init(restart_obj, domain, "RESTART", trim(timeStamp))
-            call mpas_output_state_for_domain(restart_obj, domain, 1)
-            call mpas_output_state_finalize(restart_obj, domain % dminfo)
-         end if
+!         if (mpas_is_alarm_ringing(clock, restartAlarmID, ierr=ierr)) then
+!            call mpas_reset_clock_alarm(clock, restartAlarmID, ierr=ierr)
+!            
+!            block_ptr => domain % blocklist
+!            do while (associated(block_ptr))
+!               call atm_compute_restart_diagnostics(block_ptr % state % time_levs(1) % state, block_ptr % diag, block_ptr % mesh)
+!               block_ptr => block_ptr % next
+!            end do
+!
+!            ! Write one restart time per file
+!            call mpas_output_state_init(restart_obj, domain, "RESTART", trim(timeStamp))
+!            call mpas_output_state_for_domain(restart_obj, domain, 1)
+!            call mpas_output_state_finalize(restart_obj, domain % dminfo)
+!         end if
 
       end do
 
    end subroutine mpas_dyn_run
+
+
+   subroutine mpas_init_restart(PIOFileDesc)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_INIT_RESTART
+   !
+   !
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+      implicit none
+
+      type (file_desc_t), intent(inout) :: PIOFileDesc
+   
+      write(0,*) 'Called MPAS_INIT_RESTART'
+
+      cam_restart_obj % stream = RESTART
+
+      call mpas_io_output_init(domain, cam_restart_obj, domain % dminfo, domain % blocklist % mesh, PIOFileDesc)
+
+   end subroutine mpas_init_restart
+   
+   
+   subroutine mpas_write_restart(PIOFileDesc)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_WRITE_RESTART
+   !
+   !
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+      implicit none
+
+      type (file_desc_t), intent(inout) :: PIOFileDesc
+   
+      write(0,*) 'Called MPAS_WRITE_RESTART'
+
+      call mpas_output_state_for_domain(cam_restart_obj, domain, 1)
+      call mpas_io_output_finalize(cam_restart_obj, domain % dminfo)
+
+   end subroutine mpas_write_restart
    
    
    subroutine mpas_final()
@@ -643,7 +743,7 @@ write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
 
       call mpas_core_finalize(domain)
 
-      call mpas_framework_finalize(dminfo, domain)
+      call mpas_framework_finalize(dminfo, domain, io_system=pio_subsystem)
 
    
    end subroutine mpas_final

@@ -12,6 +12,7 @@ module mpas_io_output
    use mpas_sort
    use mpas_configure
    use mpas_io_streams
+   use pio_types
 
    integer, parameter :: OUTPUT = 1
    integer, parameter :: RESTART = 2
@@ -338,17 +339,19 @@ module mpas_io_output
    end subroutine mpas_output_state_finalize!}}}
 
    subroutine mpas_io_output_init( domain, output_obj, &!{{{
-                              dminfo, &
-                              mesh &
-                            )
- 
+                               dminfo, &
+                               mesh, &
+                               PIOFileDesc &
+                             )
+  
       implicit none
- 
+
       type (domain_type), intent(in) :: domain
       type (io_output_object), intent(inout) :: output_obj
       type (dm_info), intent(in) :: dminfo
       type (mesh_type), intent(in) :: mesh
- 
+      type (file_desc_t), intent(inout), optional :: PIOFileDesc
+
       integer :: nferr, ierr
       integer, dimension(10) :: dimlist
       character (len=StrKIND*4) :: runCmd
@@ -360,9 +363,9 @@ module mpas_io_output
       end if
  
       if (trim(config_pio_format) == 'pnetcdf') then
-         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, ierr=nferr)
+         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, PIOFileDesc, ierr=nferr)
       else
-         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_NETCDF, MPAS_IO_WRITE, 1, ierr=nferr)
+         call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_NETCDF, MPAS_IO_WRITE, 1, PIOFileDesc, ierr=nferr)
       end if
 
 #include "add_output_fields.inc"

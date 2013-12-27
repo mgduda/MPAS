@@ -36,11 +36,12 @@ module mpas_io_input
 
    contains
 
-   subroutine mpas_input_state_for_domain(domain)!{{{
+   subroutine mpas_input_state_for_domain(domain, PIOFileDesc)!{{{
 
       implicit none
    
       type (domain_type), pointer :: domain
+      type (file_desc_t), intent(inout), optional :: PIOFileDesc
 
       type (block_type), pointer :: block_ptr
       type (block_type), pointer :: readingBlock
@@ -104,32 +105,42 @@ module mpas_io_input
 
       nHalos = config_num_halos
 
-      if (config_do_restart) then
-        ! this get followed by set is to ensure that the time is in standard format
-        if(trim(config_start_time) == 'file') then
-          open(22,file=trim(config_restart_timestamp_name),form='formatted',status='old')
-          read(22,*) restartTimeStamp
-          close(22)
+      if (.not. present(PIOFileDesc)) then
+         if (config_do_restart) then
+           ! this get followed by set is to ensure that the time is in standard format
+           if(trim(config_start_time) == 'file') then
+             open(22,file=trim(config_restart_timestamp_name),form='formatted',status='old')
+             read(22,*) restartTimeStamp
+             close(22)
 
-        else
-          restartTimeStamp = config_start_time
-        end if
+           else
+             restartTimeStamp = config_start_time
+           end if
 
-        write(stderrUnit,*) 'RestartTimeStamp ', trim(restartTimeStamp)
-        call mpas_set_time(curr_time=startTime, dateTimeString=restartTimeStamp)
-        call mpas_get_time(curr_time=startTime, dateTimeString=timeStamp)
-        call mpas_insert_string_suffix(trim(config_restart_name), timeStamp, filename)
+           write(stderrUnit,*) 'RestartTimeStamp ', trim(restartTimeStamp)
+           call mpas_set_time(curr_time=startTime, dateTimeString=restartTimeStamp)
+           call mpas_get_time(curr_time=startTime, dateTimeString=timeStamp)
+           call mpas_insert_string_suffix(trim(config_restart_name), timeStamp, filename)
 
-        input_obj % filename = trim(filename)
-        input_obj % stream = STREAM_RESTART
+           input_obj % filename = trim(filename)
+           input_obj % stream = STREAM_RESTART
+         else
+            input_obj % filename = trim(config_input_name)
+            input_obj % stream = STREAM_INPUT
+         end if
       else
-         input_obj % filename = trim(config_input_name)
-         input_obj % stream = STREAM_INPUT
+         if (config_do_restart) then
+            input_obj % filename = ''
+            input_obj % stream = STREAM_RESTART
+         else
+            input_obj % filename = ''
+            input_obj % stream = STREAM_INPUT
+         end if
       end if
       if (trim(config_pio_format) == 'pnetcdf') then
-         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_PNETCDF, ierr=ierr)
+         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_PNETCDF, PIOFileDesc, ierr=ierr)
       else
-         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_NETCDF, ierr=ierr)
+         inputHandle = MPAS_io_open(trim(input_obj % filename), MPAS_IO_READ, MPAS_IO_NETCDF, PIOFileDesc, ierr=ierr)
       end if
       if (ierr /= MPAS_IO_NOERR) then
         write(stderrUnit,*) ' '
@@ -228,7 +239,7 @@ module mpas_io_input
                              , nCellsSolveField, nEdgesSolveField, nVerticesSolveField, indexToCellID_Block, indexToEdgeID_Block, indexToVertexID_Block)
 
 
-      call mpas_io_input_init(input_obj, domain % blocklist, domain % dminfo)
+      call mpas_io_input_init(input_obj, domain % blocklist, domain % dminfo, PIOFileDesc)
 
       call MPAS_readStreamAtt(input_obj % io_stream, 'sphere_radius', r_sphere_radius, ierr)
       if (ierr /= MPAS_STREAM_NOERR) then
@@ -288,6 +299,10 @@ module mpas_io_input
       if (.not. config_do_restart) then
         input_obj % time = 1
       else
+#ifdef CAM_DYCORE
+        input_obj % time = 1
+        timeStamp = '0000-01-01_00:00:00'
+#else
         !
         ! If doing a restart, we need to decide which time slice to read from the 
         !   restart file
@@ -297,6 +312,7 @@ module mpas_io_input
           write(stderrUnit,*) 'Error: restart file '//trim(filename)//' did not contain time '//trim(restartTimeStamp)
           call mpas_dmpar_abort(domain % dminfo)
         end if
+#endif
 
 !       input_obj % time = MPAS_seekStream(input_obj % io_stream, config_start_time, MPAS_STREAM_EXACT_TIME, timeStamp, ierr)
 !       if (ierr == MPAS_IO_ERR) then
@@ -414,20 +430,21 @@ module mpas_io_input
 
    end subroutine mpas_read_and_distribute_fields!}}}
 
-   subroutine mpas_io_input_init(input_obj, blocklist, dminfo)!{{{
+   subroutine mpas_io_input_init(input_obj, blocklist, dminfo, PIOFileDesc)!{{{
  
       implicit none
 
       type (io_input_object), intent(inout) :: input_obj
       type (block_type), intent(in) :: blocklist
       type (dm_info), intent(in) :: dminfo
+      type (file_desc_t), intent(inout), optional :: PIOFileDesc
  
       integer :: nferr
  
       if (trim(config_pio_format) == 'pnetcdf') then
-         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, ierr=nferr)
+         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, PIOFileDesc, ierr=nferr)
       else
-         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_NETCDF, MPAS_IO_READ, 1, ierr=nferr)
+         call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_NETCDF, MPAS_IO_READ, 1, PIOFileDesc, ierr=nferr)
       end if
       if (nferr /= MPAS_STREAM_NOERR) then
          write(stderrUnit,*) ' '
