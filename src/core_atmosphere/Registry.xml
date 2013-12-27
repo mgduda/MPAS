@@ -1107,9 +1107,31 @@
                 <var name="uy_cam_tend"     name_in_code="uy"      type="real"   dimensions="nVertLevels nCells Time" streams="ro" />
                 <var name="theta_cam_tend"  name_in_code="theta"   type="real"   dimensions="nVertLevels nCells Time" streams="ro" />
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
-                        <var name="qv_cam_tend"     name_in_code="qv"   array_group="moist" streams="o" />
-                        <var name="qc_cam_tend"     name_in_code="qc"   array_group="moist" streams="o" />
-                        <var name="qr_cam_tend"     name_in_code="qr"   array_group="moist" streams="o" />
+                        <var name="qv_cam_tend"     name_in_code="qv"    array_group="moist"      streams="o" />
+                        <var name="qc_cam_tend"     name_in_code="qc"    array_group="moist"      streams="o" />
+                        <var name="qr_cam_tend"     name_in_code="qr"    array_group="moist"      streams="o" />
+                        <var name="qnr_cam_tend"    name_in_code="qnr_c" array_group="conc"       streams="o"    packages="cam5"/>
+                        <var name="qni_cam_tend"    name_in_code="qni_c" array_group="conc"       streams="o"    packages="cam5"/>
+                        <var name="aer1_cam_tend"   name_in_code="aer1"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer2_cam_tend"   name_in_code="aer2"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer3_cam_tend"   name_in_code="aer3"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer4_cam_tend"   name_in_code="aer4"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer5_cam_tend"   name_in_code="aer5"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer6_cam_tend"   name_in_code="aer6"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer7_cam_tend"   name_in_code="aer7"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer8_cam_tend"   name_in_code="aer8"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer9_cam_tend"   name_in_code="aer9"  array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer10_cam_tend"  name_in_code="aer10" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer11_cam_tend"  name_in_code="aer11" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer12_cam_tend"  name_in_code="aer12" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer13_cam_tend"  name_in_code="aer13" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer14_cam_tend"  name_in_code="aer14" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer15_cam_tend"  name_in_code="aer15" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer16_cam_tend"  name_in_code="aer16" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer17_cam_tend"  name_in_code="aer17" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer18_cam_tend"  name_in_code="aer18" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer19_cam_tend"  name_in_code="aer19" array_group="aerosol"    streams="o"    packages="cam5"/>
+                        <var name="aer20_cam_tend"  name_in_code="aer20" array_group="aerosol"    streams="o"    packages="cam5"/>
                 </var_array>
         </var_struct>
 
