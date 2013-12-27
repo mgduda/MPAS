@@ -570,9 +570,11 @@ module mpas_core
       startTime = mpas_get_clock_time(clock, MPAS_START_TIME, ierr)
       currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
          
+#ifdef DO_PHYSICS
       xtimeTime = currTime - startTime
       call mpas_get_timeInterval(interval=xtimeTime, S=s, S_n=s_n, S_d=s_d, ierr=ierr)         
       xtime_s = (s + s_n / s_d)
+#endif
 
       call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
 
