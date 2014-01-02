@@ -85,7 +85,7 @@ module mpas_cam_interface
       !
       ! Compute unit vectors in east and north directions for each cell
       !
-      do iCell = 1,domain % blocklist % mesh % nCellsSolve
+      do iCell = 1,domain % blocklist % mesh % nCells
 
          east(1,iCell) = -sin(lonCell(iCell))
          east(2,iCell) =  cos(lonCell(iCell))
@@ -577,11 +577,11 @@ write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Trac
 
 write(0,*) '-> MPAS DEBUGGING: MIN  u_tend=', minval(u_tend(:,1:block % mesh % nEdges))
 write(0,*) '-> MPAS DEBUGGING: MAX  u_tend=', maxval(u_tend(:,1:block % mesh % nEdges))
-write(0,*) '-> MPAS DEBUGGING: MEAN u_tend=', sum(u_tend(:,1:block % mesh % nEdges))/real(size(u_tend))
+write(0,*) '-> MPAS DEBUGGING: MEAN u_tend=', sum(u_tend(:,1:block % mesh % nEdges))/real(size(u_tend(:,1:block % mesh % nEdges)))
 
 write(0,*) '-> MPAS DEBUGGING: MIN  theta_tend=', minval(theta_tend(:,1:block % mesh % nCells))
 write(0,*) '-> MPAS DEBUGGING: MAX  theta_tend=', maxval(theta_tend(:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MEAN theta_tend=', sum(theta_tend(:,1:block % mesh % nCells))/real(size(theta_tend))
+write(0,*) '-> MPAS DEBUGGING: MEAN theta_tend=', sum(theta_tend(:,1:block % mesh % nCells))/real(size(theta_tend(:,1:block % mesh % nCells)))
 
 write(0,*) '-> MPAS DEBUGGING: MIN  qv_tend=', minval(scalars_tend(1,:,1:block % mesh % nCells))
 write(0,*) '-> MPAS DEBUGGING: MAX  qv_tend=', maxval(scalars_tend(1,:,1:block % mesh % nCells))
