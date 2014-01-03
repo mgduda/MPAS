@@ -3509,9 +3509,9 @@ module atm_time_integration
       do i = 1, nCellsSolve
          do k = 1, nVertLevels
             tend_th(k,i)=tend_th(k,i)+cam_theta(k,i)*mass(k,i)
-            tend_scalars(tend%index_qv,k,i)=tend_scalars(tend%index_qv,k,i)+cam_scalars(1,k,i)*mass(k,i)
-            tend_scalars(tend%index_qc,k,i)=tend_scalars(tend%index_qc,k,i)+cam_scalars(2,k,i)*mass(k,i)
-            tend_scalars(tend%index_qr,k,i)=tend_scalars(tend%index_qr,k,i)+cam_scalars(3,k,i)*mass(k,i)
+            do n=1,tend%num_scalars
+               tend_scalars(n,k,i)=tend_scalars(n,k,i)+cam_scalars(n,k,i)*mass(k,i)
+            end do
          end do
       end do
      
