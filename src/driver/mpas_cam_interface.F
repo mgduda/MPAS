@@ -613,7 +613,6 @@ write(0,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % me
       
       type (MPAS_Time_Type) :: currTime
       character(len=StrKIND) :: timeStamp
-      integer :: itimestep
       integer :: ierr
       integer :: idynstep
 
