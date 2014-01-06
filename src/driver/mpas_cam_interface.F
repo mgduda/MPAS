@@ -105,6 +105,162 @@ module mpas_cam_interface
    end subroutine mpas_init1
    
 
+   subroutine mpas_global_dimensions(nCellsGlobal, nEdgesGlobal, nVerticesGlobal, maxEdges)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_GLOBAL_DIMENSIONS
+   !
+   ! Returns global grid dimensions
+   !
+   ! Output: nCellsGlobal - global number of horizontal columns
+   !         nEdgesGlobal - global number of horizontal cell faces
+   !         nVerticesGlobal - global number of horizontal cell corners
+   !         maxEdges - maximum number of horizontal faces for any cell in the mesh
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      implicit none
+
+      integer, intent(out) :: nCellsGlobal, nEdgesGlobal, nVerticesGlobal, maxEdges
+
+      write(0,*) 'Called MPAS_GLOBAL_DIMENSIONS()'
+
+      call mpas_dmpar_sum_int(domain % dminfo, domain % blocklist % mesh % nCellsSolve, nCellsGlobal)
+      call mpas_dmpar_sum_int(domain % dminfo, domain % blocklist % mesh % nEdgesSolve, nEdgesGlobal)
+      call mpas_dmpar_sum_int(domain % dminfo, domain % blocklist % mesh % nVerticesSolve, nVerticesGlobal)
+      maxEdges = domain % blocklist % mesh % maxEdges
+
+   end subroutine mpas_global_dimensions
+   
+
+   subroutine mpas_global_coordinates(nCellsGlobal, nVerticesGlobal, maxEdges, latCell, lonCell, areaCell, &
+                                      latVertex, lonVertex, nEdgesOnCell, verticesOnCell)
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE MPAS_GLOBAL_COORDINATES
+   !
+   ! Returns global coordinate information for the mesh
+   !
+   ! Input: nCellsGlobal - global number of horizontal columns
+   !        nVerticesGlobal - global number of horizontal cell corners
+   !        maxEdges - maximum number of horizontal faces for any cell in the mesh
+   !
+   ! Output: latCell - latitude at cell centers
+   !         lonCell - longitude at cell centers
+   !         areaCell - area of cells (m^2)
+   !         latVertex - latitude of cell corners
+   !         lonVertex - longitude ov cell corners
+   !         nEdgesOnCell - number of corners/faces for each cell
+   !         verticesOnCell - global indices in vertex-based arrays of cell corners
+   !
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      implicit none
+
+      integer, intent(in) :: nCellsGlobal, nVerticesGlobal, maxEdges
+      real (kind=RKIND), dimension(nCellsGlobal), intent(out) :: latCell, lonCell, areaCell
+      real (kind=RKIND), dimension(nVerticesGlobal), intent(out) :: latVertex, lonVertex
+      integer, dimension(nCellsGlobal), intent(out) :: nEdgesOnCell
+      integer, dimension(maxEdges, nCellsGlobal), intent(out) :: verticesOnCell
+
+      integer :: i, j
+      integer, dimension(:), pointer :: indexToCellID, indexToVertexID
+      integer, dimension(:), pointer :: itemp, itemp2
+      real (kind=RKIND), dimension(:), pointer :: rtemp
+
+      write(0,*) 'Called MPAS_GLOBAL_COORDINATES()'
+
+      indexToCellID => domain % blocklist % mesh % indexToCellID % array
+      indexToVertexID => domain % blocklist % mesh % indexToVertexID % array
+
+
+      !
+      ! Handle 1-d real cell-based fields
+      !
+      allocate(rtemp(nCellsGlobal))
+
+      rtemp(:) = -999.0
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         rtemp(indexToCellID(i)) = domain % blocklist % mesh % latCell % array(i)
+      end do
+      call mpas_dmpar_max_real_array(domain % dminfo, nCellsGlobal, rtemp, latCell) 
+
+      rtemp(:) = -999.0
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         rtemp(indexToCellID(i)) = domain % blocklist % mesh % lonCell % array(i)
+      end do
+      call mpas_dmpar_max_real_array(domain % dminfo, nCellsGlobal, rtemp, lonCell) 
+
+      rtemp(:) = -999.0
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         rtemp(indexToCellID(i)) = domain % blocklist % mesh % areaCell % array(i)
+      end do
+      call mpas_dmpar_max_real_array(domain % dminfo, nCellsGlobal, rtemp, areaCell) 
+
+      deallocate(rtemp)
+
+
+      !
+      ! Handle 1-d integer cell-based fields
+      !
+      allocate(itemp(nCellsGlobal))
+
+      itemp(:) = -1
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         itemp(indexToCellID(i)) = domain % blocklist % mesh % nEdgesOnCell % array(i)
+      end do
+      call mpas_dmpar_max_int_array(domain % dminfo, nCellsGlobal, itemp, nEdgesOnCell) 
+
+      deallocate(itemp)
+
+
+      !
+      ! Handle 2-d integer cell-based fields
+      !
+      allocate(itemp(maxEdges*nCellsGlobal))
+      allocate(itemp2(maxEdges*nCellsGlobal))
+
+      itemp(:) = -1
+      do i=1,domain % blocklist % mesh % nCellsSolve
+         do j=1,domain % blocklist % mesh % nEdgesOnCell % array(i)
+            itemp(j+(indexToCellID(i)-1)*maxEdges) = indexToVertexID(domain % blocklist % mesh % verticesOnCell % array(j,i))
+         end do
+         do j=domain % blocklist % mesh % nEdgesOnCell % array(i)+1,maxEdges
+            itemp(j+(indexToCellID(i)-1)*maxEdges) = 0
+         end do
+      end do
+      call mpas_dmpar_max_int_array(domain % dminfo, nCellsGlobal*maxEdges, itemp, itemp2) 
+
+      do i=1,nCellsGlobal
+         do j=1,maxEdges
+            verticesOnCell(j,i) = itemp2(j+(i-1)*maxEdges)
+         end do
+      end do
+
+      deallocate(itemp)
+      deallocate(itemp2)
+
+
+      !
+      ! Handle 1-d real vertex-based fields
+      !
+      allocate(rtemp(nVerticesGlobal))
+
+      rtemp(:) = -999.0
+      do i=1,domain % blocklist % mesh % nVerticesSolve
+         rtemp(indexToVertexID(i)) = domain % blocklist % mesh % latVertex % array(i)
+      end do
+      call mpas_dmpar_max_real_array(domain % dminfo, nVerticesGlobal, rtemp, latVertex) 
+
+      rtemp(:) = -999.0
+      do i=1,domain % blocklist % mesh % nVerticesSolve
+         rtemp(indexToVertexID(i)) = domain % blocklist % mesh % lonVertex % array(i)
+      end do
+      call mpas_dmpar_max_real_array(domain % dminfo, nVerticesGlobal, rtemp, lonVertex) 
+
+      deallocate(rtemp)
+
+   end subroutine mpas_global_coordinates
+
+
    subroutine mpas_decomp(nCellsGlobal, npes, ncells_per_proc, global_cell_owner, global_to_local_cell)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! SUBROUTINE MPAS_DECOMP
