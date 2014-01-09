@@ -203,6 +203,9 @@
 
                 <!-- arrays required for reconstruction of velocity field -->
                 <var name="coeffs_reconstruct"         type="real"     dimensions="R3 maxEdges nCells"          streams="io"/>
+
+                <!-- coordinate surface smoothing coefficient -->
+                <var name="sm"                         type="real"     dimensions="nVertLevelsP1 nCells"        streams="io"/>
         </var_struct>
 
         <var_struct name="state" time_levs="2">

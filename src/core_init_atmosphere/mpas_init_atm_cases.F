@@ -2242,7 +2242,7 @@ module init_atm_cases
 
       real (kind=RKIND), dimension(:), pointer :: rdzw, dzu, rdzu, fzm, fzp
       real (kind=RKIND), dimension(:), pointer :: vert_level, latPoints, lonPoints, ter
-      real (kind=RKIND), dimension(:,:), pointer :: zgrid, zx, zz, hx
+      real (kind=RKIND), dimension(:,:), pointer :: zgrid, zx, zz, hx, sm_3d
       real (kind=RKIND), dimension(:,:), pointer :: pressure, ppb, pb, rho_zz, rb, rr, tb, rtb, p, pp, dss, t, rt
       real (kind=RKIND), dimension(:), pointer :: destField1d
       real (kind=RKIND), dimension(:,:), pointer :: destField2d
@@ -2352,6 +2352,7 @@ module init_atm_cases
       zx => grid % zx % array
       zz => grid % zz % array
       hx => grid % hx % array
+      sm_3d => grid % sm % array
       ter => grid % ter % array
       dss => grid % dss % array
 
@@ -2620,6 +2621,8 @@ module init_atm_cases
 
       smooth = config_smooth_surfaces
 
+      sm_3d(:,:) = 0.0
+
       if (smooth) then
 
          dzmin = config_dzmin
@@ -2632,7 +2635,7 @@ module init_atm_cases
                dcsum = dcsum + dcEdge(edgesOnCell(j,iCell))
             end do
             dcsum = dcsum / real(nEdgesOnCell(iCell))
-            sm0(iCell) = max(0.01_RKIND, 0.25 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
+            sm0(iCell) = max(0.01_RKIND, 0.125 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
          end do
 
          do k=2,kz-1
@@ -2643,6 +2646,7 @@ module init_atm_cases
                do iCell=1,grid % nCells
 
                   sm = sm0(iCell) * min((3.0*zw(k)/zt)**2.0, 1.0_RKIND)
+                  sm_3d(k,iCell) = sm
 
                   hs1(iCell) = 0.
                   do j = 1,nEdgesOnCell(iCell)
