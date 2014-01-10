@@ -1312,21 +1312,21 @@ module mpas_io
 
 !      write(stderrUnit,*) 'Checking for real, int, char, etc'
       if (present(realVal)) then
-!         write (0,*) '  value is real'
+!         write(stderrUnit,*) '  value is real'
          if (field_cursor % fieldhandle % has_unlimited_dim) then
             pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, realVal)
          else
             pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, realVal)
          end if
       else if (present(intVal)) then
-!         write (0,*) '  value is int'
+!         write(stderrUnit,*) '  value is int'
          if (field_cursor % fieldhandle % has_unlimited_dim) then
             pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, intVal)
          else
             pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, intVal)
          end if
       else if (present(charVal)) then
-!         write (0,*) '  value is char'
+!         write(stderrUnit,*) '  value is char'
          if (field_cursor % fieldhandle % has_unlimited_dim) then
             count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
             pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start2, count2, tempchar)
@@ -1338,44 +1338,44 @@ module mpas_io
             charVal(1:count1(1)) = tempchar(1)(1:count1(1))
          end if
       else if (present(realArray1d)) then
-!         write (0,*) '  value is real1'
+!         write(stderrUnit,*) '  value is real1'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               realArray1d, pio_ierr)
       else if (present(realArray2d)) then
-!         write (0,*) '  value is real2'
+!         write(stderrUnit,*) '  value is real2'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               realArray2d, pio_ierr)
       else if (present(realArray3d)) then
-!         write (0,*) '  value is real3'
+!         write(stderrUnit,*) '  value is real3'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               realArray3d, pio_ierr)
       else if (present(realArray4d)) then
-!         write (0,*) '  value is real4'
+!         write(stderrUnit,*) '  value is real4'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               realArray4d, pio_ierr)
       else if (present(realArray5d)) then
-!         write (0,*) '  value is real5'
+!         write(stderrUnit,*) '  value is real5'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               realArray5d, pio_ierr)
       else if (present(intArray1d)) then
-!         write (0,*) '  value is int1'
+!         write(stderrUnit,*) '  value is int1'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               intArray1d, pio_ierr)
       else if (present(intArray2d)) then
-!         write (0,*) '  value is int2'
+!         write(stderrUnit,*) '  value is int2'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               intArray2d, pio_ierr)
       else if (present(intArray3d)) then
-!         write (0,*) '  value is int3'
+!         write(stderrUnit,*) '  value is int3'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               intArray3d, pio_ierr)
       else if (present(intArray4d)) then
-!         write (0,*) '  value is int4'
+!         write(stderrUnit,*) '  value is int4'
          call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
                               intArray4d, pio_ierr)
       end if
 
-!      write (0,*) 'Checking for error'
+!      write(stderrUnit,*) 'Checking for error'
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3460,7 +3460,7 @@ module mpas_io
       handle % initialized = .false.
 
       if (.not. handle % external_file_desc) then
-!write(0,*) 'MGD PIO_closefile'
+!write(stderrUnit,*) 'MGD PIO_closefile'
          call PIO_closefile(handle % pio_file)
       end if
 

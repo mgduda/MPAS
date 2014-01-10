@@ -1632,11 +1632,13 @@ end module mpas_timekeeping
 #ifndef CAM_DYCORE
 subroutine wrf_error_fatal(msg)
 
+   use mpas_io_units, only : stderrUnit
+
    implicit none
 
    character (len=*) :: msg
 
-   write(0,*) 'MPAS_TIMEKEEPING: '//trim(msg)
+   write(stderrUnit,*) 'MPAS_TIMEKEEPING: '//trim(msg)
 
    stop
 

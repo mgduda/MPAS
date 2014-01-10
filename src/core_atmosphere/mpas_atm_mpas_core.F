@@ -8,6 +8,7 @@
 module mpas_core
 
    use mpas_framework
+   use mpas_io_units, only : stderrUnit
 
    type (io_output_object), save :: restart_obj
    type (io_input_object), save :: sfc_update_obj
@@ -90,11 +91,11 @@ module mpas_core
          !
          sfc_update_obj % time = MPAS_seekStream(sfc_update_obj % io_stream, trim(startTimeStamp), MPAS_STREAM_LATEST_BEFORE, timeStamp, ierr)
          if (ierr == MPAS_IO_ERR) then
-            write(0,*) 'Error: surface update file '//trim(sfc_update_obj % filename)//' did not contain any times at or before '//trim(startTimeStamp)
+            write(stderrUnit,*) 'Error: surface update file '//trim(sfc_update_obj % filename)//' did not contain any times at or before '//trim(startTimeStamp)
             call mpas_dmpar_abort(domain % dminfo)
          end if
 
-         write(0,*) 'Starting model with surface time ', trim(timeStamp)
+         write(stderrUnit,*) 'Starting model with surface time ', trim(timeStamp)
 
       end if
 
@@ -130,14 +131,14 @@ module mpas_core
          if (trim(config_stop_time) /= "none") then
             call mpas_set_time(curr_time=stopTime, dateTimeString=config_stop_time, ierr=ierr)
             if(startTime + runduration /= stopTime) then
-               write(0,*) 'Warning: config_run_duration and config_stop_time are inconsitent: using config_run_duration.'
+               write(stderrUnit,*) 'Warning: config_run_duration and config_stop_time are inconsitent: using config_run_duration.'
             end if
          end if
       else if (trim(config_stop_time) /= "none") then
          call mpas_set_time(curr_time=stopTime, dateTimeString=config_stop_time, ierr=ierr)
          call mpas_create_clock(clock, startTime=startTime, timeStep=timeStep, stopTime=stopTime, ierr=ierr)
       else
-          write(0,*) 'Error: Neither config_run_duration nor config_stop_time were specified.'
+          write(stderrUnit,*) 'Error: Neither config_run_duration nor config_stop_time were specified.'
           call mpas_dmpar_abort(domain % dminfo)
       end if
 
@@ -247,9 +248,9 @@ module mpas_core
 
       call atm_compute_pgf_coefs(mesh)
 
-      write(0,*) 'min/max of meshScalingDel2 = ', minval(mesh % meshScalingDel2 % array(1:mesh%nEdges)), &
+      write(stderrUnit,*) 'min/max of meshScalingDel2 = ', minval(mesh % meshScalingDel2 % array(1:mesh%nEdges)), &
                                                   maxval(mesh % meshScalingDel2 % array(1:mesh%nEdges))
-      write(0,*) 'min/max of meshScalingDel4 = ', minval(mesh % meshScalingDel4 % array(1:mesh%nEdges)), &
+      write(stderrUnit,*) 'min/max of meshScalingDel4 = ', minval(mesh % meshScalingDel4 % array(1:mesh%nEdges)), &
                                                   maxval(mesh % meshScalingDel4 % array(1:mesh%nEdges))
 
       call atm_adv_coef_compression(mesh)
@@ -313,7 +314,7 @@ module mpas_core
 
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
          call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
-         write(0,*) 'Begin timestep ', trim(timeStamp)
+         write(stderrUnit,*) 'Begin timestep ', trim(timeStamp)
 
          ! Input external updates (i.e. surface)
          if (mpas_is_alarm_ringing(clock, sfcAlarmID, ierr=ierr)) then
@@ -726,10 +727,6 @@ module mpas_core
             cpl(3,iEdge) =  0.
 
          end do
-
-!         write(6,*) 'cpr1 = ',cpr(1,1),'  cpl1 = ',cpl(1,1)
-!         write(6,*) 'cpr2 = ',cpr(2,1),'  cpl2 = ',cpl(2,1)
-!         write(6,*) 'cpr3 = ',cpr(3,1),'  cpl3 = ',cpl(3,1)
 
       else
 

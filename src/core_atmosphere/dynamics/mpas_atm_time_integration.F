@@ -14,8 +14,9 @@ module atm_time_integration
    use mpas_dmpar
    use mpas_vector_reconstruction
    ! Added only clause to keep xlf90 from getting confused from the overloaded abs intrinsic in mpas_timekeeping
-   use mpas_timekeeping, only: MPAS_Time_type, MPAS_TimeInterval_type, &
-                               mpas_set_time, mpas_set_timeInterval, mpas_get_time, operator(+), add_t_ti
+   use mpas_timekeeping, only : MPAS_Time_type, MPAS_TimeInterval_type, &
+                                mpas_set_time, mpas_set_timeInterval, mpas_get_time, operator(+), add_t_ti
+   use mpas_io_units, only : stderrUnit
 
 #ifdef DO_PHYSICS
    use mpas_atmphys_driver_microphysics
@@ -51,8 +52,8 @@ module atm_time_integration
       if (trim(config_time_integration) == 'SRK3') then
          call atm_srk3(domain, dt, itimestep)
       else
-         write(0,*) 'Unknown time integration option '//trim(config_time_integration)
-         write(0,*) 'Currently, only ''SRK3'' is supported.'
+         write(stderrUnit,*) 'Unknown time integration option '//trim(config_time_integration)
+         write(stderrUnit,*) 'Currently, only ''SRK3'' is supported.'
          stop
       end if
 
@@ -124,7 +125,7 @@ module atm_time_integration
       number_sub_steps(2) = number_of_sub_steps/2
       number_sub_steps(3) = number_of_sub_steps
 
-      if(debug) write(0,*) ' copy step in rk solver '
+      if(debug) write(stderrUnit,*) ' copy step in rk solver '
 
 ! theta_m
       call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(1) % state % theta_m)
@@ -151,7 +152,7 @@ module atm_time_integration
 
       do rk_step = 1, 3  ! Runge-Kutta loop
 
-         if(debug) write(0,*) ' rk substep ', rk_step
+         if(debug) write(stderrUnit,*) ' rk substep ', rk_step
 
          block => domain % blocklist
          do while (associated(block))
@@ -161,16 +162,16 @@ module atm_time_integration
          end do
 
 
-         if (debug) write(0,*) ' compute_dyn_tend '
+         if (debug) write(stderrUnit,*) ' compute_dyn_tend '
          block => domain % blocklist
          do while (associated(block))
             call atm_compute_dyn_tend( block % tend, block % state % time_levs(2) % state, block % diag, block % mesh, rk_step, dt )
             block => block % next
          end do
-         if (debug) write(0,*) ' finished compute_dyn_tend '
+         if (debug) write(stderrUnit,*) ' finished compute_dyn_tend '
 
 #ifdef DO_PHYSICS
-         if (debug) write(0,*) ' add physics tendencies '
+         if (debug) write(stderrUnit,*) ' add physics tendencies '
          block => domain % blocklist
          do while (associated(block))
             call physics_addtend( block % mesh, &
@@ -183,10 +184,10 @@ module atm_time_integration
                          rk_step )
             block => block % next
          end do
-         if (debug) write(0,*) ' finished add physics tendencies '
+         if (debug) write(stderrUnit,*) ' finished add physics tendencies '
 #endif
 #ifdef CAM_DYCORE
-        write(0,*) 'Adding physics tendencies from CAM'
+        write(stderrUnit,*) 'Adding physics tendencies from CAM'
         block => domain % blocklist
         call cam_addtend( block % mesh, &
                      block % state % time_levs(1) % state, &
@@ -195,7 +196,7 @@ module atm_time_integration
                      block % tend_physics, &
                      block % state % time_levs(2) % state % rho_zz % array(:,:), &
                      block % diag % rho_edge % array(:,:) )
-        write(0,*) 'Finished adding physics tendencies from CAM'
+        write(stderrUnit,*) 'Finished adding physics tendencies from CAM'
 #endif
 
          !***********************************
@@ -220,7 +221,7 @@ module atm_time_integration
 
          do small_step = 1, number_sub_steps(rk_step)
 
-            if(debug) write(0,*) ' acoustic step ',small_step
+            if(debug) write(stderrUnit,*) ' acoustic step ',small_step
       
             block => domain % blocklist
             do while (associated(block))
@@ -229,7 +230,7 @@ module atm_time_integration
                block => block % next
             end do
 
-            if(debug) write(0,*) ' acoustic step complete '
+            if(debug) write(stderrUnit,*) ' acoustic step complete '
   
 ! rtheta_pp
 ! This is the only communications needed during the acoustic steps because we solve for u on all edges of owned cells
@@ -290,7 +291,7 @@ module atm_time_integration
 
          else
  
-            write(0,*) ' no scalar advection '
+            write(stderrUnit,*) ' no scalar advection '
 
          end if
 
@@ -300,7 +301,7 @@ module atm_time_integration
             block => block % next
          end do
 
-         if(debug) write(0,*) ' diagnostics complete '
+         if(debug) write(stderrUnit,*) ' diagnostics complete '
 
 ! w
          call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % w)
@@ -372,7 +373,7 @@ module atm_time_integration
 #endif
 
       102 format(' global min, max scalar',i4,2(1x,e17.10))
-      write(0,*)
+      write(stderrUnit,*)
       block => domain % blocklist
       do while (associated(block))
          scalar_min = 0.
@@ -385,7 +386,7 @@ module atm_time_integration
          end do
          call mpas_dmpar_min_real(domain%dminfo, scalar_min, global_scalar_min)
          call mpas_dmpar_max_real(domain%dminfo, scalar_max, global_scalar_max)
-         write(0,*) 'global min, max w ',global_scalar_min, global_scalar_max
+         write(stderrUnit,*) 'global min, max w ',global_scalar_min, global_scalar_max
 
          scalar_min = 0.
          scalar_max = 0.
@@ -397,7 +398,7 @@ module atm_time_integration
          end do
          call mpas_dmpar_min_real(domain%dminfo, scalar_min, global_scalar_min)
          call mpas_dmpar_max_real(domain%dminfo, scalar_max, global_scalar_max)
-         write(0,*) 'global min, max u ',global_scalar_min, global_scalar_max
+         write(stderrUnit,*) 'global min, max u ',global_scalar_min, global_scalar_max
 
          do iScalar = 1, block % state % time_levs(2) % state % num_scalars
             scalar_min = 0.
@@ -410,7 +411,7 @@ module atm_time_integration
             end do
             call mpas_dmpar_min_real(domain%dminfo, scalar_min, global_scalar_min)
             call mpas_dmpar_max_real(domain%dminfo, scalar_max, global_scalar_max)
-            write(0,102) iScalar,global_scalar_min,global_scalar_max
+            write(stderrUnit,102) iScalar,global_scalar_min,global_scalar_max
          end do
 
          block => block % next
@@ -815,7 +816,7 @@ module atm_time_integration
       ! acoustic step divergence damping - forward weight rtheta_pp - see Klemp et al MWR 2007
       rtheta_pp_old = rtheta_pp + smdiv*(rtheta_pp - rtheta_pp_old)
 
-      if (debug) write(0,*) ' updating ru_p '
+      if (debug) write(stderrUnit,*) ' updating ru_p '
 
       ! forward-backward acoustic step integration.
       ! begin by updating the horizontal velocity u, 
@@ -1411,7 +1412,7 @@ module atm_time_integration
                                                                                         
       else 
 
-         write(0,*) ' bad value for config_scalar_vadv_order - ', config_scalar_vadv_order
+         write(stderrUnit,*) ' bad value for config_scalar_vadv_order - ', config_scalar_vadv_order
 
       end if
 
@@ -1572,7 +1573,7 @@ module atm_time_integration
       num_scalars = 1
 
       do iScalar = 1, s_old % num_scalars
-         write(0,*) ' mono transport for scalar ',iScalar
+         write(stderrUnit,*) ' mono transport for scalar ',iScalar
 
          do iCell = 1, nCells
          do k = 1, nVertLevels
@@ -1590,7 +1591,7 @@ module atm_time_integration
                scmax = max(scmax,scalar_old(k,iCell))
             end do
             end do
-            write(0,*) ' scmin, scmin old in ',scmin,scmax
+            write(stderrUnit,*) ' scmin, scmin old in ',scmin,scmax
 
             scmin = scalar_new(1,1)
             scmax = scalar_new(1,1)
@@ -1600,7 +1601,7 @@ module atm_time_integration
                scmax = max(scmax,scalar_new(k,iCell))
             end do
             end do
-            write(0,*) ' scmin, scmin new in ',scmin,scmax
+            write(stderrUnit,*) ' scmin, scmin new in ',scmin,scmax
          end if
 
 
@@ -1836,8 +1837,8 @@ module atm_time_integration
                end if
             end do
             end do
-            write(0,*) ' scmin, scmax new out ',scmin,scmax
-            write(0,*) ' icell_min, k_min ',icellmax, kmax
+            write(stderrUnit,*) ' scmin, scmax new out ',scmin,scmax
+            write(stderrUnit,*) ' icell_min, k_min ',icellmax, kmax
 
          end if
 
@@ -2050,7 +2051,7 @@ module atm_time_integration
 
       prandtl_inv = 1.0_RKIND/prandtl
 
-      write(0,*) ' rk_step in compute_dyn_tend ',rk_step
+      write(stderrUnit,*) ' rk_step in compute_dyn_tend ',rk_step
 
 
       delsq_horiz_mixing = .false.
@@ -2081,9 +2082,9 @@ module atm_time_integration
          h_mom_eddy_visc4   = config_visc4_2dsmag * config_len_disp**3
          h_theta_eddy_visc4 = h_mom_eddy_visc4
          delsq_horiz_mixing = .true.
-         write(0,*) '... config_visc4_2dsmag = ', config_visc4_2dsmag
-         write(0,*) '... h_mom_eddy_visc4    = ', h_mom_eddy_visc4
-         write(0,*) '... h_theta_eddy_visc4  = ', h_theta_eddy_visc4
+         write(stderrUnit,*) '... config_visc4_2dsmag = ', config_visc4_2dsmag
+         write(stderrUnit,*) '... h_mom_eddy_visc4    = ', h_mom_eddy_visc4
+         write(stderrUnit,*) '... h_theta_eddy_visc4  = ', h_theta_eddy_visc4
       else if ( config_horiz_mixing == "2d_fixed") then
          h_mom_eddy_visc4   = config_h_mom_eddy_visc4
          h_theta_eddy_visc4 = config_h_theta_eddy_visc4

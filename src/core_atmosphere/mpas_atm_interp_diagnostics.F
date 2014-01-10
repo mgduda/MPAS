@@ -10,6 +10,7 @@
  use mpas_kind_types
  use mpas_grid_types
  use mpas_constants
+ use mpas_io_units, only : stderrUnit
 
  implicit none
  private
@@ -52,8 +53,8 @@
  
 !--------------------------------------------------------------------------------------------------
 
- write(0,*)
- write(0,*) '--- enter subroutine interp_diagnostics:'
+ write(stderrUnit,*)
+ write(stderrUnit,*) '--- enter subroutine interp_diagnostics:'
 
  nCells        = mesh % nCells
  nVertLevels   = mesh % nVertLevels
@@ -179,7 +180,7 @@
  diag % temperature_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % temperature_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % temperature_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate temperature:'
+ write(stderrUnit,*) '--- end interpolate temperature:'
 
 !... relative humidity:
  do iCell = 1, nCells
@@ -193,7 +194,7 @@
  diag % relhum_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % relhum_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % relhum_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate relative humidity:'
+ write(stderrUnit,*) '--- end interpolate relative humidity:'
 
 !... u zonal wind:
  do iCell = 1, nCells
@@ -207,7 +208,7 @@
  diag % uzonal_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % uzonal_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % uzonal_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate zonal wind:'
+ write(stderrUnit,*) '--- end interpolate zonal wind:'
 
 !... u meridional wind:
  do iCell = 1, nCells
@@ -221,7 +222,7 @@
  diag % umeridional_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % umeridional_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % umeridional_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate meridional wind:'
+ write(stderrUnit,*) '--- end interpolate meridional wind:'
 
  if(allocated(field_in)) deallocate(field_in)
  if(allocated(press_in)) deallocate(press_in)
@@ -249,7 +250,7 @@
  diag % height_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % height_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % height_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate height:'
+ write(stderrUnit,*) '--- end interpolate height:'
  
 !... vertical velocity
  do iCell = 1, nCells
@@ -263,7 +264,7 @@
  diag % w_500hPa % array(1:nCells) = field_interp(1:nCells,2)
  diag % w_700hPa % array(1:nCells) = field_interp(1:nCells,3)
  diag % w_850hPa % array(1:nCells) = field_interp(1:nCells,4)
- write(0,*) '--- end interpolate vertical velocity:'
+ write(stderrUnit,*) '--- end interpolate vertical velocity:'
  
  if(allocated(field_interp)) deallocate(field_interp)
  if(allocated(press_interp)) deallocate(press_interp)
@@ -303,7 +304,7 @@
  diag % vorticity_500hPa % array(1:nVertices) = field_interp(1:nVertices,2)
  diag % vorticity_700hPa % array(1:nVertices) = field_interp(1:nVertices,3)
  diag % vorticity_850hPa % array(1:nVertices) = field_interp(1:nVertices,4)
- write(0,*) '--- end interpolate relative vorticity:'
+ write(stderrUnit,*) '--- end interpolate relative vorticity:'
 
  if(allocated(field_interp)) deallocate(field_interp)
  if(allocated(press_interp)) deallocate(press_interp)
@@ -344,16 +345,16 @@
 !formats:
 ! 201 format(i5,8(1x,e15.8))
 
-!write(0,*)
-!write(0,*) '--- enter subroutine interp_tofixed_pressure:'
-!write(0,*) '... ncol     = ',ncol
-!write(0,*) '... nlev_in  = ',nlev_in
-!write(0,*) '... nlev_out = ',nlev_out
+!write(stderrUnit,*)
+!write(stderrUnit,*) '--- enter subroutine interp_tofixed_pressure:'
+!write(stderrUnit,*) '... ncol     = ',ncol
+!write(stderrUnit,*) '... nlev_in  = ',nlev_in
+!write(stderrUnit,*) '... nlev_out = ',nlev_out
 !i1=1 ; i2=ncol
 !do k = 1, nlev_in
-!   write(0,201) k,pres_in(i1,k),field_in(i1,k),pres_in(i2,k),field_in(i2,k)
+!   write(stderrUnit,201) k,pres_in(i1,k),field_in(i1,k),pres_in(i2,k),field_in(i2,k)
 !enddo
-!write(0,*)
+!write(stderrUnit,*)
 
  do icol = 1, ncol
     kupper(icol) = 1
@@ -372,7 +373,7 @@
           if(pres_out(icol,k).gt.pres_in(icol,kk).and.pres_out(icol,k).le.pres_in(icol,kk+1)) then
              kupper(icol) = kk
              kount = kount + 1
-!            write(0,201) kupper(icol),pres_out(icol,k),pres_in(icol,kk),pres_in(icol,kk+1)
+!            write(stderrUnit,201) kupper(icol),pres_out(icol,k),pres_in(icol,kk),pres_in(icol,kk+1)
           endif
        enddo
 
@@ -401,9 +402,9 @@
     enddo
 
  35 continue
-!   write(0,201) kupper(i1),pres_out(i1,k),pres_in(i1,kupper(i1)),pres_in(i1,kupper(i1)+1), &
+!   write(stderrUnit,201) kupper(i1),pres_out(i1,k),pres_in(i1,kupper(i1)),pres_in(i1,kupper(i1)+1), &
 !                field_out(i1,k),field_in(i1,kupper(i1)),field_in(i1,kupper(i1)+1)
-!   write(0,201) kupper(i2),pres_out(i2,k),pres_in(i2,kupper(i2)),pres_in(i2,kupper(i2)+1), &
+!   write(stderrUnit,201) kupper(i2),pres_out(i2,k),pres_in(i2,kupper(i2)),pres_in(i2,kupper(i2)+1), &
 !                field_out(i2,k),field_in(i2,kupper(i2)),field_in(i2,kupper(i2)+1)
 
  enddo

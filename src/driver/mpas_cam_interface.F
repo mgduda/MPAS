@@ -7,6 +7,7 @@ module mpas_cam_interface
    use mpas_dmpar
    use mpas_constants
    use mpas_core
+   use mpas_io_units, only : stdoutUnit, stderrUnit
 
 
 #ifdef CAM_DYCORE
@@ -51,7 +52,7 @@ module mpas_cam_interface
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
       real (kind=RKIND), dimension(:,:), pointer :: east, north
 
-      write(0,*) 'Called MPAS_INIT1'
+      write(stderrUnit,*) 'Called MPAS_INIT1'
 
       pio_subsystem => shr_pio_getiosys('ATM')
 
@@ -122,7 +123,7 @@ module mpas_cam_interface
 
       integer, intent(out) :: nCellsGlobal, nEdgesGlobal, nVerticesGlobal, maxEdges
 
-      write(0,*) 'Called MPAS_GLOBAL_DIMENSIONS()'
+      write(stderrUnit,*) 'Called MPAS_GLOBAL_DIMENSIONS()'
 
       call mpas_dmpar_sum_int(domain % dminfo, domain % blocklist % mesh % nCellsSolve, nCellsGlobal)
       call mpas_dmpar_sum_int(domain % dminfo, domain % blocklist % mesh % nEdgesSolve, nEdgesGlobal)
@@ -166,7 +167,7 @@ module mpas_cam_interface
       integer, dimension(:), pointer :: itemp, itemp2
       real (kind=RKIND), dimension(:), pointer :: rtemp
 
-      write(0,*) 'Called MPAS_GLOBAL_COORDINATES()'
+      write(stderrUnit,*) 'Called MPAS_GLOBAL_COORDINATES()'
 
       indexToCellID => domain % blocklist % mesh % indexToCellID % array
       indexToVertexID => domain % blocklist % mesh % indexToVertexID % array
@@ -287,13 +288,13 @@ module mpas_cam_interface
       integer :: i
       integer, dimension(:), allocatable :: temp
 
-      write(0,*) 'Called MPAS_DECOMP()'
+      write(stderrUnit,*) 'Called MPAS_DECOMP()'
 
       !
       !  Perform basic sanity check on expected and available field dimensions
       !
       if (npes /= domain % dminfo % nprocs ) then
-         write(0,*) 'Error: mismatch between npes and nprocs: ', npes, domain % dminfo % nprocs
+         write(stderrUnit,*) 'Error: mismatch between npes and nprocs: ', npes, domain % dminfo % nprocs
          return
       end if
 
@@ -396,7 +397,7 @@ module mpas_cam_interface
       integer :: index_qv
       character (len=StrKIND) :: initialTimeStamp
    
-      write(0,*) 'Called MPAS_INIT2' 
+      write(stderrUnit,*) 'Called MPAS_INIT2' 
 
 
       ! Compute diagnostic fields needed in solve loop, and initialize
@@ -468,7 +469,7 @@ module mpas_cam_interface
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
       type (block_type), pointer :: block
 
-      write(0,*) 'Called MPAS_TO_CAM'
+      write(stderrUnit,*) 'Called MPAS_TO_CAM'
 
 
       block => domain % blocklist
@@ -480,15 +481,15 @@ module mpas_cam_interface
       !  Perform basic sanity check on expected and available field dimensions
       !
       if (Numcols /= block % mesh % nCellsSolve) then
-         write(0,*) 'Error: mismatch between Numcols and nCellsSolve: ', Numcols, block % mesh % nCellsSolve
+         write(stderrUnit,*) 'Error: mismatch between Numcols and nCellsSolve: ', Numcols, block % mesh % nCellsSolve
          return
       end if
       if (Plev /= block % mesh % nVertLevels) then
-         write(0,*) 'Error: mismatch between Plev and nVertLevels: ', Plev, block % mesh % nVertLevels
+         write(stderrUnit,*) 'Error: mismatch between Plev and nVertLevels: ', Plev, block % mesh % nVertLevels
          return
       end if
       if (Pcnst /= block % state % time_levs(1) % state % num_scalars) then
-         write(0,*) 'Error: mismatch between Pcnst and num_scalars: ', Pcnst, block % state % time_levs(1) % state % num_scalars
+         write(stderrUnit,*) 'Error: mismatch between Pcnst and num_scalars: ', Pcnst, block % state % time_levs(1) % state % num_scalars
          return
       end if
 
@@ -544,57 +545,57 @@ module mpas_cam_interface
          end do
       end do 
 
-write(0,*) '<- MPAS DEBUGGING: MIN  uReconstructZonal=', minval(Ux)
-write(0,*) '<- MPAS DEBUGGING: MAX  uReconstructZonal=', maxval(Ux)
-write(0,*) '<- MPAS DEBUGGING: MEAN uReconstructZonal=', sum(Ux)/real(size(UX))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  uReconstructZonal=', minval(Ux)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  uReconstructZonal=', maxval(Ux)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN uReconstructZonal=', sum(Ux)/real(size(UX))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  uReconstructMeridional=', minval(Uy)
-write(0,*) '<- MPAS DEBUGGING: MAX  uReconstructMeridional=', maxval(Uy)
-write(0,*) '<- MPAS DEBUGGING: MEAN uReconstructMeridional=', sum(Uy)/real(size(Uy))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  uReconstructMeridional=', minval(Uy)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  uReconstructMeridional=', maxval(Uy)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN uReconstructMeridional=', sum(Uy)/real(size(Uy))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Psd=', minval(Psd)
-write(0,*) '<- MPAS DEBUGGING: MAX  Psd=', maxval(Psd)
-write(0,*) '<- MPAS DEBUGGING: MEAN Psd=', sum(Psd)/real(size(Psd))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Psd=', minval(Psd)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Psd=', maxval(Psd)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Psd=', sum(Psd)/real(size(Psd))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Phis=', minval(Phis)
-write(0,*) '<- MPAS DEBUGGING: MAX  Phis=', maxval(Phis)
-write(0,*) '<- MPAS DEBUGGING: MEAN Phis=', sum(Phis)/real(size(Phis))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Phis=', minval(Phis)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Phis=', maxval(Phis)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Phis=', sum(Phis)/real(size(Phis))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Pint=', minval(Pint)
-write(0,*) '<- MPAS DEBUGGING: MAX  Pint=', maxval(Pint)
-write(0,*) '<- MPAS DEBUGGING: MEAN Pint=', sum(Pint)/real(size(Pint))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Pint=', minval(Pint)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Pint=', maxval(Pint)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Pint=', sum(Pint)/real(size(Pint))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Pmid=', minval(Pmid)
-write(0,*) '<- MPAS DEBUGGING: MAX  Pmid=', maxval(Pmid)
-write(0,*) '<- MPAS DEBUGGING: MEAN Pmid=', sum(Pmid)/real(size(Pmid))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Pmid=', minval(Pmid)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Pmid=', maxval(Pmid)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Pmid=', sum(Pmid)/real(size(Pmid))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Zint=', minval(Zint)
-write(0,*) '<- MPAS DEBUGGING: MAX  Zint=', maxval(Zint)
-write(0,*) '<- MPAS DEBUGGING: MEAN Zint=', sum(Zint)/real(size(Zint))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Zint=', minval(Zint)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Zint=', maxval(Zint)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Zint=', sum(Zint)/real(size(Zint))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Zmid=', minval(Zmid)
-write(0,*) '<- MPAS DEBUGGING: MAX  Zmid=', maxval(Zmid)
-write(0,*) '<- MPAS DEBUGGING: MEAN Zmid=', sum(Zmid)/real(size(Zmid))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Zmid=', minval(Zmid)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Zmid=', maxval(Zmid)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Zmid=', sum(Zmid)/real(size(Zmid))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  T=', minval(T)
-write(0,*) '<- MPAS DEBUGGING: MAX  T=', maxval(T)
-write(0,*) '<- MPAS DEBUGGING: MEAN T=', sum(T)/real(size(T))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  T=', minval(T)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  T=', maxval(T)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN T=', sum(T)/real(size(T))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Omega=', minval(Omega)
-write(0,*) '<- MPAS DEBUGGING: MAX  Omega=', maxval(Omega)
-write(0,*) '<- MPAS DEBUGGING: MEAN Omega=', sum(Omega)/real(size(Omega))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Omega=', minval(Omega)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Omega=', maxval(Omega)
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Omega=', sum(Omega)/real(size(Omega))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Tracer1=', minval(Tracer(:,:,1))
-write(0,*) '<- MPAS DEBUGGING: MAX  Tracer1=', maxval(Tracer(:,:,1))
-write(0,*) '<- MPAS DEBUGGING: MEAN Tracer1=', sum(Tracer(:,:,1))/real(size(Tracer(:,:,1)))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Tracer1=', minval(Tracer(:,:,1))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Tracer1=', maxval(Tracer(:,:,1))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Tracer1=', sum(Tracer(:,:,1))/real(size(Tracer(:,:,1)))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Tracer2=', minval(Tracer(:,:,2))
-write(0,*) '<- MPAS DEBUGGING: MAX  Tracer2=', maxval(Tracer(:,:,2))
-write(0,*) '<- MPAS DEBUGGING: MEAN Tracer2=', sum(Tracer(:,:,2))/real(size(Tracer(:,:,2)))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Tracer2=', minval(Tracer(:,:,2))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Tracer2=', maxval(Tracer(:,:,2))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Tracer2=', sum(Tracer(:,:,2))/real(size(Tracer(:,:,2)))
 
-write(0,*) '<- MPAS DEBUGGING: MIN  Tracer3=', minval(Tracer(:,:,3))
-write(0,*) '<- MPAS DEBUGGING: MAX  Tracer3=', maxval(Tracer(:,:,3))
-write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Tracer(:,:,3)))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MIN  Tracer3=', minval(Tracer(:,:,3))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MAX  Tracer3=', maxval(Tracer(:,:,3))
+write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Tracer(:,:,3)))
 
    end subroutine mpas_to_cam
    
@@ -634,7 +635,7 @@ write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Trac
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars, scalars_tend
       type (block_type), pointer :: block
 
-      write(0,*) 'Called CAM_TO_MPAS'
+      write(stderrUnit,*) 'Called CAM_TO_MPAS'
 
       block => domain % blocklist
 
@@ -645,15 +646,15 @@ write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Trac
       !  Perform basic sanity check on expected and available field dimensions
       !
       if (Numcols /= block % mesh % nCellsSolve) then
-         write(0,*) 'Error: mismatch between Numcols and nCellsSolve: ', Numcols, block % mesh % nCellsSolve
+         write(stderrUnit,*) 'Error: mismatch between Numcols and nCellsSolve: ', Numcols, block % mesh % nCellsSolve
          return
       end if
       if (Plev /= block % mesh % nVertLevels) then
-         write(0,*) 'Error: mismatch between Plev and nVertLevels: ', Plev, block % mesh % nVertLevels
+         write(stderrUnit,*) 'Error: mismatch between Plev and nVertLevels: ', Plev, block % mesh % nVertLevels
          return
       end if
       if (Pcnst /= block % state % time_levs(1) % state % num_scalars) then
-         write(0,*) 'Error: mismatch between Pcnst and num_scalars: ', Pcnst, block % state % time_levs(1) % state % num_scalars
+         write(stderrUnit,*) 'Error: mismatch between Pcnst and num_scalars: ', Pcnst, block % state % time_levs(1) % state % num_scalars
          return
       end if
 
@@ -731,25 +732,25 @@ write(0,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(size(Trac
       call mpas_dmpar_exch_halo_field(block % tend_physics % u)
       call mpas_dmpar_exch_halo_field(block % tend_physics % scalars)
 
-write(0,*) '-> MPAS DEBUGGING: MIN  u_tend=', minval(u_tend(:,1:block % mesh % nEdges))
-write(0,*) '-> MPAS DEBUGGING: MAX  u_tend=', maxval(u_tend(:,1:block % mesh % nEdges))
-write(0,*) '-> MPAS DEBUGGING: MEAN u_tend=', sum(u_tend(:,1:block % mesh % nEdges))/real(size(u_tend(:,1:block % mesh % nEdges)))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MIN  u_tend=', minval(u_tend(:,1:block % mesh % nEdges))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MAX  u_tend=', maxval(u_tend(:,1:block % mesh % nEdges))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MEAN u_tend=', sum(u_tend(:,1:block % mesh % nEdges))/real(size(u_tend(:,1:block % mesh % nEdges)))
 
-write(0,*) '-> MPAS DEBUGGING: MIN  theta_tend=', minval(theta_tend(:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MAX  theta_tend=', maxval(theta_tend(:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MEAN theta_tend=', sum(theta_tend(:,1:block % mesh % nCells))/real(size(theta_tend(:,1:block % mesh % nCells)))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MIN  theta_tend=', minval(theta_tend(:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MAX  theta_tend=', maxval(theta_tend(:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MEAN theta_tend=', sum(theta_tend(:,1:block % mesh % nCells))/real(size(theta_tend(:,1:block % mesh % nCells)))
 
-write(0,*) '-> MPAS DEBUGGING: MIN  qv_tend=', minval(scalars_tend(1,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MAX  qv_tend=', maxval(scalars_tend(1,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MEAN qv_tend=', sum(scalars_tend(1,:,1:block % mesh % nCells))/real(size(scalars_tend(1,:,1:block % mesh % nCells)))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MIN  qv_tend=', minval(scalars_tend(1,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MAX  qv_tend=', maxval(scalars_tend(1,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MEAN qv_tend=', sum(scalars_tend(1,:,1:block % mesh % nCells))/real(size(scalars_tend(1,:,1:block % mesh % nCells)))
 
-write(0,*) '-> MPAS DEBUGGING: MIN  qc_tend=', minval(scalars_tend(2,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MAX  qc_tend=', maxval(scalars_tend(2,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MEAN qc_tend=', sum(scalars_tend(2,:,1:block % mesh % nCells))/real(size(scalars_tend(2,:,1:block % mesh % nCells)))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MIN  qc_tend=', minval(scalars_tend(2,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MAX  qc_tend=', maxval(scalars_tend(2,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MEAN qc_tend=', sum(scalars_tend(2,:,1:block % mesh % nCells))/real(size(scalars_tend(2,:,1:block % mesh % nCells)))
 
-write(0,*) '-> MPAS DEBUGGING: MIN  qr_tend=', minval(scalars_tend(3,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MAX  qr_tend=', maxval(scalars_tend(3,:,1:block % mesh % nCells))
-write(0,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % mesh % nCells))/real(size(scalars_tend(3,:,1:block % mesh % nCells)))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MIN  qr_tend=', minval(scalars_tend(3,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MAX  qr_tend=', maxval(scalars_tend(3,:,1:block % mesh % nCells))
+write(stderrUnit,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % mesh % nCells))/real(size(scalars_tend(3,:,1:block % mesh % nCells)))
    
    end subroutine cam_to_mpas
    
@@ -772,7 +773,7 @@ write(0,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % me
       integer :: ierr
       integer :: idynstep
 
-      write(0,*) 'Called MPAS_DYN_RUN'
+      write(stderrUnit,*) 'Called MPAS_DYN_RUN'
 
       
       ! Eventually, dt should be domain specific
@@ -780,12 +781,12 @@ write(0,*) '-> MPAS DEBUGGING: MEAN qr_tend=', sum(scalars_tend(3,:,1:block % me
       
       ! During integration, time level 1 stores the model state at the beginning of the
       !   time step, and time level 2 stores the state advanced dt_dynamics in time by timestep(...)
-write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
+write(stderrUnit,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
       do idynstep=1,n_subcycle_steps
       
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
          call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)
-         write(0,*) 'Begin timestep ', trim(timeStamp)
+         write(stderrUnit,*) 'Begin timestep ', trim(timeStamp)
          
          ! Input external updates (i.e. surface)
          if (mpas_is_alarm_ringing(clock, sfcAlarmID, ierr=ierr)) then
@@ -852,7 +853,7 @@ write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
 
       type (file_desc_t), intent(inout) :: PIOFileDesc
    
-      write(0,*) 'Called MPAS_INIT_RESTART'
+      write(stderrUnit,*) 'Called MPAS_INIT_RESTART'
 
       cam_restart_obj % stream = RESTART
 
@@ -873,7 +874,7 @@ write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
 
       type (file_desc_t), intent(inout) :: PIOFileDesc
    
-      write(0,*) 'Called MPAS_WRITE_RESTART'
+      write(stderrUnit,*) 'Called MPAS_WRITE_RESTART'
 
       call mpas_output_state_for_domain(cam_restart_obj, domain, 1)
       call mpas_io_output_finalize(cam_restart_obj, domain % dminfo)
@@ -892,7 +893,7 @@ write(0,*) 'MGD running dynamics for n_subcycle_steps=',n_subcycle_steps
    
       implicit none
    
-      write(0,*) 'Called MPAS_FINAL'
+      write(stderrUnit,*) 'Called MPAS_FINAL'
 
       call mpas_output_state_finalize(output_obj, domain % dminfo)
 
