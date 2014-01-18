@@ -463,11 +463,13 @@ module mpas_cam_interface
 
       integer :: iCell, k, iScalar
       integer :: index_qv
+      real (kind=RKIND) :: z0, z1, z2, w1, w2, rho_a
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
       real (kind=RKIND), dimension(:,:), pointer :: theta, pressure_base, pressure_p, ww, uReconstZonal, uReconstMeridional, east, north
       real (kind=RKIND), dimension(:,:), pointer :: w, rho_p, rho_base, zz
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
       type (block_type), pointer :: block
+
 
       write(stderrUnit,*) 'Called MPAS_TO_CAM'
 
@@ -504,38 +506,65 @@ module mpas_cam_interface
       rho_p => block % diag % rho_p % array
       rho_base => block % diag % rho_base % array
 
+
       !
       ! Fill in CAM arrays from block % state % time_levs(1) % state arrays
       !
       do iCell=1,block % mesh % nCellsSolve
-         Psd(iCell) = block % diag % surface_pressure % array(iCell)
-         Phis(iCell) = block % mesh % zgrid % array(1,iCell) * 9.81
+
+         Phis(iCell) = block % mesh % zgrid % array(1,iCell) * gravity
+
          do k=1,block % mesh % nVertLevels
             theta(k,iCell) = block % state % time_levs(1) % state % theta_m % array(k,iCell) &
                              / (1.0 + 1.61 * scalars(index_qv,k,iCell)) 
             T(iCell,k) = theta(k,iCell) * ((pressure_base(k,iCell)+pressure_p(k,iCell)) / p0) ** (rgas/cp)
-            Pmid(iCell,k) = pressure_base(k,iCell)+pressure_p(k,iCell)
-            if (k == 1) then
-               Pint(iCell,k) = Psd(iCell)
-            else
-               Pint(iCell,k) = block % mesh % fzm % array(k) * Pmid(iCell,k-1) + &
-                               block % mesh % fzp % array(k) * Pmid(iCell,k)
-            end if
+
             Zint(iCell,k) = block % mesh % zgrid % array(k,iCell)
             Zmid(iCell,k) = 0.5*(block % mesh % zgrid % array(k,iCell) + block % mesh % zgrid % array(k+1,iCell))
 
-!            Omega(iCell,k) = 0.5*(ww(k,iCell) + ww(k+1,iCell))
             Omega(iCell,k) = -1.0 * gravity * (rho_p(k,iCell)+rho_base(k,iCell)) * zz(k,iCell) * (w(k,iCell)+w(k+1,iCell))
+
             !
             ! NOTE: Eventually, we need to ensure that the moisture variables we return to CAM
             !       are what CAM expects, rather than simply what we have in our scalars array
             !
             do iScalar=1,block % state % time_levs(1) % state % num_scalars
-               Tracer(iCell,k,iScalar) = scalars(iScalar,k,iCell) / (1.0 + scalars(index_qv,k,iCell))
+               Tracer(iCell,k,iScalar) = scalars(iScalar,k,iCell)
             end do
          end do
+
          Zint(iCell,Plev+1) = block % mesh % zgrid % array(Plev+1,iCell)
-         Pint(iCell,Plev+1) = Pmid(iCell,Plev) + (Pmid(iCell,Plev) - Pint(iCell,Plev))
+
+      end do
+
+      k = block % mesh % nVertLevels + 1
+      do iCell = 1,block % mesh % nCellsSolve
+         z0 = Zint(iCell,k)
+         z1 = 0.5*(Zint(iCell,k)   + Zint(iCell,k-1)) 
+         z2 = 0.5*(Zint(iCell,k-1) + Zint(iCell,k-2))
+         w1 = (z0-z2)/(z1-z2)
+         w2 = 1.0 - w1
+
+         !use log of pressure to avoid occurrences of negative top-of-the-model pressure.
+         Pint(iCell,k) = exp(w1*log(pressure_base(k-1,iCell)+pressure_p(k-1,iCell)) &
+                            +w2*log(pressure_base(k-2,iCell)+pressure_p(k-2,iCell)))
+      end do
+
+      do iCell = 1,block % mesh % nCellsSolve
+
+         !pressure at w-points:
+         do k = block % mesh % nVertLevels,1,-1
+             rho_a = (rho_p(k,iCell) + rho_base(k,iCell)) * zz(k,iCell)
+             Pint(iCell,k) = Pint(iCell,k+1) + gravity*rho_a*(Zint(iCell,k+1) - Zint(iCell,k))
+         end do                                                                                              
+
+         !pressure at theta-points:
+         do k = block % mesh % nVertLevels,1,-1
+             Pmid(iCell,k) = 0.5*(Pint(iCell,k+1) + Pint(iCell,k))
+         end do
+
+         !surface pressure:
+         Psd(iCell) = Pint(iCell,1)
       end do
 
       do iCell=1,block % mesh % nCellsSolve
@@ -704,23 +733,17 @@ write(stderrUnit,*) '<- MPAS DEBUGGING: MEAN Tracer3=', sum(Tracer(:,:,3))/real(
 
       do iCell=1,block % mesh % nCellsSolve
          do k=1,block % mesh % nVertLevels
+
             theta_tend(k,iCell) = T_tend(iCell,k) * (p0 / (pressure_base(k,iCell)+pressure_p(k,iCell))) ** (rgas/cp)
             
-            ! Couple theta tendency with h valid at time when tendency was computed
-!            theta_tend(k,iCell) = theta_tend(k,iCell) * h(k,iCell) 
-
             !
             ! NOTE: Once we begin to use more than just qv in MPAS, we need to make sure to
             !       properly assign variables from Tracer array provided from CAM physics
             !
             do iScalar=1,block % state % time_levs(1) % state % num_scalars
-               scalars_tend(iScalar,k,iCell) = (Tracer(iCell,k,iScalar) * (1.0 + Tracer(iCell,k,index_qv)) &
-                                              - scalars(iScalar,k,iCell)&
-                                               ) / dt_physics
-
-               ! Couple scalar tendencies with h valid at time when tendencies were computed
-!               scalars_tend(iScalar,k,iCell) = scalars_tend(iScalar,k,iCell) * h(k,iCell) 
+               scalars_tend(iScalar,k,iCell) = ( Tracer(iCell,k,iScalar) - scalars(iScalar,k,iCell) ) / dt_physics
             end do
+
          end do
       end do
 
