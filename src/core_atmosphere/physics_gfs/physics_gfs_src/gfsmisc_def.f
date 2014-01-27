@@ -26,4 +26,5 @@
       real (kind=kind_phys), allocatable :: phy_f3d(:,:,:,:), 
      &     phy_f2d(:,:,:), ddy(:), fscav(:)
 #endif
+      real (kind=kind_phys), allocatable :: fscav(:)
       end module gfsmisc_def

@@ -95,17 +95,6 @@
 
       logical :: flag(im)
 
-      write(0,*) '--- subroutine sfc_ocean:'
-      101 format(i8,15(1x,e15.8))
-      do i = 1, im
-         if(i.eq.192 .or. i.eq.377) then
-            write(0,101) i,ps(i),u1(i),v1(i),t1(i),q1(i),tskin(i),cm(i),ch(i),prsl1(i), &
-                         prslki(i),slimsk(i),ddvel(i)
-         endif
-      enddo
-
-
-
 !
 !===> ...  begin here
 !
@@ -154,9 +143,6 @@
           tem      = 1.0 / rho
           hflx(i)  = hflx(i) * tem * cpinv
           evap(i)  = evap(i) * tem * hvapi
-
-          if(i.eq.192 .or. i.eq.377) &
-             write(0,101) i,slimsk(i),cmm(i),chh(i),hflx(i),evap(i),qsurf(i),hflx(i),evap(i)
 
         endif
       enddo

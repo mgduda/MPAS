@@ -73,10 +73,6 @@ C  PS IS IN PASCALS
 C  WIND IS WIND SPEED, THETA1 IS ADIABATIC SURFACE TEMP FROM LEVEL 1
 C  SURFACE ROUGHNESS LENGTH IS CONVERTED TO M FROM CM
 C
-
-      write(0,*)
-      write(0,*) '.... enter subbroutine sfc_diff:'
-
       DO I=1,IM
         if(flag_iter(i)) then 
 !**       TSURF(I)  = TSKIN(I)                 !! <---- Clu_q2m_iter [-1L]
@@ -205,10 +201,6 @@ C
           FMS    = FM(I) - PM(I)
           FHS    = FH(I) - PH(I)
           HL1(I) = FMS * FMS * RB(I) / FHS
-          if(i.eq.192) then
-             write(0,*) '... stable case:'
-             write(0,101) i,aa0,aa,bb0,bb,pm(i),ph(i)
-          endif
         ENDIF
        endif
       ENDDO
@@ -233,12 +225,6 @@ C
 C         AA      = SQRT(1. + 4. * ALPHA * HL12(I))
           BB      = SQRT(1. + 4. * ALPHA * HL12(I))
           PH2(I)  = BB0 - BB + LOG((BB + 1.) / (BB0 + 1.))
-          if(i.eq.192) then
-             write(0,*) '... second iteration:'
-             write(0,101) i,alpha,z0max(i),ztmax(i),z1i(i),
-     +                   hl1(i),hl0,hlt
-             write(0,101) i,aa0,aa,bb0,bb,pm(i),ph(i)
-          endif
         ENDIF
        endif
       ENDDO
@@ -280,10 +266,6 @@ C
           HL12(I) = HL1(I) * 2. * Z1I(I)
           PH2(I)  = (A0P + A1P * HL12(I)) * HL12(I)
      &            / (1. + B1P * HL12(I) + B2P * HL12(I) * HL12(I))
-          if(i.eq.192) then
-             write(0,*) '... case 1:'
-             write(0,101) i,pm(i),ph(i)
-          endif
         ENDIF
         IF(DTV(I).LT.0.AND.HLINF(I).LT.-.5) THEN
           HL1(I)  = -HLINF(I)
@@ -293,16 +275,9 @@ C
           PM10(I) = LOG(HL110) + 2. * HL110 ** (-.25) - .8776
           HL12(I) = HL1(I) * 2. * Z1I(I)
           PH2(I)  = LOG(HL12(I)) + .5 * HL12(I) ** (-.5) + 1.386
-          if(i.eq.192) then
-             write(0,*) '... case 2:'
-             write(0,101) i,pm(i),ph(i)
-          endif
         ENDIF
        endif
-!      write(0,101) i,pm(i),ph(i)
       ENDDO
- 101  format(i8,3(1x,e15.8))
-      stop
 C
 C  FINISH THE EXCHANGE COEFFICIENT COMPUTATION TO PROVIDE FM AND FH
 C

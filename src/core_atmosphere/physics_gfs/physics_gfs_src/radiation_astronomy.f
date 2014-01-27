@@ -632,7 +632,7 @@
       nstp = 6                               ! number of cosz calc per fcst hour
 !     nstp = max(6, min(10, nint(3600.0/deltim) ))  ! for better time step sync
       istp = nint( dtswav*nstp )             ! total num of calc in dtswav interval
-
+      istp  = max(istp,1)
 !     pid12 = con_pi / 12.0                  ! angle per hour
       pid12 = (2.0 * asin(1.0)) / 12.0
 

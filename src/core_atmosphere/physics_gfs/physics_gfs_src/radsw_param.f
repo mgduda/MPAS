@@ -153,7 +153,8 @@
 
       integer, parameter :: NSWSTR = 1
       integer, parameter :: NSWEND = NBANDS
-      integer, parameter :: NBDSW  = NBANDS
+!     integer, parameter :: NBDSW  = NBANDS
+      integer, parameter, public :: NBDSW  = NBANDS
 
 !  ---  number of g-point in each band
       integer  :: NG16, NG17, NG18, NG19, NG20, NG21, NG22,             &

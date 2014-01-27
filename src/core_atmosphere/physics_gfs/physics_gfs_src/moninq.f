@@ -865,16 +865,6 @@ c
           ad(i,k+1) = 1.-al(i,k)
         enddo
       enddo
-      write(0,*)
-      do i = 1,1
-      do k = 1,km1
-         write(0,100) i,k,a1(i,k),a2(i,k),ad(i,k),au(i,k),spd1(i)
-      enddo
-      write(0,*)
-      enddo
-  100 format(i8,i4,5(1x,e15.8))
-      stop
-
 !
 !     solve tridiagonal problem for momentum
 !

@@ -24,6 +24,8 @@ ifeq ($(PHYSICS),-DDO_PHYSICS_GFS)
 physcore:
 	( cd physics_gfs; $(MAKE) all )
 	( mkdir libphys; cd libphys; ar -x ../physics_gfs/libphys.a )
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_gfs/physics_gfs_files/*.f77 .)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_gfs/physics_gfs_files/global_climaeropac_global.txt aerosol.dat)
 endif
 endif
 
@@ -57,18 +59,24 @@ else
 	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I./physics -I./dynamics -I./physics/physics_wrf -I../external/esmf_time_f90
 endif
 
+else
+
 ifeq ($(PHYSICS),-DDO_PHYSICS_GFS)
 clean:
 	( cd physics_gfs; $(MAKE) clean )
 	( cd dynamics; $(MAKE) clean )
+	( cd ../..; rm -f *.f77 )
+	( cd ../..; rm -f *.dat )
 	$(RM) -r libphys
 	$(RM) *.o *.mod *.f90 libdycore.a
 
 .F.o:
 	$(RM) $@ $*.mod
+ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(PHYSICS) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I./physics_gfs -I./dynamics -I./physics_gfs/physics_gfs_lib -I../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I./physics_gfs -I./dynamics -I./physics_gfs/physics_gfs_lib -I./physics_gfs/physics_gfs_src -I../external/esmf_time_f90
+else
+	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I./physics_gfs -I./dynamics -I./physics_gfs/physics_gfs_lib -I./physics_gfs/physics_gfs_src -I../external/esmf_time_f90
 endif
-
 endif
-
+endif

@@ -1,3 +1,4 @@
+#if !defined(mpas)
       SUBROUTINE setindxoz(latd,nlats,global_lats_r,
      &                     jindx1,jindx2,ddy)
 !
@@ -136,7 +137,7 @@ cyt   if(me.eq.0) print*,'completed setindxoz for nasa prod. and diss'
 !
       RETURN
       END
-
+#endif
 !------------------------------------------------------
 !---interpoltion on unstructured grid array 
 !--Fanglin Yang, September 2012

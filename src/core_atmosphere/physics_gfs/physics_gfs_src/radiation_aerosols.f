@@ -350,6 +350,8 @@
 
       data volcano_file / 'volcanic_aerosols_1850-1859.txt ' /
 
+      write(0,*) '--- subroutine aerinit:'
+
 !===>  ...  begin here
 
       isw = mod(IAER,10)                ! trop-aer scheme for sw
@@ -467,6 +469,8 @@
         endif     ! end if_IAER_block
 
       endif       ! end if_me_block
+      write(0,*) '--- end me_block:'
+
 
 !  --- ...  tropospheric aerosol initialization
 
@@ -506,6 +510,7 @@
         endif                          ! end if_iaerflg_block
 
       endif    ! end if_IAER_block
+      write(0,*) '--- end i_aer_block'
 
 !  --- ...  stratosperic volcanic aerosol initialization
 
@@ -571,6 +576,7 @@
           endif                ! end if_iyear_block
 
         endif              ! end if_kyrstr_block
+        write(0,*) '--- end if_kyrstr:'
 
         if ( me == 0 ) then
           iy = mod(kyrsav,10) + 1

@@ -946,8 +946,9 @@
         enddo    ! end_do_k_loop
 
         if ( lfdncmp ) then
+           
 
-          call spcvrt                                                   &
+        call spcvrt                                                   &
 !  ---  inputs:
      &     ( colamt, colmol, coldry, cosz1, sntz1, albbm, albdf,        &
      &       zcf1, zclfr, taucw, ssacw, asycw, tauae, ssaae, asyae,     &
@@ -977,7 +978,7 @@
 !  ---  inputs:
      &     ( colamt, colmol, coldry, cosz1, sntz1, albbm, albdf,        &
      &       zcf1, zclfr, taucw, ssacw, asycw, tauae, ssaae, asyae,     &
-     &       forfac, forfrac, indfor, selffac, selffrac, indself,       &
+     &       forfac, forfrac, indfor, selffac, selffrac, indself,       & 
      &       fac00, fac01, fac10, fac11, jp, jt, jt1, laytrop,          &
      &       NLAY, NLP1,                                                &
 !  ---  outputs:

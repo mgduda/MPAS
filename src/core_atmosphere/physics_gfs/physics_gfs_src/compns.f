@@ -246,8 +246,8 @@ c     if output (fhout) more frequently than zeroing ,get partial rains
 !
       ref_temp         = 300.0
 !
-      gfsio_in         = .true.
-      gfsio_out        = .true.
+      gfsio_in         = .false.
+      gfsio_out        = .false.
 !
       nsout   = 0
       nsout_hf = 0
@@ -283,6 +283,7 @@ c     if output (fhout) more frequently than zeroing ,get partial rains
       yhalo   = 4
 
 #if defined(mpas)
+      iret = 0
       return
 #else
 !

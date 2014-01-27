@@ -145,7 +145,8 @@
       integer, parameter :: MAXXSEC= 4          ! num of halocarbon gases
       integer, parameter :: NPLNK  = 181        ! dim for plank function table
 
-      integer, parameter :: NBDLW  = NBANDS
+!     integer, parameter :: NBDLW  = NBANDS
+      integer, parameter, public :: NBDLW  = NBANDS
 
 !  ---  number of g-point in each band
       integer  :: NG01, NG02, NG03, NG04, NG05, NG06, NG07, NG08,       &

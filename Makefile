@@ -42,11 +42,11 @@ pgi:
 	"FC_SERIAL = pgf90" \
 	"CC_SERIAL = pgcc" \
 	"FFLAGS_OPT = -r8 -O3 -byteswapio -Mfree" \
-	"FFLAGS77_OPT = -r8 -O3 -byteswapio -Mfixed" \
+	"FFLAGS77_OPT = -r8 -O3 -byteswapio -Mfixed -Mpreprocess" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"FFLAGS_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
-	"FFLAGS77_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfixed -Ktrap=divz,fp,inv,ovf -traceback" \
+	"FFLAGS77_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfixed -Mpreprocess -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CFLAGS_DEBUG = -O0 -g -traceback" \
 	"LDFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CORE = $(CORE)" \
@@ -89,9 +89,11 @@ ifort:
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = icc" \
 	"FFLAGS_OPT = -real-size 64 -O3 -convert big_endian -FR" \
+	"FFLAGS77_OPT = -real-size 64 -O3 -convert big_endian -fpp -FI" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
+	"FFLAGS77_DEBUG = -real-size 64 -g -convert big_endian -fpp -FI -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CORE = $(CORE)" \
