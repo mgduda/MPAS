@@ -45,8 +45,10 @@
  type(diag_physics_type),intent(inout):: diag_physics
  
 !local variables:
- integer:: nCellsSolve
+ integer:: iCell,nCellsSolve
+ integer,dimension(:),pointer:: landmask
 
+ real(kind=RKIND),dimension(:),pointer:: xice
  real(kind=RKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,vegfra,zorl
  real(kind=RKIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac,zorl12m
 
@@ -55,11 +57,13 @@
 
  nCellsSolve = mesh % nCellsSolve
 
+ landmask  => sfc_input % landmask  % array
  alnsf4s   => sfc_input % alnsf4s   % array
  alnwf4s   => sfc_input % alnwf4s   % array
  alvsf4s   => sfc_input % alvsf4s   % array
  alvwf4s   => sfc_input % alvwf4s   % array
  greenfrac => sfc_input % greenfrac % array
+ xice      => sfc_input % xice      % array
  zorl12m   => sfc_input % zorl12m   % array
 
  alnsf  => diag_physics % alnsf  % array
@@ -72,9 +76,18 @@
 !initialization of the green-ness (vegetation) fraction: interpolation of the monthly mean values
 !to the initial date:
  call monthly_interp_to_date(nCellsSolve,current_date,greenfrac,vegfra)
+ write(0,*) '--- end monthly_interp_to_date'
+ write(0,*) '--- max vegfra = ',maxval(vegfra(1:nCellsSolve))
+ write(0,*) '--- min vegfra = ',minval(vegfra(1:nCellsSolve))
 
-!initialization of the mixing length: interpolation of the monthly mean values to the initial date.
- call monthly_interp_to_date(nCellsSolve,current_date,zorl12m,zorl)
+!initialization of the surface roughness length (here zorl is in cm) interpolation of the monthly
+!mean values to the current date. set the minimum values for zorl over the oceans.
+!call monthly_interp_to_date(nCellsSolve,current_date,zorl12m,zorl)
+!do iCell = 1, nCellsSolve
+!   if(landmask(iCell) == 1 .and. zorl(iCell) == 0._RKIND) then 
+!      zorl(iCell) = 2.0_RKIND
+!   endif    
+!enddo
 
 !initialization of the seasonal mean near-infrared and visible spectral surface albedos with strong
 !and weak dependence on the solar zenith angle
@@ -82,6 +95,11 @@
  call season_interp_to_date(nCellsSolve,current_date,alnwf4s,alnwf)
  call season_interp_to_date(nCellsSolve,current_date,alvsf4s,alvsf)
  call season_interp_to_date(nCellsSolve,current_date,alvwf4s,alvwf)
+ write(0,*) '--- end season_interp_to_date'
+ write(0,*) '--- max alnsf = ',maxval(alnsf(1:nCellsSolve))
+ write(0,*) '--- min alnwf = ',minval(alnwf(1:nCellsSolve))
+ write(0,*) '--- max alvsf = ',maxval(alvsf(1:nCellsSolve))
+ write(0,*) '--- min alvwf = ',minval(alvwf(1:nCellsSolve))
 
  write(0,*) '--- end physics_gfs_update_surface:'
  write(0,*)

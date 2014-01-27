@@ -15,6 +15,16 @@
  private
  public:: season_interp_to_date
 
+!>\brief MPAS utility module for time management.
+!>\author Laura D. Fowler (send comments to laura@ucar.edu)
+!>\date 2013-01-27.
+!>
+!>\details
+!> subroutines called in mpas_atmphys_gfs_date_time:
+!> -------------------------------------------------
+!> season_interp_to_date : interpolates seasonal-mean data to current julian day.
+
+
  contains
 
 !==================================================================================================
@@ -41,9 +51,9 @@
  real(kind=RKIND):: gmt
 
 !--------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine season_interp_to_date:'
- write(0,*) '--- current_date  = ',trim(date_str)
+!write(0,*)
+!write(0,*) '--- enter subroutine season_interp_to_date:'
+!write(0,*) '--- current_date  = ',trim(date_str)
 
  write(day15,fmt='(I2.2)') 15
  do l = 1,12
@@ -74,9 +84,9 @@
           season1 = int_season
           season2 = season1+1 
        endif
-       write(0,*)
-       write(0,*) '--- season1 = ',season1
-       write(0,*) '--- season2 = ',season2
+!      write(0,*)
+!      write(0,*) '--- season1 = ',season1
+!      write(0,*) '--- season2 = ',season2
        do n = 1,npoints
           field_out(n) = ( field_in(season2,n) * (target_date - season(l))    &
                        +   field_in(season1,n) * (season(l+1) - target_date)) &
@@ -85,7 +95,7 @@
     endif
  enddo find_season
 
- write(0,*) '--- end season_interp_to_date'
+!write(0,*) '--- end season_interp_to_date'
 
  end subroutine season_interp_to_date
 

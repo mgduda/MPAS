@@ -12,7 +12,9 @@
  use mpas_grid_types
  use mpas_timekeeping
 
+ use mpas_atmphys_update
  use mpas_atmphys_utilities
+ use mpas_atmphys_gfs_o3climatology
  use mpas_atmphys_gfs_update_surface
  use mpas_atmphys_gfs_vars
 
@@ -35,6 +37,10 @@
 
 !defines alarm to update the background surface albedo and the greeness fraction:
  integer, parameter:: greenAlarmID  = 16
+
+!defines alarm to reset to zero the radiation and other physics fields accumulated in subroutine
+!gbphys. By default, these fields are initialized every 6 hours, as with the GFS.
+ integer, parameter:: acfieldsAlarmID = 19
 
  integer :: h, d, dd, m, mm, s, s_n, s_d, DoY, yr
 
@@ -110,6 +116,13 @@
  block => domain % blocklist
  do while(associated(block))
 
+    !initialize diagnostics accumulated in subroutine gbphys back to zero:
+    if(mpas_is_alarm_ringing(clock,acfieldsAlarmID,ierr=ierr)) then
+       call mpas_reset_clock_alarm(clock,acfieldsAlarmID,ierr=ierr)
+       write(0,*) '--- time to initialize diagnostics accumulated in gbphys.'
+       call physics_gfs_update_diagnostics(block%mesh,block%diag_physics)
+    endif
+
     !update the background surface albedo and greeness of vegetation: interpolation of input
     !monthly values to current day:
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
@@ -144,6 +157,15 @@
     l_radtsw = .true.
  endif
  write(0,*) '--- time to run the SW radiation scheme L_RADSW =',l_radtsw
+
+!update ozone to the current julian day for use in the parameterization of !progsnotic ozone:
+ 
+ block => domain % blocklist
+ do while(associated(block))
+    call o3climatology_from_MPAS(block%mesh,block%atm_input,block%diag_physics)
+
+    block => block % next
+ end do
 
  write(0,*) '--- end subroutine physics_timetracker.'
 
@@ -226,6 +248,7 @@
     call physics_error_fatal('subroutine physics_run_init: dt_radtsw is not defined')
 
  endif
+ write(0,102) dt_radtlw,dt_radtsw
 
 !set alarm for updating the background surface albedo and the greeness fraction:
  call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
@@ -234,7 +257,13 @@
     if(ierr /= 0) &
        call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
 
- write(0,102) dt_radtlw,dt_radtsw
+!set alarm to reset to zero the radiation and other physics fields accumulated in subroutine
+!gbphys.
+ call mpas_set_timeInterval(alarmTimeStep,timeString=config_bucket_update,ierr=ierr)
+ alarmStartTime = startTime
+ call mpas_add_clock_alarm(clock,acfieldsAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+    if(ierr /= 0) &
+       call physics_error_fatal('subroutine physics_init: error creating alarm acfields')
 
 !initialization of local physics time-steps:
 !... dynamics:

@@ -18,6 +18,9 @@
  use resol_def
  use ozne_def
 
+ use module_radlw_cntr_para
+ use module_radsw_cntr_para
+
  implicit none
  public
  save
@@ -33,31 +36,6 @@
 !==================================================================================================
 
 !... parameters that should be defined using an input namelist file:
-!integer, parameter:: &
-!   ialb    = 0       !control flag for the surface albedo.
-!                     !ialb  = 0: climatological surface albedo, based on surface types.
-!                     !ialb  = 1: read from an input file.
-!integer, parameter:: &
-!   iems    = 0       !control flag for the surface emissivity.
-!                     !iems   = 0: the surface emissivity is set to 1.
-!                     !iems   = 1: climatological surface emissivity, based on surface type.
-!integer, parameter:: &
-!   ictm    = 0       !external data time/date control flag.
-!                     !ictm   = 0: use data at initial time.
-!                     !ictm   = .: see all *init subroutines for description of all other options.
-!integer, parameter:: &
-!   isol    = 0       !control flag for solar constants:
-!                     !isol   = 0: use a fixed solar constant.
-!                     !isol   = 1: use 11-year cycle constant table.
-!integer, parameter:: &
-!   ico2    = 0       !control flag for input CO2 data.
-!                     !ico2   = 0: use prescribed global mean CO2.
-!                     !ico2   = 1: use observed CO2 global annual mean value.
-!                     !ico2   = 2: use observed CO2 monthly data with 2D variation.
-!integer, parameter:: &
-!   iaer    = 0       !control flag for aerosol effects.
-!                     !iaer   = 0: turn all aerosol effects of (sw,lw,volc)
-!                     !iaer   = .: see subroutine aerinit for description of all other options.
  integer, parameter:: &
     icld    = 1       !cloud computation method flag.
                       !icld   = 0: model use diagnostic cloud scheme.
@@ -198,6 +176,10 @@
 !GFS VARIABLES AND ARRAYS:
 !==================================================================================================
 
+!... initial values for the surface roughness length as a function of the vegetation type:
+ real(kind=RKIND),dimension(13):: z0_sib
+ data z0_sib /2.653,0.826,0.563,1.089,0.854,0.856,0.035,0.238,0.065,0.076,0.011,0.035,0.011/
+
  real(kind=RKIND),dimension(:),allocatable:: &
     slmsk              !land/sea/sea-ice mask (sea=0;land=1;seaice=2)
 
@@ -225,8 +207,10 @@
     stc                !soil temperature                                                        [K]
 
 !... arrays related to gravity wave drag over orography:
+ real(kind=RKIND),dimension(:),allocatable:: &
+    hprime_rad         !input orography statistics for radiation
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    hprime             !input statistics. 
+    hprime             !input orography statistics. 
 
 !... arrays related to shallow convection:
  real(kind=RKIND),dimension(:),allocatable:: &
@@ -256,6 +240,27 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     phy_f3d
 
+!... local outputs from subroutine gbphys:
+ real(kind=RKIND),dimension(:),allocatable:: &
+    dlwsfci,          &!
+    dswsfci,          &!
+    ulwsfci,          &!
+    uswsfci,          &!
+    dqsfci,           &!
+    dtsfci,           &!
+    epi,              &!
+    gfluxi,           &!
+    rqtk,             &!
+    psurf,            &!
+    tref,             &!
+    zlvl               !
+ real(kind=RKIND),dimension(:),allocatable:: &
+    c_0,              &!
+    c_d,              &!
+    w_0,              &!
+    w_d,              &!
+    z_c                !
+
 !==================================================================================================
 !... variables and arrays related to parameterization of longwave and shortwave radiation:
 !==================================================================================================
@@ -274,6 +279,10 @@
     htrlw,            &!
     fluxr,            &!
     cldcov             !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    htrswb,           &!
+    htrlwb             !
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     frain,            &!

@@ -19,6 +19,7 @@
           deallocate_forall_physics, &
           MPAS_to_physics
 
+
 !>\brief interface for conversion between variables used in the MPAS dynamical core and variables
 !> needed in the GFS physics parameterizations.
 !>\author Laura D. Fowler (send comments to laura@mmm.ucar.edu).
@@ -141,7 +142,7 @@
  type(diag_type) ,intent(in):: diag
 
 !local variables:
- integer:: k,iCell,i1,i2,nt,it,izgrid
+ integer:: k,kk,iCell,i1,i2,nt,it,izgrid
  integer:: nCells,nCellsSolve,nVertLevels
 
  real(kind=RKIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
@@ -150,6 +151,7 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: tracer
 
  real(kind=RKIND):: tem1,z0,z1,z2,w1,w2
+ real(kind=RKIND),dimension(:,:),allocatable:: height
 
 !--------------------------------------------------------------------------------------------------
  write(0,*)
@@ -170,13 +172,20 @@
  qv      => state % scalars % array(state%index_qv,:,:)
  tracer  => state % scalars % array(:,:,:)
 
+ if(.not.allocated(height)) allocate(height(nVertLevels+1,nCellsSolve))
+ do k = 1, nVertLevels + 1
+ do iCell = 1, nCellsSolve
+    height(k,iCell) = max(0._RKIND,zgrid(k,iCell))
+ enddo
+ enddo
+
 !... zonal and meridional winds, and vertical velocities:
  do k = 1, nVertLevels
  do iCell = 1, nCellsSolve
     ugrs(iCell,k) = diag  % uReconstructZonal % array(k,iCell)
     vgrs(iCell,k) = diag  % uReconstructMeridional % array(k,iCell)
     vvel(iCell,k) = 0.5_RKIND * (state % w % array(k,iCell) + state % w % array(k+1,iCell))
-    vvel(iCell,k) = grav * rho(k,iCell) * zz(k,iCell) * vvel(iCell,k)
+    vvel(iCell,k) = - grav * rho(k,iCell) * zz(k,iCell) * vvel(iCell,k)
  enddo
  enddo
 
@@ -189,64 +198,63 @@
     tgrs(iCell,k)   = theta_m(k,iCell) * exner(k,iCell) / (1. + R_v/R_d * qv(k,iCell))
     prsl(iCell,k)   = pressure_b(k,iCell) + pressure_p(k,iCell)
     prslk(iCell,k)  = exner(k,iCell)
-    phil(iCell,k)   = 0.5_RKIND * grav * (zgrid(k,iCell)+zgrid(k+1,iCell))
-    dzgrid(iCell,k) = zgrid(k+1,iCell) - zgrid(k,iCell) 
+    phil(iCell,k)   = 0.5_RKIND * grav * (height(k,iCell)+height(k+1,iCell))
+    dzgrid(iCell,k) = height(k+1,iCell) - height(k,iCell) 
  enddo
  enddo
-
- izgrid = 0
- do iCell = 1, nCellsSolve
-    if(zgrid(1,iCell) .lt. 0._RKIND) then
-       izgrid = izgrid+1
-!      write(0,*) '... negative zgrid:'
-!      do k = 1, nVertLevels
-!         write(0,201) iCell,k,zgrid(k,iCell)
-!      enddo
-    endif
- enddo
- write(0,*) '... number of negative zgrid = ',izgrid
 
 !... temperature, pressure, exner function, and geopotential height at layer interfaces:
  do k = 2, nVertLevels
  do iCell = 1, nCellsSolve
-    tem1 = 1./(zgrid(k+1,iCell)-zgrid(k-1,iCell))
-    fzm(iCell,k) = (zgrid(k,iCell)-zgrid(k-1,iCell)) * tem1
-    fzp(iCell,k) = (zgrid(k+1,iCell)-zgrid(k,iCell)) * tem1
+    tem1 = 1./(height(k+1,iCell)-height(k-1,iCell))
+    fzm(iCell,k) = (height(k,iCell)-height(k-1,iCell)) * tem1
+    fzp(iCell,k) = (height(k+1,iCell)-height(k,iCell)) * tem1
 
     tgrsi(iCell,k) = fzm(iCell,k)*tgrs(iCell,k) + fzp(iCell,k)*tgrs(iCell,k-1)
     prsi(iCell,k)  = fzm(iCell,k)*prsl(iCell,k) + fzp(iCell,k)*prsl(iCell,k-1)
-    phii(iCell,k)  = grav * zgrid(k,iCell)
+    phii(iCell,k)  = grav * height(k,iCell)
  enddo
  enddo
 !... extrapolation of temperature and pressure to the surface:
  k = 1
  do iCell = 1, nCellsSolve
-    z0 = zgrid(k,iCell)
-    z1 = 0.5*(zgrid(k,iCell)+zgrid(k+1,iCell)) 
-    z2 = 0.5*(zgrid(k+1,iCell)+zgrid(k+2,iCell))
+    z0 = height(k,iCell)
+    z1 = 0.5*(height(k,iCell)+height(k+1,iCell)) 
+    z2 = 0.5*(height(k+1,iCell)+height(k+2,iCell))
     w1 = (z0-z2)/(z1-z2)
     w2 = 1.-w1
     tgrsi(iCell,k) = w1*tgrs(iCell,k) + w2*tgrs(iCell,k+1)
     prsi(iCell,k)  = w1*prsl(iCell,k) + w2*prsl(iCell,k+1)
-    phii(iCell,k)  = grav * zgrid(k,iCell)
+    phii(iCell,k)  = grav * height(k,iCell)
  enddo
 !... extrapolation of temperature and pressure to the top-of-the-model:
  k = nVertLevels+1
  do iCell = 1, nCellsSolve
-    z0 = zgrid(k,iCell)
-    z1 = 0.5*(zgrid(k,iCell)+zgrid(k-1,iCell)) 
-    z2 = 0.5*(zgrid(k-1,iCell)+zgrid(k-2,iCell))
+    z0 = height(k,iCell)
+    z1 = 0.5*(height(k,iCell)+height(k-1,iCell)) 
+    z2 = 0.5*(height(k-1,iCell)+height(k-2,iCell))
     w1 = (z0-z2)/(z1-z2)
     w2 = 1.-w1
     tgrsi(iCell,k) = w1*tgrs(iCell,k-1) + w2*tgrs(iCell,k-2)
     !use log of pressure to avoid occurrences of negative top-of-the-model pressure.
     prsi(iCell,k) = exp(w1*log(prsl(iCell,k-1)) + w2*log(prsl(iCell,k-2)))
-    phii(iCell,k) = grav * zgrid(k,iCell)
+    phii(iCell,k) = grav * height(k,iCell)
  enddo
 !... surface pressure and exner function:
  do iCell = 1,nCellsSolve
+    do k = 1,nVertLevels
+       if(prsl(iCell,k) .le. 0._RKIND .or. prsi(iCell,k) .le. 0._RKIND) then
+          do kk = 1, nVertLevels
+             write(0,201) iCell,kk,fzm(iCell,kk),fzp(iCell,kk), &
+                prsl(iCell,kk),prsi(iCell,kk)
+          enddo
+       endif
+    enddo
+ enddo
+
+ do iCell = 1,nCellsSolve
     pgr(iCell) = prsi(iCell,1)
-    do k = 1, nVertLevels
+    do k = 1,nVertLevels
        prslk(iCell,k) = (prsl(iCell,k)/pgr(iCell))**rcp
        prsik(iCell,k) = (prsi(iCell,k)/pgr(iCell))**rcp
     enddo
@@ -259,7 +267,7 @@
     k = nVertLevels+1
     prsi_hyd(iCell,k) = prsi(iCell,k)
     do k = nVertLevels,1,-1
-       prsi_hyd(iCell,k) = prsi_hyd(iCell,k+1) + grav * rhos(iCell,k) * dzgrid(iCell,k) 
+       prsi_hyd(iCell,k) = prsi_hyd(iCell,k+1) + grav * rhos(iCell,k) * height(k,iCell) 
     enddo
     !surface pressure:
     pgr_hyd(iCell) = prsi_hyd(iCell,1)
@@ -269,18 +277,6 @@
        prsl_hyd(iCell,k) = 0.5_RKIND * (prsi_hyd(iCell,k) + prsi_hyd(iCell,k+1))
     enddo 
  enddo
-
-!write(0,*)
-!i1 = 1 ; i2 = nCellsSolve
-!do k = nVertLevels,1,-1
-!   write(0,201) i1,k,phil(i1,k),dzgrid(i1,k),prsl(i1,k),prsl_hyd(i1,k),prslk(i1,k), &
-!                tgrs(i1,k),rhos(i1,k),qvrs(i1,k)
-!enddo
-!write(0,*)
-!do k = nVertLevels,1,-1
-!   write(0,201) i2,k,phil(i2,k),dzgrid(i2,k),prsl(i2,k),prsl_hyd(i2,k),prslk(i2,k), &
-!                tgrs(i2,k),rhos(i2,k),qvrs(i2,k)
-!enddo
 
 !... conversion of all pressures from Pa to centibars for radiation parameterizations:
 #if defined(do_hydrostatic_pressure)
@@ -309,12 +305,9 @@
  enddo
 #endif
 
-!... fill the tracer array:
- write(0,*)
- write(0,*) 'ntrac = ',ntrac
- write(0,*) 'ncld  = ',ncld
- write(0,*) 'ntcw  = ',ntcw
+ if(allocated(height)) deallocate(height)
 
+!... fill the tracer array:
  if(.not. allocated(qgrs) ) allocate(qgrs(1:nCellsSolve,1:nVertLevels,ntrac)   )
  if(.not. allocated(qtrcs)) allocate(qtrcs(1:nCellsSolve,1:nVertLevels,ntrac-1))
  if(.not. allocated(gq0)  ) allocate(gq0(1:nCellsSolve,1:nVertLevels,ntrac)    )
