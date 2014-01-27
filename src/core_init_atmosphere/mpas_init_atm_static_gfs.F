@@ -69,6 +69,7 @@
        mesh%orogwd%array(nm,iCell) = hprime(ilon,ilat,nm)
     enddo
  enddo 
+ if(allocated(hprime)) deallocate(hprime)
 
  do nm = 1,mesh%nMtvr
     where(mesh%landmask%array(:) .eq. 0) mesh%orogwd%array(nm,:) = 0_RKIND 
@@ -1199,6 +1200,7 @@
  101 format(i9,8(1x,e15.8))
  102 format(i9,4(1x,e15.8),i9)
  103 format(i4,i9,8(1x,e15.8))
+ 104 format(2i9,8(1x,e15.8))
 
  write(0,*) '--- end subroutine init_atm_static_fields_forGFS'
 
