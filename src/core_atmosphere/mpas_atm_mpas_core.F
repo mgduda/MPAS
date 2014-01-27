@@ -224,8 +224,7 @@ module mpas_core
 !      use mpas_configure
       use mpas_rbf_interpolation
       use mpas_vector_reconstruction
-#ifdef DO_PHYSICS
-!     use mpas_atmphys_aquaplanet
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)
       use mpas_atmphys_control
       use mpas_atmphys_init
       use mpas_atmphys_manager
@@ -280,7 +279,14 @@ module mpas_core
                             uReconstructMeridional     &
                            )
    
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)
+   !
+   ! Note: The following initialization calls have been moved to mpas_setup_test_case()
+   !       since values computed by these routines are needed to produce initial fields
+   !
+   !   call atm_initialize_advection_rk(mesh)
+   !   call atm_initialize_deformation_weights(mesh)
+
       !check that all the physics options are correctly defined and that at least one physics
       !parameterization is called (using the logical moist_physics):
       call physics_namelist_check(mesh, block % configs)
@@ -729,7 +735,7 @@ module mpas_core
       use mpas_grid_types
       use mpas_kind_types
       use atm_time_integration
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)
       use mpas_atmphys_control
       use mpas_atmphys_driver
       use mpas_atmphys_manager
@@ -759,7 +765,7 @@ module mpas_core
       call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
 
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)

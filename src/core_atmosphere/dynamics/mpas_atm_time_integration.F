@@ -16,10 +16,12 @@ module atm_time_integration
    use mpas_timekeeping, only: MPAS_Time_type, MPAS_TimeInterval_type, &
                                mpas_set_time, mpas_set_timeInterval, mpas_get_time, operator(+), add_t_ti
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS)
    use mpas_atmphys_driver_microphysics
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
+#elif defined(DO_PHYSICS_GFS)
+   use mpas_atmphys_todynamics
 #endif
 
    contains
@@ -252,7 +254,7 @@ module atm_time_integration
          end do
          if (debug) write(0,*) ' finished compute_dyn_tend '
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)
          if (debug) write(0,*) ' add physics tendencies '
          block => domain % blocklist
          do while (associated(block))
@@ -468,7 +470,7 @@ module atm_time_integration
 !... call to parameterizations of cloud microphysics. calculation of the tendency of water vapor to horizontal and
 !... vertical advection needed for the Tiedtke parameterization of convection.
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS)
       block => domain % blocklist
       do while(associated(block))
 
@@ -1545,7 +1547,7 @@ module atm_time_integration
       call mpas_pool_get_config(configs, 'config_v_theta_eddy_visc2', v_theta_eddy_visc2)
 
 
-#ifndef DO_PHYSICS
+#if !(defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS))
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
 #endif
 
@@ -1808,7 +1810,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'qv_init', qv_init)
       call mpas_pool_get_array(mesh, 'zgrid', zgrid)
 
-#ifndef DO_PHYSICS
+#if !(defined(DO_PHYSICS) || defined(DO_PHYSICS_GFS)) 
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
 #endif
 
