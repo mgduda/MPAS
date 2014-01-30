@@ -19,6 +19,8 @@
 #endif
 #endif
 
+#define MPAS_DEBUG
+
 int fd_out, fd_err;
 
 void open_streams(int * id)

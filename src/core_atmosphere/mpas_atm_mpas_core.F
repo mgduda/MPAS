@@ -489,7 +489,7 @@ module mpas_core
       integer :: ierr
       type (MPAS_Stream_type) :: hifreq_stream
 
-      call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, ierr)
+      call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE_CDF2, 1, ierr)
 
       if (block_ptr % mesh % on_a_sphere) then
          call MPAS_writeStreamAtt(hifreq_stream, 'on_a_sphere', 'YES             ', ierr)
