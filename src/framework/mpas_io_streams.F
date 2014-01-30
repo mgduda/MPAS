@@ -1420,7 +1420,7 @@ contains
       allocate(new_field_list_node)
       nullify(new_field_list_node % next)
 
-      if (stream % ioDirection == MPAS_IO_WRITE) then
+      if (stream % ioDirection == MPAS_IO_WRITE .or. stream % ioDirection == MPAS_IO_WRITE_CDF2) then
 !write(stderrUnit,*) '... defining field'
 
          !
@@ -3334,7 +3334,7 @@ contains
       if (.not. associated(attList)) return
 
       att_cursor => attList
-      if (ioDirection == MPAS_IO_WRITE) then
+      if (ioDirection == MPAS_IO_WRITE .or. ioDirection == MPAS_IO_WRITE_CDF2) then
          do while (associated(att_cursor))
             select case (att_cursor % attType)
                case (ATT_INT)

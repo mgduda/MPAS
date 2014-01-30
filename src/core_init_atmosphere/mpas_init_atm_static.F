@@ -24,6 +24,8 @@
           nearest_cell,              &
           sphere_distance
 
+ integer :: mpi_ierr
+
  contains
 
 !==================================================================================================
@@ -242,6 +244,8 @@
  deallocate(nhs)
  write(0,*) '--- end interpolate TER'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 
 !
 ! Interpolate LU_INDEX
@@ -301,6 +305,7 @@
  deallocate(ncat)
  write(0,*) '--- end interpolate LU_INDEX'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate SOILCAT_TOP
@@ -360,6 +365,8 @@
  deallocate(ncat)
  write(0,*) '--- end interpolate SOILCAT_TOP'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 
 !
 ! Interpolate SOILCAT_BOT
@@ -418,6 +425,8 @@
  deallocate(rarray)
  deallocate(ncat)
  write(0,*) '--- end interpolate SOILCAT_BOT'
+
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -605,6 +614,7 @@
  deallocate(maxsnowalb)
  write(0,*) '--- end interpolate SNOALB'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate GREENFRAC
@@ -676,6 +686,7 @@
  deallocate(vegfra)
  write(0,*) '--- end interpolate GREENFRAC'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate ALBEDO12M
@@ -1035,6 +1046,8 @@
  deallocate(xarray)
  write(0,*) '--- end interpolate CON'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 !
 ! Interpolate OA1:
 !
@@ -1138,6 +1151,8 @@
  deallocate(xarray)
  write(0,*) '--- end interpolate OA1'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 !
 ! Interpolate OA2:
  oa2(:) = 0.0_RKIND
@@ -1239,6 +1254,8 @@
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate OA2'
+
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate OA3:
@@ -1343,6 +1360,8 @@
  deallocate(xarray)
  write(0,*) '--- end interpolate OA3'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 !
 ! Interpolate OA4:
 !
@@ -1445,6 +1464,8 @@
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate OA4'
+
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate OL1:
@@ -1549,6 +1570,8 @@
  deallocate(xarray)
  write(0,*) '--- end interpolate OL1'
 
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
 !
 ! Interpolate OL2:
 !
@@ -1651,6 +1674,8 @@
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate OL2'
+
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate OL3:
@@ -1857,6 +1882,8 @@
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate OL4'
+
+ call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
 
 !
 ! Interpolate VAR2D:

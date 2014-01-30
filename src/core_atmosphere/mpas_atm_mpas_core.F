@@ -650,7 +650,7 @@ module mpas_core
       type (field1DReal), pointer :: vorticity_850hPa
 
 
-      call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, ierr)
+      call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE_CDF2, 1, ierr)
 
       call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
       call mpas_pool_get_config(mesh, 'on_a_sphere', on_a_sphere)
