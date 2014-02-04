@@ -175,6 +175,7 @@
        htrsw(iCell,k)  = tend_physics%rthratensw%array(k,iCell)
        cldcov(iCell,k) = diag_physics%cldfrac   %array(k,iCell)
     enddo
+    fluxr(iCell,:) = 0._RKIND
 !   diag_physics%sfcnsw % array(iCell) = 0._RKIND
 !   diag_physics%sfcdsw % array(iCell) = 0._RKIND
 !   diag_physics%sfcdlw % array(iCell) = 0._RKIND   
