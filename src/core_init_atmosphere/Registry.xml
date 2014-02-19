@@ -572,11 +572,11 @@
                 <var name="xland"                             type="real"     dimensions="nCells Time"/>
 
                 <!-- horizontally interpolated from first-guess data, only needed for the GFS physics, and should be read in by model -->
-                <var name="alnsf"                             type="real"     dimensions="nCells"/>
-                <var name="alnwf"                             type="real"     dimensions="nCells"/>
-                <var name="alvsf"                             type="real"     dimensions="nCells"/>
-                <var name="alvwf"                             type="real"     dimensions="nCells"/>
-                <var name="zorl"                              type="real"     dimensions="nCells"/>
+                <var name="alnsf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alnwf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alvsf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alvwf"                             type="real"     dimensions="nCells Time"/>
+                <var name="zorl"                              type="real"     dimensions="nCells Time"/>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">

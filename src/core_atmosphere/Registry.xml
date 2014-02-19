@@ -321,6 +321,155 @@
 			<var name="rw_p"/>
 			<var name="rtheta_p"/>
 			<var name="rho_p"/>
+			<var name="tend_qv"/>
+			<var name="tend_qc"/>
+			<var name="tend_qo3"/>
+			<var name="tend_u"/>
+			<var name="tend_w"/>
+			<var name="tend_rho"/>
+			<var name="tend_theta"/>
+			<var name="icsdlw"/>
+			<var name="icsdsw"/>
+			<var name="alnsf"/>
+			<var name="alnwf"/>
+			<var name="alvsf"/>
+			<var name="alvwf"/>
+			<var name="sfcalb"/>
+			<var name="sfcemis"/>
+			<var name="coszen"/>
+			<var name="coszdg"/>
+			<var name="sfcdlw"/>
+			<var name="sfcdsw"/>
+			<var name="sfcnsw"/>
+			<var name="tsflw"/>
+			<var name="cldfrac"/>
+			<var name="dlwsfc"/>
+			<var name="ulwsfc"/>
+			<var name="suntim"/>
+			<var name="dusfc"/>
+			<var name="dvsfc"/>
+			<var name="dtsfc"/>
+			<var name="dqsfc"/>
+			<var name="dugwd"/>
+			<var name="dvgwd"/>
+			<var name="gpblh"/>
+			<var name="psmean"/>
+			<var name="evbsa"/>
+			<var name="evcwa"/>
+			<var name="sbsnoa"/>
+			<var name="snohfa"/>
+			<var name="snowca"/>
+			<var name="transa"/>
+			<var name="ep"/>
+			<var name="gflux"/>
+			<var name="runoff"/>
+			<var name="srunoff"/>
+			<var name="gsoil"/>
+			<var name="goro"/>
+			<var name="gtmp2m"/>
+			<var name="gu10m"/>
+			<var name="gustar"/>
+			<var name="gv10m"/>
+			<var name="gzorl"/>
+			<var name="spfhmax"/>
+			<var name="spfhmin"/>
+			<var name="tmpmax"/>
+			<var name="tmpmin"/>
+			<var name="cldwrk"/>
+			<var name="cnvprcp"/>
+			<var name="totprcp"/>
+			<var name="flgmin_2d"/>
+			<var name="fcice"/>
+			<var name="rrime"/>
+			<var name="det_mf"/>
+			<var name="dwn_mf"/>
+			<var name="upd_mf"/>
+			<var name="dlwsfci"/>
+			<var name="ulwsfci"/>
+			<var name="dswsfci"/>
+			<var name="uswsfci"/>
+			<var name="acv"/>
+			<var name="acvb"/>
+			<var name="acvt"/>
+			<var name="dkh"/>
+			<var name="rnp"/>
+			<var name="hlw"/>
+			<var name="hsw"/>
+			<var name="c_0"/>
+			<var name="c_d"/>
+			<var name="chh"/>
+			<var name="cmm"/>
+			<var name="cv"/>
+			<var name="cvb"/>
+			<var name="cvt"/>
+			<var name="d_conv"/>
+			<var name="dt_cool"/>
+			<var name="dqsfci"/>
+			<var name="dtsfci"/>
+			<var name="epi"/>
+			<var name="f10m"/>
+			<var name="ffhh"/>
+			<var name="ffmm"/>
+			<var name="gfluxi"/>
+			<var name="hice"/>
+			<var name="ifd"/>
+			<var name="q1"/>
+			<var name="q2m"/>
+			<var name="psurf"/>
+			<var name="pwat"/>
+			<var name="qrain"/>
+			<var name="relhum"/>
+			<var name="rqtk"/>
+			<var name="sncovr"/>
+			<var name="smcref2"/>
+			<var name="snwdph"/>
+			<var name="srflag"/>
+			<var name="t1"/>
+			<var name="tisfc"/>
+			<var name="tprcp"/>
+			<var name="tref"/>
+			<var name="u1"/>
+			<var name="u10m"/>
+			<var name="uustar"/>
+			<var name="v1"/>
+			<var name="v10m"/>
+			<var name="w_d"/>
+			<var name="xs"/>
+			<var name="xt"/>
+			<var name="xtts"/> 
+			<var name="xu"/>
+			<var name="xv"/>
+			<var name="xzts"/>
+			<var name="z_c"/>
+			<var name="zlvl"/>
+			<var name="zm"/>
+			<var name="vegfra"/>
+			<var name="zorl"/>
+			<var name="landmask"/>
+			<var name="isltyp"/>
+			<var name="ivgtyp"/>
+			<var name="orogwd"/>
+			<var name="facsf"/>
+			<var name="facwf"/>
+			<var name="alnsf4s"/>
+			<var name="alnwf4s"/>
+			<var name="alvsf4s"/>
+			<var name="alvwf4s"/>
+			<var name="shdmax"/>
+			<var name="shdmin"/>
+			<var name="greenfrac"/>
+			<var name="zorl12m"/> 
+			<var name="slope"/>
+			<var name="snoalb"/>
+			<var name="ter"/>
+			<var name="tmn"/>
+			<var name="skintemp"/>
+			<var name="snow"/>
+			<var name="snowc"/>
+			<var name="xice"/>
+			<var name="smcrel"/>
+			<var name="smois"/>
+			<var name="tslb"/>
 		</stream>
 
 		<stream name="output" type="output">
@@ -455,6 +604,148 @@
 			<var name="tend_w"/>
 			<var name="tend_rho"/>
 			<var name="tend_theta"/>
+			<var name="icsdlw"/>
+			<var name="icsdsw"/>
+			<var name="alnsf"/>
+			<var name="alnwf"/>
+			<var name="alvsf"/>
+			<var name="alvwf"/>
+			<var name="sfcalb"/>
+			<var name="sfcemis"/>
+			<var name="coszen"/>
+			<var name="coszdg"/>
+			<var name="sfcdlw"/>
+			<var name="sfcdsw"/>
+			<var name="sfcnsw"/>
+			<var name="tsflw"/>
+			<var name="cldfrac"/>
+			<var name="dlwsfc"/>
+			<var name="ulwsfc"/>
+			<var name="suntim"/>
+			<var name="dusfc"/>
+			<var name="dvsfc"/>
+			<var name="dtsfc"/>
+			<var name="dqsfc"/>
+			<var name="dugwd"/>
+			<var name="dvgwd"/>
+			<var name="gpblh"/>
+			<var name="psmean"/>
+			<var name="evbsa"/>
+			<var name="evcwa"/>
+			<var name="sbsnoa"/>
+			<var name="snohfa"/>
+			<var name="snowca"/>
+			<var name="transa"/>
+			<var name="ep"/>
+			<var name="gflux"/>
+			<var name="runoff"/>
+			<var name="srunoff"/>
+			<var name="gsoil"/>
+			<var name="goro"/>
+			<var name="gtmp2m"/>
+			<var name="gu10m"/>
+			<var name="gustar"/>
+			<var name="gv10m"/>
+			<var name="gzorl"/>
+			<var name="spfhmax"/>
+			<var name="spfhmin"/>
+			<var name="tmpmax"/>
+			<var name="tmpmin"/>
+			<var name="cldwrk"/>
+			<var name="cnvprcp"/>
+			<var name="totprcp"/>
+			<var name="flgmin_2d"/>
+			<var name="fcice"/>
+			<var name="rrime"/>
+			<var name="det_mf"/>
+			<var name="dwn_mf"/>
+			<var name="upd_mf"/>
+			<var name="dlwsfci"/>
+			<var name="ulwsfci"/>
+			<var name="dswsfci"/>
+			<var name="uswsfci"/>
+			<var name="acv"/>
+			<var name="acvb"/>
+			<var name="acvt"/>
+			<var name="dkh"/>
+			<var name="rnp"/>
+			<var name="hlw"/>
+			<var name="hsw"/>
+			<var name="c_0"/>
+			<var name="c_d"/>
+			<var name="chh"/>
+			<var name="cmm"/>
+			<var name="cv"/>
+			<var name="cvb"/>
+			<var name="cvt"/>
+			<var name="d_conv"/>
+			<var name="dt_cool"/>
+			<var name="dqsfci"/>
+			<var name="dtsfci"/>
+			<var name="epi"/>
+			<var name="f10m"/>
+			<var name="ffhh"/>
+			<var name="ffmm"/>
+			<var name="gfluxi"/>
+			<var name="hice"/>
+			<var name="ifd"/>
+			<var name="q1"/>
+			<var name="q2m"/>
+			<var name="psurf"/>
+			<var name="pwat"/>
+			<var name="qrain"/>
+			<var name="relhum"/>
+			<var name="rqtk"/>
+			<var name="sncovr"/>
+			<var name="smcref2"/>
+			<var name="snwdph"/>
+			<var name="srflag"/>
+			<var name="t1"/>
+			<var name="tisfc"/>
+			<var name="tprcp"/>
+			<var name="tref"/>
+			<var name="u1"/>
+			<var name="u10m"/>
+			<var name="uustar"/>
+			<var name="v1"/>
+			<var name="v10m"/>
+			<var name="w_d"/>
+			<var name="xs"/>
+			<var name="xt"/>
+			<var name="xtts"/> 
+			<var name="xu"/>
+			<var name="xv"/>
+			<var name="xzts"/>
+			<var name="z_c"/>
+			<var name="zlvl"/>
+			<var name="zm"/>
+			<var name="vegfra"/>
+			<var name="zorl"/>
+			<var name="landmask"/>
+			<var name="isltyp"/>
+			<var name="ivgtyp"/>
+			<var name="orogwd"/>
+			<var name="facsf"/>
+			<var name="facwf"/>
+			<var name="alnsf4s"/>
+			<var name="alnwf4s"/>
+			<var name="alvsf4s"/>
+			<var name="alvwf4s"/>
+			<var name="shdmax"/>
+			<var name="shdmin"/>
+			<var name="greenfrac"/>
+			<var name="zorl12m"/> 
+			<var name="slope"/>
+			<var name="snoalb"/>
+			<var name="ter"/>
+			<var name="tmn"/>
+			<var name="skintemp"/>
+			<var name="snow"/>
+			<var name="snowc"/>
+			<var name="xice"/>
+			<var name="smcrel"/>
+			<var name="smois"/>
+			<var name="tslb"/>
 		</stream>
 
 		<stream name="surface" type="input;output">
@@ -724,21 +1015,21 @@
 <!--  hydrostatic and non-hydrostatic dynamical cores):                                                 -->
 <!-- ================================================================================================== -->
 
-        <nml_record name="physics_gfs">
-                <nml_option name="num_soil_layers"                   type="integer"       default_value="4"/>
-                <nml_option name="months"                            type="integer"       default_value="12"/>
-                <nml_option name="seasons"                           type="integer"       default_value="4"/>
-                <nml_option name="norogwd"                           type="integer"       default_value="14"/>
+        <nml_record name="physics_gfs" in_defaults="true">
+                <nml_option name="num_soil_layers"                   type="integer"       default_value="4" in_defaults="false" />
+                <nml_option name="months"                            type="integer"       default_value="12" in_defaults="false" />
+                <nml_option name="seasons"                           type="integer"       default_value="4" in_defaults="false" />
+                <nml_option name="norogwd"                           type="integer"       default_value="14" in_defaults="false"/>
 
-                <nml_option name="num2d"                             type="integer"       default_value="20"/>
-                <nml_option name="num3d"                             type="integer"       default_value="20"/>
-                <nml_option name="naerlev"                           type="integer"       default_value="29"/>
-                <nml_option name="noznlev"                           type="integer"       default_value="80"/> 
-                <nml_option name="nozcoef"                           type="integer"       default_value="4"/> 
+                <nml_option name="num2d"                             type="integer"       default_value="20" in_defaults="false"/>
+                <nml_option name="num3d"                             type="integer"       default_value="20" in_defaults="false"/>
+                <nml_option name="naerlev"                           type="integer"       default_value="29" in_defaults="false"/>
+                <nml_option name="noznlev"                           type="integer"       default_value="80" in_defaults="false"/> 
+                <nml_option name="nozcoef"                           type="integer"       default_value="4" in_defaults="false"/> 
 
                 <nml_option name="config_radtlw_interval"            type="character"     default_value="none"/>
                 <nml_option name="config_radtsw_interval"            type="character"     default_value="none"/>
-                <nml_option name="config_greeness_update"            type="character"     default_value="24:00:00"/>
+                <nml_option name="config_greeness_update"            type="character"     default_value="24:00:00" in_defaults="false"/>
                 <nml_option name="config_bucket_update"              type="character"     default_value="06:00:00"/>
         </nml_record>
 
