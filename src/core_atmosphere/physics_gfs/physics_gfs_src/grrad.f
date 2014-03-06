@@ -305,9 +305,6 @@
 !       ihdat = ihour
       endif   ! end if_ICTM_block
 
-      write(0,*)
-      write(0,*) '--- inside subroutine radinit: irad1st=',irad1st
-
       if ( irad1st == 1 ) then
         if (me == 0) then
 !         print *,' NEW RADIATION PROGRAM STRUCTURES -- SEP 01 2004'
@@ -359,7 +356,6 @@
           endif
         endif
       endif
-      write(0,*) '--- end irad1st'
 
 !  --- ...  call aerosols initialization routine
 
@@ -367,18 +363,11 @@
         month0 = month
 
         if ( iaersw==1 .or. iaerlw==1 ) then
-        
-          write(0,*) '--- begin subroutine aerinit:'
-          write(0,*) '--- iyear  = ', iyear
-          write(0,*) '--- month  = ', month
-          write(0,*) '--- iearos = ', iaeros
-          write(0,*) '--- me     = ', me
+
           call aerinit ( iyear, month, iaeros, me )
-          write(0,*) '--- end subroutine aerinit.'
 
         endif
       endif
-      write(0,*) '--- end aerinit:'
 
 !  --- ...  call co2 and other gases initialization routine
 
@@ -387,7 +376,6 @@
 
         call gasinit ( iydat, imdat, ICTM, ICO2, me )
       endif
-      write(0,*) '--- end gasinit'
 
 !  --- ...  call astronomy initialization routine
 
@@ -405,7 +393,6 @@
         endif
 
       endif
-      write(0,*) '--- end solinit'
 
 !  --- ...  followings only need to be called once
 
@@ -430,10 +417,6 @@
         call rswinit ( ICWP, me, NLAY, iovrsw, isubcsw )
 
       endif      ! end of if_irad1st_block
-      
-      write(0,*) '--- end subroutine radinit'
-      write(0,*)
-      
 !
       return
 !...................................
@@ -777,68 +760,6 @@
 !       endif
 !     enddo
 
- write(0,*)
- write(0,*) '--- enter subroutine grrad:'
- write(0,*) '--- IM =', im
- write(0,*) '--- IX =', ix
- write(0,*) '--- LM =', lm
- write(0,*)
- write(0,*) '--- IFLIP  =', iflip
- write(0,*) '--- ME     =', me
- write(0,*) '--- IPT    =', ipt
- write(0,*) '--- KDT    =', kdt
- write(0,*) '--- LPRNT  =', lprnt
- write(0,*)
- write(0,*) '--- SOLCON       =', solcon
- write(0,*) '--- K1OZ         =', k1oz
- write(0,*) '--- K2OZ         =', k2oz
- write(0,*) '--- FACOZ        =', facoz
- write(0,*) '--- IOVRSW       =', iovrsw
- write(0,*) '--- IOVRLW       =', iovrlw
- write(0,*) '--- NP3D         =', np3d
- write(0,*) '--- NTCW         =', ntcw
- write(0,*) '--- NCLD         =', ncld
- write(0,*) '--- NTOZ         =', ntoz
- write(0,*) '--- NTRAC        =', ntrac
- write(0,*) '--- NFXR         =', nfxr
- write(0,*) '--- DTLW         =', dtlw
- write(0,*) '--- DTSW         =', dtsw
- write(0,*) '--- LSSWR        =', lsswr
- write(0,*) '--- LSLWR        =', lslwr
- write(0,*) '--- LSSAV        =', lssav
- write(0,*) '--- SASHAL       =', sashal
- write(0,*) '--- NORAD_PRECIP =', norad_precip
- write(0,*) '--- CRICK_PROOF  =', crick_proof
- write(0,*) '--- CCNORM       =', ccnorm
- write(0,*)
- 101 format(i8,i3,10(1x,e15.8))
- 102 format(i8,10(1x,e15.8))
-!do i = 1, ix
-!   do k = 1, lm
-!      write(0,101) i,k,prsi(i,k),prsl(i,k),prslk(i,k),tgrs(i,k),qgrs(i,k),vvl(i,k)
-!   enddo
-!   k = lm+1
-!   write(0,101) i,k,prsi(i,k)
-!   write(0,*)
-!enddo
-!do i = 1, im
-!   write(0,102) i,xlon(i),xlat(i),slmsk(i),tsfc(i),snowd(i),sncovr(i),snoalb(i),zorl(i),hprim(i)
-!enddo
-!do i = 1, ix
-!   do k = 1, lm
-!      write(0,101) i,k,fcice(i,k),frain(i,k),rrime(i,k),cldcov(i,k),htrsw(i,k),htrlw(i,k)
-!   enddo
-!   write(0,*)
-!enddo
-!do i = 1, im
-!   write(0,102) i,hprim(i),alvsf(i),alnsf(i),alvwf(i),alnwf(i),facsf(i),facwf(i),fice(i),tisfc(i)
-!enddo
-!do i = 1, im
-!   write(0,102) i,coszen(i),coszdg(i),cv(i),cvt(i),cvb(i),flgmin(i)
-!enddo
-!stop
-
-
 !     print *,' in grrad : raddt=',raddt
 !  --- ...  compute relative humidity
 
@@ -879,7 +800,6 @@
      &     )
 
       endif                            ! end_if_ntoz
-      write(0,*) '--- end subroutine getozn:'
 
 !  --- ...  setup surface ground temp and ground/air skin temp if required
 
@@ -918,7 +838,6 @@
 !  ---  outputs:
      &      gasvmr                                                      &
      &     )
-      write(0,*) '--- end subroutine getgases:'
 
 !  --- ...  get temperature at layer interface, and layer moisture
 
@@ -982,7 +901,6 @@
         enddo
 
       endif                              ! end_if_iflip
-      write(0,*) '--- end if_iflip'
 
 !  ---  check for daytime points
 
@@ -1020,7 +938,6 @@
      &     )
 
       endif           ! end_if_iaersw_iaerlw
-      write(0,*) '--- end subroutine setaer:'
 
 !  --- ...  obtain cloud information for radiation calculations
 
@@ -1096,7 +1013,6 @@
      &      )
 
       endif                                ! end_if_ntcw
-      write(0,*) '--- end if_ntcw:'
 
 !  --- ...  start radiation calculations 
 !           remember to set heating rate unit to k/sec!
@@ -1113,22 +1029,18 @@
 !  ---  outputs:
      &       sfcalb                                                     &
      &     )
-       write(0,*) '--- end setalb:'
 
 !  --- lu [+4L]: derive SFALB from vis- and nir- diffuse surface albedo
         do i = 1, IM
           sfalb(i) = max(0.01, 0.5 * (sfcalb(i,2) + sfcalb(i,4)))
         enddo
-        write(0,*) '--- end sfalb:'
-        write(0,*) '--- nday = ', nday
 
         if (nday > 0) then
 
 !     print *,' in grrad : calling swrad'
 
           if ( present(htrswb) ) then
-          
-            write(0,*) '--- enter subroutine swrad with htrswb'
+
             call swrad                                                  &
 !  ---  inputs:
      &     ( plyr,plvl,tlyr,tlvl,qlyr,olyr,gasvmr,                      &
@@ -1141,8 +1053,6 @@
 !!   &,      HSW0=htsw0,FLXPRF=fswprf                                   &
      &,      HSWB=htswb,FDNCMP=scmpsw                                   &
      &     )
-            
-            write(0,*) '--- end subroutine swrad with htrswb'
 
             do j = 1, NBDSW
               do k = 1, LM
@@ -1154,7 +1064,6 @@
 
           else
 
-            write(0,*) '--- enter subroutine swrad without htrswb'
             call swrad                                                  &
 !  ---  inputs:
      &     ( plyr,plvl,tlyr,tlvl,qlyr,olyr,gasvmr,                      &
@@ -1167,7 +1076,6 @@
 !!   &,      HSW0=htsw0,FLXPRF=fswprf,HSWB=htswb                        &
      &,      FDNCMP=scmpsw                                              &
      &     )
-            write(0,*) '--- end subroutine swrad without htrswb'
 
           endif
 
@@ -1303,7 +1211,6 @@
 !*RADFLX*
           enddo
         endif
-        write(0,*) '--- end lslwr:'
 
 !  ---  proper diurnal sw wgt..coszro=mean cosz over daylight, while
 !       coszdg= mean cosz over entire interval
@@ -1327,7 +1234,6 @@
             endif
           enddo
         endif
-        write(0,*) '--- end lsswr:'
 
 !  ---  save total cloud and bl cloud
 
@@ -1336,7 +1242,6 @@
             fluxr(i,26) = fluxr(i,26) + raddt * cldsa(i,4)
             fluxr(i,27) = fluxr(i,27) + raddt * cldsa(i,5)
           enddo
-          write(0,*) '--- end clouds 1'
 
 !  ---  save cld frac,toplyr,botlyr and top temp, note that the order
 !       of h,m,l cloud is reversed for the fluxr output.
@@ -1353,7 +1258,6 @@
               fluxr(i,17-k) = fluxr(i,17-k) + tgrs(i,itop)   * tem0d
             enddo
           enddo
-          write(0,*) '--- end clouds 2:'
         endif
 
         do k = 1, LM
@@ -1361,13 +1265,8 @@
             cldcov(i,k) = clouds(i,k,1)
           enddo
         enddo
-        write(0,*) '--- end cldcov:'
 
       endif                                ! end_if_lssav
-
-      write(0,*)
-      write(0,*) '--- end grrad:'
-
 !
       return
 !...................................

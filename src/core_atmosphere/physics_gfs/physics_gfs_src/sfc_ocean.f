@@ -94,7 +94,6 @@
       integer :: i
 
       logical :: flag(im)
-
 !
 !===> ...  begin here
 !
@@ -143,7 +142,6 @@
           tem      = 1.0 / rho
           hflx(i)  = hflx(i) * tem * cpinv
           evap(i)  = evap(i) * tem * hvapi
-
         endif
       enddo
 !

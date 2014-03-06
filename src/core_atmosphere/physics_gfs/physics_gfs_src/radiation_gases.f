@@ -220,11 +220,8 @@
         co2_glb = co2vmr_def
 
         if ( me == 0 ) then
-!ldf (2012-11-09) begin:
-!        print *,' - Using prescribed co2 global mean value=',         &
-!    &              co2vmr_def
-         write(0,*) '---- Using prescribed co2 global mean value=', co2vmr_def
-!ldf end.
+          print *,' - Using prescribed co2 global mean value=',         &
+     &              co2vmr_def
         endif
 
         return

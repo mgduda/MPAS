@@ -226,12 +226,6 @@
     enddo
  enddo
 
- do iCell = 1, 10
-    do k = 1, nOZnLevels
-       write(0,201) iCell,k,(o3clim(k,nc,iCell),nc=1,nOznPlCoeff)
-    enddo
- enddo
-
  write(0,*) '--- end subroutine o3climatology_from_MPAS'
 
 !format:

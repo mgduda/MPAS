@@ -53,15 +53,6 @@
         THETA1(I) = T1(I) * PRSLKI(I)
       ENDDO
 !!
-!
-!     write(0,*)
-!     write(0,*) '--- subroutine sfc_diag:'
-!     do i = 1, im
-!        write(0,101) i,theta1(i),t1(i),prslki(i),fm(i),fh(i)
-!     enddo
-! 101 format(i8,5(1x,e15.8))
-!     stop
-
       DO I = 1, IM
         F10M(I) = FM10(I) / FM(I)
         F10M(I) = min(F10M(I),1.)
@@ -70,7 +61,6 @@
         FHI     = FH2(I) / FH(I)
         T2M(I)  = TSKIN(I)*(1. - FHI) + THETA1(I)*FHI
         T2M(I)  = T2M(I) * SIG2K
-!       write(0,101) i,f10m(i),u10m(i),v10m(i),fh2(i),fh(i),t2m(i)
         IF(EVAP(I) >= 0.) THEN !  For EVAPORATION>0, USE INFERRED QSURF TO DEDUCE Q2M
           Q2M(I) = QSURF(I)*(1.-FHI) + max(qmin,Q1(I))*FHI
         ELSE                   !  FOR DEW FORMATION, USE SATURATED Q AT TSKIN
@@ -82,7 +72,6 @@
         QSS(I) = EPS * QSS(I) / (PS(I) + EPSM1 * QSS(I))
         Q2M(I) = MIN(Q2M(I),QSS(I))
       ENDDO
-!     stop
 
       RETURN
       END
