@@ -209,6 +209,13 @@
        diag_physics%cldfrac   %array(k,iCell) = cldcov(iCell,k)
     enddo
  enddo
+ write(0,*)
+ write(0,*) '--- end subroutine radiation_to_MPAS:'
+ write(0,*) '--- max rthratenlw = ', maxval(tend_physics%rthratenlw%array(:,1:mesh%nCellsSolve))
+ write(0,*) '--- min rthratenlw = ', minval(tend_physics%rthratenlw%array(:,1:mesh%nCellsSolve))
+ write(0,*) '--- max rthratensw = ', maxval(tend_physics%rthratensw%array(:,1:mesh%nCellsSolve))
+ write(0,*) '--- min rthratensw = ', minval(tend_physics%rthratensw%array(:,1:mesh%nCellsSolve))
+ write(0,*)
 
  end subroutine radiation_to_MPAS
 
@@ -389,66 +396,63 @@
 !stop
 
 !... CALL GFS PHYSICS DRIVER FOR ALL PHYSICS, EXCEPT RADIATION:
- write(0,*)
- write(0,*) '--- before call to grrad:'
- write(0,*) '... solcon       = ', solcon
- write(0,*) '... k1oz         = ', k1oz
- write(0,*) '... k2oz         = ', k2oz
- write(0,*) '... facoz        = ', facoz
- write(0,*) '... iovrsw       = ', iovr_sw
- write(0,*) '... iovrlw       = ', iovr_lw
- write(0,*) '... np3d         = ', num_p3d
- write(0,*) '... ntcw         = ', ntcw
- write(0,*) '... ncld         = ', ncld
- write(0,*) '... ntoz         = ', ntoz
- write(0,*) '... ntrac        = ', ntrac
- write(0,*) '... nfxr         = ', nfxr
- write(0,*) '... dtlw         = ', dt_radtlw
- write(0,*) '... dtsw         = ', dt_radtsw
- write(0,*) '... lslwr        = ', lslwr
- write(0,*) '... lsswr        = ', lsswr
- write(0,*) '... lssav        = ', lssav
- write(0,*) '... norad_precip = ', norad_precip
- write(0,*) '... crick_proof  = ', crick_proof
- write(0,*) '... ccnorm       = ', ccnorm
- write(0,*) '... ix           = ', nCellsSolve
- write(0,*) '... im           = ', nCellsSolve
- write(0,*) '... lm           = ', nVertLevels
- write(0,*) '... iflip        = ', iflip
- write(0,*) '... me           = ', me
- write(0,*) '... lprnt        = ', lprnt
- write(0,*) '... ipt          = ', nCellsSolve
- write(0,*) '... kdt          = ', itimestep
-!iCell = 5000
+!write(0,*)
+!write(0,*) '--- before call to grrad:'
+!write(0,*) '... itimestep    = ', itimestep
+!write(0,*) '... nCellsSolve  = ', nCellsSolve
+!write(0,*) '... nVertLevels  = ', nVertLevels
+!write(0,*) '... norad_precip = ', norad_precip
+!write(0,*) '... crick_proof  = ', crick_proof
+!write(0,*) '... ccnorm       = ', ccnorm
+!write(0,*) '... lssav        = ', lssav
+!write(0,*) '... sas_shal     = ', sas_shal
+!write(0,*) '... lslwr        = ', lslwr
+!write(0,*) '... lsswr        = ', lsswr
+!write(0,*) '... iflip        = ', iflip
+!write(0,*) '... me           = ', me
+!write(0,*) '... lprnt        = ', lprnt
+!write(0,*) '... ipt          = ', nCellsSolve
+!write(0,*) '... np3d         = ', num_p3d
+!write(0,*) '... nfxr         = ', nfxr
+!write(0,*) '... ntcw         = ', ntcw
+!write(0,*) '... ncld         = ', ncld
+!write(0,*) '... ntoz         = ', ntoz
+!write(0,*) '... ntrac        = ', ntrac
+!write(0,*) '... k1oz         = ', k1oz
+!write(0,*) '... k2oz         = ', k2oz
+!write(0,*) '... facoz        = ', facoz
+!write(0,*) '... iovrlw       = ', iovr_lw
+!write(0,*) '... iovrsw       = ', iovr_sw
+!write(0,*) '... dtlw         = ', dt_radtlw
+!write(0,*) '... dtsw         = ', dt_radtsw
+!write(0,*) '... solcon       = ', solcon
+!write(0,*)
+!iCell = nCellsSolve
+!do k = 1, nVertLevels+1
+!   write(0,103) iCell,k,prsi_rad(iCell,k)
+!enddo
+!write(0,*)
 !do k = 1, nVertLevels
-!   write(0,103) iCell,k,prsl_rad(iCell,k),prslk(iCell,k),tgrs(iCell,k),qvrs(iCell,k), &
+!   write(0,103) iCell,k,prsl_rad(iCell,k),prslk(iCell,k),tgrs(iCell,k),qvrs(iCell,k), & 
 !      qgrs(iCell,k,1),qgrs(iCell,k,2),qgrs(iCell,k,3)
 !enddo
 !write(0,*)
-!do iCell = 1, 500
-!   if(slmsk(iCell) .gt. 0.) then
-!      write(0,102) iCell,slmsk(iCell),mesh%lonCell%array(iCell),mesh%latCell%array(iCell), &
-!         sfc_input%skintemp%array(iCell),sfc_input%snoalb%array(iCell),                    &
-!         sfc_input%facsf%array(iCell),sfc_input%facwf%array(iCell),                        &
-!         sfc_input%orogwd%array(1,iCell)
-!   endif
+!do k = 1, nVertLevels
+!   write(0,103) iCell,k,vvel(iCell,k)
 !enddo
 !write(0,*)
-!do iCell = 1, 500
-!   if(slmsk(iCell) .gt. 0._RKIND) then
-!      write(0,102) iCell,slmsk(iCell),diag_physics%zorl%array(iCell),     &
+!do iCell = 1, nCellsSolve
+!   write(0,102) iCell,slmsk(iCell),mesh%lonCell%array(iCell),mesh%latCell%array(iCell), &
+!         sfc_input%skintemp%array(iCell),sfc_input%snow%array(iCell),sfc_input%snoalb%array(iCell), &
+!         sfc_input%facsf%array(iCell),sfc_input%facwf%array(iCell)
+!enddo
+!write(0,*)
+!do iCell = 1, nCellsSolve
+!   write(0,102) iCell,diag_physics%zorl%array(iCell),     &
 !         diag_physics%alnsf%array(iCell),diag_physics%alnwf%array(iCell), &
 !         diag_physics%alvsf%array(iCell),diag_physics%alvwf%array(iCell)
-!   endif
 !enddo
 !write(0,*)
-!do iCell = 1, 500
-!   if(slmsk(iCell) .gt. 0._RKIND) then
-!      write(0,102) iCell,diag_physics%cv%array(iCell),diag_physics%cvb%array(iCell), &
-!         diag_physics%cvt%array(iCell)
-!   endif
-!enddo
-!stop
 
  call grrad( &
 !... inputs:

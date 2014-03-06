@@ -329,10 +329,11 @@
  end subroutine gbphys_from_MPAS
 
 !==================================================================================================
- subroutine gbphys_to_MPAS(mesh,diag_physics,tend_physics,sfc_input)
+ subroutine gbphys_to_MPAS(dminfo,mesh,diag_physics,tend_physics,sfc_input)
 !==================================================================================================
 
 !input arguments:
+ type(dm_info),intent(in):: dminfo
  type(mesh_type),intent(in):: mesh
 
 !inout arguments:
@@ -343,6 +344,9 @@
 !local variables:
  integer:: iCell,k,n
  real(kind=RKIND):: dti
+
+ real(kind=RKIND):: tend_min,tend_max
+ real(kind=RKIND):: global_tend_min,global_tend_max
 
 !--------------------------------------------------------------------------------------------------
  write(0,*)
@@ -374,6 +378,57 @@
        tend_physics % qo3prodct    % array(k,iCell) = dq3dt(iCell,k,6)*dti
     enddo
  enddo
+ tend_min =  999._RKIND
+ tend_max = -999._RKIND
+ do iCell = 1, mesh%nCellsSolve
+    do k = 1, mesh%nVertLevels
+       tend_min = min(tend_min,tend_physics%qvdiffusion%array(k,iCell))
+       tend_max = max(tend_max,tend_physics%qvdiffusion%array(k,iCell))
+    enddo
+ enddo
+ call mpas_dmpar_min_real(dminfo,tend_min,global_tend_min)
+ call mpas_dmpar_min_real(dminfo,tend_max,global_tend_max)
+ write(0,*)
+ write(0,*) 'global min, max tend_qvdiffusion',global_tend_min,global_tend_max
+
+ tend_min =  999._RKIND
+ tend_max = -999._RKIND
+ do iCell = 1, mesh%nCellsSolve
+    do k = 1, mesh%nVertLevels
+       tend_min = min(tend_min,tend_physics%qvcudeep%array(k,iCell))
+       tend_max = max(tend_max,tend_physics%qvcudeep%array(k,iCell))
+    enddo
+ enddo
+ call mpas_dmpar_min_real(dminfo,tend_min,global_tend_min)
+ call mpas_dmpar_min_real(dminfo,tend_max,global_tend_max)
+ write(0,*)
+ write(0,*) 'global min, max tend_qvcudeep',global_tend_min,global_tend_max
+
+ tend_min =  999._RKIND
+ tend_max = -999._RKIND
+ do iCell = 1, mesh%nCellsSolve
+    do k = 1, mesh%nVertLevels
+       tend_min = min(tend_min,tend_physics%qvcushallow%array(k,iCell))
+       tend_max = max(tend_max,tend_physics%qvcushallow%array(k,iCell))
+    enddo
+ enddo
+ call mpas_dmpar_min_real(dminfo,tend_min,global_tend_min)
+ call mpas_dmpar_min_real(dminfo,tend_max,global_tend_max)
+ write(0,*)
+ write(0,*) 'global min, max tend_qvcushallow',global_tend_min,global_tend_max
+
+ tend_min =  999._RKIND
+ tend_max = -999._RKIND
+ do iCell = 1, mesh%nCellsSolve
+    do k = 1, mesh%nVertLevels
+       tend_min = min(tend_min,tend_physics%qvmicrop%array(k,iCell))
+       tend_max = max(tend_max,tend_physics%qvmicrop%array(k,iCell))
+    enddo
+ enddo
+ call mpas_dmpar_min_real(dminfo,tend_min,global_tend_min)
+ call mpas_dmpar_min_real(dminfo,tend_max,global_tend_max)
+ write(0,*)
+ write(0,*) 'global min, max tend_qvmicrop',global_tend_min,global_tend_max
 
 !zonal and meridional winds:
  do iCell = 1, mesh%nCellsSolve
@@ -418,6 +473,12 @@
  enddo
  write(0,*) "max tend thphysics   = ",maxval(tend_physics%thphysics%array(:,1:mesh%nCellsSolve)  )
  write(0,*) "min tend thphysics   = ",minval(tend_physics%thphysics%array(:,1:mesh%nCellsSolve)  )
+ write(0,*)
+ iCell = 68
+ do k = 1, mesh%nVertLevels
+    write(0,202) iCell,k,gt0(iCell,k),gq0(iCell,k,1),gq0(iCell,k,3),gq0(iCell,k,2)
+ enddo
+
 !stop
 !do iCell = 100,150
 !   do k = 1, mesh%nVertLevels
@@ -625,7 +686,6 @@
  202 format(2i9,10(1x,e15.8))
 
 !... CALL GFS PHYSICS DRIVER FOR ALL PHYSICS, EXCEPT RADIATION:
- write(0,*) '--- enter subroutine gbphys:'
  call gbphys( &
     !... inputs:
     nCellsSolve , nCellsSolve , nVertLevels , nSoilLevels , lsm , ntrac , ncld , ntoz , ntcw ,  &
@@ -704,9 +764,13 @@
     dumphys, dumphys, dumphys, dumphys, dumphys, tref, z_c, c_0, c_d, w_0, w_d, rqtk            &
             )
  write(0,*) '--- end subroutine gbphys:'
+ iCell = 103
+ do k = 1,nVertLevels
+    write(0,202) iCell,k,gt0(iCell,k),(gq0(iCell,k,n),n=1,ntrac),gu0(iCell,k),gv0(iCell,k)
+ enddo
 
 !... copy all GFS arrays to MPAS arrays:
- call gbphys_to_MPAS(mesh,diag_physics,tend_physics,sfc_input)
+ call gbphys_to_MPAS(dminfo,mesh,diag_physics,tend_physics,sfc_input)
 
  write(0,*) '--- end subroutine mpas_atmphys_gbphys:'
 
