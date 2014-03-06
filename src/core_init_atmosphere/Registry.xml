@@ -228,6 +228,7 @@
 			<var name="rho_base"/>
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
+			<var name="initial_date"/>
 		</stream>
 
 		<stream name="restart" type="restart">
@@ -386,6 +387,7 @@
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
 			<var name="precipw"/>
+			<var name="initial_date"/>
 		</stream>
 		<stream name="surface" type="input;output">
 			<var name="xtime"/>
