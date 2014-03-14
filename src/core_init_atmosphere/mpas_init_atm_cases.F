@@ -2580,7 +2580,7 @@ write(0,*) 'USING ECMWF TERRAIN...'
       kz = nz
       if (hybrid) then
       
-         zh = zt
+         zh = 30000.0
 !         zh = 0.5*zt
 
          do k=1,nz
@@ -2658,7 +2658,7 @@ write(0,*) 'USING ECMWF TERRAIN...'
                dcsum = dcsum + dcEdge(edgesOnCell(j,iCell))
             end do
             dcsum = dcsum / real(nEdgesOnCell(iCell))
-            sm0(iCell) = max(0.01_RKIND, 0.25 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
+            sm0(iCell) = max(0.01_RKIND, 0.125 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
          end do
 
          do k=2,kz-1
@@ -3786,7 +3786,7 @@ write(0,*) 'PROCESSING SEAICE'
             target_z = 0.5 * (grid % zgrid % array(k,iCell) + grid % zgrid % array(k+1,iCell))
 !           state % theta_m % array(k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1)
             state % theta_m % array(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=2)
+                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
          end do
 
 

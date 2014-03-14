@@ -642,11 +642,17 @@ module mpas_core
       meshScalingDel2(:) = 1.0
       meshScalingDel4(:) = 1.0
       if (config_h_ScaleWithMesh) then
+!         do iEdge=1,mesh%nEdges
+!            cell1 = mesh % cellsOnEdge % array(1,iEdge)
+!            cell2 = mesh % cellsOnEdge % array(2,iEdge)
+!            meshScalingDel2(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.5
+!            meshScalingDel4(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)
+!         end do
          do iEdge=1,mesh%nEdges
             cell1 = mesh % cellsOnEdge % array(1,iEdge)
             cell2 = mesh % cellsOnEdge % array(2,iEdge)
-            meshScalingDel2(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.5
-            meshScalingDel4(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)
+            meshScalingDel2(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.25
+            meshScalingDel4(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.75
          end do
       end if
 

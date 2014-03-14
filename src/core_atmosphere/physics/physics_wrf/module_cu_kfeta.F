@@ -491,6 +491,10 @@ CONTAINS
    REAL    :: CHMIN,PM15,CHMAX,DTRH,RAD,DPPP
    REAL    :: TVDIFF,DTTOT,ABSOMG,ABSOMGTC,FRDP
 
+!ckay
+   REAL    :: xcldfra,UMF_new
+   REAL    :: denSplume, TOKIOKA, grid_TOKIOKA
+
       INTEGER :: KX,K,KL
 !
       INTEGER :: NCHECK
@@ -821,6 +825,11 @@ trigger:  IF(TLCL+DTLCL+DTRH.LT.TENV)THEN
             ELSE
               RAD = 1000.+1000*WKL/0.1
             ENDIF
+!ckay
+! new formulation based on the LCL replacing the cloud radius concept
+!introduce LCL instead of RAD based on WKL here
+            RAD = ZLCL
+            RAD = AMIN1(4000.,RAD)  ! max tra
 !     
 !*******************************************************************
 !                                                                  *
@@ -952,6 +961,19 @@ updraft:    DO NK=K,KL-1
 !...REI IS THE RATE OF ENVIRONMENTAL INFLOW...
 !
               REI=VMFLCL*DP(NK1)*0.03/RAD
+! New formulation for entrainment
+!ckay introduce DX dependcy for the TOKIOKA Parameter =0.03
+!ckay Kim et al 2011; Kang et al 2009; Lin et al 2013;  GCM findings
+
+              TOKIOKA = 0.03
+
+              IF(DX.GE.24.999E3) then
+                grid_TOKIOKA = 1.0
+              else
+                grid_TOKIOKA = 1.0 + (log(25.E3/DX))
+               end if
+              TOKIOKA = TOKIOKA * grid_TOKIOKA
+
               TVQU(NK1)=TU(NK1)*(1.+0.608*QU(NK1)-QLIQ(NK1)-QICE(NK1))
               IF(NK.EQ.K)THEN
                 DILBE=((TVLCL+TVQU(NK1))/(TVEN+TV0(NK1))-1.)*DZZ
@@ -1325,6 +1347,17 @@ updraft:    DO NK=K,KL-1
         IF(ISHALL.EQ.1)TIMEC=2400.
         NIC=NINT(TIMEC/DT)
         TIMEC=FLOAT(NIC)*DT
+!ckay: new formulation Alapaty et al., 2013
+!Dynamic Tau formulation: dynTau
+         FRC2 = UMF(KLCL)/DXSQ
+         denSplume = P0(KLCL)/(R*TU(KLCL))
+         FRC2 = FRC2/denSplume
+         TIMEC = CLDHGT(LC)/((FRC2*ABE)**0.3333)
+         TIMEC=AMAX1(1800.,TIMEC)         ! 30 minutes  >= TIMEC <= 5 hours
+         TIMEC=AMIN1(5.*3600.,TIMEC)
+         IF(ISHALL.EQ.1)TIMEC=2400.       ! shallow convection TIMEC = 40 minutes
+         NIC=NINT(TIMEC/DT)
+         TIMEC=FLOAT(NIC)*DT
 !     
 !...COMPUTE WIND SHEAR AND PRECIPITATION EFFICIENCY.
 !     
