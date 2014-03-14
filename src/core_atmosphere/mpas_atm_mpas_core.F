@@ -440,6 +440,7 @@ module mpas_core
          do k=1,grid%nVertLevels
             diag % theta % array(k,iCell) = state % theta_m % array(k,iCell) / (1._RKIND + rvord * state % scalars % array(state % index_qv,k,iCell))
             diag % rho % array(k,iCell) = state % rho_zz % array(k,iCell) * grid % zz % array(k,iCell)
+            diag % pressure % array(k,iCell) = diag % pressure_base % array(k,iCell) + diag % pressure_p % array(k,iCell)
          end do
       end do
 

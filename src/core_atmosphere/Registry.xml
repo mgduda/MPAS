@@ -1032,6 +1032,7 @@
 
                 <!-- state variables diagnosed from prognostic state -->
                 <var name="pressure_p"              type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="pressure"                type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- Diagnostic fields: only written to output                                                           -->
                 <!-- NOTE: added the "r" option to rho,theta,uReconstructZonal,and uReconstructMeridional for use of the -->
