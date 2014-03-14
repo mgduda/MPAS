@@ -506,6 +506,8 @@ module mpas_core
 
       call MPAS_streamAddField(hifreq_stream, block_ptr % state % time_levs(1) % state % xtime, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % olrtoa, ierr)
+      call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % i_rainc, ierr)
+      call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % i_rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % rainc, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, block_ptr % diag_physics % hfx, ierr)
