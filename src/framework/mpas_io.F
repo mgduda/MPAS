@@ -23,8 +23,9 @@ module mpas_io
 #endif
 
    ! File access modes
-   integer, parameter :: MPAS_IO_READ  = 1, &
-                         MPAS_IO_WRITE = 2
+   integer, parameter :: MPAS_IO_READ       = 1, &
+                         MPAS_IO_WRITE      = 2, &
+                         MPAS_IO_WRITE_CDF2 = 3
 
    ! I/O formats
    integer, parameter :: MPAS_IO_NETCDF  = 3, &
@@ -303,7 +304,8 @@ module mpas_io
 
       ! Sanity checks
       if (mode /= MPAS_IO_READ .and. &
-          mode /= MPAS_IO_WRITE) then
+          mode /= MPAS_IO_WRITE .and. &
+          mode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_INVALID_MODE
          return 
       end if
@@ -334,6 +336,9 @@ module mpas_io
       if (mode == MPAS_IO_WRITE) then
 !write(stderrUnit,*) 'MGD PIO_createfile'
          pio_ierr = PIO_createfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_64BIT_DATA)
+      else if (mode == MPAS_IO_WRITE_CDF2) then
+!write(stderrUnit,*) 'MGD PIO_createfile'
+         pio_ierr = PIO_createfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_64BIT_OFFSET)
       else
 !write(stderrUnit,*) 'MGD PIO_openfile'
          pio_ierr = PIO_openfile(pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
@@ -500,7 +505,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -817,7 +822,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -2858,7 +2863,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -2995,7 +3000,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -3141,7 +3146,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -3278,7 +3283,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
@@ -3424,7 +3429,7 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_DATA_MODE
          return 
       end if
-      if (handle % iomode /= MPAS_IO_WRITE) then
+      if (handle % iomode /= MPAS_IO_WRITE .and. handle % iomode /= MPAS_IO_WRITE_CDF2) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NOWRITE
          return 
       end if
