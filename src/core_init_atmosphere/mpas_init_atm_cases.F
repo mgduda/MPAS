@@ -2920,7 +2920,7 @@ write(0,*) 'USING ECMWF TERRAIN...'
       kz = nz
       if (hybrid) then
       
-         zh = zt
+         zh = 30000.0
 !         zh = 0.5*zt
 
          do k=1,nz
@@ -2994,7 +2994,7 @@ write(0,*) 'USING ECMWF TERRAIN...'
                dcsum = dcsum + dcEdge(edgesOnCell(j,iCell))
             end do
             dcsum = dcsum / real(nEdgesOnCell(iCell))
-            sm0(iCell) = max(0.01_RKIND, 0.25 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
+            sm0(iCell) = max(0.01_RKIND, 0.125 * min(1.0_RKIND, 3000.0_RKIND/dcsum))
          end do
 
          do k=2,kz-1

@@ -138,7 +138,7 @@ MODULE module_cu_tiedtke
       PARAMETER(CRIRH=0.80,fdbk = 1.0,ZTAU = 3600.0)
 !--------------------
       LOGICAL :: LMFPEN,LMFMID,LMFSCV,LMFDD,LMFDUDV
-      PARAMETER(LMFPEN=.TRUE.,LMFMID=.TRUE.,LMFSCV=.TRUE.,LMFDD=.TRUE.,LMFDUDV=.TRUE.)
+      PARAMETER(LMFPEN=.FALSE.,LMFMID=.FALSE.,LMFSCV=.TRUE.,LMFDD=.TRUE.,LMFDUDV=.TRUE.)
 !--------------------
 !#################### END of Variables definition##########################
 !-----------------------------------------------------------------------
@@ -1004,7 +1004,7 @@ CONTAINS
   320 CONTINUE
       DO 340 JL=1,KLON
          KTYPE(JL)=0
-      IF(ZDQCV(JL).GT.MAX(0.,1.1*PQHFL(JL)*G)) THEN
+      IF((ZDQCV(JL).GT.MAX(0.,1.1*PQHFL(JL)*G)) .AND. LMFPEN) THEN
          KTYPE(JL)=1
       ELSE
          KTYPE(JL)=2
