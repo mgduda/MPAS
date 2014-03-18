@@ -2326,6 +2326,8 @@ module init_atm_cases
 
       real (kind=RKIND) :: alt, als, zetal, zl
 
+      real (kind=RKIND) :: rtmp, rtmp2
+
       block => grid % block
       parinfo => block % parinfo
       dminfo => block % domain % dminfo
@@ -2459,6 +2461,26 @@ module init_atm_cases
 
 
       if (config_vertical_grid) then
+
+      ! 
+      !  recompute angleEdge correctly
+      ! 
+write(0,*) 'MGD RECOMPUTING ANGLE_EDGE'
+      do iEdge=1,grid%nEdges
+         rtmp2 = sphere_distance(grid % latVertex % array(grid % verticesOnEdge % array(1,iEdge)), grid % lonVertex % array(grid % verticesOnEdge % array(1,iEdge)), &
+                           grid % latVertex % array(grid % verticesOnEdge % array(2,iEdge)), grid % lonVertex % array(grid % verticesOnEdge % array(2,iEdge)), 1.0_RKIND)
+         rtmp = (grid % latVertex % array(grid % verticesOnEdge % array(2,iEdge)) - grid % latVertex % array(grid % verticesOnEdge % array(1,iEdge))) / rtmp2
+         if (rtmp > 1.0) rtmp = 1.0
+         if (rtmp < -1.0) rtmp = -1.0
+         rtmp = acos(rtmp)
+         grid % angleEdge % array(iEdge) = meridian_angle(grid % latEdge % array(iEdge), grid % lonEdge % array(iEdge), &
+                 grid % latVertex % array(grid % verticesOnEdge % array(2,iEdge)), grid % lonVertex % array(grid % verticesOnEdge % array(2,iEdge)))
+         grid % angleEdge % array(iEdge) = sign(rtmp, grid % angleEdge % array(iEdge))
+         if (grid % angleEdge % array(iEdge) > pii) grid % angleEdge % array(iEdge) = grid % angleEdge % array(iEdge) - 2.0*pii
+         if (grid % angleEdge % array(iEdge) < -pii) grid % angleEdge % array(iEdge) = grid % angleEdge % array(iEdge) + 2.0*pii
+      end do
+
+
 
       !
       ! Vertical grid setup
@@ -4356,6 +4378,119 @@ write(0,*) 'PROCESSING SEAICE'
       end do
 
    end subroutine decouple_variables
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! FUNCTION MERIDIAN_ANGLE
+   !
+   ! Find the angle between the meridian that intersects point (lat1,lon1)
+   !   and the great circle passing through points (lat1,lon1) (lat2,lon2).
+   !   (lat1,lon1) is the vertex of the angle.
+   !
+   ! Convention: zero points north, 90 points west, -90 point east,
+   !   points south 180, -180
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   real(kind=RKIND) function meridian_angle(p1lat, p1lon, p2lat, p2lon)
+
+      implicit none
+
+      real(kind=RKIND), intent(in) :: p1lat, p1lon, p2lat, p2lon
+
+      real(kind=RKIND) :: nplat, nplon
+      real(kind=RKIND) :: ax, ay, az
+      real(kind=RKIND) :: bx, by, bz
+      real(kind=RKIND) :: cx, cy, cz
+
+      if (p1lat <= (pii/2.0)-0.05) then
+         nplat = p1lat + 0.05
+      else
+         if (p1lat /= pii/2.0) then
+            nplat = pii/2.0
+         else
+            meridian_angle = 0.0
+            return
+         end if
+      end if
+      nplon = p1lon
+
+      call convert_lx(ax, ay, az, 1.0, p1lat, p1lon)
+      call convert_lx(bx, by, bz, 1.0, nplat, nplon)
+      call convert_lx(cx, cy, cz, 1.0, p2lat, p2lon)
+
+      meridian_angle = plane_angle(ax, ay, az, bx, by, bz, cx, cy, cz, ax, ay, az)
+
+   end function meridian_angle
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! FUNCTION PLANE_ANGLE
+   !
+   ! Computes the angle between vectors AB and AC, given points A, B, and C, and
+   !   a vector (u,v,w) normal to the plane.
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if 0
+   real (kind=RKIND) function plane_angle(ax, ay, az, bx, by, bz, cx, cy, cz, u, v, w)
+
+      implicit none
+
+      real (kind=RKIND), intent(in) :: ax, ay, az, bx, by, bz, cx, cy, cz, u, v, w
+
+      real (kind=RKIND) :: ABx, ABy, ABz    ! The components of the vector AB
+      real (kind=RKIND) :: mAB              ! The magnitude of AB
+      real (kind=RKIND) :: ACx, ACy, ACz    ! The components of the vector AC
+      real (kind=RKIND) :: mAC              ! The magnitude of AC
+
+      real (kind=RKIND) :: Dx               ! The i-components of the cross product AB x AC
+      real (kind=RKIND) :: Dy               ! The j-components of the cross product AB x AC
+      real (kind=RKIND) :: Dz               ! The k-components of the cross product AB x AC
+
+      real (kind=RKIND) :: cos_angle
+
+      ABx = bx - ax
+      ABy = by - ay
+      ABz = bz - az
+      mAB = sqrt(ABx**2.0 + ABy**2.0 + ABz**2.0)
+
+      ACx = cx - ax
+      ACy = cy - ay
+      ACz = cz - az
+      mAC = sqrt(ACx**2.0 + ACy**2.0 + ACz**2.0)
+
+
+      Dx =   (ABy * ACz) - (ABz * ACy)
+      Dy = -((ABx * ACz) - (ABz * ACx))
+      Dz =   (ABx * ACy) - (ABy * ACx)
+
+      cos_angle = (ABx*ACx + ABy*ACy + ABz*ACz) / (mAB * mAC)
+
+      if ((Dx*u + Dy*v + Dz*w) >= 0.0) then
+         plane_angle =  acos(max(min(cos_angle,1.0_RKIND),-1.0_RKIND))
+      else
+         plane_angle = -acos(max(min(cos_angle,1.0_RKIND),-1.0_RKIND))
+      end if
+
+   end function plane_angle
+#endif
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! SUBROUTINE CONVERT_LX
+   !
+   ! Convert (lat,lon) to an (x, y, z) location on a sphere with specified
+   ! radius.
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   subroutine convert_lx(x, y, z, radius, lat, lon)
+
+      implicit none
+
+      real(kind=RKIND), intent(in) :: radius, lat, lon
+      real(kind=RKIND), intent(out) :: x, y, z
+
+      z = radius * sin(lat)
+      x = radius * cos(lon) * cos(lat)
+      y = radius * sin(lon) * cos(lat)
+
+   end subroutine convert_lx
 
 
 end module init_atm_cases
