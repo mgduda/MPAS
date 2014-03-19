@@ -29,10 +29,15 @@
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
 !>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Added the calculation of fhlwr and fhswr (frequencies of long- and short-wave radiation 
+!>      calls per hour to subroutine GFS_initialize in mpas_atmphys_gfs_init.F, to compute the
+!>      variables nslwr and nsswr (number of long- and short-wave radiation calls per hour). 
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19. 
 
 
  contains
-
 
 !==================================================================================================
  subroutine physics_init(dminfo,clock,config_do_restart,mesh,diag,state_1,state_2, &
@@ -203,6 +208,9 @@
                            !lsm = 1: use NOAH land surface scheme.
                             
 !... initialization for radiation calculations:
+ fhswr   = dt_radtsw / 3600._RKIND !frequency of shortwave radiation calls per hour.
+ fhlwr   = dt_radtlw / 3600._RKIND !frequency of longwave radiation calls per hour.
+
  nfxr    = 33      !second dimension of input/output array fluxr.
 
  ialb    = 0               !control flag for the surface albedo.
@@ -390,19 +398,19 @@
 !     endif
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  Compute nsswr and check rule 3.
-!     nsswr=nint(fhswr*3600./deltim)
-!     if(nsswr.le.0.or.abs(nsswr-fhswr*3600./deltim).gt.tol) then
-!       iret=3
-!       return
-!     endif
+      nsswr=nint(fhswr*3600./deltim)
+      if(nsswr.le.0.or.abs(nsswr-fhswr*3600./deltim).gt.tol) then
+        iret=3
+        return
+      endif
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  Compute nslwr and check rule 4.
-!     nslwr=nint(fhlwr*3600./deltim)
-!     if(nslwr.le.0.or.abs(nslwr-fhlwr*3600./deltim).gt.tol.or.
-!    &   mod(nslwr,nsswr).ne.0) then
-!       iret=4
-!       return
-!     endif
+      nslwr=nint(fhlwr*3600./deltim)
+      if(nslwr.le.0.or.abs(nslwr-fhlwr*3600./deltim).gt.tol.or. &
+         mod(nslwr,nsswr).ne.0) then
+        iret=4
+        return
+      endif
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  Compute nszer and check rule 5.
 !     nszer=nint(fhzer*3600./deltim)

@@ -35,6 +35,13 @@
 !>\brief MPAS top driver for the GFS radiation codes.
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Moved the calculation of fhlwr and fhswr (frequencies of long- and short-wave radiation 
+!>      calls per hour to subroutine GFS_initialize in mpas_atmphys_gfs_init.F, to compute the
+!>      variables nslwr and nsswr  (number of long- and short-wave radiation calls per hour). 
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19. 
 
 
  contains
@@ -351,11 +358,8 @@
 !... calculation of astronomy for shortwave radiation code:
  lsswr = l_radtsw
  lslwr = l_radtlw
-
  raddt = min(dt_radtsw,dt_radtlw)
 
- fhswr = dt_radtsw / 3600._RKIND
- fhlwr = dt_radtlw / 3600._RKIND
  write(0,*) 'fhlwr =', fhlwr
  write(0,*) 'dtlw  =', dt_radtlw
  write(0,*) 'lslwr =', lslwr

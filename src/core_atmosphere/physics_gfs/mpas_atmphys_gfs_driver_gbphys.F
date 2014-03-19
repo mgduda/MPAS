@@ -22,6 +22,13 @@
 !>\brief MPAS top driver for the GFS physics, except the radiation codes.
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Added the calculation of logical lscca for outputs of the diagnostics cv, cvb, cvt, acv,
+!>      acvb, and acvt which are instantaneous and accumulated convection cloud fraction, and
+!>      cloud base and cloud-top of convective clouds.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-19.
 
 
  contains
@@ -558,8 +565,12 @@
  integer:: lat,lonf,latg,kdt,ko3
 
  real(kind=RKIND),parameter:: cons_24 = 24._RKIND
+ real(kind=RKIND),parameter:: cons_99 = 99._RKIND
+
  real(kind=RKIND):: xtime_h
  real(kind=RKIND):: dtp,dtf,solhr
+ real(kind=RKIND):: clstp
+
 
 !--------------------------------------------------------------------------------------------------
  write(0,100) itimestep
@@ -593,6 +604,21 @@
 !... date conversion:
  fhour = utc_h
  solhr = mod(fhour+idate(1),cons_24)
+
+!... initialization of variable clstp needed in the calculation of bottom and top pressures for
+!convective clouds (Ken Campana diagnostics). set switch for saving convective clouds:
+ lscca = mod(itimestep,nsswr) == 0
+ if(lscca.and.lsswr) then
+    clstp = 1100.+min(fhswr,fhour,cons_99)  !initialize,accumulate,convert
+ elseif(lscca) then
+    clstp = 0100.+min(fhswr,fhour,cons_99)  !accumulate,convert
+ elseif(lsswr) then
+    clstp = 1100.                           !initialize,accumulate
+ else
+    clstp = 0100.                           !accumulate
+ endif
+ lslwr = .false.
+ lsswr = .false.
 
 !... initialization of local variables:
  nCellsSolve = mesh % nCellsSolve
@@ -637,6 +663,7 @@
 !write(0,*) 'lat         = ', lat
 !write(0,*) 'me          = ', me
 !write(0,*) 'pl_coeff    = ', pl_coeff
+
 !write(0,*) 'nlons       = ', nlons(1)
 !write(0,*) 'ncw         = ', ncw
 !write(0,*) 'flgmin      = ', flgmin
@@ -764,10 +791,6 @@
     dumphys, dumphys, dumphys, dumphys, dumphys, tref, z_c, c_0, c_d, w_0, w_d, rqtk            &
             )
  write(0,*) '--- end subroutine gbphys:'
- iCell = 103
- do k = 1,nVertLevels
-    write(0,202) iCell,k,gt0(iCell,k),(gq0(iCell,k,n),n=1,ntrac),gu0(iCell,k),gv0(iCell,k)
- enddo
 
 !... copy all GFS arrays to MPAS arrays:
  call gbphys_to_MPAS(dminfo,mesh,diag_physics,tend_physics,sfc_input)
