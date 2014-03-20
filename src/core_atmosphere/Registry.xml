@@ -402,20 +402,14 @@
 			<var name="rnp"/>
 			<var name="hlw"/>
 			<var name="hsw"/>
-			<var name="c_0"/>
-			<var name="c_d"/>
 			<var name="canopy"/>
 			<var name="cv"/>
 			<var name="cvb"/>
 			<var name="cvt"/>
-			<var name="d_conv"/>
-			<var name="dt_cool"/>
 			<var name="f10m"/>
 			<var name="ffhh"/>
 			<var name="ffmm"/>
 			<var name="hice"/>
-			<var name="ifd"/>
-			<var name="qrain"/>
 			<var name="relhum"/>
 			<var name="rqtk"/>
 			<var name="sncovr"/>
@@ -425,16 +419,7 @@
 			<var name="tprcp"/>
 			<var name="tref"/>
 			<var name="uustar"/>
-			<var name="w_d"/>
 			<var name="weasd"/>
-			<var name="xs"/>
-			<var name="xt"/>
-			<var name="xtts"/> 
-			<var name="xu"/>
-			<var name="xv"/>
-			<var name="xzts"/>
-			<var name="z_c"/>
-			<var name="zm"/>
 			<var name="vegfra"/>
 			<var name="zorl"/>
 			<var name="landmask"/>
@@ -674,14 +659,10 @@
 			<var name="rnp"/>
 			<var name="hlw"/>
 			<var name="hsw"/>
-			<var name="c_0"/>
-			<var name="c_d"/>
 			<var name="canopy"/>
 			<var name="cv"/>
 			<var name="cvb"/>
 			<var name="cvt"/>
-			<var name="d_conv"/>
-			<var name="dt_cool"/>
 			<var name="dqsfci"/>
 			<var name="dtsfci"/>
 			<var name="epi"/>
@@ -690,12 +671,10 @@
 			<var name="ffmm"/>
 			<var name="gfluxi"/>
 			<var name="hice"/>
-			<var name="ifd"/>
 			<var name="q1"/>
 			<var name="q2m"/>
 			<var name="psurf"/>
 			<var name="pwat"/>
-			<var name="qrain"/>
 			<var name="relhum"/>
 			<var name="rqtk"/>
 			<var name="sncovr"/>
@@ -711,17 +690,8 @@
 			<var name="uustar"/>
 			<var name="v1"/>
 			<var name="v10m"/>
-			<var name="w_d"/>
 			<var name="weasd"/>
-			<var name="xs"/>
-			<var name="xt"/>
-			<var name="xtts"/> 
-			<var name="xu"/>
-			<var name="xv"/>
-			<var name="xzts"/>
-			<var name="z_c"/>
 			<var name="zlvl"/>
-			<var name="zm"/>
 			<var name="vegfra"/>
 			<var name="zorl"/>
 			<var name="landmask"/>
@@ -1434,12 +1404,6 @@
              <var name="hsw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}" 
                   description="total sky short-wave radiative heating rate"
              />
-             <var name="c_0" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="c_d" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
              <var name="canopy" type="real" dimensions="nCells Time" units="?" 
                   description="canopy water"
              />
@@ -1457,12 +1421,6 @@
              />
              <var name="cvt" type="real" dimensions="nCells Time" units="Pa" 
                   description="convective cloud top pressure"
-             />
-             <var name="d_conv" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="dt_cool" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
              />
              <var name="dqsfci" type="real" dimensions="nCells Time" units="?" 
                   description="  "
@@ -1491,9 +1449,6 @@
              <var name="hpbl" type="real" dimensions="nCells Time" units="m" 
                   description="height of planetary boundary layer"
              />
-             <var name="ifd" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
              <var name="q1" type="real" dimensions="nCells Time" units="kg kg^{-1}" 
                   description="1-meter specific humidity"
              />
@@ -1505,9 +1460,6 @@
              />
              <var name="pwat" type="real" dimensions="nCells Time" units="kg m^{-2}" 
                   description="precipitable water"
-             />
-             <var name="qrain" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
              />
              <var name="relhum" type="real" dimensions="nVertLevels nCells Time" units="-" 
                   description="relative humidity"
@@ -1563,44 +1515,11 @@
              <var name="v10m" type="real" dimensions="nCells Time" units="m s^{-1}" 
                   description="10-meter meridional wind"
              />
-             <var name="w_0" type="real" dimensions="nCells Time" units="  " 
-                  description="  "
-             />
-             <var name="w_d" type="real" dimensions="nCells Time" units="  " 
-                  description="  "
-             />
              <var name="weasd" type="real" dimensions="nCells Time" units="kg m^{-2}" 
                   description="water equivalent snow depth over land and sea-ice"
              />
-             <var name="xs" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xt" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xtts" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xu" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xv" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xz" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="xzts" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
-             <var name="z_c" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
-             />
              <var name="zlvl" type="real" dimensions="nCells Time" units="m" 
                   description="height of layer next to the surface"
-             />
-             <var name="zm" type="real" dimensions="nCells Time" units="?" 
-                  description="  "
              />
              <var name="vegfra" type="real" dimensions="nCells Time" units="-" 
                   description="vegetation fraction"

@@ -29,6 +29,10 @@
 !>      acvb, and acvt which are instantaneous and accumulated convection cloud fraction, and
 !>      cloud base and cloud-top of convective clouds.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-19.
+!>    * Removed inputs/outputs in the argument list to subroutine gbphys needed in subroutine
+!>      sfc_nst since the variable nst_fcst is set to 0 and that subroutine is not called. Doing
+!>      so helps reduce the size of the restart and output files.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-20.
 
 
  contains
@@ -765,12 +769,12 @@
     diag_physics%acvt%array(1:nCellsSolve)    ,                                                 &
     slc, smc, stc, upd_mf, dwn_mf, det_mf, dkh, rnp, phy_f3d, phy_f2d,                          &
     dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     & 
-    diag_physics%xt%array(1:nCellsSolve)      , diag_physics%xs%array(1:nCellsSolve) ,          &
-    diag_physics%xu%array(1:nCellsSolve)      , diag_physics%xv%array(1:nCellsSolve) ,          &
-    diag_physics%xz%array(1:nCellsSolve)      , diag_physics%zm%array(1:nCellsSolve) ,          &
-    diag_physics%xtts%array(1:nCellsSolve)    , diag_physics%xzts%array(1:nCellsSolve) ,        &
-    diag_physics%d_conv%array(1:nCellsSolve)  , diag_physics%ifd%array(1:nCellsSolve) ,         &
-    diag_physics%dt_cool%array(1:nCellsSolve) , diag_physics%qrain%array(1:nCellsSolve) ,       &
+    dumphys                                   , dumphys,                                        &
+    dumphys                                   , dumphys,                                        &
+    dumphys                                   , dumphys,                                        &
+    dumphys                                   , dumphys,                                        &
+    dumphys                                   , dumphys,                                        &
+    dumphys                                   , dumphys,                                        &
     !... outputs:
     gt0, gq0, gu0, gv0,                                                                         &
     diag_physics%t2m%array(1:nCellsSolve)     , diag_physics%q2m%array(1:nCellsSolve) ,         &
@@ -788,7 +792,8 @@
     diag_physics%gustar%array(1:nCellsSolve)  , diag_physics%gpblh%array(1:nCellsSolve) ,       &
     diag_physics%gu10m%array(1:nCellsSolve)   , diag_physics%gv10m%array(1:nCellsSolve) ,       &
     diag_physics%gzorl%array(1:nCellsSolve)   , diag_physics%goro%array(1:nCellsSolve) ,        &
-    dumphys, dumphys, dumphys, dumphys, dumphys, tref, z_c, c_0, c_d, w_0, w_d, rqtk            &
+    dumphys, dumphys, dumphys, dumphys, dumphys, tref, dumphys, dumphys, dumphys, dumphys,      &
+    dumphys, rqtk                                                                               &
             )
  write(0,*) '--- end subroutine gbphys:'
 
