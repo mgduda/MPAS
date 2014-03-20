@@ -29,8 +29,10 @@
 !>\author Laura D. Fowler (send comments to laura@mmm.ucar.edu).
 !>\date 2013-11-21.
 !>
-!>\details
-!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Removed non-needed variables.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
 
 
 !==================================================================================================
@@ -239,27 +241,6 @@
     phy_f2d
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     phy_f3d
-
-!... local outputs from subroutine gbphys:
- real(kind=RKIND),dimension(:),allocatable:: &
-    dlwsfci,          &!
-    dswsfci,          &!
-    ulwsfci,          &!
-    uswsfci,          &!
-    dqsfci,           &!
-    dtsfci,           &!
-    epi,              &!
-    gfluxi,           &!
-    rqtk,             &!
-    psurf,            &!
-    tref,             &!
-    zlvl               !
- real(kind=RKIND),dimension(:),allocatable:: &
-    c_0,              &!
-    c_d,              &!
-    w_0,              &!
-    w_d,              &!
-    z_c                !
 
 !==================================================================================================
 !... variables and arrays related to parameterization of longwave and shortwave radiation:

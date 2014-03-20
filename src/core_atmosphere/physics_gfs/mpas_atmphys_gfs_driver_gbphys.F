@@ -28,11 +28,13 @@
 !>    * Added the calculation of logical lscca for outputs of the diagnostics cv, cvb, cvt, acv,
 !>      acvb, and acvt which are instantaneous and accumulated convection cloud fraction, and
 !>      cloud base and cloud-top of convective clouds.
-!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-19.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19.
 !>    * Removed inputs/outputs in the argument list to subroutine gbphys needed in subroutine
 !>      sfc_nst since the variable nst_fcst is set to 0 and that subroutine is not called. Doing
 !>      so helps reduce the size of the restart and output files.
-!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-20.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
+!>    * Cleaned-up sourcecode for non-needed variables and diagnostics.
+!>    * laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
 
 
  contains
@@ -91,25 +93,6 @@
  if(.not.allocated(smc)    ) allocate(smc(mesh%nCellsSolve,mesh%nSoilLevels)                )
  if(.not.allocated(stc)    ) allocate(stc(mesh%nCellsSolve,mesh%nSoilLevels)                )
 
-!outputs to subroutine to gbphys that are not really needed as diagnostics:
- if(.not.allocated(dlwsfci)) allocate(dlwsfci(1:mesh%nCellsSolve))
- if(.not.allocated(dswsfci)) allocate(dswsfci(1:mesh%nCellsSolve))
- if(.not.allocated(ulwsfci)) allocate(ulwsfci(1:mesh%nCellsSolve))
- if(.not.allocated(uswsfci)) allocate(uswsfci(1:mesh%nCellsSolve))
- if(.not.allocated(dqsfci) ) allocate(dqsfci(1:mesh%nCellsSolve) )
- if(.not.allocated(dtsfci) ) allocate(dtsfci(1:mesh%nCellsSolve) )
- if(.not.allocated(epi)    ) allocate(epi(1:mesh%nCellsSolve)    )
- if(.not.allocated(gfluxi) ) allocate(gfluxi(1:mesh%nCellsSolve) )
- if(.not.allocated(psurf)  ) allocate(psurf(1:mesh%nCellsSolve)  )
- if(.not.allocated(rqtk)   ) allocate(rqtk(1:mesh%nCellsSolve)   )
- if(.not.allocated(tref)   ) allocate(tref(1:mesh%nCellsSolve)   )
- if(.not.allocated(zlvl)   ) allocate(zlvl(1:mesh%nCellsSolve)   )
- if(.not.allocated(c_0)    ) allocate(c_0(1:mesh%nCellsSolve)    )
- if(.not.allocated(c_d)    ) allocate(c_d(1:mesh%nCellsSolve)    )
- if(.not.allocated(w_0)    ) allocate(w_0(1:mesh%nCellsSolve)    )
- if(.not.allocated(w_d)    ) allocate(w_d(1:mesh%nCellsSolve)    )
- if(.not.allocated(z_c)    ) allocate(z_c(1:mesh%nCellsSolve)    ) 
-
  end subroutine allocate_gbphys
 
 !==================================================================================================
@@ -158,25 +141,6 @@
  if(allocated(slc)    ) deallocate(slc    )
  if(allocated(smc)    ) deallocate(smc    )
  if(allocated(stc)    ) deallocate(stc    )  
-
-!outputs to subroutine to gbphys that are not really needed as diagnostics:
- if(allocated(dlwsfci)) deallocate(dlwsfci)
- if(allocated(dswsfci)) deallocate(dswsfci)
- if(allocated(ulwsfci)) deallocate(ulwsfci)
- if(allocated(uswsfci)) deallocate(uswsfci)
- if(allocated(dqsfci) ) deallocate(dqsfci )
- if(allocated(dtsfci) ) deallocate(dtsfci )
- if(allocated(epi)    ) deallocate(epi    )
- if(allocated(gfluxi) ) deallocate(gfluxi )
- if(allocated(psurf)  ) deallocate(psurf  )
- if(allocated(rqtk)   ) deallocate(rqtk   )
- if(allocated(tref)   ) deallocate(tref   )
- if(allocated(zlvl)   ) deallocate(zlvl   )
- if(allocated(c_0)    ) deallocate(c_0    )
- if(allocated(c_d)    ) deallocate(c_d    )
- if(allocated(w_0)    ) deallocate(w_0    )
- if(allocated(w_d)    ) deallocate(w_d    )
- if(allocated(z_c)    ) deallocate(z_c    ) 
 
  end subroutine deallocate_gbphys
 
@@ -234,9 +198,9 @@
           phy_f3d(iCell,k,n) = diag_physics % phy_f3d % array(n,k,iCell)
        enddo
        !initialization of in cloud precipitation rate:
-       rnp(iCell,k) = 0._RKIND
+       rnp(iCell,k) = diag_physics % rnp % array(k,iCell)
        !initialization of arrays for parameterization of vertical diffusion (gocart):
-       dkh(iCell,k) = 0._RKIND
+       dkh(iCell,k) = diag_physics % dkh % array(k,iCell)
     enddo
  enddo
 
@@ -321,20 +285,10 @@
     diag_physics%ulwsfci%array(iCell) = 0._RKIND
     diag_physics%dswsfci%array(iCell) = 0._RKIND
     diag_physics%uswsfci%array(iCell) = 0._RKIND
-
-    dqsfci(iCell)  = 0._RKIND
-    dtsfci(iCell)  = 0._RKIND
-    epi(iCell)     = 0._RKIND
-    gfluxi(iCell)  = 0._RKIND
-    psurf(iCell)   = 0._RKIND
-    rqtk(iCell)    = 0._RKIND
-    tref(iCell)    = 0._RKIND
-    c_0(iCell)     = 0._RKIND
-    c_d(iCell)     = 0._RKIND
-    w_0(iCell)     = 0._RKIND
-    w_d(iCell)     = 0._RKIND
-    z_c(iCell)     = 0._RKIND
-    zlvl(iCell)    = 0._RKIND
+    diag_physics%dqsfci%array(iCell)  = 0._RKIND
+    diag_physics%dtsfci%array(iCell)  = 0._RKIND
+    diag_physics%epi%array(iCell)     = 0._RKIND
+    diag_physics%gfluxi%array(iCell)  = 0._RKIND
  enddo
 
  end subroutine gbphys_from_MPAS
@@ -485,22 +439,6 @@
  write(0,*) "max tend thphysics   = ",maxval(tend_physics%thphysics%array(:,1:mesh%nCellsSolve)  )
  write(0,*) "min tend thphysics   = ",minval(tend_physics%thphysics%array(:,1:mesh%nCellsSolve)  )
  write(0,*)
- iCell = 68
- do k = 1, mesh%nVertLevels
-    write(0,202) iCell,k,gt0(iCell,k),gq0(iCell,k,1),gq0(iCell,k,3),gq0(iCell,k,2)
- enddo
-
-!stop
-!do iCell = 100,150
-!   do k = 1, mesh%nVertLevels
-!      write(0,202) iCell,k,tend_physics%thphysics%array(k,iCell), &
-!                   tend_physics%qvphysics%array(k,iCell),         &
-!                   tend_physics%qcphysics%array(k,iCell),         &
-!                   tend_physics%qo3physics%array(k,iCell)
-!   enddo
-!   write(0,*)
-!enddo
- 202 format(2i9,10(1x,e15.8))
 
  do iCell = 1, mesh%nCellsSolve
     !update 2D arrays for restarts:
@@ -719,28 +657,25 @@
 !... CALL GFS PHYSICS DRIVER FOR ALL PHYSICS, EXCEPT RADIATION:
  call gbphys( &
     !... inputs:
-    nCellsSolve , nCellsSolve , nVertLevels , nSoilLevels , lsm , ntrac , ncld , ntoz , ntcw ,  &
-    nmtvr , nrcm , ko3 , lonf , latg , jcap , num_p3d , num_p2d ,                               & 
-    kdt , lat , me , pl_coeff , nlons , ncw , flgmin , crtrh , cdmbgwd ,                        &
-    ccwf , dlqf , ctei_rm , clstp , dtp , dtf , fhour , solhr ,                                 & 
-    slag , sdec , cdec , sinlat , coslat , pgr , ugrs , vgrs ,                                  & 
-    tgrs , qgrs , vvel , prsi , prsl , prslk , prsik , phii , phil ,                            &
-    rann , prdout , poz, dpshc , hprime ,                                                       &
-    mesh%lonCell%array(1:nCellsSolve)           , mesh%latCell%array(1:nCellsSolve) ,           &
-    sfc_input%slope%array(1:nCellsSolve)        , sfc_input%shdmin%array(1:nCellsSolve) ,       &
-    sfc_input%shdmax%array(1:nCellsSolve)       , sfc_input%snoalb%array(1:nCellsSolve) ,       &
-    sfc_input%tmn%array(1:nCellsSolve) , slmsk  , diag_physics%vegfra%array(1:nCellsSolve) ,    & 
-    DBLE(sfc_input%ivgtyp%array(1:nCellsSolve)) , DBLE(sfc_input%isltyp%array(1:nCellsSolve)) , &
-    diag_physics%uustar%array(1:nCellsSolve) , sfc_input%ter%array(1:nCellsSolve) ,             &
-    diag_physics%coszen%array(1:nCellsSolve) , diag_physics%sfcdsw%array(1:nCellsSolve) ,       &
-    diag_physics%sfcnsw%array(1:nCellsSolve) , diag_physics%sfcdlw% array(1:nCellsSolve) ,      &
-    diag_physics%tsflw%array(1:nCellsSolve), diag_physics%sfcemis%array(1:nCellsSolve),         &
-    diag_physics%sfcalb%array(1:nCellsSolve) , htrsw , htrlw , ras , pre_rad ,                  &
-    ldiag3d , lggfs3d , lssav , lssav_cc ,                                                      &
-    xkzm_m , xkzm_h , xkzm_s , psautco , prautco , evpco , wminco ,                             &
-    flipv , old_monin , cnvgwd , shal_cnv , sashal , newsas , cal_pre ,                         &
-    mom4ice , mstrat , trans_trac ,nst_fcst ,moist_adj ,fscav ,                                 &
-    thermodyn_id , sfcpress_id , gen_coord_hybrid ,                                             &
+    nCellsSolve, nCellsSolve, nVertLevels, nSoilLevels, lsm, ntrac, ncld, ntoz, ntcw, nmtvr,    &
+    nrcm, ko3, lonf, latg, jcap, num_p3d, num_p2d, kdt, lat, me, pl_coeff, nlons, ncw, flgmin,  & 
+    crtrh, cdmbgwd, ccwf, dlqf, ctei_rm, clstp, dtp, dtf, fhour, solhr, slag, sdec , cdec,      & 
+    sinlat, coslat, pgr, ugrs, vgrs, tgrs, qgrs, vvel, prsi, prsl, prslk, prsik, phii, phil,    &
+    rann, prdout, poz, dpshc, hprime,                                                           &
+    mesh%lonCell%array(1:nCellsSolve)           , mesh%latCell%array(1:nCellsSolve),            &
+    sfc_input%slope%array(1:nCellsSolve)        , sfc_input%shdmin%array(1:nCellsSolve),        &
+    sfc_input%shdmax%array(1:nCellsSolve)       , sfc_input%snoalb%array(1:nCellsSolve),        &
+    sfc_input%tmn%array(1:nCellsSolve),  slmsk  , diag_physics%vegfra%array(1:nCellsSolve),     & 
+    DBLE(sfc_input%ivgtyp%array(1:nCellsSolve)) , DBLE(sfc_input%isltyp%array(1:nCellsSolve)),  &
+    diag_physics%uustar%array(1:nCellsSolve)    , sfc_input%ter%array(1:nCellsSolve),           &
+    diag_physics%coszen%array(1:nCellsSolve)    , diag_physics%sfcdsw%array(1:nCellsSolve),     &
+    diag_physics%sfcnsw%array(1:nCellsSolve)    , diag_physics%sfcdlw% array(1:nCellsSolve),    &
+    diag_physics%tsflw%array(1:nCellsSolve)     , diag_physics%sfcemis%array(1:nCellsSolve),    &
+    diag_physics%sfcalb%array(1:nCellsSolve)    ,                                               & 
+    htrsw, htrlw, ras, pre_rad, ldiag3d, lggfs3d, lssav, lssav_cc, xkzm_m, xkzm_h, xkzm_s,      & 
+    psautco, prautco, evpco, wminco, flipv, old_monin, cnvgwd, shal_cnv, sashal, newsas,        &
+    cal_pre, mom4ice, mstrat, trans_trac, nst_fcst, moist_adj, fscav, thermodyn_id,             &
+    sfcpress_id, gen_coord_hybrid,                                                              &
     !... inputs/outputs:
     diag_physics%hice%array(1:nCellsSolve)    , sfc_input%xice%array(1:nCellsSolve) ,           &
     diag_physics%tisfc%array(1:nCellsSolve)   , sfc_input%skintemp%array(1:nCellsSolve) ,       &
@@ -769,31 +704,28 @@
     diag_physics%acvt%array(1:nCellsSolve)    ,                                                 &
     slc, smc, stc, upd_mf, dwn_mf, det_mf, dkh, rnp, phy_f3d, phy_f2d,                          &
     dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     & 
-    dumphys                                   , dumphys,                                        &
-    dumphys                                   , dumphys,                                        &
-    dumphys                                   , dumphys,                                        &
-    dumphys                                   , dumphys,                                        &
-    dumphys                                   , dumphys,                                        &
-    dumphys                                   , dumphys,                                        &
+    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &
+    dumphys, dumphys, dumphys, dumphys,                                                         &
     !... outputs:
     gt0, gq0, gu0, gv0,                                                                         &
     diag_physics%t2m%array(1:nCellsSolve)     , diag_physics%q2m%array(1:nCellsSolve) ,         &
     diag_physics%u10m%array(1:nCellsSolve)    , diag_physics%v10m%array(1:nCellsSolve) ,        &
-    zlvl, psurf,                                                                                &
+    dumphys,dumphys,                                                                            &
     diag_physics%hpbl%array(1:nCellsSolve)    , diag_physics%pwat%array(1:nCellsSolve) ,        &
     diag_physics%t1%array(1:nCellsSolve)      , diag_physics%q1%array(1:nCellsSolve) ,          &
     diag_physics%u1%array(1:nCellsSolve)      , diag_physics%v1%array(1:nCellsSolve) ,          &
     diag_physics%chh%array(1:nCellsSolve)     , diag_physics%cmm%array(1:nCellsSolve) ,         &
     diag_physics%dlwsfci%array(1:nCellsSolve) , diag_physics%ulwsfci%array(1:nCellsSolve) ,     &
     diag_physics%dswsfci%array(1:nCellsSolve) , diag_physics%uswsfci%array(1:nCellsSolve) ,     & 
-    dtsfci, dqsfci, gfluxi, epi,                                                                &
+    diag_physics%dtsfci%array(1:nCellsSolve)  , diag_physics%dqsfci%array(1:nCellsSolve) ,      &
+    diag_physics%gfluxi%array(1:nCellsSolve)  , diag_physics%epi%array(1:nCellsSolve),          &
     diag_physics%smcwlt2%array(1:nCellsSolve) , diag_physics%smcref2%array(1:nCellsSolve) ,     &
     diag_physics%gsoil%array(1:nCellsSolve)   , diag_physics%gtmp2m%array(1:nCellsSolve) ,      &
     diag_physics%gustar%array(1:nCellsSolve)  , diag_physics%gpblh%array(1:nCellsSolve) ,       &
     diag_physics%gu10m%array(1:nCellsSolve)   , diag_physics%gv10m%array(1:nCellsSolve) ,       &
     diag_physics%gzorl%array(1:nCellsSolve)   , diag_physics%goro%array(1:nCellsSolve) ,        &
-    dumphys, dumphys, dumphys, dumphys, dumphys, tref, dumphys, dumphys, dumphys, dumphys,      &
-    dumphys, rqtk                                                                               &
+    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &   
+    dumphys, dumphys, dumphys,dumphys                                                           &
             )
  write(0,*) '--- end subroutine gbphys:'
 

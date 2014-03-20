@@ -61,7 +61,7 @@
  type(diag_physics_type),intent(inout)::diag_physics
 
 !local variables:
- integer:: iCell
+ integer:: iCell,k
 
 !--------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine physics_gfs_update_diagnostics:'
@@ -107,6 +107,11 @@
     diag_physics % tmpmin  % array(iCell) = 0._RKIND
     diag_physics % spfhmax % array(iCell) = 0._RKIND
     diag_physics % spfhmin % array(iCell) = 0._RKIND
+
+    do k = 1, mesh%nVertLevels
+       diag_physics % dkh % array(k,iCell) = 0._RKIND
+    enddo
+
  enddo
 
  write(0,*) '--- end subroutine physics_gfs_update_diagnostics:'

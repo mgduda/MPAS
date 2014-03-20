@@ -32,7 +32,10 @@
 !> allocate_forall_physics  : allocation of all meteorological variables needed in the physics.
 !> deallocate_forall_physics: deallocation of all meteorological variables needed in the physics.
 !> MPAS_to_physics          : conversion of input "MPAS" variables to "physics" variables.
-
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Added diagnostic for the surface pressure.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
 
  contains
 
@@ -139,7 +142,9 @@
 !input variables:
  type(mesh_type) ,intent(in):: mesh
  type(state_type),intent(in):: state
- type(diag_type) ,intent(in):: diag
+
+!inout variables:
+ type(diag_type) ,intent(inout):: diag
 
 !local variables:
  integer:: k,kk,iCell,i1,i2,nt,it,izgrid
@@ -201,6 +206,10 @@
     phil(iCell,k)   = 0.5_RKIND * grav * (height(k,iCell)+height(k+1,iCell))
     dzgrid(iCell,k) = height(k+1,iCell) - height(k,iCell) 
  enddo
+ enddo
+ k = 1
+ do iCell = 1, nCellsSolve
+    diag%surface_pressure%array(iCell) = prsl(iCell,k)
  enddo
 
 !... temperature, pressure, exner function, and geopotential height at layer interfaces:
