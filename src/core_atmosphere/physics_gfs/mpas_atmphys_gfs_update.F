@@ -26,6 +26,10 @@
 !> -----------------------------------
 !> physics_update                : not used.
 !> physics_gfs_update_diagnostics: reset all accumulated diagnostics to zero.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * added initialization of variable dkh (accumulated vertical diffusion coefficient).
 
 
  contains

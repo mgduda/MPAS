@@ -37,6 +37,11 @@
 !> init_soil_layers_depth     : initialize height and depth of soil layers needed in NOAH scheme.
 !> init_soil_layers_properties: initialize soil temperature, soil moisture, etc.
 !> adjust_input_soiltemp      : adjust the deep soil temperature to sea-level values.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Converted snowh (actual snow depth over land/sea ice) from m to mm.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-19.
 
 
  contains
@@ -103,6 +108,9 @@
        snowc(iCell) = 0._RKIND
     endif
     snowh(iCell) = snow(iCell) * 5.0_RKIND / 1000._RKIND
+
+    !In the GFS physics (see subroutine sfc_drv.f), snowh needs to be in mm:
+    snowh(iCell) = snowh(iCell) * 1000._RKIND
  enddo
 
 !initialization of soil layers properties:

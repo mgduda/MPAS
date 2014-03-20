@@ -29,6 +29,8 @@
 !>\author Laura D. Fowler (send comments to laura@mmm.ucar.edu).
 !>\date 2013-11-21.
 !>
+!>\details
+!>
 !> add-ons and modifications to sourcecode:
 !> ----------------------------------------
 !>    * Removed non-needed variables.
@@ -66,11 +68,6 @@
 !... parameters set for gbphys:
 !integer, parameter:: &
 !   jcap      = 1       !nb pf spectral wave truncation used only by sascnv and shalcnv.
-
- real(kind=RKIND), parameter:: &
-    xkzm_h    = 1.,    &!background vertical diffusion for heat, q
-    xkzm_m    = 1.,    &!background vertical diffusion for momentum
-    xkzm_s    = 1.      !background vertical diffusion for momentum diffusion
 
  logical, parameter:: &
     lssav_cc   = .false. !logical flag for save data for ocean coupling.

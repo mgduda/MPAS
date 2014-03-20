@@ -28,13 +28,19 @@
 !>    * Added the calculation of logical lscca for outputs of the diagnostics cv, cvb, cvt, acv,
 !>      acvb, and acvt which are instantaneous and accumulated convection cloud fraction, and
 !>      cloud base and cloud-top of convective clouds.
-!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-19.
+!>    * Replaced the variables xkzm_m, xkzm_h, and xkzm_s, with the actual background vertical
+!>      diffusivity coefficients provided by the GFS physics.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04.20. 
+!>    * Corrected the argument list in the call to subroutine gbphys for the water equivalent snow
+!>      snow depth (snow), the actual snow depth (snowh), and the fractional area of snow (snowc).
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-20.
 !>    * Removed inputs/outputs in the argument list to subroutine gbphys needed in subroutine
 !>      sfc_nst since the variable nst_fcst is set to 0 and that subroutine is not called. Doing
 !>      so helps reduce the size of the restart and output files.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
 !>    * Cleaned-up sourcecode for non-needed variables and diagnostics.
-!>    * laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
+!>    * Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
 
 
  contains
@@ -626,9 +632,6 @@
 !write(0,*) 'lggfs3d          = ',lggfs3d
 !write(0,*) 'lssav            = ',lssav
 !write(0,*) 'lssav_cc         = ',lssav_cc
-!write(0,*) 'xkzm_m           = ',xkzm_m
-!write(0,*) 'xkzm_h           = ',xkzm_h
-!write(0,*) 'xkzm_s           = ',xkzm_s
 !write(0,*) 'psautco          = ',psautco
 !write(0,*) 'prautco          = ',prautco
 !write(0,*) 'evpco            = ',evpco
@@ -657,9 +660,9 @@
 !... CALL GFS PHYSICS DRIVER FOR ALL PHYSICS, EXCEPT RADIATION:
  call gbphys( &
     !... inputs:
-    nCellsSolve, nCellsSolve, nVertLevels, nSoilLevels, lsm, ntrac, ncld, ntoz, ntcw, nmtvr,    &
+    nCellsSolve, nCellsSolve, nVertLevels, nSoilLevels, lsm, ntrac, ncld, ntoz, ntcw, nmtvr,    & 
     nrcm, ko3, lonf, latg, jcap, num_p3d, num_p2d, kdt, lat, me, pl_coeff, nlons, ncw, flgmin,  & 
-    crtrh, cdmbgwd, ccwf, dlqf, ctei_rm, clstp, dtp, dtf, fhour, solhr, slag, sdec , cdec,      & 
+    crtrh, cdmbgwd, ccwf, dlqf, ctei_rm, clstp, dtp, dtf, fhour, solhr, slag, sdec, cdec,       & 
     sinlat, coslat, pgr, ugrs, vgrs, tgrs, qgrs, vvel, prsi, prsl, prslk, prsik, phii, phil,    &
     rann, prdout, poz, dpshc, hprime,                                                           &
     mesh%lonCell%array(1:nCellsSolve)           , mesh%latCell%array(1:nCellsSolve),            &
@@ -671,60 +674,60 @@
     diag_physics%coszen%array(1:nCellsSolve)    , diag_physics%sfcdsw%array(1:nCellsSolve),     &
     diag_physics%sfcnsw%array(1:nCellsSolve)    , diag_physics%sfcdlw% array(1:nCellsSolve),    &
     diag_physics%tsflw%array(1:nCellsSolve)     , diag_physics%sfcemis%array(1:nCellsSolve),    &
-    diag_physics%sfcalb%array(1:nCellsSolve)    ,                                               & 
-    htrsw, htrlw, ras, pre_rad, ldiag3d, lggfs3d, lssav, lssav_cc, xkzm_m, xkzm_h, xkzm_s,      & 
-    psautco, prautco, evpco, wminco, flipv, old_monin, cnvgwd, shal_cnv, sashal, newsas,        &
-    cal_pre, mom4ice, mstrat, trans_trac, nst_fcst, moist_adj, fscav, thermodyn_id,             &
+    diag_physics%sfcalb%array(1:nCellsSolve)    ,                                               &
+    htrsw, htrlw, ras, pre_rad, ldiag3d, lggfs3d, lssav, lssav_cc, bkgd_vdif_m, bkgd_vdif_h,    &
+    bkgd_vdif_s, psautco, prautco, evpco, wminco, flipv, old_monin, cnvgwd, shal_cnv, sashal,   &
+    newsas, cal_pre, mom4ice, mstrat, trans_trac, nst_fcst, moist_adj, fscav, thermodyn_id,     & 
     sfcpress_id, gen_coord_hybrid,                                                              &
     !... inputs/outputs:
-    diag_physics%hice%array(1:nCellsSolve)    , sfc_input%xice%array(1:nCellsSolve) ,           &
-    diag_physics%tisfc%array(1:nCellsSolve)   , sfc_input%skintemp%array(1:nCellsSolve) ,       &
-    diag_physics%tprcp%array(1:nCellsSolve)   , diag_physics%cv%array(1:nCellsSolve) ,          & 
-    diag_physics%cvb%array(1:nCellsSolve)     , diag_physics%cvt%array(1:nCellsSolve) ,         &
-    diag_physics%srflag%array(1:nCellsSolve)  , diag_physics%snwdph%array(1:nCellsSolve) ,      &
-    diag_physics%weasd%array(1:nCellsSolve)   , diag_physics%sncovr%array(1:nCellsSolve) ,      &
-    diag_physics%zorl%array(1:nCellsSolve)    , diag_physics%canopy%array(1:nCellsSolve) ,      &
-    diag_physics%ffmm%array(1:nCellsSolve)    , diag_physics%ffhh%array(1:nCellsSolve) ,        &
-    diag_physics%f10m%array(1:nCellsSolve)    , diag_physics%srunoff%array(1:nCellsSolve) ,     &
-    diag_physics%evbsa%array(1:nCellsSolve)   , diag_physics%evcwa%array(1:nCellsSolve) ,       &
-    diag_physics%snohfa%array(1:nCellsSolve)  , diag_physics%transa%array(1:nCellsSolve) ,      &
-    diag_physics%sbsnoa%array(1:nCellsSolve)  , diag_physics%snowca%array(1:nCellsSolve) ,      &
-    diag_physics%soilm%array(1:nCellsSolve)   , diag_physics%tmpmin%array(1:nCellsSolve) ,      &
-    diag_physics%tmpmax%array(1:nCellsSolve)  , diag_physics%dusfc%array(1:nCellsSolve) ,       &
-    diag_physics%dvsfc%array(1:nCellsSolve)   , diag_physics%dtsfc%array(1:nCellsSolve) ,       &
-    diag_physics%dqsfc%array(1:nCellsSolve)   , diag_physics%totprcp%array(1:nCellsSolve) ,     &
-    diag_physics%gflux%array(1:nCellsSolve)   , diag_physics%dlwsfc%array(1:nCellsSolve) ,      &
-    diag_physics%ulwsfc%array(1:nCellsSolve)  , diag_physics%suntim%array(1:nCellsSolve) ,      & 
-    diag_physics%runoff%array(1:nCellsSolve)  , diag_physics%ep%array(1:nCellsSolve) ,          &
-    diag_physics%cldwrk%array(1:nCellsSolve)  , diag_physics%dugwd%array(1:nCellsSolve) ,       &
-    diag_physics%dvgwd%array(1:nCellsSolve)   , diag_physics%psmean%array(1:nCellsSolve) ,      &    
-    diag_physics%cnvprcp%array(1:nCellsSolve) , diag_physics%spfhmin%array(1:nCellsSolve) ,     &
+    diag_physics%hice%array(1:nCellsSolve)    , sfc_input%xice%array(1:nCellsSolve),            &
+    diag_physics%tisfc%array(1:nCellsSolve)   , sfc_input%skintemp%array(1:nCellsSolve),        &
+    diag_physics%tprcp%array(1:nCellsSolve)   , diag_physics%cv%array(1:nCellsSolve),           & 
+    diag_physics%cvb%array(1:nCellsSolve)     , diag_physics%cvt%array(1:nCellsSolve),          &
+    diag_physics%srflag%array(1:nCellsSolve)  , sfc_input%snowh%array(1:nCellsSolve),           &
+    sfc_input%snow%array(1:nCellsSolve)       , sfc_input%snowc%array(1:nCellsSolve),           &
+    diag_physics%zorl%array(1:nCellsSolve)    , diag_physics%canopy%array(1:nCellsSolve),       &
+    diag_physics%ffmm%array(1:nCellsSolve)    , diag_physics%ffhh%array(1:nCellsSolve),         &
+    diag_physics%f10m%array(1:nCellsSolve)    , diag_physics%srunoff%array(1:nCellsSolve),      &
+    diag_physics%evbsa%array(1:nCellsSolve)   , diag_physics%evcwa%array(1:nCellsSolve),        &
+    diag_physics%snohfa%array(1:nCellsSolve)  , diag_physics%transa%array(1:nCellsSolve),       &
+    diag_physics%sbsnoa%array(1:nCellsSolve)  , diag_physics%snowca%array(1:nCellsSolve),       &
+    diag_physics%soilm%array(1:nCellsSolve)   , diag_physics%tmpmin%array(1:nCellsSolve),       &
+    diag_physics%tmpmax%array(1:nCellsSolve)  , diag_physics%dusfc%array(1:nCellsSolve),        &
+    diag_physics%dvsfc%array(1:nCellsSolve)   , diag_physics%dtsfc%array(1:nCellsSolve),        &
+    diag_physics%dqsfc%array(1:nCellsSolve)   , diag_physics%totprcp%array(1:nCellsSolve),      &
+    diag_physics%gflux%array(1:nCellsSolve)   , diag_physics%dlwsfc%array(1:nCellsSolve),       &
+    diag_physics%ulwsfc%array(1:nCellsSolve)  , diag_physics%suntim%array(1:nCellsSolve),       & 
+    diag_physics%runoff%array(1:nCellsSolve)  , diag_physics%ep%array(1:nCellsSolve),           &
+    diag_physics%cldwrk%array(1:nCellsSolve)  , diag_physics%dugwd%array(1:nCellsSolve),        &
+    diag_physics%dvgwd%array(1:nCellsSolve)   , diag_physics%psmean%array(1:nCellsSolve),       &    
+    diag_physics%cnvprcp%array(1:nCellsSolve) , diag_physics%spfhmin%array(1:nCellsSolve),      &
     diag_physics%spfhmax%array(1:nCellsSolve) , dt3dt , dq3dt , du3dt , dv3dt ,                 &
-    diag_physics%acv%array(1:nCellsSolve)     , diag_physics%acvb%array(1:nCellsSolve) ,        &
+    diag_physics%acv%array(1:nCellsSolve)     , diag_physics%acvb%array(1:nCellsSolve),         &
     diag_physics%acvt%array(1:nCellsSolve)    ,                                                 &
     slc, smc, stc, upd_mf, dwn_mf, det_mf, dkh, rnp, phy_f3d, phy_f2d,                          &
-    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     & 
+    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &
     dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &
     dumphys, dumphys, dumphys, dumphys,                                                         &
     !... outputs:
     gt0, gq0, gu0, gv0,                                                                         &
-    diag_physics%t2m%array(1:nCellsSolve)     , diag_physics%q2m%array(1:nCellsSolve) ,         &
-    diag_physics%u10m%array(1:nCellsSolve)    , diag_physics%v10m%array(1:nCellsSolve) ,        &
-    dumphys,dumphys,                                                                            &
-    diag_physics%hpbl%array(1:nCellsSolve)    , diag_physics%pwat%array(1:nCellsSolve) ,        &
-    diag_physics%t1%array(1:nCellsSolve)      , diag_physics%q1%array(1:nCellsSolve) ,          &
-    diag_physics%u1%array(1:nCellsSolve)      , diag_physics%v1%array(1:nCellsSolve) ,          &
-    diag_physics%chh%array(1:nCellsSolve)     , diag_physics%cmm%array(1:nCellsSolve) ,         &
-    diag_physics%dlwsfci%array(1:nCellsSolve) , diag_physics%ulwsfci%array(1:nCellsSolve) ,     &
-    diag_physics%dswsfci%array(1:nCellsSolve) , diag_physics%uswsfci%array(1:nCellsSolve) ,     & 
-    diag_physics%dtsfci%array(1:nCellsSolve)  , diag_physics%dqsfci%array(1:nCellsSolve) ,      &
-    diag_physics%gfluxi%array(1:nCellsSolve)  , diag_physics%epi%array(1:nCellsSolve),          &
-    diag_physics%smcwlt2%array(1:nCellsSolve) , diag_physics%smcref2%array(1:nCellsSolve) ,     &
-    diag_physics%gsoil%array(1:nCellsSolve)   , diag_physics%gtmp2m%array(1:nCellsSolve) ,      &
-    diag_physics%gustar%array(1:nCellsSolve)  , diag_physics%gpblh%array(1:nCellsSolve) ,       &
-    diag_physics%gu10m%array(1:nCellsSolve)   , diag_physics%gv10m%array(1:nCellsSolve) ,       &
-    diag_physics%gzorl%array(1:nCellsSolve)   , diag_physics%goro%array(1:nCellsSolve) ,        &
-    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &   
+    diag_physics%t2m%array(1:nCellsSolve)     , diag_physics%q2m%array(1:nCellsSolve),          &
+    diag_physics%u10m%array(1:nCellsSolve)    , diag_physics%v10m%array(1:nCellsSolve),         &
+    dumphys, dumphys,                                                                           &
+    diag_physics%hpbl%array(1:nCellsSolve)    , diag_physics%pwat%array(1:nCellsSolve),         &
+    diag_physics%t1%array(1:nCellsSolve)      , diag_physics%q1%array(1:nCellsSolve),           &
+    diag_physics%u1%array(1:nCellsSolve)      , diag_physics%v1%array(1:nCellsSolve),           &
+    diag_physics%chh%array(1:nCellsSolve)     , diag_physics%cmm%array(1:nCellsSolve),          &
+    diag_physics%dlwsfci%array(1:nCellsSolve) , diag_physics%ulwsfci%array(1:nCellsSolve),      &
+    diag_physics%dswsfci%array(1:nCellsSolve) , diag_physics%uswsfci%array(1:nCellsSolve),      & 
+    diag_physics%dtsfci%array(1:nCellsSolve)  , diag_physics%dqsfci%array(1:nCellsSolve),       &
+    diag_physics%gfluxi%array(1:nCellsSolve)  , diag_physics%epi%array(1:nCellsSolve),          & 
+    diag_physics%smcwlt2%array(1:nCellsSolve) , diag_physics%smcref2%array(1:nCellsSolve),      &
+    diag_physics%gsoil%array(1:nCellsSolve)   , diag_physics%gtmp2m%array(1:nCellsSolve),       &
+    diag_physics%gustar%array(1:nCellsSolve)  , diag_physics%gpblh%array(1:nCellsSolve),        &
+    diag_physics%gu10m%array(1:nCellsSolve)   , diag_physics%gv10m%array(1:nCellsSolve),        &
+    diag_physics%gzorl%array(1:nCellsSolve)   , diag_physics%goro%array(1:nCellsSolve),         &
+    dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys, dumphys,                     &
     dumphys, dumphys, dumphys,dumphys                                                           &
             )
  write(0,*) '--- end subroutine gbphys:'
