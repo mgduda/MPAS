@@ -34,10 +34,10 @@
 <!-- **************************************************************************************** -->
 
         <nml_record name="nhyd_model" in_defaults="true">
-                <nml_option name="config_time_integration"           type="character"     default_value="SRK3"/>
-                <nml_option name="config_dt"                         type="real"          default_value="600.0"/>
-                <nml_option name="config_calendar_type"              type="character"     default_value="gregorian"/>
-                <nml_option name="config_start_time"                 type="character"     default_value="0000-01-01_00:00:00"/>
+                <nml_option name="config_time_integration"           type="character"     default_value="SRK3"       "in_defaults="false"/>
+                <nml_option name="config_dt"                         type="real"          default_value="450.0"/>
+                <nml_option name="config_calendar_type"              type="character"     default_value="gregorian"  "in_defaults="false"/>
+                <nml_option name="config_start_time"                 type="character"     default_value="2010-10-23_00:00:00"/>
                 <nml_option name="config_stop_time"                  type="character"     default_value="none"/>
                 <nml_option name="config_run_duration"               type="character"     default_value="none"/>
                 <nml_option name="config_horiz_mixing"               type="character"     default_value="2d_smagorinsky"/>
@@ -1132,6 +1132,8 @@
                 <var name="euler_tend_u"       name_in_code="u_euler"     type="real"     dimensions="nVertLevels nEdges Time"/>
                 <var name="euler_tend_w"       name_in_code="w_euler"     type="real"     dimensions="nVertLevelsP1 nCells Time"/>
                 <var name="euler_tend_theta"   name_in_code="theta_euler" type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="tend_w_pgf"         name_in_code="w_pgf"       type="real"     dimensions="nVertLevelsP1 nCells Time"/>
+                <var name="tend_w_buoy"        name_in_code="w_buoy"      type="real"     dimensions="nVertLevelsP1 nCells Time"/>
 
                 <!-- scalar tendencies -->
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
