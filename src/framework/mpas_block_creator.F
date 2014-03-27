@@ -129,20 +129,28 @@ module mpas_block_creator
 !
 !-----------------------------------------------------------------------
 
-   subroutine mpas_block_creator_build_0halo_cell_fields(indexToCellIDBlock, nEdgesOnCellBlock, cellsOnCellBlock, verticesOnCellBlock, edgesOnCellBlock, indexToCellID_0Halo, nEdgesOnCell_0Halo, cellsOnCell_0Halo, verticesOnCell_0Halo, edgesOnCell_0Halo)!{{{
+   subroutine mpas_block_creator_build_0halo_cell_fields(indexToCellIDBlock, nEdgesOnCellBlock, cellsOnCellBlock, verticesOnCellBlock, edgesOnCellBlock, indexToCellID_0Halo, &
+              xCellBlock, yCellBlock, zCellBlock, nEdgesOnCell_0Halo, cellsOnCell_0Halo, verticesOnCell_0Halo, edgesOnCell_0Halo, xCell_0Halo, yCell_0Halo, zCell_0Halo)!{{{
      type(field1dInteger), pointer :: indexToCellIDBlock !< Input: Block of read in indexToCellID field
      type(field1dInteger), pointer :: nEdgesOnCellBlock !< Input: Block of read in nEdgesOnCell field
      type(field2dInteger), pointer :: cellsOnCellBlock !< Input: Block of read in cellsOnCell field
      type(field2dInteger), pointer :: verticesOnCellBlock !< Input: Block of read in verticesOnCell field
      type(field2dInteger), pointer :: edgesOnCellBlock !< Input: Block of read in edgesOnCellField
-
      type(field1dInteger), pointer :: indexToCellID_0Halo !< Input: 0-Halo indices for indexToCellID field
+     type(field1dReal), pointer :: xCellBlock !< Input: Block of read in xCell
+     type(field1dReal), pointer :: yCellBlock !< Input: Block of read in yCell
+     type(field1dReal), pointer :: zCellBlock !< Input: Block of read in zCell
+
      type(field1dInteger), pointer :: nEdgesOnCell_0Halo !< Output: nEdgesOnCell field for 0-Halo cells
      type(field2dInteger), pointer :: cellsOnCell_0Halo !< Output: cellsOnCell field for 0-Halo cells
      type(field2dInteger), pointer :: verticesOnCell_0Halo !< Output: verticesOnCell field for 0-Halo cells
      type(field2dInteger), pointer :: edgesOnCell_0Halo !< Output: edgesOnCell field for 0-Halo cells
+     type(field1dReal), pointer :: xCell_0Halo !< Output: xCell field for 0-Halo cells
+     type(field1dReal), pointer :: yCell_0Halo !< Output: yCell field for 0-Halo cells
+     type(field1dReal), pointer :: zCell_0Halo !< Output: zCell field for 0-Halo cells
 
      type(field1dInteger), pointer :: indexCursor, nEdgesCursor
+     type(field1dReal), pointer :: xCellCursor, yCellCursor, zCellCursor
      type(field2dInteger), pointer :: cellsOnCellCursor, verticesOnCellCursor, edgesOnCellCursor
 
      integer, dimension(:), pointer :: sendingHaloLayers
@@ -164,6 +172,15 @@ module mpas_block_creator
      allocate(nEdgesOnCell_0Halo)
      nullify(nEdgesOncell_0Halo % next)
 
+     allocate(xCell_0Halo)
+     nullify(xCell_0Halo % next)
+
+     allocate(yCell_0Halo)
+     nullify(yCell_0Halo % next)
+
+     allocate(zCell_0Halo)
+     nullify(zCell_0Halo % next)
+
      allocate(cellsOnCell_0Halo)
      nullify(cellsOnCell_0Halo % next)
   
@@ -176,6 +193,9 @@ module mpas_block_creator
      ! Loop over blocks
      indexCursor => indexToCellID_0Halo
      nEdgesCursor => nEdgesOnCell_0Halo
+     xCellCursor => xCell_0Halo
+     yCellCursor => yCell_0Halo
+     zCellCursor => zCell_0Halo
      cellsOnCellCursor => cellsOnCell_0Halo
      verticesOnCellCursor => verticesOnCell_0Halo
      edgesOnCellCursor => edgesOnCell_0Halo
@@ -184,18 +204,27 @@ module mpas_block_creator
 
        ! Link to block structure
        nEdgesCursor % block => indexCursor % block
+       xCellCursor % block => indexCursor % block
+       yCellCursor % block => indexCursor % block
+       zCellCursor % block => indexCursor % block
        cellsOnCellCursor % block => indexCursor % block
        verticesOnCellCursor % block => indexCursor % block
        edgesOnCellCursor % block => indexCursor % block
 
        ! Nullify ioinfo, since this data is not read in
        nullify(nEdgesCursor % ioinfo)
+       nullify(xCellCursor % ioinfo)
+       nullify(yCellCursor % ioinfo)
+       nullify(zCellCursor % ioinfo)
        nullify(cellsOnCellCursor % ioinfo)
        nullify(verticesOnCellCursor % ioinfo)
        nullify(edgesOnCellCursor % ioinfo)
 
        ! Setup array sizes
        nEdgesCursor % dimSizes(1) = nCellsInBlock
+       xCellCursor % dimSizes(1) = nCellsInBlock
+       yCellCursor % dimSizes(1) = nCellsInBlock
+       zCellCursor % dimSizes(1) = nCellsInBlock
        cellsOnCellCursor % dimSizes(1) = maxEdges
        cellsOnCellCursor % dimSizes(2) = nCellsInBlock
        verticesOnCellCursor % dimSizes(1) = maxEdges
@@ -207,6 +236,15 @@ module mpas_block_creator
        nEdgesCursor % sendList => indexCursor % sendList
        nEdgesCursor % recvList => indexCursor % recvList
        nEdgesCursor % copyList => indexCursor % copyList
+       xCellCursor % sendList => indexCursor % sendList
+       xCellCursor % recvList => indexCursor % recvList
+       xCellCursor % copyList => indexCursor % copyList
+       yCellCursor % sendList => indexCursor % sendList
+       yCellCursor % recvList => indexCursor % recvList
+       yCellCursor % copyList => indexCursor % copyList
+       zCellCursor % sendList => indexCursor % sendList
+       zCellCursor % recvList => indexCursor % recvList
+       zCellCursor % copyList => indexCursor % copyList
        cellsOnCellCursor % sendList => indexCursor % sendList
        cellsOnCellCursor % recvList => indexCursor % recvList
        cellsOnCellCursor % copyList => indexCursor % copyList
@@ -219,6 +257,9 @@ module mpas_block_creator
 
        ! Allocate arrays
        allocate(nEdgesCursor % array(nEdgesCursor % dimSizes(1)))
+       allocate(xCellCursor % array(xCellCursor % dimSizes(1)))
+       allocate(yCellCursor % array(yCellCursor % dimSizes(1)))
+       allocate(zCellCursor % array(zCellCursor % dimSizes(1)))
        allocate(cellsOnCellCursor % array(cellsOnCellCursor % dimSizes(1), cellsOnCellCursor % dimSizes(2)))
        allocate(verticesOnCellCursor % array(verticesOnCellCursor % dimSizes(1), verticesOnCellCursor % dimSizes(2)))
        allocate(edgesOnCellCursor % array(edgesOnCellCursor % dimSizes(1), edgesOnCellCursor % dimSizes(2)))
@@ -227,11 +268,17 @@ module mpas_block_creator
        indexCursor => indexCursor % next
        if(associated(indexCursor)) then
          allocate(nEdgesCursor % next)
+         allocate(xCellCursor % next)
+         allocate(yCellCursor % next)
+         allocate(zCellCursor % next)
          allocate(cellsOnCellCursor % next)
          allocate(verticesOnCellCursor % next)
          allocate(edgesOnCellCursor % next)
 
          nEdgesCursor => nEdgesCursor % next
+         xCellCursor => xCellCursor % next
+         yCellCursor => yCellCursor % next
+         zCellCursor => zCellCursor % next
          cellsOnCellCursor => cellsOnCellCursor % next
          verticesOnCellCursor => verticesOnCellCursor % next
          edgesOnCellCursor => edgesOnCellCursor % next
@@ -240,12 +287,19 @@ module mpas_block_creator
 
        ! Nullify next pointers
        nullify(nEdgesCursor % next)
+       nullify(xCellCursor % next)
+       nullify(yCellCursor % next)
+       nullify(zCellCursor % next)
        nullify(cellsOnCellCursor % next)
        nullify(verticesOnCellCursor % next)
        nullify(edgesOnCellCursor % next)
      end do ! indexCursor loop over blocks
 
      ! Communicate data from read in blocks to each block's fields
+     call mpas_dmpar_alltoall_field(nEdgesOnCellBlock, nEdgesOnCell_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(xCellBlock, xCell_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(yCellBlock, yCell_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(zCellBlock, zCell_0Halo, sendingHaloLayers)
      call mpas_dmpar_alltoall_field(nEdgesOnCellBlock, nEdgesOnCell_0Halo, sendingHaloLayers)
      call mpas_dmpar_alltoall_field(cellsOnCellBlock, cellsOnCell_0Halo, sendingHaloLayers)
      call mpas_dmpar_alltoall_field(verticesOnCellBlock, verticesOnCell_0Halo, sendingHaloLayers)

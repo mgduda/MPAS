@@ -16,6 +16,7 @@ module mpas_io_input
    use mpas_timekeeping
    use mpas_io_streams
    use mpas_io_units
+   use mpas_cell_ordering
 
    integer, parameter :: STREAM_INPUT=1, STREAM_SFC=2, STREAM_RESTART=3
    integer, parameter :: idLength = 10
@@ -68,6 +69,7 @@ module mpas_io_input
       type (field2dInteger), pointer :: cellsOnVertexField
 
       type (field1dReal), pointer :: xCellField,   yCellField,   zCellField
+      type (field1DReal), pointer :: xCell_Block, yCell_Block, zCell_Block
       type (field1dReal), pointer :: xEdgeField,   yEdgeField,   zEdgeField
       type (field1dReal), pointer :: xVertexField, yVertexField, zVertexField
 
@@ -96,6 +98,8 @@ module mpas_io_input
       integer, dimension(:), pointer :: local_cell_list
       integer, dimension(:), pointer :: block_id, block_start, block_count
       type (graph) :: partial_global_graph_info
+      integer :: nCellsSolve
+      integer, dimension(:), allocatable :: cellOrder
 
       type (MPAS_Time_type) :: startTime
       character(len=StrKIND) :: timeStamp, restartTimeStamp
@@ -172,8 +176,10 @@ module mpas_io_input
       call mpas_io_setup_cell_block_fields(inputHandle, nreadCells, readCellStart, readingBlock, maxEdges, indexTocellIDField, xCellField, &
                                            yCellField, zCellField, nEdgesOnCellField, cellsOnCellField, edgesOnCellField, verticesOnCellField)
 
+!MGD: we can modify this subroutine to actually read in xEdgeField
       call mpas_io_setup_edge_block_fields(inputHandle, nReadEdges, readEdgeStart, readingBlock, indexToEdgeIDField, xEdgeField, yEdgeField, zEdgeField, cellsOnEdgeField)
 
+!MGD: we can modify this subroutine to actually read in xVertexField
       call mpas_io_setup_vertex_block_fields(inputHandle, nReadVertices, readVertexStart, readingBlock, vertexDegree, indexToVertexIDField, &
                                              xVertexField, yVertexField, zVertexField, cellsOnVertexField)
       !
@@ -208,19 +214,62 @@ module mpas_io_input
       deallocate(partial_global_graph_info % adjacencyList)
 
       call mpas_block_creator_setup_blocks_and_0halo_cells(domain, indexToCellID_Block, local_cell_list, block_id, block_start, block_count)
-      call mpas_block_creator_build_0halo_cell_fields(indexToCellIDField, nEdgesOnCellField, cellsOnCellField, verticesOnCellField, edgesOnCellField, indexToCellID_Block, nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, edgesOnCell_Block)
 
+      !
+      ! Do all-to-all to get from read indices to owned indices
+      !
+      call mpas_block_creator_build_0halo_cell_fields(indexToCellIDField, nEdgesOnCellField, cellsOnCellField, verticesOnCellField, edgesOnCellField, indexToCellID_Block, &
+              xCellField, yCellField, zCellField, nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, edgesOnCell_Block, xCell_Block, yCell_Block, zCell_Block)
+
+!MGD: we can modify for xEdge
       call mpas_block_creator_build_0_and_1halo_edge_fields(indexToEdgeIDField, cellsOnEdgeField, indexToCellID_Block, nEdgesOnCell_Block, edgesOnCell_Block, indexToEdgeID_Block, cellsOnEdge_Block, nEdgesSolveField)
+
+!MGD: we can modify for xEdge
       call mpas_block_creator_build_0_and_1halo_edge_fields(indexToVertexIDField, cellsOnVertexField, indexToCellID_Block, nEdgesOnCell_Block, verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, nVerticesSolveField)
 
-      call mpas_block_creator_build_cell_halos(indexToCellID_Block, nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, edgesOnCell_Block, nCellsSolveField)
 
+      !
+      ! Now we have the opportunity to use the fields created above to re-order cells, edges, and vertices
+      !
+write(0,*) 'REARRANGE...'
+write(0,*) 'shape(cellsOnCell_Block) ', shape(cellsOnCell_Block % array)
+write(0,*) 'shape(nEdgesOnCell_Block) ', shape(nEdgesOnCell_Block % array)
+write(0,*) 'shape(xCell_Block) ', shape(xCell_Block % array)
+      nCellsSolve = size(local_cell_list)
+write(0,*) 'nCellsSolve = ', nCellsSolve
+      allocate(cellOrder(nCellsSolve))
+      call mpas_orderCells(domain % dminfo, nCellsSolve, maxEdges, &
+                           IndexToCellID_Block % array(1:nCellsSolve), &
+                           xCell_Block % array(1:nCellsSolve), &
+                           yCell_Block % array(1:nCellsSolve), &
+                           zCell_Block % array(1:nCellsSolve), &
+                           cellsOnCell_Block % array(:,1:nCellsSolve), &
+                           nEdgesOnCell_Block % array(1:nCellsSolve), &
+                           cellOrder)
+
+      call MPAS_permuteCellFields(nCellsSolve, maxEdges, &
+                                  indexToCellID_Block % array(1:nCellsSolve), &
+                                  nEdgesOnCell_Block % array(1:nCellsSolve), &
+                                  cellsOnCell_Block % array(:,1:nCellsSolve), &
+                                  verticesOnCell_Block % array(:,1:nCellsSolve), &
+                                  edgesOnCell_Block % array(:,1:nCellsSolve), &
+                                  cellOrder)
+      
+      deallocate(cellOrder)
+
+      !
+      ! The essential purpose of the next three calls is to build halos so that we know 
+      !   nCells/nCellsSolve, nEdges/nEdgesSolve, nVertices/nVerticesSolve in the call 
+      !   to mpas_block_creator_finalize_block_init(), and also to generate exchange lists
+      !   for cell-, edge-, and vertex-based fields
+      !
+      call mpas_block_creator_build_cell_halos(indexToCellID_Block, nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, edgesOnCell_Block, nCellsSolveField)
       call mpas_block_creator_build_edge_halos(indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, edgesOnCell_Block, indexToEdgeID_Block, cellsOnEdge_Block, nEdgesSolveField)
       call mpas_block_creator_build_edge_halos(indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, nVerticesSolveField)
 
 
-     ! Allocate blocks, and copy indexTo arrays into blocks
-     call mpas_block_creator_finalize_block_init(domain % blocklist, &
+      ! Allocate blocks, and copy indexTo arrays into blocks
+      call mpas_block_creator_finalize_block_init(domain % blocklist, &
 #include "dim_dummy_args.inc"         
                              , nCellsSolveField, nEdgesSolveField, nVerticesSolveField, indexToCellID_Block, indexToEdgeID_Block, indexToVertexID_Block)
 
@@ -553,7 +602,57 @@ module mpas_io_input
      call mpas_dmpar_init_multihalo_exchange_list(indexToCellID % recvList, nHalos)
      call mpas_dmpar_init_multihalo_exchange_list(indexToCellID % copyList, nHalos)
      nullify(indexToCellID % next)
-   
+
+     ! x-coordinate of cell
+     allocate(xCell)
+     allocate(xCell % ioinfo)
+     xCell % ioinfo % fieldName = 'xCell'
+     xCell % ioinfo % start(1) = readCellStart
+     xCell % ioinfo % count(1) = nReadCells
+     allocate(xCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'xCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'xCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'xCell', xCell % array, ierr)
+     xCell % dimSizes(1) = nReadCells
+     xCell % block => readingBlock
+     xCell % sendList => indexToCellID % sendList
+     xCell % recvList => indexToCellID % recvList
+     xCell % copyList => indexToCellID % copyList
+     nullify(xCell % next)
+
+     ! y-coordinate of cell
+     allocate(yCell)
+     allocate(yCell % ioinfo)
+     yCell % ioinfo % fieldName = 'yCell'
+     yCell % ioinfo % start(1) = readCellStart
+     yCell % ioinfo % count(1) = nReadCells
+     allocate(yCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'yCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'yCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'yCell', yCell % array, ierr)
+     yCell % dimSizes(1) = nReadCells
+     yCell % block => readingBlock
+     yCell % sendList => indexToCellID % sendList
+     yCell % recvList => indexToCellID % recvList
+     yCell % copyList => indexToCellID % copyList
+     nullify(yCell % next)
+
+     ! z-coordinate of cell
+     allocate(zCell)
+     allocate(zCell % ioinfo)
+     zCell % ioinfo % fieldName = 'zCell'
+     zCell % ioinfo % start(1) = readCellStart
+     zCell % ioinfo % count(1) = nReadCells
+     allocate(zCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'zCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'zCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'zCell', zCell % array, ierr)
+     zCell % dimSizes(1) = nReadCells
+     zCell % block => readingBlock
+     zCell % sendList => indexToCellID % sendList
+     zCell % recvList => indexToCellID % recvList
+     zCell % copyList => indexToCellID % copyList
+     nullify(zCell % next)
 
      ! Number of cell/edges/vertices adjacent to each cell
      allocate(nEdgesOnCell)
