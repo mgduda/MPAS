@@ -71,7 +71,9 @@ module mpas_io_input
       type (field1dReal), pointer :: xCellField,   yCellField,   zCellField
       type (field1DReal), pointer :: xCell_Block, yCell_Block, zCell_Block
       type (field1dReal), pointer :: xEdgeField,   yEdgeField,   zEdgeField
+      type (field1dReal), pointer :: xEdge_Block,   yEdge_Block,   zEdge_Block
       type (field1dReal), pointer :: xVertexField, yVertexField, zVertexField
+      type (field1dReal), pointer :: xVertex_Block, yVertex_Block, zVertex_Block
 
       type (field1DChar) :: xtime
 
@@ -219,13 +221,9 @@ module mpas_io_input
       call mpas_block_creator_build_0halo_cell_fields(indexToCellIDField, nEdgesOnCellField, cellsOnCellField, verticesOnCellField, edgesOnCellField, indexToCellID_Block, &
               xCellField, yCellField, zCellField, nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, edgesOnCell_Block, xCell_Block, yCell_Block, zCell_Block)
 
-!MGD: we can modify for xEdge
-! outputs: indexToEdgeID_Block, cellsOnEdge_Block, nEdgesSolveField
-      call mpas_block_creator_build_0_and_1halo_edge_fields(indexToEdgeIDField, cellsOnEdgeField, indexToCellID_Block, nEdgesOnCell_Block, edgesOnCell_Block, indexToEdgeID_Block, cellsOnEdge_Block, nEdgesSolveField)
+      call mpas_block_creator_build_0_and_1halo_edge_fields(indexToEdgeIDField, cellsOnEdgeField, indexToCellID_Block, nEdgesOnCell_Block, edgesOnCell_Block, xEdgeField, yEdgeField, zEdgeField, indexToEdgeID_Block, cellsOnEdge_Block, xEdge_Block, yEdge_Block, zEdge_Block, nEdgesSolveField)
 
-!MGD: we can modify for xVertex
-! outputs: indexToVertexID_Block, cellsOnVertex_Block, nVerticesSolveField
-      call mpas_block_creator_build_0_and_1halo_edge_fields(indexToVertexIDField, cellsOnVertexField, indexToCellID_Block, nEdgesOnCell_Block, verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, nVerticesSolveField)
+      call mpas_block_creator_build_0_and_1halo_edge_fields(indexToVertexIDField, cellsOnVertexField, indexToCellID_Block, nEdgesOnCell_Block, verticesOnCell_Block, xVertexField, yVertexField, zVertexField, indexToVertexID_Block, cellsOnVertex_Block, xVertex_Block, yVertex_Block, zVertex_Block, nVerticesSolveField)
 
 
       !

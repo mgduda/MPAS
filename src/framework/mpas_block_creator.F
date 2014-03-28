@@ -321,14 +321,21 @@ module mpas_block_creator
 !
 !-----------------------------------------------------------------------
 
-   subroutine mpas_block_creator_build_0_and_1halo_edge_fields(indexToEdgeIDBlock, cellsOnEdgeBlock, indexToCellID_0Halo, nEdgesOnCell_0Halo, edgesOnCell_0Halo, indexToEdgeID_0Halo, cellsOnEdge_0Halo, nEdgesSolve)!{{{
+   subroutine mpas_block_creator_build_0_and_1halo_edge_fields(indexToEdgeIDBlock, cellsOnEdgeBlock, indexToCellID_0Halo, nEdgesOnCell_0Halo, edgesOnCell_0Halo, &
+             xEdgeBlock, yEdgeBlock, zEdgeBlock, indexToEdgeID_0Halo, cellsOnEdge_0Halo, xEdge_0Halo, yEdge_0Halo, zEdge_0Halo, nEdgesSolve)!{{{
      type (field1dInteger), pointer :: indexToEdgeIDBlock !< Input: indexToEdgeID read in field
      type (field2dInteger), pointer :: cellsOnEdgeBlock !< Input: cellsOnEdge read in field
      type (field1dInteger), pointer :: indexToCellID_0Halo !< Input: indexToCellID field on 0 halo
      type (field1dInteger), pointer :: nEdgesOnCell_0Halo !< Input: nEdgesOnCell field on 0 halo
      type (field2dInteger), pointer :: edgesOnCell_0Halo !< Input: edgesOnCell field on 0 and 1 halos
+     type (field1dReal), pointer :: xEdgeBlock !< Input: xEdge read in field
+     type (field1dReal), pointer :: yEdgeBlock !< Input: yEdge read in field
+     type (field1dReal), pointer :: zEdgeBlock !< Input: xEdge read in field
      type (field1dInteger), pointer :: indexToEdgeID_0Halo !< Output: indexToEdgeID field on 0 and 1 halos
      type (field2dInteger), pointer :: cellsOnEdge_0Halo !< Output: CellsOnEdge field on 0 and 1 halos
+     type (field1dReal), pointer :: xEdge_0Halo !< Output: xEdge field on 0 and 1 halos
+     type (field1dReal), pointer :: yEdge_0Halo !< Output: yEdge field on 0 and 1 halos
+     type (field1dReal), pointer :: zEdge_0Halo !< Output: xEdge field on 0 and 1 halos
      type (field1dInteger), pointer :: nEdgesSolve !< Output: Array with max index to edges in halos
 
      type (field0dInteger), pointer :: offSetField, edgeLimitField
