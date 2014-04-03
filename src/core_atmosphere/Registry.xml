@@ -601,8 +601,6 @@
 			<var name="dlwsfc"/>
 			<var name="ulwsfc"/>
 			<var name="suntim"/>
-			<var name="phy_f2d"/>
-			<var name="phy_f3d"/>
 			<var name="dusfc"/>
 			<var name="dvsfc"/>
 			<var name="dtsfc"/>
@@ -976,16 +974,16 @@
 <!-- ================================================================================================== -->
 
         <nml_record name="physics_gfs" in_defaults="true">
-                <nml_option name="num_soil_layers"                   type="integer"       default_value="4" in_defaults="false" />
+                <nml_option name="num_soil_layers"                   type="integer"       default_value="4"  in_defaults="false" />
                 <nml_option name="months"                            type="integer"       default_value="12" in_defaults="false" />
-                <nml_option name="seasons"                           type="integer"       default_value="4" in_defaults="false" />
+                <nml_option name="seasons"                           type="integer"       default_value="4"  in_defaults="false" />
                 <nml_option name="norogwd"                           type="integer"       default_value="14" in_defaults="false"/>
 
-                <nml_option name="num2d"                             type="integer"       default_value="20" in_defaults="false"/>
-                <nml_option name="num3d"                             type="integer"       default_value="20" in_defaults="false"/>
+                <nml_option name="num2d"                             type="integer"       default_value="3"  in_defaults="false"/>
+                <nml_option name="num3d"                             type="integer"       default_value="4"  in_defaults="false"/>
                 <nml_option name="naerlev"                           type="integer"       default_value="29" in_defaults="false"/>
                 <nml_option name="noznlev"                           type="integer"       default_value="80" in_defaults="false"/> 
-                <nml_option name="nozcoef"                           type="integer"       default_value="4" in_defaults="false"/> 
+                <nml_option name="nozcoef"                           type="integer"       default_value="4"  in_defaults="false"/> 
 
                 <nml_option name="config_radtlw_interval"            type="character"     default_value="none"/>
                 <nml_option name="config_radtsw_interval"            type="character"     default_value="none"/>
