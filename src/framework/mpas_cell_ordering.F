@@ -38,8 +38,9 @@ module mpas_cell_ordering
       integer, dimension(nCells), intent(in) :: nEdgesOnCell
       integer, dimension(nCells), intent(out) :: cellOrder
 
-      integer :: iCell, i, j, k, bdyCell, localCell
+      integer :: iCell, i, j, k, firstIdx, bdyCell, localCell
       integer, dimension(2,nCells) :: global_local
+      logical :: found_non_cell
 
 
       !
@@ -82,7 +83,46 @@ module mpas_cell_ordering
       do while (queue_size > 0)
          i = queue_remove()
 
+
+         ! Find first index that we can add to the queue after finding an index that we cannot
+         found_non_cell = .false.
+         firstIdx = -1
          do j=1,nEdgesOnCell(i)
+            k = MPAS_binary_search(global_local, 2, 1, nCells, cellsOnCell(j,i))
+            if (k <= nCells) then
+               if (.not. dictionary_search(localCell)) then
+                  if (found_non_cell) then
+                     firstIdx = j
+                     exit
+                  end if
+               else
+                  found_non_cell = .true.
+               end if
+            else
+               found_non_cell = .true.
+            end if
+         end do
+         if (firstIdx == -1) then
+            firstIdx = 1
+         end if
+         
+
+         do j=firstIdx,nEdgesOnCell(i)
+
+            k = MPAS_binary_search(global_local, 2, 1, nCells, cellsOnCell(j,i))
+            if (k <= nCells) then
+               localCell = global_local(2,k)
+               if (.not. dictionary_search(localCell)) then
+                  cellOrder(iCell) = global_local(1,k)     ! add global ID to cellOrder array
+                  iCell = iCell - 1
+                  call queue_insert(localCell)
+                  call dictionary_insert(localCell)
+               else
+               end if
+            end if
+         end do
+
+         do j=1,firstIdx-1
 
             k = MPAS_binary_search(global_local, 2, 1, nCells, cellsOnCell(j,i))
             if (k <= nCells) then
