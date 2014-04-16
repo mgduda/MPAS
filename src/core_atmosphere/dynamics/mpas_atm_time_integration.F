@@ -105,7 +105,11 @@ module atm_time_integration
 
       real (kind=RKIND) :: scalar_min, scalar_max
       real (kind=RKIND) :: global_scalar_min, global_scalar_max
+      integer :: sec, usec
+      integer :: sec2, usec2
+      integer, parameter :: omp_timer = 5
 
+      call start_timer(dyn_timer)
 
       !
       ! Initialize RK weights
@@ -126,24 +130,37 @@ module atm_time_integration
 
       if(debug) write(0,*) ' copy step in rk solver '
 
+      call start_timer(halo_timer)
 ! theta_m
-      call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(1) % state % theta_m)
+      call instr_dmpar_exch_halo_field(domain % blocklist % state % time_levs(1) % state % theta_m, halo_count)
  
 ! scalars
-      call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(1) % state % scalars)
+      call instr_dmpar_exch_halo_field(domain % blocklist % state % time_levs(1) % state % scalars, halo_count)
 
 ! pressure_p
-      call mpas_dmpar_exch_halo_field(domain % blocklist % diag % pressure_p)
+      call instr_dmpar_exch_halo_field(domain % blocklist % diag % pressure_p, halo_count)
 
 ! rtheta_p
-      call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_p)
+      call instr_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_p, halo_count)
+
+      call stop_timer(halo_timer, sec, usec)
+      write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+      halo_sec = halo_sec + sec
+      halo_usec = halo_usec + usec
+      if (halo_usec >= 1000000) then
+         halo_usec = halo_usec - 1000000
+         halo_sec = halo_sec + 1
+      end if
 
 
+      call start_timer(omp_timer)
       block => domain % blocklist
       do while (associated(block))
-         call atm_rk_integration_setup( block % state % time_levs(2) % state, block % state % time_levs(1) % state, block % diag )
+         call atm_rk_integration_setup( block % mesh, block % state % time_levs(2) % state, block % state % time_levs(1) % state, block % diag )
          block => block % next
       end do
+      call stop_timer(omp_timer, sec, usec)
+      write(0,'(a,i4,a,i6.6)') 'TIMING (rk_integration_setup) : ', sec, '.', usec
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
       ! BEGIN Runge-Kutta loop 
@@ -153,20 +170,26 @@ module atm_time_integration
 
          if(debug) write(0,*) ' rk substep ', rk_step
 
+         call start_timer(omp_timer)
          block => domain % blocklist
          do while (associated(block))
             ! The coefficients are set for owned cells (cqw) and for all edges of owned cells, 
             call atm_compute_moist_coefficients( block % state % time_levs(2) % state, block % diag, block % mesh )
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (compute_moist_coeffs) : ', sec, '.', usec
 
 
          if (debug) write(0,*) ' compute_dyn_tend '
+         call start_timer(omp_timer)
          block => domain % blocklist
          do while (associated(block))
             call atm_compute_dyn_tend( block % tend, block % state % time_levs(2) % state, block % diag, block % mesh, rk_step, dt )
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (compute_dyn_tend) : ', sec, '.', usec
          if (debug) write(0,*) ' finished compute_dyn_tend '
 
 #ifdef DO_PHYSICS
@@ -193,14 +216,27 @@ module atm_time_integration
          !***********************************
 
 ! tend_u
-         call mpas_dmpar_exch_halo_field(domain % blocklist % tend % u, (/ 1 /))
+         call start_timer(halo_timer)
+         call instr_dmpar_exch_halo_field(domain % blocklist % tend % u, halo_count, (/ 1 /))
 
+         call stop_timer(halo_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+         halo_sec = halo_sec + sec
+         halo_usec = halo_usec + usec
+         if (halo_usec >= 1000000) then
+            halo_usec = halo_usec - 1000000
+            halo_sec = halo_sec + 1
+         end if
+
+         call start_timer(omp_timer)
          block => domain % blocklist
-            do while (associated(block))
-               call atm_set_smlstep_pert_variables( block % tend, block % diag, block % mesh )
-               call atm_compute_vert_imp_coefs( block % state % time_levs(2) % state, block % mesh, block % diag, rk_sub_timestep(rk_step) )
+         do while (associated(block))
+            call atm_set_smlstep_pert_variables( block % tend, block % diag, block % mesh )
+            call atm_compute_vert_imp_coefs( block % state % time_levs(2) % state, block % mesh, block % diag, rk_sub_timestep(rk_step) )
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (smlstep_setup) : ', sec, '.', usec
 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          ! begin acoustic steps loop
@@ -210,33 +246,57 @@ module atm_time_integration
 
             if(debug) write(0,*) ' acoustic step ',small_step
       
+            call start_timer(omp_timer)
             block => domain % blocklist
             do while (associated(block))
                call atm_advance_acoustic_step( block % state % time_levs(2) % state, block % diag, block % tend, &
                                            block % mesh, rk_sub_timestep(rk_step) )
                block => block % next
             end do
+            call stop_timer(omp_timer, sec, usec)
+            write(0,'(a,i4,a,i6.6)') 'TIMING (advance_acoustic_step) : ', sec, '.', usec
 
             if(debug) write(0,*) ' acoustic step complete '
   
 ! rtheta_pp
 ! This is the only communications needed during the acoustic steps because we solve for u on all edges of owned cells
 
-            call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_pp, (/ 1 /))
+            call start_timer(halo_timer)
+            call instr_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_pp, halo_count, (/ 1 /))
+
+            call stop_timer(halo_timer, sec, usec)
+            write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+            halo_sec = halo_sec + sec
+            halo_usec = halo_usec + usec
+            if (halo_usec >= 1000000) then
+               halo_usec = halo_usec - 1000000
+               halo_sec = halo_sec + 1
+            end if
  
          end do  ! end of acoustic steps loop
 
+         call start_timer(halo_timer)
          !CR: SMALLER STENCIL?: call mpas_dmpar_exch_halo_field(block % diag % rw_p, (/ 1 /))
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rw_p)
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % rw_p, halo_count)
 
          !CR: SMALLER STENCIL?: call mpas_dmpar_exch_halo_field(block % diag % ru_p, (/ 2 /))
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % ru_p)
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % ru_p, halo_count)
 
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rho_pp)
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % rho_pp, halo_count)
 
          ! the second layer of halo cells must be exchanged before calling atm_recover_large_step_variables
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_pp, (/ 2 /))
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % rtheta_pp, halo_count, (/ 2 /))
 
+         call stop_timer(halo_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+         halo_sec = halo_sec + sec
+         halo_usec = halo_usec + usec
+         if (halo_usec >= 1000000) then
+            halo_usec = halo_usec - 1000000
+            halo_sec = halo_sec + 1
+         end if
+
+         call start_timer(omp_timer)
          block => domain % blocklist
          do while (associated(block))
             call atm_recover_large_step_variables( block % state % time_levs(2) % state,                 &
@@ -244,16 +304,29 @@ module atm_time_integration
                                                rk_timestep(rk_step), number_sub_steps(rk_step), rk_step  )
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (recover_large_step) : ', sec, '.', usec
 
 ! u
+         call start_timer(halo_timer)
          !CR: SMALLER STENCIL?: call mpas_dmpar_exch_halo_field(block % state % time_levs(2) % state % u, (/ 3 /))
-         call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % u)
+         call instr_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % u, halo_count)
+
+         call stop_timer(halo_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+         halo_sec = halo_sec + sec
+         halo_usec = halo_usec + usec
+         if (halo_usec >= 1000000) then
+            halo_usec = halo_usec - 1000000
+            halo_sec = halo_sec + 1
+         end if
 
          ! scalar advection: RK3 scheme of Skamarock and Gassmann (2011). 
          ! PD or monotonicity constraints applied only on the final Runge-Kutta substep.
 
          if (config_scalar_advection) then
 
+         call start_timer(omp_timer)
          block => domain % blocklist
          do while (associated(block))
             !
@@ -275,6 +348,8 @@ module atm_time_integration
             end if
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (advance_scalars) : ', sec, '.', usec
 
          else
  
@@ -282,26 +357,39 @@ module atm_time_integration
 
          end if
 
+         call start_timer(omp_timer)
          block => domain % blocklist
          do while (associated(block))
             call atm_compute_solve_diagnostics( dt, block % state % time_levs(2) % state, block % diag, block % mesh )
             block => block % next
          end do
+         call stop_timer(omp_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (compute_solve_diagnostics) : ', sec, '.', usec
 
          if(debug) write(0,*) ' diagnostics complete '
 
+         call start_timer(halo_timer)
 ! w
-         call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % w)
+         call instr_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % w, halo_count)
 
 ! pv_edge
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % pv_edge)
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % pv_edge, halo_count)
 
 ! rho_edge
-         call mpas_dmpar_exch_halo_field(domain % blocklist % diag % rho_edge)
+         call instr_dmpar_exch_halo_field(domain % blocklist % diag % rho_edge, halo_count)
 
 ! scalars
          if (rk_step < 3) then
-            call mpas_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % scalars)
+            call instr_dmpar_exch_halo_field(domain % blocklist % state % time_levs(2) % state % scalars, halo_count)
+         end if
+
+         call stop_timer(halo_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+         halo_sec = halo_sec + sec
+         halo_usec = halo_usec + usec
+         if (halo_usec >= 1000000) then
+            halo_usec = halo_usec - 1000000
+            halo_sec = halo_sec + 1
          end if
 
       end do ! rk_step loop
@@ -322,7 +410,10 @@ module atm_time_integration
 !... call to parameterizations of cloud microphysics. calculation of the tendency of water vapor to horizontal and
 !... vertical advection needed for the Tiedtke parameterization of convection.
 
+      call stop_timer(dyn_timer, dyn_sec, dyn_usec)
+
 #ifdef DO_PHYSICS
+      call start_timer(phys_timer)
       block => domain % blocklist
       do while(associated(block))
 
@@ -349,6 +440,14 @@ module atm_time_integration
 
          block => block % next
       end do
+
+      call stop_timer(phys_timer, sec2, usec2)
+      phys_sec = phys_sec + sec2
+      phys_usec = phys_usec + usec2
+      if (phys_usec >= 1000000) then
+         phys_usec = phys_usec - 1000000
+         phys_sec = phys_sec + 1
+      end if
 #endif
 
       102 format(' global min, max scalar',i4,2(1x,e17.10))
@@ -400,23 +499,70 @@ module atm_time_integration
 
 !---
 
-   subroutine atm_rk_integration_setup( s_old, s_new, diag )
+   subroutine atm_rk_integration_setup( mesh, s_old, s_new, diag )
 
       implicit none
 
-      type (state_type) :: s_new, s_old
-      type (diag_type) :: diag
+      type (mesh_type), intent(in) :: mesh
+      type (state_type), intent(in) :: s_new
+      type (state_type), intent(inout) :: s_old
+      type (diag_type), intent(inout) :: diag
 
-      diag % ru_save % array       = diag % ru % array
-      diag % rw_save % array       = diag % rw % array
-      diag % rtheta_p_save % array = diag % rtheta_p % array
-      diag % rho_p_save % array    = diag % rho_p % array
+      integer :: nCells, nEdges
+      integer :: iCell, iEdge
 
-      s_old % u % array       = s_new % u % array
-      s_old % w % array       = s_new % w % array
-      s_old % theta_m % array = s_new % theta_m % array
-      s_old % rho_zz % array  = s_new % rho_zz % array
-      s_old % scalars % array = s_new % scalars % array
+      real (kind=RKIND), dimension(:,:), pointer :: rw_save, rw
+      real (kind=RKIND), dimension(:,:), pointer :: rtheta_p_save, rtheta_p
+      real (kind=RKIND), dimension(:,:), pointer :: rho_p_save, rho_p
+      real (kind=RKIND), dimension(:,:), pointer :: w_old, w_new
+      real (kind=RKIND), dimension(:,:), pointer :: theta_m_old, theta_m_new
+      real (kind=RKIND), dimension(:,:), pointer :: rho_zz_old, rho_zz_new
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalars_old, scalars_new
+      real (kind=RKIND), dimension(:,:), pointer :: ru_save, ru
+      real (kind=RKIND), dimension(:,:), pointer :: u_old, u_new
+
+!MGD MAJOR SUCCESS IN REORGANIZING CODE
+      nCells = mesh % nCells
+      nEdges = mesh % nEdges
+
+      rw_save => diag % rw_save % array
+      rw      => diag % rw % array
+      rtheta_p_save => diag % rtheta_p_save % array
+      rtheta_p      => diag % rtheta_p % array
+      rho_p_save => diag % rho_p_save % array
+      rho_p      => diag % rho_p % array
+      w_old => s_old % w % array
+      w_new => s_new % w % array
+      theta_m_old => s_old % theta_m % array
+      theta_m_new => s_new % theta_m % array
+      rho_zz_old => s_old % rho_zz % array
+      rho_zz_new => s_new % rho_zz % array
+      scalars_old => s_old % scalars % array
+      scalars_new => s_new % scalars % array
+      ru_save => diag % ru_save % array
+      ru => diag % ru % array
+      u_old => s_old % u % array
+      u_new => s_new % u % array
+
+!$OMP PARALLEL
+!$OMP DO PRIVATE(iCell) SCHEDULE(STATIC)
+      do iCell=1,nCells
+         rw_save(:,iCell)       = rw(:,iCell)
+         rtheta_p_save(:,iCell) = rtheta_p(:,iCell)
+         rho_p_save(:,iCell)    = rho_p(:,iCell)
+         w_old(:,iCell)         = w_new(:,iCell)
+         theta_m_old(:,iCell)   = theta_m_new(:,iCell)
+         rho_zz_old(:,iCell)    = rho_zz_new(:,iCell)
+         scalars_old(:,:,iCell) = scalars_new(:,:,iCell)
+      end do
+!$OMP END DO
+!$OMP DO PRIVATE(iEdge) SCHEDULE(STATIC)
+      do iEdge=1,nEdges
+         ru_save(:,iEdge) = ru(:,iEdge)
+         u_old(:,iEdge)   = u_new(:,iEdge)
+      end do
+!$OMP END DO
+!$OMP END PARALLEL
 
    end subroutine atm_rk_integration_setup
 
@@ -445,6 +591,7 @@ module atm_time_integration
 
       cellsOnEdge => grid % cellsOnEdge % array
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve
          do k = 2, nVertLevels
             qtot = 0.
@@ -455,6 +602,7 @@ module atm_time_integration
          end do
       end do
 
+!MGD PARALLELIZE
       do iEdge = 1, nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -540,6 +688,7 @@ module atm_time_integration
          cofrz(k) = dtseps*rdzw(k)
       end do
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve  !  we only need to do cells we are solving for, not halo cells
 
          do k=2,nVertLevels
@@ -631,6 +780,7 @@ module atm_time_integration
       ! set the acoustic step perturbation variables by subtracting the RK timestep variables
       ! from their at the previous RK substep.
 
+!MGD PARALLELIZE
       diag % rho_pp % array = diag % rho_p_save % array - diag % rho_p % array
       diag % ru_p % array = diag % ru_save % array - diag % ru % array
       diag % rtheta_pp % array = diag % rtheta_p_save % array - diag % rtheta_p % array
@@ -640,6 +790,7 @@ module atm_time_integration
       ! we solve for omega instead of w (see Klemp et al MWR 2007),
       ! so here we change the w_p tendency to an omega_p tendency
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve
       do k = 2, nVertLevels
          tend % w % array(k,iCell) = ( fzm(k) * grid % zz % array(k  ,iCell) +   &
@@ -651,6 +802,7 @@ module atm_time_integration
       ! here we need to compute the omega tendency in a manner consistent with our diagnosis of omega.
       ! this requires us to use the same flux divergence as is used in the theta eqn - see Klemp et al MWR 2003.
 
+!MGD REWRITE
       do iEdge = 1, nEdges
 
          cell1 = cellsOnEdge(1,iEdge)
@@ -670,6 +822,7 @@ module atm_time_integration
 
       !  ruAvg and wwAvg will store the mass fluxes averaged over the acoustic steps for the subsequent scalar transport.
 
+!MGD PARALLELIZE
       diag % ruAvg % array = 0.
       diag % wwAvg % array = 0.
 
@@ -805,6 +958,7 @@ module atm_time_integration
       ! all owned edges plus some edges that are owned by other blocks.  We perform these redundant computations
       ! so that we do not have to communicate updates of u to update the cell variables (rho, w, and theta). 
 
+!MGD PARALLELIZE (WHAT EXACTLY IS HAPPENING HERE?)
       do iEdge = 1, nEdges
  
          cell1 = cellsOnEdge(1,iEdge)
@@ -913,12 +1067,14 @@ module atm_time_integration
 
       ! saving rtheta_pp before update for use in divergence damping in next acoustic step
 
+!MGD PARALLELIZE
       rtheta_pp_old(:,:) = rtheta_pp(:,:)
 
       ! vertically implicit acoustic and gravity wave integration.
       ! this follows Klemp et al MWR 2007, with the addition of an implicit Rayleigh damping of w
       ! serves as a gravity-wave absorbing layer, from Klemp et al 2008.
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve
 
          do k=1, nVertLevels
@@ -1074,6 +1230,7 @@ module atm_time_integration
       ! compute new density everywhere so we can compute u from ru.
       ! we will also need it to compute theta_m below
 
+!MGD PARALLELIZE
       do iCell = 1, nCells
 
          do k = 1, nVertLevels
@@ -1125,6 +1282,7 @@ module atm_time_integration
       ! initializing the "garbage cell" of rho_zz to a non-zero value
       rho_zz(:,nCells+1) = 1.0
 
+!MGD PARALLELIZE
       do iEdge = 1, nEdges
 
          cell1 = cellsOnEdge(1,iEdge)
@@ -1140,6 +1298,7 @@ module atm_time_integration
          !  to use the same flux-divergence operator as is used for the horizontal theta transport
          !  (See Klemp et al 2003).
 
+!MGD REWRITE
          flux = cf1*ru(1,iEdge) + cf2*ru(2,iEdge) + cf3*ru(3,iEdge)
          w(1,cell2) = w(1,cell2) - (zb(1,2,iEdge) + sign(1.0_RKIND,flux)*coef_3rd_order*zb3(1,2,iEdge))  &
                                 *flux/(cf1*rho_zz(1,cell2)+cf2*rho_zz(2,cell2)+cf3*rho_zz(3,cell2))
@@ -1261,6 +1420,7 @@ module atm_time_integration
       qv_init      => grid % qv_init % array
       zgrid        => grid % zgrid % array
 
+!MGD PARALLELIZE
 #ifndef DO_PHYSICS
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
 #endif
@@ -1270,6 +1430,7 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
+!MGD REWRITE
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1315,6 +1476,7 @@ module atm_time_integration
 
       if (config_scalar_vadv_order == 2) then
 
+!MGD PARALLELIZE
          do iCell=1,nCellsSolve
             do k = 2, nVertLevels
                do iScalar=1,s_old % num_scalars
@@ -1331,6 +1493,7 @@ module atm_time_integration
 
       else if ( config_scalar_vadv_order == 3 ) then
 
+!MGD PARALLELIZE
          do iCell=1,nCellsSolve
 
             k = 2
@@ -1361,6 +1524,7 @@ module atm_time_integration
 
       else if ( config_scalar_vadv_order == 4 ) then
 
+!MGD PARALLELIZE
          do iCell=1,nCellsSolve
 
             k = 2
@@ -1469,6 +1633,7 @@ module atm_time_integration
       integer, parameter :: hadv_opt = 2
       real (kind=RKIND), parameter :: eps=1.e-20
       logical, parameter :: debug_print = .false.
+      integer :: sec, usec
 
       flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
           ua*( 7.*(q_i + q_im1) - (q_ip1 + q_im2) )/12.0
@@ -1517,9 +1682,6 @@ module atm_time_integration
       qv_init      => grid % qv_init % array
       zgrid        => grid % zgrid % array
 
-#ifndef DO_PHYSICS
-      scalar_tend = 0.  !  testing purposes - we have no sources or sinks
-#endif
 
       !  for positive-definite or monotonic option, we first update scalars using the tendency from sources other than
       !  the resolved transport (these should constitute a positive definite update).  
@@ -1537,7 +1699,17 @@ module atm_time_integration
 
       !  halo exchange
 
-      call mpas_dmpar_exch_halo_field(s_old % scalars)
+      call start_timer(halo_timer)
+      call instr_dmpar_exch_halo_field(s_old % scalars, halo_count)
+
+      call stop_timer(halo_timer, sec, usec)
+      write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+      halo_sec = halo_sec + sec
+      halo_usec = halo_usec + usec
+      if (halo_usec >= 1000000) then
+         halo_usec = halo_usec - 1000000
+         halo_sec = halo_sec + 1
+      end if
 
       !
       ! Runge Kutta integration, so we compute fluxes from scalar_new values, update starts from scalar_old
@@ -1747,7 +1919,17 @@ module atm_time_integration
          tempField % next => null()
 
          tempField % array => scale_arr
-         call mpas_dmpar_exch_halo_field(tempField, (/ 1 /))
+         call start_timer(halo_timer)
+         call instr_dmpar_exch_halo_field(tempField, halo_count, (/ 1 /))
+
+         call stop_timer(halo_timer, sec, usec)
+         write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+         halo_sec = halo_sec + sec
+         halo_usec = halo_usec + usec
+         if (halo_usec >= 1000000) then
+            halo_usec = halo_usec - 1000000
+            halo_sec = halo_sec + 1
+         end if
 
 !
 !  rescale the fluxes
@@ -1827,6 +2009,7 @@ module atm_time_integration
          end do
 
       end do !  loop over scalars
+
 
    end subroutine atm_advance_scalars_mono
 
@@ -2039,6 +2222,7 @@ module atm_time_integration
          ! Smagorinsky eddy viscosity, based on horizontal deformation (in this case on model coordinate surfaces).
          ! The integration coefficients were precomputed and stored in defc_a and defc_b
 
+!MGD PARALLELIZE
          do iCell = 1, nCells
             d_diag(:) = 0.
             d_off_diag(:) = 0.
@@ -2071,6 +2255,7 @@ module atm_time_integration
 !ldf (2012-10-10):
       end if
 
+!MGD PARALLELIZE
       tend_u(:,:) = 0.0
 
       cf1 = grid % cf1 % scalar
@@ -2083,11 +2268,13 @@ module atm_time_integration
       allocate(divergence_ru(nVertLevels, nCells+1))
       allocate(qtot(nVertLevels, nCells+1))
 
+!MGD PARALLELIZE
       divergence_ru(:,:) = 0.0
       h_divergence(:,:) = 0.
 
       ! accumulate horizontal mass-flux
 
+!MGD REWRITE
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -2098,10 +2285,12 @@ module atm_time_integration
          end do
       end do
 
+!MGD PARALLELIZE
       qtot(:,:)=0.
 
       ! compute horiontal mass-flux divergence, add vertical mass flux divergence to complete tend_rho
 
+!MGD PARALLELIZE
       do iCell = 1,nCells
          r = 1.0 / areaCell(iCell)
          do k = 1,nVertLevels
@@ -2120,6 +2309,7 @@ module atm_time_integration
       ! Compute u (normal) velocity tendency for each edge (cell face)
       !
 
+!MGD PARALLELIZE
       do iEdge=1,nEdgesSolve
 
          cell1 = cellsOnEdge(1,iEdge)
@@ -2134,6 +2324,7 @@ module atm_time_integration
             pl  = cpl(k,iEdge)*pp(k,cell1)+cpl(k+1,iEdge)*pp(k+1,cell1)+cpl(k+2,iEdge)*pp(k+2,cell1)
             tend_u(k,iEdge) =  - cqu(k,iEdge)*2./(zz(k,cell1)+zz(k,cell2))*(pr-pl)/dcEdge(iEdge)
 
+!MGD REWRITE
             do k=2,nVertLevels
 
                kr = min(nVertLevels,k+ nint(.5-sign(0.5_RKIND,zx(k,iEdge)+zx(k+1,iEdge))))
@@ -2192,6 +2383,7 @@ module atm_time_integration
 
          wduz(nVertLevels+1) = 0.
 
+!MGD PARALLELIZE
          do k=1,nVertLevels
             tend_u(k,iEdge) = tend_u(k,iEdge) - rdzw(k)*(wduz(k+1)-wduz(k)) 
          end do
@@ -2242,6 +2434,7 @@ module atm_time_integration
       if (delsq_horiz_mixing) then
 
          if ((h_mom_eddy_visc2 > 0.0) .and. (config_horiz_mixing == "2d_fixed")) then
+!MGD PARALLELIZE
             do iEdge=1, nEdgesSolve
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2269,6 +2462,7 @@ module atm_time_integration
 
          else if ( config_horiz_mixing == "2d_smagorinsky") then
 
+!MGD PARALLELIZE
             do iEdge=1, nEdgesSolve
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2305,6 +2499,7 @@ module atm_time_integration
 
          delsq_u(:,:) = 0.0
 
+!MGD PARALLELIZE
          do iEdge=1, nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2324,6 +2519,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD REWRITE
          delsq_circulation(:,:) = 0.0
          do iEdge=1,nEdges
             do k=1,nVertLevels
@@ -2338,6 +2534,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD REWRITE
          delsq_divergence(:,:) = 0.0
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
@@ -2354,6 +2551,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD PARALLELIZE
          do iEdge=1,nEdgesSolve
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2393,6 +2591,7 @@ module atm_time_integration
 
          if (config_mix_full) then
 
+!MGD PARALLELIZE
             do iEdge=1,nEdgesSolve
 
                cell1 = cellsOnEdge(1,iEdge)
@@ -2417,6 +2616,7 @@ module atm_time_integration
 
          else  ! idealized cases where we mix on the perturbation from the initial 1-D state
 
+!MGD PARALLELIZE
             do iEdge=1,nEdgesSolve
 
                cell1 = cellsOnEdge(1,iEdge)
@@ -2455,6 +2655,7 @@ module atm_time_integration
 
 !  add in mixing for u
 
+!MGD PARALLELIZE
       do iEdge=1,nEdgesSolve
          do k=1,nVertLevels
             tend_u(k,iEdge) = tend_u(k,iEdge) + tend_u_euler(k,iEdge)
@@ -2463,6 +2664,7 @@ module atm_time_integration
 
 !----------- rhs for w
 
+!MGD PARALLELIZE
       tend_w(:,:) = 0.
       if(rk_step .eq. 1) then
          tend_w_pgf(:,:)  = 0.
@@ -2475,6 +2677,7 @@ module atm_time_integration
 
       if (config_w_adv_order == 2) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2490,6 +2693,7 @@ module atm_time_integration
 
       else if (config_w_adv_order == 3) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2521,6 +2725,7 @@ module atm_time_integration
 
       else  if (config_w_adv_order == 4) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2554,6 +2759,7 @@ module atm_time_integration
 
       if (curvature) then
 
+!MGD PARALLELIZE
          do iCell = 1, nCellsSolve
             do k=2,nVertLevels
                tend_w(k,iCell) = tend_w(k,iCell) + (rho_zz(k,iCell)*fzm(k)+rho_zz(k-1,iCell)*fzp(k))*          &
@@ -2581,6 +2787,7 @@ module atm_time_integration
 
             if ((h_mom_eddy_visc2 > 0.0) .and. (config_horiz_mixing == "2d_fixed")) then
 
+!MGD REWRITE
                do iEdge=1,nEdges
                   cell1 = cellsOnEdge(1,iEdge)
                   cell2 = cellsOnEdge(2,iEdge)
@@ -2601,6 +2808,7 @@ module atm_time_integration
 
             else if (config_horiz_mixing == "2d_smagorinsky") then
 
+!MGD REWRITE
                do iEdge=1,nEdges
                   cell1 = cellsOnEdge(1,iEdge)
                   cell2 = cellsOnEdge(2,iEdge)
@@ -2631,8 +2839,10 @@ module atm_time_integration
 
             allocate(delsq_theta(nVertLevels, nCells+1))
 
+!MGD PARALLELIZE
             delsq_theta(:,:) = 0.
 
+!MGD REWRITE
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2642,6 +2852,7 @@ module atm_time_integration
                end do
             end do
 
+!MGD PARALLELIZE
             do iCell = 1, nCells
                r = 1.0 / areaCell(iCell)
                do k=2,nVertLevels
@@ -2649,6 +2860,7 @@ module atm_time_integration
                end do
             end do
 
+!MGD REWRITE
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2675,6 +2887,7 @@ module atm_time_integration
       !  vertical advection, pressure gradient and buoyancy for w
       !
 
+!MGD PARALLELIZE
       do iCell = 1, nCells
 
          wdwz(1) = 0.
@@ -2740,6 +2953,7 @@ module atm_time_integration
 
          if ( v_mom_eddy_visc2 > 0.0 ) then
 
+!MGD PARALLELIZE
             do iCell = 1, nCellsSolve
             do k=2,nVertLevels
                tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + v_mom_eddy_visc2*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
@@ -2755,6 +2969,7 @@ module atm_time_integration
 
 ! add in mixing terms for w
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve
          do k=2,nVertLevels
             tend_w(k,iCell) = tend_w(k,iCell) + tend_w_euler(k,iCell)
@@ -2765,6 +2980,7 @@ module atm_time_integration
 
 !----------- rhs for theta
 
+!MGD PARALLELIZE
       tend_theta(:,:) = 0.
 
       !
@@ -2773,6 +2989,7 @@ module atm_time_integration
 
       if (config_theta_adv_order == 2) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2787,6 +3004,7 @@ module atm_time_integration
 
       else if (config_theta_adv_order == 3) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2811,6 +3029,7 @@ module atm_time_integration
 
       else  if (config_theta_adv_order == 4) then
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2849,11 +3068,13 @@ module atm_time_integration
 
       if (rk_step == 1 .or. rk_diffusion) then
 
+!MGD PARALLELIZE
       tend_theta_euler = 0.
 
       if (delsq_horiz_mixing) then
          if ( (h_theta_eddy_visc2 > 0.0) .and. (config_horiz_mixing == "2d_fixed") ) then
 
+!MGD REWRITE
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2872,6 +3093,7 @@ module atm_time_integration
 
          else if (  ( config_horiz_mixing == "2d_smagorinsky") ) then
 
+!MGD REWRITE
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -2899,6 +3121,7 @@ module atm_time_integration
 
          delsq_theta(:,:) = 0.
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2908,6 +3131,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD PARALLELIZE
          do iCell = 1, nCells
             r = 1.0 / areaCell(iCell)
             do k=1,nVertLevels
@@ -2915,6 +3139,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD REWRITE
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2941,6 +3166,7 @@ module atm_time_integration
       !  vertical advection plus diabatic term
       !  Note: we are also dividing through by the cell area after the horizontal flux divergence
       !
+!MGD PARALLELIZE
       do iCell = 1, nCells
 
          wdtz(1) = 0.
@@ -2991,6 +3217,7 @@ module atm_time_integration
 
          if (config_mix_full) then
 
+!MGD PARALLELIZE
             do iCell = 1, nCellsSolve
                do k=2,nVertLevels-1
                   z1 = zgrid(k-1,iCell)
@@ -3010,6 +3237,7 @@ module atm_time_integration
 
          else  ! idealized cases where we mix on the perturbation from the initial 1-D state
 
+!MGD PARALLELIZE
             do iCell = 1, nCellsSolve
                do k=2,nVertLevels-1
                   z1 = zgrid(k-1,iCell)
@@ -3033,6 +3261,7 @@ module atm_time_integration
 
       end if ! compute theta mixing on first rk_step
 
+!MGD PARALLELIZE
       do iCell = 1, nCellsSolve
          do k=1,nVertLevels
             tend_theta(k,iCell) = tend_theta(k,iCell) + tend_theta_euler(k,iCell)
@@ -3117,6 +3346,7 @@ module atm_time_integration
       !
       ! Compute height on cell edges at velocity locations
       !
+!MGD PARALLELIZE
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -3129,6 +3359,7 @@ module atm_time_integration
       !
       ! Compute circulation and relative vorticity at each vertex
       !
+!MGD REWRITE
       circulation(:,:) = 0.0
       do iEdge=1,nEdges
          do k=1,nVertLevels
@@ -3136,6 +3367,7 @@ module atm_time_integration
             circulation(k,verticesOnEdge(2,iEdge)) = circulation(k,verticesOnEdge(2,iEdge)) + dcEdge(iEdge) * u(k,iEdge)
          end do
       end do
+!MGD PARALLELIZE
       do iVertex=1,nVertices
          do k=1,nVertLevels
             vorticity(k,iVertex) = circulation(k,iVertex) / areaTriangle(iVertex)
@@ -3146,7 +3378,9 @@ module atm_time_integration
       !
       ! Compute the divergence at each cell center
       !
+!MGD PARALLELIZE
       divergence(:,:) = 0.0
+!MGD REWRITE
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -3155,6 +3389,7 @@ module atm_time_integration
            divergence(k,cell2) = divergence(k,cell2) - u(k,iEdge)*dvEdge(iEdge)
          end do
       end do
+!MGD PARALLELIZE
       do iCell = 1,nCells
          r = 1.0 / areaCell(iCell)
          do k = 1,nVertLevels
@@ -3166,6 +3401,7 @@ module atm_time_integration
       !
       ! Compute kinetic energy in each cell (Ringler et al JCP 2009)
       !
+!MGD PARALLELIZE
       ke(:,:) = 0.0
       do iCell=1,nCells
          do i=1,nEdgesOnCell(iCell)
@@ -3186,6 +3422,7 @@ module atm_time_integration
          !
 
          allocate (ke_vertex(nVertLevels,nVertices))
+!MGD PARALLELIZE
          do iVertex=1,nVertices
             do k=1,nVertLevels
 
@@ -3202,6 +3439,7 @@ module atm_time_integration
 
          ke_fact = 1.0 - .375
 
+!MGD PARALLELIZE
          do iCell=1,nCells
             do k=1,nVertLevels
                ke(k,iCell) = ke_fact*ke(k,iCell)
@@ -3212,6 +3450,7 @@ module atm_time_integration
          ! initializing the "garbage cell" of areaCell to a non-zero value
          areaCell(nCells+1) = 1.0
 
+!MGD REWRITE
          do iVertex = 1, nVertices
             do i=1,vertexDegree
                iCell = cellsOnVertex(i,iVertex)
@@ -3227,6 +3466,7 @@ module atm_time_integration
       !
       ! Compute v (tangential) velocities following Thuburn et al JCP 2009
       !
+!MGD PARALLELIZE
       v(:,:) = 0.0
       do iEdge = 1,nEdges
          do i=1,nEdgesOnEdge(iEdge)
@@ -3242,6 +3482,7 @@ module atm_time_integration
       ! Compute height at vertices, pv at vertices, and average pv to edge locations
       !  ( this computes pv_vertex at all vertices bounding real cells )
       !
+!MGD PARALLELIZE
       do iVertex = 1,nVertices
          do k=1,nVertLevels
             h_vertex = 0.0
@@ -3260,6 +3501,7 @@ module atm_time_integration
       !   ( this computes pv_edge at all edges bounding real cells )
       !
       pv_edge(:,:) = 0.0
+!MGD REWRITE
       do iVertex = 1,nVertices
          do i=1,vertexDegree
             iEdge = edgesOnVertex(i,iVertex)
@@ -3273,6 +3515,7 @@ module atm_time_integration
       ! Compute pv at cell centers
       !    ( this computes pv_cell for all real cells )
       !
+!MGD REWRITE
       pv_cell(:,:) = 0.0
       do iVertex = 1, nVertices
          do i=1,vertexDegree
@@ -3292,6 +3535,7 @@ module atm_time_integration
          ! Compute gradient of PV in the tangent direction
          !   ( this computes gradPVt at all edges bounding real cells )
          !
+!MGD PARALLELIZE
          do iEdge = 1,nEdges
             do k = 1,nVertLevels
                gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) / &
@@ -3304,6 +3548,7 @@ module atm_time_integration
          !   (tdr: 2009-10-02: this is not correct because the pv_cell in the halo is not correct)
          !
          gradPVn(:,:) = 0.0
+!MGD PARALLELIZE
          do iEdge = 1,nEdges
             do k = 1,nVertLevels
                gradPVn(k,iEdge) = (pv_cell(k,cellsOnEdge(2,iEdge)) - pv_cell(k,cellsOnEdge(1,iEdge))) / &
@@ -3311,6 +3556,7 @@ module atm_time_integration
             end do
          end do
 
+!MGD PARALLELIZE
          do iEdge = 1,nEdges
             do k = 1,nVertLevels
                pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * v(k,iEdge) * dt * gradPVt(k,iEdge)
@@ -3319,6 +3565,7 @@ module atm_time_integration
 
          ! Modify PV edge with upstream bias.
          !
+!MGD PARALLELIZE
          do iEdge = 1,nEdges
             do k = 1,nVertLevels
                pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * u(k,iEdge) *dt * gradPVn(k,iEdge)
@@ -3357,6 +3604,7 @@ module atm_time_integration
       rcv = rgas / (cp-rgas)
       p0 = 1.e5  ! this should come from somewhere else...
 
+!MGD PARALLELIZE
       do iCell=1,nCells
          do k=1,nVertLevels
             state % theta_m % array(k,iCell) = diag % theta % array(k,iCell) * (1._RKIND + rvord * state % scalars % array(state % index_qv,k,iCell))
@@ -3364,6 +3612,7 @@ module atm_time_integration
          end do
       end do
 
+!MGD PARALLELIZE
       do iEdge = 1, nEdges
          iCell1 = cellsOnEdge(1,iEdge)
          iCell2 = cellsOnEdge(2,iEdge)
@@ -3375,6 +3624,7 @@ module atm_time_integration
       ! Compute rw (i.e. rho_zz * omega) from rho_zz, w, and ru.
       ! We are reversing the procedure we use in subroutine atm_recover_large_step_variables.
       ! first, the piece that depends on w.
+!MGD PARALLELIZE
       do iCell=1,nCells
          diag % rw % array(1,iCell) = 0.
          diag % rw % array(grid%nVertLevels+1,iCell) = 0.
@@ -3386,6 +3636,7 @@ module atm_time_integration
       end do
   
       ! next, the piece that depends on ru
+!MGD REWRITE
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -3400,18 +3651,21 @@ module atm_time_integration
          end do
       end do
 
+!MGD PARALLELIZE
       do iCell = 1, nCells
          do k=1,nVertLevels
             diag % rho_p % array(k,iCell) = state % rho_zz % array(k,iCell) - diag % rho_base % array(k,iCell)
          end do
       end do
 
+!MGD PARALLELIZE
       do iCell = 1, nCells
          do k=1,nVertLevels
             diag % rtheta_base % array(k,iCell) = diag % theta_base % array(k,iCell) * diag % rho_base % array(k,iCell)
          end do
       end do
 
+!MGD PARALLELIZE
       do iCell = 1, nCells
          do k=1,nVertLevels
             diag % rtheta_p % array(k,iCell) = state % theta_m % array(k,iCell) * diag % rho_p % array(k,iCell)  &
@@ -3419,12 +3673,14 @@ module atm_time_integration
          end do
       end do
 
+!MGD PARALLELIZE
       do iCell=1,nCells
          do k=1,nVertLevels
             diag % exner % array(k,iCell) = (grid % zz % array(k,iCell) * (rgas/p0) * (diag % rtheta_p % array(k,iCell) + diag % rtheta_base % array(k,iCell)))**rcv
          end do
       end do
 
+!MGD PARALLELIZE
       do iCell=1,nCells
          do k=1,nVertLevels
             diag % pressure_p % array(k,iCell) = grid % zz % array(k,iCell) * rgas &

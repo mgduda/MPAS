@@ -557,6 +557,10 @@ module mpas_core
       integer :: s, s_n, s_d
       real (kind=RKIND) :: xtime_s
       integer :: ierr
+      integer :: sec, usec
+      integer :: timestep_timer = 1
+
+      call start_timer(timestep_timer)
 
       startTime = mpas_get_clock_time(clock, MPAS_START_TIME, ierr)
       currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
@@ -570,13 +574,29 @@ module mpas_core
 
 #ifdef DO_PHYSICS
       !proceed with physics if moist_physics is set to true:
+      call start_timer(phys_timer)
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
          call physics_driver(domain,itimestep,xtime_s)
       endif
+      call stop_timer(phys_timer, phys_sec, phys_usec)
 #endif
 
       call atm_timestep(domain, dt, timeStamp, itimestep)
+
+      call stop_timer(timestep_timer, sec, usec)
+      write(0,'(a,i4,a,i6.6)') 'TIMING (dynamics)   : ', dyn_sec, '.', dyn_usec
+      write(0,'(a,i4,a,i6.6)') 'TIMING (physics)    : ', phys_sec, '.', phys_usec
+      write(0,'(a,i4,a,i6.6)') 'TIMING (timestep)   : ', sec, '.', usec
+      write(0,'(a,i4,a,i6.6)') 'TIMING (total_halo) : ', halo_sec, '.', halo_usec
+      write(0,'(a,i9)') 'TOTAL HALO REALS    : ', halo_count
+      halo_sec = 0
+      halo_usec = 0
+      halo_count = 0
+      dyn_sec = 0
+      dyn_usec = 0
+      phys_sec = 0
+      phys_usec = 0
 
    end subroutine atm_do_timestep
    

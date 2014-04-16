@@ -14,8 +14,17 @@
 
  implicit none
  private
- public:: physics_addtend
+ public:: physics_addtend, halo_timer, halo_sec, halo_usec, halo_count
+ public :: phys_timer, phys_sec, phys_usec
+ public :: dyn_timer, dyn_sec, dyn_usec
 
+
+ integer, parameter :: halo_timer = 2
+ integer, parameter :: phys_timer = 3
+ integer, parameter :: dyn_timer = 4
+ integer :: halo_sec, halo_usec, halo_count
+ integer :: phys_sec, phys_usec
+ integer :: dyn_sec, dyn_usec
 
 !>\brief interface between the physics parameterizations and the non-hydrostatic dynamical core.
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
@@ -245,6 +254,8 @@
  
 !--------------------------------------------------------------------------------------------------
 
+ integer :: sec, usec
+
  block => mesh % block
  
  nCells       = mesh % nCells
@@ -279,11 +290,21 @@
  tempField % prev => null()
  tempField % next => null()
 
+ call start_timer(halo_timer)
  tempField % array => Ux_tend_halo
- call mpas_dmpar_exch_halo_field(tempField)
+ call instr_dmpar_exch_halo_field(tempField, halo_count)
  
  tempField % array => Uy_tend_halo
- call mpas_dmpar_exch_halo_field(tempField)
+ call instr_dmpar_exch_halo_field(tempField, halo_count)
+
+ call stop_timer(halo_timer, sec, usec)
+ write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+ halo_sec = halo_sec + sec
+ halo_usec = halo_usec + usec
+ if (halo_usec >= 1000000) then
+    halo_usec = halo_usec - 1000000
+    halo_sec = halo_sec + 1
+ end if
 
  U_tend(:,:) = 0.0
  do iCell = 1, nCells
