@@ -197,6 +197,28 @@ module mpas_core
       type (block_type), intent(inout) :: block
       type (mesh_type), intent(inout) :: mesh
       real (kind=RKIND), intent(in) :: dt
+
+      integer :: iCell, iVertex, j
+
+      do iCell=1,mesh%nCells
+         do j=1,mesh%nEdgesOnCell%array(iCell)
+            if (iCell == mesh%cellsOnEdge%array(1,mesh%edgesOnCell%array(j,iCell))) then
+               mesh % fluxSign % array(j,iCell) = 1.0
+            else
+               mesh % fluxSign % array(j,iCell) = -1.0
+            end if
+         end do
+      end do
+
+      do iVertex=1,mesh%nVertices
+         do j=1,mesh%vertexDegree
+            if (iVertex == mesh%verticesOnEdge%array(2,mesh%edgesOnVertex%array(j,iVertex))) then
+               mesh % circSign % array(j,iVertex) = 1.0
+            else
+               mesh % circSign % array(j,iVertex) = -1.0
+            end if
+         end do
+      end do
    
       if (.not. config_do_restart .or. (config_do_restart .and. config_do_DAcycling)) then
          call atm_init_coupled_diagnostics( block % state % time_levs(1) % state, block % diag, mesh)

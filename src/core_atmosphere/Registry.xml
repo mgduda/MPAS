@@ -947,6 +947,9 @@
                 <var name="pzm"                       type="real"     dimensions="nVertLevels nCells"/>
                 <var name="pzp"                       type="real"     dimensions="nVertLevels nCells"/>
 
+                <var name="fluxSign"                  type="real"     dimensions="maxEdges nCells"/>
+                <var name="circSign"                  type="real"     dimensions="vertexDegree nVertices"/>
+
                 <!-- W-Rayleigh damping coefficients -->
                 <var name="dss"                       type="real"     dimensions="nVertLevels nCells"/>
 
