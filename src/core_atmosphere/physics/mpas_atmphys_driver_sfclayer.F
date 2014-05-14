@@ -286,6 +286,8 @@
  subroutine driver_sfclayer(mesh,diag_physics,sfc_input)
 !==================================================================================================
 
+! use perf_counters
+
 !input and inout arguments:
 !--------------------------
  type(mesh_type)        ,intent(in):: mesh
@@ -307,6 +309,7 @@
 
     case("monin_obukhov")
        dx = sqrt(maxval(mesh % areaCell % array))
+!       call start_counters()
        call sfclay( &
                    p3d      = pres_hyd_p , psfc     = psfc_p     , t3d      = t_p        , &
                    u3d      = u_p        , v3d      = v_p        , qv3d     = qv_p       , &
@@ -335,6 +338,7 @@
                    ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme , &
                    its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
                   )
+!       call stop_counters('monin_obukhov')
         
     case default
 

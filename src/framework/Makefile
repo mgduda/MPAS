@@ -22,6 +22,7 @@ OBJS = mpas_kind_types.o \
        mpas_io_input.o \
        mpas_io_output.o \
        mpas_io_units.o \
+       perf_counters.o \
        random_id.o \
        streams.o \
        timer.o

@@ -26,7 +26,7 @@ void open_streams(int * id)
    char fname[128];
 
 #ifndef MPAS_DEBUG
-   if(*id == 0){
+   if((*id) % 16 == 0){
 	   sprintf(fname, "log.%4.4i.err", *id);
 	   fd_err = open(fname,O_CREAT|O_WRONLY|O_TRUNC,0644);
 	   if (dup2(fd_err, 2) < 0) {

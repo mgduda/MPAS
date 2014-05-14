@@ -243,6 +243,8 @@
  subroutine driver_convection_deep(itimestep,mesh,sfc_input,diag_physics,tend_physics)
 !==================================================================================================
 
+! use perf_counters
+
 !input and output arguments:
 !---------------------------
  integer,intent(in):: itimestep
@@ -331,6 +333,8 @@
 
     case("tiedtke")
        write(0,*) '--- enter subroutine cu_tiedtke:'
+
+!       call start_counters()
        call cu_tiedtke ( &
              pcps        = pres_hyd_p  , p8w             = pres2_hyd_p     ,         &
              znu         = znu_hyd_p   , t3d             = t_p             ,         &              
@@ -354,6 +358,7 @@
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
                     )
+!       call stop_counters('tiedtke')
 
     case default
 

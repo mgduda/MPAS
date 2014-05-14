@@ -409,6 +409,8 @@
  subroutine driver_lsm(itimestep,mesh,diag_physics,sfc_input)
 !==================================================================================================
 
+! use perf_counters
+
 !input arguments:
  integer,intent(in):: itimestep
  type(mesh_type),intent(in):: mesh
@@ -435,6 +437,7 @@
  lsm_select: select case (trim(lsm_scheme))
 
     case("noah")
+!       call start_counters()
        call lsm( &
                 dz8w      = dz_p      , p8w3d     = pres2_hyd_p  , t3d       = t_p          , &  
                 qv3d      = qv_p      , xland     = xland_p      , xice      = xice_p       , &
@@ -471,6 +474,7 @@
                 ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,       &
                 its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte         &
                )
+!       call stop_counters('noah')
 
     case default
 

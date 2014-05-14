@@ -177,6 +177,8 @@
  subroutine microphysics_driver(state,diag,diag_physics,tend,mesh,itimestep)
 !==================================================================================================
 
+! use perf_counters
+
 !input arguments:
 !----------------
  type(mesh_type),intent(in):: mesh
@@ -251,6 +253,7 @@
           write(0,*) '--- end kessler:',istep
 
        case ("wsm6")
+!          call start_counters()
           call wsm6( &
                   th      = th_p        , q          = qv_p         , qc      = qc_p      , &
                   qr      = qr_p        , qi         = qi_p         , qs      = qs_p      , &
@@ -268,6 +271,7 @@
                   ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme   , &
                   its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte     &
                    )
+!          call stop_counters('wsm6')
           write(0,*) '--- end wsm6:',istep
 
        case default

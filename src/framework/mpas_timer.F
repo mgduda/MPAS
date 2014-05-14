@@ -27,10 +27,6 @@
         implicit none
         save
 
-#ifdef _PAPI
-        include 'f90papi.h'
-#endif
-
         type timer_node
           character (len=StrKIND) :: timer_name
           logical :: running, printable
@@ -163,10 +159,7 @@
             current%running = .true.
             levels = levels + 1
 
-#ifdef _PAPI
-            call PAPIF_get_real_usec(usecs, check_flag)
-            current%start_time = usecs/1.0e6
-#elif _MPI
+#ifdef _MPI
             current%start_time = MPI_Wtime()
 #else
             call system_clock (count=clock)
@@ -255,10 +248,7 @@
             current%running = .false.
             levels = levels - 1
 
-#ifdef _PAPI
-            call PAPIF_get_real_usec(usecs, check_flag)
-            current%end_time = usecs/1.0e6
-#elif _MPI
+#ifdef _MPI
             current%end_time = MPI_Wtime()
 #else
             call system_clock(count=clock)

@@ -581,6 +581,8 @@
  subroutine driver_radiation_lw(xtime_s,mesh,state,diag_physics,atm_input,sfc_input,tend_physics)
 !==================================================================================================
 
+! use perf_counters
+
 !input arguments:
  type(mesh_type),intent(in) :: mesh
  real(kind=RKIND),intent(in):: xtime_s
@@ -615,6 +617,7 @@
        o3input = 0
        if(config_o3climatology) o3input = 2
 
+!       call start_counters()
        call rrtmg_lwrad( &
              p3d        = pres_hyd_p   , p8w        = pres2_hyd_p , pi3d       = pi_p          ,&
              t3d        = t_p          , t8w        = t2_p        , rho3d      = rho_p         ,&
@@ -636,6 +639,7 @@
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,&
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  &
                        )
+!       call stop_counters('rrtmg_lw')
 
     case ("cam_lw")
        xtime_m = xtime_s/60.

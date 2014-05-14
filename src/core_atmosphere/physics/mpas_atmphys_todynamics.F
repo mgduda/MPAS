@@ -26,6 +26,8 @@
  integer :: phys_sec, phys_usec
  integer :: dyn_sec, dyn_usec
 
+ integer :: old_halo_count
+
 !>\brief interface between the physics parameterizations and the non-hydrostatic dynamical core.
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2013-05-01.
@@ -291,6 +293,7 @@
  tempField % next => null()
 
  call start_timer(halo_timer)
+ old_halo_count = halo_count
  tempField % array => Ux_tend_halo
  call instr_dmpar_exch_halo_field(tempField, halo_count)
  
@@ -298,7 +301,7 @@
  call instr_dmpar_exch_halo_field(tempField, halo_count)
 
  call stop_timer(halo_timer, sec, usec)
- write(0,'(a,i4,a,i6.6)') 'TIMING (halo) : ', sec, '.', usec
+ write(0,'(a,i4,a,i6.6,a,i9)') 'TIMING (halo) : ', sec, '.', usec, ' ', halo_count - old_halo_count
  halo_sec = halo_sec + sec
  halo_usec = halo_usec + usec
  if (halo_usec >= 1000000) then

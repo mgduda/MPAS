@@ -541,6 +541,8 @@
                                 tend_physics,xtime_s)
 !==================================================================================================
 
+! use perf_counters
+
 !input arguments:
  integer,intent(in):: itimestep
  type(mesh_type),intent(in) :: mesh
@@ -593,6 +595,7 @@
        o3input = 0
        if(config_o3climatology) o3input = 2
 
+!       call start_counters()
        call rrtmg_swrad( &
               p3d        = pres_hyd_p   , p8w        = pres2_hyd_p   , pi3d       = pi_p          ,&
               t3d        = t_p          , t8w        = t2_p          , rho3d      = rho_p         ,&
@@ -621,6 +624,7 @@
               ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme ,&
               its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  &
                        )
+!       call stop_counters('rrtmg_sw')
        write(0,*) '--- exit subroutine rrtmg_swrad'
 
     case ("cam_sw")

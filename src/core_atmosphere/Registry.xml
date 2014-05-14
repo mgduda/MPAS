@@ -988,6 +988,9 @@
                 <var name="rho_zz"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="theta_m"   type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="m_ps"      type="real"     dimensions="nCells Time"/>
+                <var name="scalefac"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="scalefac_inv"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="accum"     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="qv"      array_group="moist"/>
                         <var name="qc"      array_group="moist"/>

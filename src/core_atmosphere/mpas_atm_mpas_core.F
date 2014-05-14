@@ -8,6 +8,7 @@
 module mpas_core
 
    use mpas_framework
+!   use perf_counters
 
    type (io_output_object), save :: restart_obj
    type (io_input_object), save :: sfc_update_obj
@@ -28,6 +29,7 @@ module mpas_core
       use mpas_configure
       use mpas_kind_types
       use mpas_grid_types
+!      use perf_counters
 
       implicit none
 
@@ -41,12 +43,16 @@ module mpas_core
       integer :: i
       integer :: ierr
 
+!      call perf_counters_init()
+
       if (.not. config_do_restart) then
 
          ! Code that was previously in atm_setup_test_case()
 
          block => domain % blocklist
          do while (associated(block))
+            block % state % time_levs(1) % state % scalefac % array(:,:) = 1.61
+            block % state % time_levs(1) % state % scalefac_inv % array(:,:) = -1.0 * (1.0 - (1.0 / 1.61))
             do i=2,nTimeLevs
                call mpas_copy_state(block % state % time_levs(i) % state, block % state % time_levs(1) % state)
             end do
@@ -581,6 +587,8 @@ module mpas_core
       integer :: ierr
       integer :: sec, usec
       integer :: timestep_timer = 1
+ 
+      integer :: mpi_ierr
 
       call start_timer(timestep_timer)
 
@@ -596,6 +604,7 @@ module mpas_core
 
 #ifdef DO_PHYSICS
       !proceed with physics if moist_physics is set to true:
+!      call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
       call start_timer(phys_timer)
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
@@ -635,6 +644,8 @@ module mpas_core
       if (config_sfc_update_interval /= "none") call mpas_io_input_finalize(sfc_update_obj, domain % dminfo)
 
       call mpas_destroy_clock(clock, ierr)
+
+!      call perf_counters_finalize()
    
    end subroutine mpas_core_finalize
 

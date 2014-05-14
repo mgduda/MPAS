@@ -225,6 +225,8 @@
  subroutine driver_pbl(sfc_input,diag_physics,tend_physics)
 !==================================================================================================
 
+! use perf_counters
+
 !input and output arguments:
 !---------------------------
  type(sfc_input_type),intent(inout)   :: sfc_input
@@ -241,6 +243,7 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("ysu")
+!       call start_counters()
        call ysu ( &
                  p3d      = pres_hyd_p , p3di     = pres2_hyd_p , psfc     = psfc_p     , &
                  th3d     = th_p       , t3d      = t_p         , dz8w     = dz_p       , &
@@ -263,6 +266,7 @@
                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme  , &
                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                 )
+!        call stop_counters('ysu')
 
      case default
 
