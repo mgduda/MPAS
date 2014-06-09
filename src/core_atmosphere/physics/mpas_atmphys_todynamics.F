@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_todynamics
  use mpas_kind_types
  use mpas_grid_types
@@ -40,12 +40,11 @@
  contains
 
  
-!==================================================================================================
- subroutine physics_addtend(block, mesh, state, diag, tend, tend_physics, configs, rk_step)
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_addtend(block,mesh,state,diag,tend,tend_physics,configs,rk_step)
+!=================================================================================================================
 
 !input variables:
-!----------------
  type(block_type),intent(in),target:: block
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
@@ -55,13 +54,9 @@
  integer, intent(in):: rk_step
 
 !inout variables:
-!----------------
  type(mpas_pool_type),intent(inout):: tend
 
 !local variables:
-!----------------
-
-
  integer:: i,iCell,k,n
  integer,pointer:: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg
  integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
@@ -84,13 +79,14 @@
  real(kind=RKIND):: tem
  real(kind=RKIND),dimension(:,:),allocatable:: rublten_Edge,rucuten_Edge
 
- character(len=StrKIND), pointer :: config_pbl_scheme, config_conv_deep_scheme, config_radt_lw_scheme, config_radt_sw_scheme
+ character(len=StrKIND), pointer :: config_pbl_scheme,config_conv_deep_scheme,config_radt_lw_scheme, &
+                                    config_radt_sw_scheme
 
 !ldf (2011-12-16):
  real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 !ldf end.
 
-!==================================================================================================
+!=================================================================================================================
  call mpas_pool_get_dimension(mesh, 'nCells', nCells)
  call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
  call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
@@ -257,9 +253,9 @@
 
  end subroutine  physics_addtend
 
-!==================================================================================================
+!=================================================================================================================
  subroutine tend_toEdges(block,mesh,Ux_tend,Uy_tend,U_tend)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
 !----------------
@@ -283,7 +279,7 @@
  real(kind=RKIND),dimension(:,:),pointer:: east,north,edge_normal
  real(kind=RKIND),dimension(:,:),allocatable,target:: Ux_tend_halo,Uy_tend_halo
  
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_dimension(mesh, 'nCells', nCells)
  call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
@@ -344,6 +340,6 @@
  
  end subroutine tend_toEdges
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_todynamics
-!==================================================================================================
+!=================================================================================================================

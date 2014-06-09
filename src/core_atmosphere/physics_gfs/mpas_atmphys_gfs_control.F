@@ -5,9 +5,8 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_control
- use mpas_configure
  use mpas_grid_types
 
  implicit none
@@ -18,17 +17,29 @@
  logical,public:: moist_physics
 
 
-!>\brief MPAS control and initialization routines.
+!>\brief MPAS control and initialization routines. Note that the length of the module is strongly reduced relative
+!> to that in the physics directory. It is only used to follow the implementation of the WRF physics, and use the
+!> same set of calls in the module mpas_atm_mpas_core.F.
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
 !>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
- subroutine physics_namelist_check
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_namelist_check(mesh,configs)
+!=================================================================================================================
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: configs
+
+!-----------------------------------------------------------------------------------------------------------------
 
  write(0,*)
  write(0,*) '--- enter subroutine physics_namelist_check:'
@@ -37,16 +48,16 @@
 
  end subroutine physics_namelist_check
 
-!==================================================================================================
- subroutine physics_registry_init(config_do_restart,mesh,sfc_input)
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_registry_init(mesh,configs,sfc_input)
+!=================================================================================================================
 
 !input and inout arguments:
- logical,intent(in):: config_do_restart
- type(mesh_type),intent(in):: mesh
- type(sfc_input_type),intent(inout):: sfc_input
+ type(mpas_pool_type),intent(in):: configs
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(inout):: sfc_input
  
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
  write(0,*)
  write(0,*) '--- enter subroutine physics_registry_init:'
@@ -54,8 +65,8 @@
 
  end subroutine physics_registry_init
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_control
-!==================================================================================================
+!=================================================================================================================
 
 

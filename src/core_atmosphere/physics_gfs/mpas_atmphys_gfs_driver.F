@@ -5,10 +5,9 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_driver
  use mpas_dmpar
- use mpas_configure
  use mpas_grid_types
 
  use mpas_atmphys_gfs_driver_gbphys
@@ -43,13 +42,18 @@
 !> MPAS_to_physics             : interface between the dynamical core and GFS physics.
 !> mpas_atmphys_grrad          : driver for GFS long-wave and short-wave radiation codes. 
 !> mpas_atmphys_gbphys         : driver for all other GFS physics, except radiation.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
+!=================================================================================================================
  subroutine physics_driver(domain,itimestep,xtime_s)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
  integer,intent(in):: itimestep
@@ -58,32 +62,54 @@
 !inout arguments:
  type(domain_type),intent(inout):: domain
 
+!local pointers:
+ type(mpas_pool_type),pointer::  mesh,         &
+                                 state,        &
+                                 diag,         &
+                                 diag_physics, &
+                                 tend_physics, &
+                                 atm_input,    &
+                                 sfc_input
+
 !local variables:
  type(block_type),pointer:: block
 
-!==================================================================================================
+ integer:: time_lev
+
+!=================================================================================================================
  write(0,*)
  write(0,*) '--- enter subroutine physics_gfs_driver:'
 
  block => domain % blocklist
  do while(associated(block))
 
+    call mpas_pool_get_subpool(block%structs,'mesh'        ,mesh        )
+    call mpas_pool_get_subpool(block%structs,'state'       ,state       )
+    call mpas_pool_get_subpool(block%structs,'diag'        ,diag        )
+    call mpas_pool_get_subpool(block%structs,'diag_physics',diag_physics)
+    call mpas_pool_get_subpool(block%structs,'atm_input'   ,atm_input   )
+    call mpas_pool_get_subpool(block%structs,'sfc_input'   ,sfc_input   )
+    call mpas_pool_get_subpool(block%structs,'tend_physics',tend_physics)
+
     !allocate arrays shared by all physics parameterizations:
-    call allocate_forall_physics(block%mesh)
-    call MPAS_to_physics(block%mesh,block%state%time_levs(1)%state,block%diag)
+    call allocate_forall_physics(mesh)
+
+    !physics prep step:
+    time_lev = 1
+    call MPAS_to_physics(mesh,state,time_lev,diag)
 
     !call to longwave and shortwave radiation:
     if(l_radtlw .or. l_radtsw) then
-       call allocate_radiation(block%mesh)
-       call mpas_atmphys_grrad(itimestep,xtime_s,domain%dminfo,block%mesh,block%sfc_input, &
-                               block%diag_physics,block%tend_physics)
+       call allocate_radiation(mesh)
+       call mpas_atmphys_grrad(itimestep,xtime_s,domain%dminfo,mesh,sfc_input, &
+                               diag_physics,tend_physics)
        call deallocate_radiation
     endif
 
     !call to all physics, except radiation:
-    call allocate_gbphys(block%mesh) 
-    call mpas_atmphys_gbphys(itimestep,xtime_s,domain%dminfo,block%mesh,block%atm_input, &
-                             block%sfc_input,block%diag_physics,block%tend_physics)
+    call allocate_gbphys(mesh) 
+    call mpas_atmphys_gbphys(itimestep,xtime_s,domain%dminfo,mesh,atm_input, &
+                             sfc_input,diag_physics,tend_physics)
     call deallocate_gbphys
 
     !deallocate arrays shared by all physics parameterizations:
@@ -98,6 +124,6 @@
 
  end subroutine physics_driver
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_driver
-!==================================================================================================
+!=================================================================================================================

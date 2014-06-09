@@ -5,9 +5,8 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_update
- use mpas_configure
  use mpas_grid_types
 
  implicit none
@@ -30,13 +29,15 @@
 !> add-ons and modifications to sourcecode:
 !> ----------------------------------------
 !>    * added initialization of variable dkh (accumulated vertical diffusion coefficient).
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
  
-!==================================================================================================
+!=================================================================================================================
  subroutine physics_update(domain,dt)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
  type(domain_type),intent(in):: domain
@@ -46,7 +47,7 @@
  type(block_type),pointer:: block
  integer:: i,j,k
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
  write(0,*)
  write(0,*) '--- begin physics_update:'
@@ -54,80 +55,119 @@
 
  end subroutine physics_update
 
-!==================================================================================================
+!=================================================================================================================
  subroutine physics_gfs_update_diagnostics(mesh,diag_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
 !inout arguments:
- type(diag_physics_type),intent(inout)::diag_physics
+ type(mpas_pool_type),intent(inout)::diag_physics
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
+
+ real(kind=RKIND),dimension(:),pointer  :: psmean,suntim,dlwsfc,ulwsfc,gflux,evbsa,evcwa,transa,    &
+                                           sbsnoa,snowca,snohfa,ep,gtmp2m,gu10m,gv10m,gustar,gzorl, &
+                                           goro,dusfc,dvsfc,dtsfc,dqsfc,gpblh,dugwd,dvgwd,cldwrk,   &
+                                           cnvprcp,totprcp,runoff,srunoff,gsoil,tmpmax,tmpmin,      &
+                                           spfhmax,spfhmin
+ real(kind=RKIND),dimension(:,:),pointer:: dkh
 
 !local variables:
  integer:: iCell,k
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine physics_gfs_update_diagnostics:'
-!do iCell = 1,5
-!   write(0,201) iCell,diag_physics%suntim%array(iCell),diag_physics%dlwsfc%array(iCell), &
-!                diag_physics%dusfc%array(iCell)
-!enddo
 
- do iCell = 1, mesh%nCellsSolve
-    diag_physics % psmean  % array(iCell) = 0._RKIND
-    diag_physics % suntim  % array(iCell) = 0._RKIND
-    diag_physics % dlwsfc  % array(iCell) = 0._RKIND
-    diag_physics % ulwsfc  % array(iCell) = 0._RKIND
-    diag_physics % gflux   % array(iCell) = 0._RKIND
-    diag_physics % evbsa   % array(iCell) = 0._RKIND
-    diag_physics % evcwa   % array(iCell) = 0._RKIND
-    diag_physics % transa  % array(iCell) = 0._RKIND
-    diag_physics % sbsnoa  % array(iCell) = 0._RKIND
-    diag_physics % snowca  % array(iCell) = 0._RKIND
-    diag_physics % snohfa  % array(iCell) = 0._RKIND
-    diag_physics % ep      % array(iCell) = 0._RKIND
-    diag_physics % gtmp2m  % array(iCell) = 0._RKIND
-    diag_physics % gu10m   % array(iCell) = 0._RKIND
-    diag_physics % gv10m   % array(iCell) = 0._RKIND
-    diag_physics % gustar  % array(iCell) = 0._RKIND
-    diag_physics % gzorl   % array(iCell) = 0._RKIND
-    diag_physics % goro    % array(iCell) = 0._RKIND
-    diag_physics % dusfc   % array(iCell) = 0._RKIND
-    diag_physics % dvsfc   % array(iCell) = 0._RKIND
-    diag_physics % dtsfc   % array(iCell) = 0._RKIND
-    diag_physics % dqsfc   % array(iCell) = 0._RKIND
-    diag_physics % gpblh   % array(iCell) = 0._RKIND
-    diag_physics % dugwd   % array(iCell) = 0._RKIND
-    diag_physics % dvgwd   % array(iCell) = 0._RKIND
-    diag_physics % cldwrk  % array(iCell) = 0._RKIND
-    diag_physics % cnvprcp % array(iCell) = 0._RKIND
-    diag_physics % totprcp % array(iCell) = 0._RKIND
-    diag_physics % runoff  % array(iCell) = 0._RKIND
-    diag_physics % srunoff % array(iCell) = 0._RKIND
-    diag_physics % gsoil   % array(iCell) = 0._RKIND
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
 
-    diag_physics % tmpmax  % array(iCell) = 0._RKIND
-    diag_physics % tmpmin  % array(iCell) = 0._RKIND
-    diag_physics % spfhmax % array(iCell) = 0._RKIND
-    diag_physics % spfhmin % array(iCell) = 0._RKIND
+ call mpas_pool_get_array(diag_physics,'psmean' ,psmean )
+ call mpas_pool_get_array(diag_physics,'suntim' ,suntim )
+ call mpas_pool_get_array(diag_physics,'dlwsfc' ,dlwsfc )
+ call mpas_pool_get_array(diag_physics,'ulwsfc' ,ulwsfc )
+ call mpas_pool_get_array(diag_physics,'gflux'  ,gflux  )
+ call mpas_pool_get_array(diag_physics,'evbsa'  ,evbsa  )
+ call mpas_pool_get_array(diag_physics,'evcwa'  ,evcwa  )
+ call mpas_pool_get_array(diag_physics,'transa' ,transa )
+ call mpas_pool_get_array(diag_physics,'sbsnoa' ,sbsnoa )
+ call mpas_pool_get_array(diag_physics,'snowca' ,snowca )
+ call mpas_pool_get_array(diag_physics,'snohfa' ,snohfa )
+ call mpas_pool_get_array(diag_physics,'ep'     ,ep     )
+ call mpas_pool_get_array(diag_physics,'gtmp2m' ,gtmp2m )
+ call mpas_pool_get_array(diag_physics,'gu10m'  ,gu10m  )
+ call mpas_pool_get_array(diag_physics,'gv10m'  ,gv10m  )
+ call mpas_pool_get_array(diag_physics,'gustar' ,gustar )
+ call mpas_pool_get_array(diag_physics,'gzorl'  ,gzorl  )
+ call mpas_pool_get_array(diag_physics,'goro'   ,goro   )
+ call mpas_pool_get_array(diag_physics,'dusfc'  ,dusfc  )
+ call mpas_pool_get_array(diag_physics,'dvsfc'  ,dvsfc  )
+ call mpas_pool_get_array(diag_physics,'dtsfc'  ,dtsfc  )
+ call mpas_pool_get_array(diag_physics,'dqsfc'  ,dqsfc  )
+ call mpas_pool_get_array(diag_physics,'gpblh'  ,gpblh  )
+ call mpas_pool_get_array(diag_physics,'dugwd'  ,dugwd  )
+ call mpas_pool_get_array(diag_physics,'dvgwd'  ,dvgwd  )
+ call mpas_pool_get_array(diag_physics,'cldwrk' ,cldwrk )
+ call mpas_pool_get_array(diag_physics,'cnvprcp',cnvprcp)
+ call mpas_pool_get_array(diag_physics,'totprcp',totprcp)
+ call mpas_pool_get_array(diag_physics,'runoff' ,runoff )
+ call mpas_pool_get_array(diag_physics,'srunoff',srunoff)
+ call mpas_pool_get_array(diag_physics,'gsoil'  ,gsoil  )
+ call mpas_pool_get_array(diag_physics,'tmpmax' ,tmpmax )
+ call mpas_pool_get_array(diag_physics,'tmpmin' ,tmpmin )
+ call mpas_pool_get_array(diag_physics,'spfhmax',spfhmax)
+ call mpas_pool_get_array(diag_physics,'spfhmin',spfhmin)
+ call mpas_pool_get_array(diag_physics,'dkh'    ,dkh    )
 
-    do k = 1, mesh%nVertLevels
-       diag_physics % dkh % array(k,iCell) = 0._RKIND
+ do iCell = 1, nCellsSolve
+    psmean(iCell)  = 0._RKIND
+    suntim(iCell)  = 0._RKIND
+    dlwsfc(iCell)  = 0._RKIND
+    ulwsfc(iCell)  = 0._RKIND
+    gflux(iCell)   = 0._RKIND
+    evbsa(iCell)   = 0._RKIND
+    evcwa(iCell)   = 0._RKIND
+    transa(iCell)  = 0._RKIND
+    sbsnoa(iCell)  = 0._RKIND
+    snowca(iCell)  = 0._RKIND
+    snohfa(iCell)  = 0._RKIND
+    ep(iCell)      = 0._RKIND
+    gtmp2m(iCell)  = 0._RKIND
+    gu10m(iCell)   = 0._RKIND
+    gv10m(iCell)   = 0._RKIND
+    gustar(iCell)  = 0._RKIND
+    gzorl(iCell)   = 0._RKIND
+    goro(iCell)    = 0._RKIND
+    dusfc(iCell)   = 0._RKIND
+    dvsfc(iCell)   = 0._RKIND
+    dtsfc(iCell)   = 0._RKIND
+    dqsfc(iCell)   = 0._RKIND
+    gpblh(iCell)   = 0._RKIND
+    dugwd(iCell)   = 0._RKIND
+    dvgwd(iCell)   = 0._RKIND
+    cldwrk(iCell)  = 0._RKIND
+    cnvprcp(iCell) = 0._RKIND
+    totprcp(iCell) = 0._RKIND
+    runoff(iCell)  = 0._RKIND
+    srunoff(iCell) = 0._RKIND
+    gsoil(iCell)   = 0._RKIND
+    tmpmax(iCell)  = 0._RKIND
+    tmpmin(iCell)  = 0._RKIND
+    spfhmax(iCell) = 0._RKIND
+    spfhmin(iCell) = 0._RKIND
+
+    do k = 1, nVertLevels
+       dkh(k,iCell) = 0._RKIND
     enddo
 
  enddo
 
  write(0,*) '--- end subroutine physics_gfs_update_diagnostics:'
-!do iCell = 1,5
-!   write(0,201) iCell,diag_physics%suntim%array(iCell),diag_physics%dlwsfc%array(iCell), &
-!                diag_physics%dusfc%array(iCell)
-!enddo
-!write(0,*)
- 201 format(i9,10(1x,e15.8))
 
  end subroutine physics_gfs_update_diagnostics
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_update
-!==================================================================================================
+!=================================================================================================================

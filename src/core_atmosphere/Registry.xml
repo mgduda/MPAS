@@ -23,7 +23,7 @@
                 <dim name="nMonthsP1"          definition="nMonths+1"/>
                 <dim name="nSeasons"           definition="namelist:seasons"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
-                <dim name="nMtvr"              definition="namelist:norogwd"/>
+                <dim name="nGwd"               definition="namelist:norogwd"/>
                 <dim name="nAerLevels"         definition="namelist:naerlev"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"/>
                 <dim name="numP2d"             definition="namelist:num2d"/> 
@@ -220,7 +220,6 @@
 			<var name="smcrel"/>
 			<var name="smois"/>
 			<var name="tslb"/>
-			<var name="initial_date"/>
 		</stream>
 
 		<stream name="restart" type="restart">
@@ -441,7 +440,6 @@
 			<var name="smcrel"/>
 			<var name="smois"/>
 			<var name="tslb"/>
-			<var name="initial_date"/>
 		</stream>
 
 		<stream name="output" type="output">
@@ -703,7 +701,6 @@
 			<var name="smcrel"/>
 			<var name="smois"/>
 			<var name="tslb"/>
-			<var name="initial_date"/>
 		</stream>
 
 		<stream name="surface" type="input;output">
@@ -763,7 +760,6 @@
                 <var name="meshScalingDel2"           type="real"     dimensions="nEdges"/>
                 <var name="meshScalingDel4"           type="real"     dimensions="nEdges"/>
 
-                <var name="initial_date"              type="text"     dimensions=""/>
 
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1"                       type="real"     dimensions=""/>
@@ -974,21 +970,23 @@
 <!-- ================================================================================================== -->
 
         <nml_record name="physics_gfs" in_defaults="true">
-                <nml_option name="num_soil_layers"                   type="integer"       default_value="4"  in_defaults="false" />
-                <nml_option name="months"                            type="integer"       default_value="12" in_defaults="false" />
-                <nml_option name="seasons"                           type="integer"       default_value="4"  in_defaults="false" />
-                <nml_option name="norogwd"                           type="integer"       default_value="14" in_defaults="false"/>
+                <nml_option name="num_soil_layers"                type="integer"       default_value="4"   in_defaults="false"/>
+                <nml_option name="months"                         type="integer"       default_value="12"  in_defaults="false"/>
+                <nml_option name="seasons"                        type="integer"       default_value="4"   in_defaults="false"/>
+                <nml_option name="norogwd"                        type="integer"       default_value="14"  in_defaults="false"/>
 
-                <nml_option name="num2d"                             type="integer"       default_value="3"  in_defaults="false"/>
-                <nml_option name="num3d"                             type="integer"       default_value="4"  in_defaults="false"/>
-                <nml_option name="naerlev"                           type="integer"       default_value="29" in_defaults="false"/>
-                <nml_option name="noznlev"                           type="integer"       default_value="80" in_defaults="false"/> 
-                <nml_option name="nozcoef"                           type="integer"       default_value="4"  in_defaults="false"/> 
+                <nml_option name="num2d"                          type="integer"       default_value="3"   in_defaults="false"/>
+                <nml_option name="num3d"                          type="integer"       default_value="4"   in_defaults="false"/>
+                <nml_option name="naerlev"                        type="integer"       default_value="29"  in_defaults="false"/>
+                <nml_option name="noznlev"                        type="integer"       default_value="80"  in_defaults="false"/> 
+                <nml_option name="nozcoef"                        type="integer"       default_value="4"   in_defaults="false"/> 
 
-                <nml_option name="config_radtlw_interval"            type="character"     default_value="none"/>
-                <nml_option name="config_radtsw_interval"            type="character"     default_value="none"/>
-                <nml_option name="config_greeness_update"            type="character"     default_value="24:00:00" in_defaults="false"/>
-                <nml_option name="config_bucket_update"              type="character"     default_value="06:00:00"/>
+                <nml_option name="config_microp_scheme"           type="character"     default_value="off" in_defaults="false"/>
+
+                <nml_option name="config_radtlw_interval"         type="character"     default_value="none"/>
+                <nml_option name="config_radtsw_interval"         type="character"     default_value="none"/>
+                <nml_option name="config_greeness_update"         type="character"     default_value="24:00:00" in_defaults="false"/>
+                <nml_option name="config_bucket_update"           type="character"     default_value="06:00:00"/>
         </nml_record>
 
 <!-- =========================================================================================================== -->
@@ -1096,7 +1094,7 @@
              <var name="tend_qo3diffusion" name_in_code="qo3diffusion" type="real" dimensions="nVertLevels nCells Time"
                   units="kg kg^{-1} s^{-1}" description="tendency of ozone mixing ratio due to diffusion"
              /> 
-             <var name="tend_qo3prodct" name_in_code="qo3prodct" type="real" dimensions="nVertLevels nCells Time"
+             <var name="tend_qo3product" name_in_code="qo3product" type="real" dimensions="nVertLevels nCells Time"
                   units="kg kg^{-1} s^{-1}" description="tendency of ozone mixing ratio due to ozone production"
              /> 
              <var name="tend_udiffusion" name_in_code="udiffusion" type="real" dimensions="nVertLevels nCells Time"
@@ -1483,6 +1481,8 @@
              <var name="zorl" type="real" dimensions="nCells Time" units="m" 
                   description="surface roughness"
              />
+        </var_struct>
+        <!-- end var_struct diag_physics --> 
 
 
         <var_struct name="atm_input" time_levs="1">
@@ -1490,7 +1490,7 @@
                 <var name="pin"         type="real"     dimensions="nOznLevels"/>
                 <var name="ozmixm"      type="real"     dimensions="nMonths nOznLevels nCells"/>
         </var_struct>
-        <!-- end var_struct diag_physics --> 
+        <!-- end var_struct atm_input --> 
 
 
         <var_struct name="sfc_input" time_levs="1">
@@ -1503,7 +1503,7 @@
              <var name="ivgtyp" type="integer" dimensions="nCells" units="-" 
                   description="vegetation category for land-surface scheme"
              />
-             <var name="orogwd" type="real" dimensions="nMtvr nCells" units="-" 
+             <var name="orogwd" type="real" dimensions="nGwd nCells" units="-" 
                   description="statistical fields for gravity wave drag over orography"
              />
              <var name="facsf" type="real" dimensions="nCells" units="-" 

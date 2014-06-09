@@ -5,9 +5,9 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_todynamics
- use mpas_configure
+ use mpas_dmpar
  use mpas_grid_types
 
  use mpas_atmphys_gfs_constants, only: R_d,R_v,degrad
@@ -27,35 +27,42 @@
 !> ---------------------------------------
 !> physics_addtend: add and mass-weigh tendencies before being added to dynamics tendencies.
 !> tend_toEdges   : interpolate wind-tendencies from centers to edges of grid-cells.
+!>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
  
-!==================================================================================================
- subroutine physics_addtend(mesh, state, diag, tend, tend_physics, mass, mass_edge, rk_step)
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_addtend(block,mesh,state,diag,tend,tend_physics,configs,rk_step)
+!=================================================================================================================
 
 !input variables:
-!----------------
- type(mesh_type),intent(in):: mesh
- type(state_type),intent(in):: state
- type(diag_type),intent(in):: diag
- type(tend_physics_type),intent(inout):: tend_physics
+ type(block_type),pointer:: block
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: diag
+ type(mpas_pool_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(in):: configs
  integer, intent(in):: rk_step
- real(kind=RKIND),dimension(:,:),intent(in):: mass
- real(kind=RKIND),dimension(:,:),intent(in):: mass_edge
 
 !inout variables:
-!----------------
- type(tend_type),intent(inout):: tend
+ type(mpas_pool_type),intent(inout):: tend
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nEdges,nEdgesSolve,nVertLevels
+ integer,pointer:: index_qv,index_qc,index_qo3
 
 !local variables:
-!----------------
- type(block_type),pointer :: block
+ integer:: iCell,iEdge,k,n
 
- integer:: iCell,iEdge,k,n,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
-
+ real(kind=RKIND),dimension(:,:),pointer:: mass          ! time level 2 rho_zz
+ real(kind=RKIND),dimension(:,:),pointer:: mass_edge     ! diag rho_edge
  real(kind=RKIND),dimension(:,:),pointer:: theta_m,qv
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
  real(kind=RKIND),dimension(:,:),pointer:: tend_thdiffusion,tend_qvdiffusion,  &
                                            tend_qcdiffusion,tend_qo3diffusion, &
@@ -75,63 +82,72 @@
 
  real(kind=RKIND),dimension(:,:),pointer  :: tend_theta,tend_u
  real(kind=RKIND),dimension(:,:,:),pointer:: tend_scalars
+ real(kind=RKIND),dimension(:,:),pointer:: tend_qv,tend_qc,tend_qo3
 
  real(kind=RKIND),dimension(:,:),allocatable:: tend_uphysics_Edge
  real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 
-!==================================================================================================
- block => mesh % block
- 
- nEdges      = mesh % nEdges
- nCellsSolve = mesh % nCellsSolve
- nEdgesSolve = mesh % nEdgesSolve
- nVertLevels = mesh % nVertLevels
+!=================================================================================================================
 
-!theta   => diag % theta % array
- theta_m => state % theta_m % array
- qv      => state % scalars % array(state%index_qv,:,:)
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nEdges'     ,nEdges     )
+ call mpas_pool_get_dimension(mesh,'nEdgesSolve',nEdgesSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(state,'theta_m' ,theta_m,1)
+ call mpas_pool_get_array(state,'scalars' ,scalars,1)
+ call mpas_pool_get_array(state,'rho_zz'  ,mass,2   )
+ call mpas_pool_get_array(diag ,'rho_edge',mass_edge)
+
+ call mpas_pool_get_dimension(state,'index_qv' ,index_qv )
+ call mpas_pool_get_dimension(state,'index_qc' ,index_qc )
+ call mpas_pool_get_dimension(state,'index_qo3',index_qo3)
+ qv => scalars(index_qv,:,:)
 
 !PBL and diffusion:
- tend_udiffusion   => tend_physics % udiffusion   % array
- tend_vdiffusion   => tend_physics % vdiffusion   % array
- tend_thdiffusion  => tend_physics % thdiffusion  % array
- tend_qvdiffusion  => tend_physics % qvdiffusion  % array
- tend_qcdiffusion  => tend_physics % qcdiffusion  % array
- tend_qo3diffusion => tend_physics % qo3diffusion % array
+ call mpas_pool_get_array(tend_physics,'udiffusion'  ,tend_udiffusion  )
+ call mpas_pool_get_array(tend_physics,'vdiffusion'  ,tend_vdiffusion  )
+ call mpas_pool_get_array(tend_physics,'thdiffusion' ,tend_thdiffusion )
+ call mpas_pool_get_array(tend_physics,'qvdiffusion' ,tend_qvdiffusion )
+ call mpas_pool_get_array(tend_physics,'qcdiffusion' ,tend_qcdiffusion )
+ call mpas_pool_get_array(tend_physics,'qo3diffusion',tend_qo3diffusion)
 
 !deep convection and moist convective adjustment:
- tend_ucudeep  => tend_physics % ucudeep  % array
- tend_vcudeep  => tend_physics % vcudeep  % array
- tend_thcudeep => tend_physics % thcudeep % array
- tend_qvcudeep => tend_physics % qvcudeep % array
- tend_qccudeep => tend_physics % qccudeep % array
+ call mpas_pool_get_array(tend_physics,'ucudeep' ,tend_ucudeep )
+ call mpas_pool_get_array(tend_physics,'vcudeep' ,tend_vcudeep )
+ call mpas_pool_get_array(tend_physics,'thcudeep',tend_thcudeep)
+ call mpas_pool_get_array(tend_physics,'qvcudeep',tend_qvcudeep)
+ call mpas_pool_get_array(tend_physics,'qccudeep',tend_qccudeep)
 
 !shallow convection:
- tend_thcushallow => tend_physics % thcushallow % array
- tend_qvcushallow => tend_physics % qvcushallow % array
- tend_qccushallow => tend_physics % qccushallow % array
+ call mpas_pool_get_array(tend_physics,'thcushallow',tend_thcushallow)
+ call mpas_pool_get_array(tend_physics,'qvcushallow',tend_qvcushallow)
+ call mpas_pool_get_array(tend_physics,'qccushallow',tend_qccushallow)
 
 !long-wave and short-wave convection:
- tend_thradlw => tend_physics % thradlw % array
- tend_thradsw => tend_physics % thradsw % array
+ call mpas_pool_get_array(tend_physics,'thradlw',tend_thradlw)
+ call mpas_pool_get_array(tend_physics,'thradsw',tend_thradsw)
 
 !gravity wave drag over orography and convective gravity wave drag:
- tend_ugwdo   => tend_physics % ugwdo % array
- tend_ugwdc   => tend_physics % ugwdc % array
- tend_vgwdo   => tend_physics % vgwdo % array
- tend_vgwdc   => tend_physics % vgwdc % array 
+ call mpas_pool_get_array(tend_physics,'ugwdo',tend_ugwdo)
+ call mpas_pool_get_array(tend_physics,'ugwdc',tend_ugwdc)
+ call mpas_pool_get_array(tend_physics,'vgwdo',tend_vgwdo)
+ call mpas_pool_get_array(tend_physics,'vgwdc',tend_vgwdc)
 
 !total physics tendencies from driver to gbphys:
- tend_thphysics  => tend_physics % thphysics  % array
- tend_qvphysics  => tend_physics % qvphysics  % array
- tend_qcphysics  => tend_physics % qcphysics  % array
- tend_qo3physics => tend_physics % qo3physics % array
- tend_uphysics   => tend_physics % uphysics   % array
- tend_vphysics   => tend_physics % vphysics   % array
+ call mpas_pool_get_array(tend_physics,'thphysics' ,tend_thphysics )
+ call mpas_pool_get_array(tend_physics,'qvphysics' ,tend_qvphysics )
+ call mpas_pool_get_array(tend_physics,'qcphysics' ,tend_qcphysics )
+ call mpas_pool_get_array(tend_physics,'qo3physics',tend_qo3physics)
+ call mpas_pool_get_array(tend_physics,'uphysics'  ,tend_uphysics  )
+ call mpas_pool_get_array(tend_physics,'vphysics'  ,tend_vphysics  )
 
- tend_u       => tend % u % array
- tend_theta   => tend % theta_m % array
- tend_scalars => tend % scalars % array
+ call mpas_pool_get_array(tend,'u'      ,tend_u    )
+ call mpas_pool_get_array(tend,'theta_m',tend_theta)
+ call mpas_pool_get_array(tend,'scalars_tend',tend_scalars)
+ tend_qv  => tend_scalars(index_qv,:,:)
+ tend_qc  => tend_scalars(index_qc,:,:)
+ tend_qo3 => tend_scalars(index_qo3,:,:)
 
 !initialize the tendency for the potential temperature:
  allocate(theta(nVertLevels,nCellsSolve)  )
@@ -142,7 +158,7 @@
 !add coupled physics tendency to u tendency:
  allocate(tend_uphysics_Edge(nVertLevels,nEdges))
  tend_uphysics_Edge(:,:) = 0._RKIND
- call tend_toEdges(mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
+ call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
  do iEdge = 1, nEdgesSolve
  do k  = 1, nVertLevels
     tend_u(k,iEdge)=tend_u(k,iEdge)+tend_uphysics_Edge(k,iEdge)*mass_edge(k,iEdge)
@@ -152,13 +168,10 @@
 
  do iCell = 1, nCellsSolve
  do k = 1, nVertLevels
-    tend_th(k,iCell) = tend_th(k,iCell) + tend_thphysics(k,iCell)*mass(k,iCell)
-    tend_scalars(tend%index_qv,k,iCell)  = tend_scalars(tend%index_qv,k,iCell)  &
-                                       + tend_qvphysics(k,iCell)*mass(k,iCell)
-    tend_scalars(tend%index_qc,k,iCell)  = tend_scalars(tend%index_qc,k,iCell)  &
-                                       + tend_qcphysics(k,iCell)*mass(k,iCell)
-    tend_scalars(tend%index_qo3,k,iCell) = tend_scalars(tend%index_qo3,k,iCell) &
-                                       + tend_qo3physics(k,iCell)*mass(k,iCell)
+    tend_th(k,iCell)  = tend_th(k,iCell)  + tend_thphysics(k,iCell)*mass(k,iCell)
+    tend_qv(k,iCell)  = tend_qv(k,iCell)  + tend_qvphysics(k,iCell)*mass(k,iCell)
+    tend_qc(k,iCell)  = tend_qc(k,iCell)  + tend_qcphysics(k,iCell)*mass(k,iCell)
+    tend_qo3(k,iCell) = tend_qo3(k,iCell) + tend_qo3physics(k,iCell)*mass(k,iCell)
  enddo
  enddo
 
@@ -168,7 +181,7 @@
  do k = 1, nVertLevels
     theta(k,iCell) = theta_m(k,iCell) / (1. + R_v/R_d * qv(k,iCell))
     tend_th(k,iCell) = (1. + R_v/R_d * qv(k,iCell)) * tend_th(k,iCell) &
-                    + R_v/R_d * theta(k,iCell) * tend_scalars(tend%index_qv,k,iCell)
+                    + R_v/R_d * theta(k,iCell) * tend_qv(k,iCell)
     tend_theta(k,iCell) = tend_theta(k,iCell) + tend_th(k,iCell)
  enddo
  enddo
@@ -193,13 +206,14 @@
 
  end subroutine  physics_addtend
 
-!==================================================================================================
- subroutine tend_toEdges(mesh,Ux_tend,Uy_tend,U_tend)
-!==================================================================================================
+!=================================================================================================================
+ subroutine tend_toEdges(block,mesh,Ux_tend,Uy_tend,U_tend)
+!=================================================================================================================
 
 !input arguments:
 !----------------
- type(mesh_type),intent(in):: mesh
+ type(block_type),intent(in),target:: block
+ type(mpas_pool_type),intent(in):: mesh
  real(kind=RKIND),intent(in),dimension(:,:):: Ux_tend,Uy_tend 
 
 !output arguments:
@@ -208,29 +222,27 @@
 
 !local variables:
 !-----------------
- type(block_type),pointer :: block
  type (field2DReal), pointer :: tempField
  type (field2DReal), target :: tempFieldTarget
- integer:: iCell,iEdge,k,j,nCells,nCellsSolve,nVertLevels
+ integer:: iCell,iEdge,k,j
+ integer,pointer:: nCells,nCellsSolve,nVertLevels
  integer,dimension(:),pointer  :: nEdgesOnCell
  integer,dimension(:,:),pointer:: edgesOnCell
 
  real(kind=RKIND),dimension(:,:),pointer:: east,north,edge_normal
  real(kind=RKIND),dimension(:,:),allocatable,target:: Ux_tend_halo,Uy_tend_halo
  
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
- block => mesh % block
- 
- nCells       = mesh % nCells
- nCellsSolve  = mesh % nCellsSolve
- nVertLevels  = mesh % nVertLevels
+ call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+ call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+ call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
- east  => mesh % east  % array
- north => mesh % north % array
- edgesOnCell  => mesh % edgesOnCell  % array
- nEdgesOnCell => mesh % nEdgesOnCell % array
- edge_normal  => mesh % edgeNormalVectors % array
+ call mpas_pool_get_array(mesh, 'east', east)
+ call mpas_pool_get_array(mesh, 'north', north)
+ call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
+ call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+ call mpas_pool_get_array(mesh, 'edgeNormalVectors', edge_normal)
 
  allocate(Ux_tend_halo(nVertLevels,nCells+1))
  allocate(Uy_tend_halo(nVertLevels,nCells+1))
@@ -281,6 +293,6 @@
  
  end subroutine tend_toEdges
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_todynamics
-!==================================================================================================
+!=================================================================================================================

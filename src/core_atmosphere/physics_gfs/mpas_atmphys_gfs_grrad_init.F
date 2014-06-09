@@ -1,6 +1,6 @@
 #define DM_BCAST_MACRO(A) call mpas_dmpar_bcast_reals(dminfo,size(A),A)
 
-!=============================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_grrad_init
  use mpas_dmpar
  use mpas_kind_types
@@ -27,18 +27,25 @@
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
 !>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!=============================================================================================
+!=================================================================================================================
  subroutine radiation_init_forMPAS(dminfo,clock,mesh)
-!=============================================================================================
+!=================================================================================================================
 
 !input arguments:
  type(dm_info):: dminfo
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
  type(MPAS_Clock_type),intent(in):: clock
+
+!local pointers:
+ integer,pointer:: nVertLevels
 
 !local variables:
  type(MPAS_Time_Type):: currTime
@@ -49,11 +56,11 @@
  integer:: nVertLevels
  real(kind=RKIND),dimension(:),allocatable:: sigma
 
-!---------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine radiation_init_forMPAS:'
 
- nVertLevels = mesh%nVertLevels
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
 
 !... get the current year, month, day, and hour:
 !100 format('     YEAR        =', i5   ,/, &
@@ -120,6 +127,6 @@
 
  end subroutine radiation_init_forMPAS
 
-!=============================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_grrad_init
-!=============================================================================================
+!=================================================================================================================

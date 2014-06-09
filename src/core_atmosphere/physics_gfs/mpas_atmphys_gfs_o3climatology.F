@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_o3climatology
  use mpas_dmpar
  use mpas_kind_types
@@ -24,20 +24,32 @@
 !> update the input coefficients needed in the parameterization of prognostic ozone. 
 !>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2014-01-27.
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
  
-!==================================================================================================
+!=================================================================================================================
  subroutine init_o3climatology(dminfo,mesh,atm_input)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
  type(dm_info),intent(in):: dminfo
 
 !inout arguments:
- type(atm_input_type),intent(inout):: atm_input
+ type(mpas_pool_type),intent(inout):: atm_input
+
+!local pointers:
+ integer,pointer:: nCells,nMonths,nOznLevels,nOznPlCoeff
+
+ real(kind=RKIND),dimension(:),pointer:: latCell
+ real(kind=RKIND),dimension(:),pointer:: pl_time
+ real(kind=RKIND),dimension(:),pointer:: pl_pres
+ real(kind=RKIND),dimension(:,:,:,:),pointer:: ozmixm
 
 !local variables:
  integer,parameter:: open_ok  = 0
@@ -52,16 +64,20 @@
  real(kind=RKIND),dimension(:),allocatable:: pl_lat
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: ozplin
 
- real(kind=RKIND),dimension(:),pointer:: pl_pres,pl_time
- real(kind=RKIND),dimension(:,:,:,:),pointer:: ozmixm
-
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine init_o3climatology: ntoz =', ntoz
 
- pl_pres => atm_input % pl_pres % array
- pl_time => atm_input % pl_time % array
- ozmixm  => atm_input % ozmixm  % array
+ call mpas_pool_get_dimension(mesh,'nCells'     ,nCells     )
+ call mpas_pool_get_dimension(mesh,'nMonths'    ,nMonths    )
+ call mpas_pool_get_dimension(mesh,'nOznLevels' ,nOznLevels )
+ call mpas_pool_get_dimension(mesh,'nOznPlCoeff',nOznPlCoeff)
+
+ call mpas_pool_get_array(mesh,'latCell',latCell)
+
+ call mpas_pool_get_array(atm_input,'pl_time',pl_time)
+ call mpas_pool_get_array(atm_input,'pl_pres',pl_pres)
+ call mpas_pool_get_array(atm_input,'ozmixm' ,ozmixm )
 
  if(ntoz .le. 0) then
     write(0,*) '--- ozone parameterization option no longer supported. Reset ntoz to 2.'
@@ -78,12 +94,10 @@
     rewind (kozpl)
     read (kozpl) pl_coeff,latsozp,levozp,timeoz
    
-    if(levozp .ne. mesh%nOznLevels .or. pl_coeff .ne. mesh%nOznPlCoeff .or. &
-       timeoz .ne. mesh%nMonths) then
- 
-       write(0,*) 'nOznLevels  = ',mesh%nOznLevels
-       write(0,*) 'nMonths     = ',mesh%nMonths
-       write(0,*) 'nOznPlCoeff = ',mesh%nOznPlCoeff
+    if(levozp .ne. nOznLevels .or. pl_coeff .ne. nOznPlCoeff .or. timeoz .ne. nMonths) then 
+       write(0,*) 'nOznLevels  = ',nOznLevels
+       write(0,*) 'nMonths     = ',nMonths
+       write(0,*) 'nOznPlCoeff = ',nOznPlCoeff
        write(0,*)
        write(0,*) 'latsozp  = ',latsozp
        write(0,*) 'levozp   = ',levozp
@@ -140,9 +154,9 @@
  enddo
 
 !interpolation of the input ozone data to the MPAS mesh:
- do iCell = 1, mesh%nCells
+ do iCell = 1, nCells
 
-    ylat = mesh%latCell%array(iCell)/degrad
+    ylat = latCell(iCell)/degrad
     do jo = 1, latsozp-1
        if(ylat.ge.pl_lat(jo) .and. ylat.lt.pl_lat(jo+1)) then
           j1 = jo
@@ -187,35 +201,37 @@
 
  end subroutine init_o3climatology
 
-!==================================================================================================
+!=================================================================================================================
  subroutine o3climatology_from_MPAS(mesh,atm_input,diag_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
- type(atm_input_type),intent(in):: atm_input
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: atm_input
 
 !inout arguments:
- type(diag_physics_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: diag_physics
 
-!local variables:
- integer:: iCell,k,nc
- integer:: nOznLevels,nOznPlCoeff,nMonths,nCellsSolve
+!local pointers:
+ integer,pointer:: nCellsSolve,nMonths,nOznLevels,nOznPlCoeff
 
  real(kind=RKIND),dimension(:,:,:),pointer:: o3clim
  real(kind=RKIND),dimension(:,:,:,:),pointer:: ozmixm
 
-!--------------------------------------------------------------------------------------------------
+!local variables:
+ integer:: iCell,k,nc
+
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine o3climatology_from_MPAS:'
 
- nOznLevels  = mesh % nOznLevels
- nOznPlCoeff = mesh % nOznPlCoeff
- nCellsSolve = mesh % nCellsSolve
- nMonths     = mesh % nMonths
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nOznLevels' ,nOznLevels )
+ call mpas_pool_get_dimension(mesh,'nOznPlCoeff',nOznPlCoeff)
+ call mpas_pool_get_dimension(mesh,'nMonths'    ,nMonths    )
 
- ozmixm => atm_input    % ozmixm % array
- o3clim => diag_physics % o3clim % array
+ call mpas_pool_get_array(atm_input   ,'ozmixm',ozmixm)
+ call mpas_pool_get_array(diag_physics,'o3clim',o3clim)
 
 !for now, hard wire o3clim to ozmixm for October:
  do k = 1, nOznLevels
@@ -233,6 +249,6 @@
 
  end subroutine o3climatology_from_MPAS
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_o3climatology
-!==================================================================================================
+!=================================================================================================================

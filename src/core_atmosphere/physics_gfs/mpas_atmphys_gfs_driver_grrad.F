@@ -1,4 +1,4 @@
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_driver_grrad
  use mpas_dmpar
  use mpas_kind_types
@@ -42,46 +42,54 @@
 !>      calls per hour to subroutine GFS_initialize in mpas_atmphys_gfs_init.F, to compute the
 !>      variables nslwr and nsswr  (number of long- and short-wave radiation calls per hour). 
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19. 
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
+!=================================================================================================================
  subroutine allocate_radiation(mesh)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
-!--------------------------------------------------------------------------------------------------
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
 
- if(.not.allocated(slmsk)     ) allocate(slmsk(1:mesh%nCellsSolve)     )
- if(.not.allocated(hprime_rad)) allocate(hprime_rad(1:mesh%nCellsSolve))
- if(.not.allocated(fluxr)     ) allocate(fluxr(1:mesh%nCellsSolve,nfxr))
- if(.not.allocated(fcice)     ) allocate(fcice(1:mesh%nCellsSolve,1:mesh%nVertLevels)  )
- if(.not.allocated(frain)     ) allocate(frain(1:mesh%nCellsSolve,1:mesh%nVertLevels)  )
- if(.not.allocated(rrime)     ) allocate(rrime(1:mesh%nCellsSolve,1:mesh%nVertLevels)  )
- if(.not.allocated(htrlw)     ) allocate(htrlw(1:mesh%nCellsSolve,1:mesh%nVertLevels)  )
- if(.not.allocated(htrsw)     ) allocate(htrsw(1:mesh%nCellsSolve,1:mesh%nVertLevels)  )
- if(.not.allocated(cldcov)    ) allocate(cldcov(1:mesh%nCellsSolve,1:mesh%nVertLevels) )
+!-----------------------------------------------------------------------------------------------------------------
 
- if(.not.allocated(htrlwb)    ) allocate(htrlwb(1:mesh%nCellsSolve,1:mesh%nVertLevels,nbdlw))
- if(.not.allocated(htrswb)    ) allocate(htrswb(1:mesh%nCellsSolve,1:mesh%nVertLevels,nbdsw))
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ if(.not.allocated(slmsk)     ) allocate(slmsk(1:nCellsSolve)     )
+ if(.not.allocated(hprime_rad)) allocate(hprime_rad(1:nCellsSolve))
+ if(.not.allocated(fluxr)     ) allocate(fluxr(1:nCellsSolve,nfxr))
+ if(.not.allocated(fcice)     ) allocate(fcice(1:nCellsSolve,1:nVertLevels) )
+ if(.not.allocated(frain)     ) allocate(frain(1:nCellsSolve,1:nVertLevels) )
+ if(.not.allocated(rrime)     ) allocate(rrime(1:nCellsSolve,1:nVertLevels) )
+ if(.not.allocated(htrlw)     ) allocate(htrlw(1:nCellsSolve,1:nVertLevels) )
+ if(.not.allocated(htrsw)     ) allocate(htrsw(1:nCellsSolve,1:nVertLevels) )
+ if(.not.allocated(cldcov)    ) allocate(cldcov(1:nCellsSolve,1:nVertLevels))
+
+ if(.not.allocated(htrlwb)    ) allocate(htrlwb(1:nCellsSolve,1:nVertLevels,nbdlw))
+ if(.not.allocated(htrswb)    ) allocate(htrswb(1:nCellsSolve,1:nVertLevels,nbdsw))
 
  if(.not.allocated(lonsperlar)   ) allocate(lonsperlar(1:latr   ))
  if(.not.allocated(global_lats_r)) allocate(global_lats_r(1:latr))
 
- if(.not.allocated(sinlat_r2)    ) allocate(sinlat_r2(1:mesh%nCellsSolve,1:latr))
- if(.not.allocated(coslat_r2)    ) allocate(coslat_r2(1:mesh%nCellsSolve,1:latr))
- if(.not.allocated(xlon_r2)      ) allocate(xlon_r2(1:mesh%nCellsSolve,1:latr)  )
- if(.not.allocated(coszen_r2)    ) allocate(coszen_r2(1:mesh%nCellsSolve,1:latr))
- if(.not.allocated(coszdg_r2)    ) allocate(coszdg_r2(1:mesh%nCellsSolve,1:latr))
+ if(.not.allocated(sinlat_r2)    ) allocate(sinlat_r2(1:nCellsSolve,1:latr))
+ if(.not.allocated(coslat_r2)    ) allocate(coslat_r2(1:nCellsSolve,1:latr))
+ if(.not.allocated(xlon_r2)      ) allocate(xlon_r2(1:nCellsSolve,1:latr)  )
+ if(.not.allocated(coszen_r2)    ) allocate(coszen_r2(1:nCellsSolve,1:latr))
+ if(.not.allocated(coszdg_r2)    ) allocate(coszdg_r2(1:nCellsSolve,1:latr))
 
  end subroutine allocate_radiation
 
-!==================================================================================================
+!=================================================================================================================
  subroutine deallocate_radiation
-!==================================================================================================
+!=================================================================================================================
 
  if(allocated(slmsk)     ) deallocate(slmsk     )
  if(allocated(hprime_rad)) deallocate(hprime_rad)
@@ -105,17 +113,28 @@
 
  end subroutine deallocate_radiation
 
-!==================================================================================================
+!=================================================================================================================
  subroutine radiation_from_MPAS(mesh,sfc_input,diag_physics,tend_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
 !inout arguments:
- type(sfc_input_type),intent(inout)   :: sfc_input
- type(diag_physics_type),intent(inout):: diag_physics
- type(tend_physics_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: sfc_input
+ type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: tend_physics
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
+ integer,dimension(:),pointer:: landmask
+
+ real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
+ real(kind=RKIND),dimension(:),pointer    :: xice
+ real(kind=RKIND),dimension(:),pointer    :: flgmin_2d
+ real(kind=RKIND),dimension(:),pointer    :: sfcnsw,sfcdsw,sfcdlw,sfcalb,sfcemis,tsflw
+ real(kind=RKIND),dimension(:,:),pointer  :: orogwd,rthratenlw,rthratensw,cldfrac
+ real(kind=RKIND),dimension(:,:,:),pointer:: phy_f3d
 
 !local variables:
  integer:: iCell,iLat,k
@@ -124,24 +143,46 @@
        dxmin=-9.800790154, dxinv=1.0/(dxmax-dxmin)
  real(kind=RKIND):: work1,work2
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
- do iCell = 1, mesh%nCellsSolve
-    hprime_rad(iCell) = sfc_input%orogwd%array(1,iCell) 
-    slmsk(iCell)      = sfc_input%landmask%array(iCell)
-    if(sfc_input%xice%array(iCell) .gt. 0._RKIND) slmsk(iCell) = 2._RKIND
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(mesh,'latCell',latCell)
+ call mpas_pool_get_array(mesh,'lonCell',lonCell)
+
+ call mpas_pool_get_array(sfc_input   ,'landmask' ,landmask )
+ call mpas_pool_get_array(sfc_input   ,'orogwd'   ,orogwd   )
+ call mpas_pool_get_array(sfc_input   ,'xice'     ,xice     )
+ call mpas_pool_get_array(diag_physics,'phy_f3d'  ,phy_f3d  )
+ call mpas_pool_get_array(diag_physics,'flgmin_2d',flgmin_2d)
+ call mpas_pool_get_array(diag_physics,'sfcnsw'   ,sfcnsw   )
+ call mpas_pool_get_array(diag_physics,'sfcdsw'   ,sfcdsw   )
+ call mpas_pool_get_array(diag_physics,'sfcdlw'   ,sfcdlw   )
+ call mpas_pool_get_array(diag_physics,'sfcalb'   ,sfcalb   )
+ call mpas_pool_get_array(diag_physics,'sfcemis'  ,sfcemis  )
+ call mpas_pool_get_array(diag_physics,'tsflw'    ,tsflw    )
+ call mpas_pool_get_array(diag_physics,'cldfrac'  ,cldfrac  )
+
+ call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+ call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+
+ do iCell = 1, nCellsSolve
+    hprime_rad(iCell) = orogwd(1,iCell) 
+    slmsk(iCell)      = landmask(iCell)
+    if(xice(iCell) .gt. 0._RKIND) slmsk(iCell) = 2._RKIND
  enddo
 
 !... Local variables needed in the call to astronomy:
  do iLat = 1, latr
     global_lats_r(iLat) = Latr
-    lonsperlar(iLat)    = mesh%nCellsSolve
+    lonsperlar(iLat)    = nCellsSolve
  enddo
- do iCell = 1, mesh%nCellsSolve
+ do iCell = 1, nCellsSolve
  do iLat  = 1, latr
-    sinlat_r2(iCell,iLat) = sin(mesh%latCell%array(iCell))
-    coslat_r2(iCell,iLat) = cos(mesh%latCell%array(iCell))
-    xlon_r2(iCell,iLat)   = mesh%lonCell%array(iCell)
+    sinlat_r2(iCell,iLat) = sin(latCell(iCell))
+    coslat_r2(iCell,iLat) = cos(latCell(iCell))
+    xlon_r2(iCell,iLat)   = lonCell(iCell)
     coszen_r2(iCell,iLat) = 0._RKIND
     coszdg_r2(iCell,iLat) = 0._RKIND
  enddo
@@ -149,103 +190,124 @@
 
 !... Initialization for the Ferrier cloud microphysics scheme:
  if(num_p3d == 3) then
-    do iCell = 1, mesh%nCellsSolve
-       do k = 1, mesh%nVertLevels
-          fcice(iCell,k) = diag_physics%phy_f3d%array(1,k,iCell)
-          frain(iCell,k) = diag_physics%phy_f3d%array(2,k,iCell)
-          rrime(iCell,k) = diag_physics%phy_f3d%array(3,k,iCell)
+    do iCell = 1, nCellsSolve
+       do k = 1, nVertLevels
+          fcice(iCell,k) = phy_f3d(1,k,iCell)
+          frain(iCell,k) = phy_f3d(2,k,iCell)
+          rrime(iCell,k) = phy_f3d(3,k,iCell)
        enddo
     !... weighs range of minimum large ice fraction: 
        do iLat = 1, latr
-          work1 = (log(coslat_r2(iCell,iLat)/(mesh%nCellsSolve))-dxmin)*dxinv
+          work1 = (log(coslat_r2(iCell,iLat)/nCellsSolve)-dxmin)*dxinv
           work1 = max(0.0, min(1.0,work1))
           work2 = flgmin(1) * work1 + flgmin(2) * work2
        enddo
-!      diag_physics%flgmin_2d%array(iCell) = work2
-       diag_physics%flgmin_2d%array(iCell) = 0._RKIND
+!      flgmin_2d(iCell) = work2
+       flgmin_2d(iCell) = 0._RKIND
     enddo
  else
-    do iCell = 1, mesh%nCellsSolve
-       do k = 1, mesh%nVertLevels
+    do iCell = 1, nCellsSolve
+       do k = 1, nVertLevels
           fcice(iCell,k) = 0._RKIND
           frain(iCell,k) = 0._RKIND
           rrime(iCell,k) = 0._RKIND
        enddo
-       diag_physics%flgmin_2d%array(iCell) = 0._RKIND
+       flgmin_2d(iCell) = 0._RKIND
     enddo
  endif
 
 !... Initialization of output arrays in grrad:
- do iCell = 1, mesh%nCellsSolve
-    do k = 1, mesh%nVertLevels
-       htrlw(iCell,k)  = tend_physics%rthratenlw%array(k,iCell)
-       htrsw(iCell,k)  = tend_physics%rthratensw%array(k,iCell)
-       cldcov(iCell,k) = diag_physics%cldfrac   %array(k,iCell)
+ do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       htrlw(iCell,k)  = rthratenlw(k,iCell)
+       htrsw(iCell,k)  = rthratensw(k,iCell)
+       cldcov(iCell,k) = cldfrac(k,iCell)
     enddo
     fluxr(iCell,:) = 0._RKIND
-!   diag_physics%sfcnsw % array(iCell) = 0._RKIND
-!   diag_physics%sfcdsw % array(iCell) = 0._RKIND
-!   diag_physics%sfcdlw % array(iCell) = 0._RKIND   
-!   diag_physics%sfcalb % array(iCell) = 0._RKIND
-!   diag_physics%sfcemis% array(iCell) = 0._RKIND
-!   diag_physics%tsflw  % array(iCell) = 0._RKIND
+!   sfcnsw(iCell)  = 0._RKIND
+!   sfcdsw(iCell)  = 0._RKIND
+!   sfcdlw(iCell)  = 0._RKIND   
+!   sfcalb(iCell)  = 0._RKIND
+!   sfcemis(iCell) = 0._RKIND
+!   tsflw(iCell)   = 0._RKIND
  enddo
 
  end subroutine radiation_from_MPAS
 
-!==================================================================================================
+!=================================================================================================================
  subroutine radiation_to_MPAS(mesh,diag_physics,tend_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
 !inout arguments:
- type(diag_physics_type),intent(inout):: diag_physics
- type(tend_physics_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: tend_physics
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
+ real(kind=RKIND),dimension(:,:),pointer:: rthratenlw,rthratensw,cldfrac
 
 !local variables:
  integer:: iCell,k
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
- do iCell = 1, mesh%nCellsSolve
-    do k = 1, mesh%nVertLevels
-       tend_physics%rthratenlw%array(k,iCell) = htrlw(iCell,k)
-       tend_physics%rthratensw%array(k,iCell) = htrsw(iCell,k)
-       diag_physics%cldfrac   %array(k,iCell) = cldcov(iCell,k)
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(diag_physics,'cldfrac'   ,cldfrac   )
+ call mpas_pool_get_array(tend_physics,'rthratenlw',rthratenlw)
+ call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
+
+ do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       rthratenlw(k,iCell) = htrlw(iCell,k)
+       rthratensw(k,iCell) = htrsw(iCell,k)
+       cldfrac(k,iCell)    = cldcov(iCell,k)
     enddo
  enddo
  write(0,*)
  write(0,*) '--- end subroutine radiation_to_MPAS:'
- write(0,*) '--- max rthratenlw = ', maxval(tend_physics%rthratenlw%array(:,1:mesh%nCellsSolve))
- write(0,*) '--- min rthratenlw = ', minval(tend_physics%rthratenlw%array(:,1:mesh%nCellsSolve))
- write(0,*) '--- max rthratensw = ', maxval(tend_physics%rthratensw%array(:,1:mesh%nCellsSolve))
- write(0,*) '--- min rthratensw = ', minval(tend_physics%rthratensw%array(:,1:mesh%nCellsSolve))
+ write(0,*) '--- max rthratenlw = ', maxval(rthratenlw(:,1:nCellsSolve))
+ write(0,*) '--- min rthratenlw = ', minval(rthratenlw(:,1:nCellsSolve))
+ write(0,*) '--- max rthratensw = ', maxval(rthratensw(:,1:nCellsSolve))
+ write(0,*) '--- min rthratensw = ', minval(rthratensw(:,1:nCellsSolve))
  write(0,*)
 
  end subroutine radiation_to_MPAS
 
-!==================================================================================================
+!=================================================================================================================
  subroutine mpas_atmphys_grrad(itimestep,xtime_s,dminfo,mesh,sfc_input,diag_physics,tend_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
  type(dm_info),intent(in):: dminfo
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: xtime_s
 
 !inout arguments:
- type(sfc_input_type),intent(inout)   :: sfc_input
- type(diag_physics_type),intent(inout):: diag_physics
- type(tend_physics_type),intent(inout):: tend_physics
+ type(mpas_pool_type),intent(inout):: sfc_input
+ type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: tend_physics
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
+ integer,dimension(:),pointer:: icsdlw,icsdsw
+
+ real(kind=RKIND),dimension(:),pointer:: lonCell,latCell
+ real(kind=RKIND),dimension(:),pointer:: skintemp,snow,snowc,snoalb,xice,flgmin_2d
+ real(kind=RKIND),dimension(:),pointer:: facsf,facwf,alvsf,alnsf,alvwf,alnwf
+ real(kind=RKIND),dimension(:),pointer:: zorl,coszen,coszdg,cv,cvb,cvt,tisfc
+ real(kind=RKIND),dimension(:),pointer:: sfcnsw,sfcdsw,sfcdlw,tsflw,sfcalb,sfcemis
+
 
 !local variables:
  logical:: lprnt,sas_shal
 
- integer:: nCellsSolve,nVertLevels
  integer:: i1,i2,k
  integer:: icwp
  integer:: me
@@ -274,10 +336,46 @@
 !local variables that are not used, and for which I could not find any initialization:
  integer:: k1oz,k2oz
  real(kind=RKIND):: facoz
- real(kind=RKIND),dimension(mesh%nVertLevels+1):: sigma
+ real(kind=RKIND),dimension(:),allocatable:: sigma
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,100) itimestep
+
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(mesh,'lonCell',lonCell)
+ call mpas_pool_get_array(mesh,'latCell',latCell)
+
+ call mpas_pool_get_array(sfc_input   ,'skintemp' ,skintemp )
+ call mpas_pool_get_array(sfc_input   ,'snow'     ,snow     )
+ call mpas_pool_get_array(sfc_input   ,'snowc'    ,snowc    )
+ call mpas_pool_get_array(sfc_input   ,'snoalb'   ,snoalb   )
+ call mpas_pool_get_array(sfc_input   ,'facsf'    ,facsf    )
+ call mpas_pool_get_array(sfc_input   ,'facwf'    ,facwf    )
+ call mpas_pool_get_array(sfc_input   ,'xice'     ,xice     )
+ call mpas_pool_get_array(diag_physics,'alvsf'    ,alvsf    ) 
+ call mpas_pool_get_array(diag_physics,'alnsf'    ,alnsf    )
+ call mpas_pool_get_array(diag_physics,'alvwf'    ,alvwf    )
+ call mpas_pool_get_array(diag_physics,'alnwf'    ,alnwf    )
+ call mpas_pool_get_array(diag_physics,'coszen'   ,coszen   ) 
+ call mpas_pool_get_array(diag_physics,'coszdg'   ,coszdg   )
+ call mpas_pool_get_array(diag_physics,'cv'       ,cv       )
+ call mpas_pool_get_array(diag_physics,'cvb'      ,cvb      )
+ call mpas_pool_get_array(diag_physics,'cvt'      ,cvt      )
+ call mpas_pool_get_array(diag_physics,'icsdlw'   ,icsdlw   )
+ call mpas_pool_get_array(diag_physics,'icsdsw'   ,icsdsw   )
+ call mpas_pool_get_array(diag_physics,'sfcalb'   ,sfcalb   )
+ call mpas_pool_get_array(diag_physics,'sfcemis'  ,sfcemis  )
+ call mpas_pool_get_array(diag_physics,'zorl'     ,zorl     )
+ call mpas_pool_get_array(diag_physics,'tisfc'    ,tisfc    )
+ call mpas_pool_get_array(diag_physics,'flgmin_2d',flgmin_2d)
+ call mpas_pool_get_array(diag_physics,'sfcnsw'   ,sfcnsw   )
+ call mpas_pool_get_array(diag_physics,'sfcdsw'   ,sfcdsw   )
+ call mpas_pool_get_array(diag_physics,'sfcdlw'   ,sfcdlw   )
+ call mpas_pool_get_array(diag_physics,'tsflw'    ,tsflw    )
+
+ if(.not.allocated(sigma)) allocate(sigma(nVertLevels+1))
 
 !formats:
  100 format(/,' --- enter subroutine mpas_atmphys_grrad ',i6) 
@@ -317,9 +415,6 @@
  call w3movdat(rinc,idat,jdat) 
 
 !... initialization of local variables:
- nCellsSolve = mesh % nCellsSolve
- nVertLevels = mesh % nVertLevels
-!if(dminfo % my_proc_id == IO_NODE) me = 0
  me = dminfo % my_proc_id
  sas_shal = sashal .and. (.not. ras)
 
@@ -381,8 +476,8 @@
 !write(0,*)
  do iCell = 1, nCellsSolve
  do iLat  = 1, latr
-    diag_physics%coszen%array(iCell) = coszen_r2(iCell,iLat)
-    diag_physics%coszdg%array(iCell) = coszdg_r2(iCell,iLat)
+    coszen(iCell) = coszen_r2(iCell,iLat)
+    coszdg(iCell) = coszdg_r2(iCell,iLat)
 !   if(abs(diag_physics%coszen%array(iCell)) .gt. 0._RKIND) &
 !      write(0,102) iCell,diag_physics%coszen%array(iCell),diag_physics%coszdg%array(iCell)
  enddo
@@ -399,159 +494,58 @@
 !endif
 !stop
 
-!... CALL GFS PHYSICS DRIVER FOR ALL PHYSICS, EXCEPT RADIATION:
-!write(0,*)
-!write(0,*) '--- before call to grrad:'
-!write(0,*) '... itimestep    = ', itimestep
-!write(0,*) '... nCellsSolve  = ', nCellsSolve
-!write(0,*) '... nVertLevels  = ', nVertLevels
-!write(0,*) '... norad_precip = ', norad_precip
-!write(0,*) '... crick_proof  = ', crick_proof
-!write(0,*) '... ccnorm       = ', ccnorm
-!write(0,*) '... lssav        = ', lssav
-!write(0,*) '... sas_shal     = ', sas_shal
-!write(0,*) '... lslwr        = ', lslwr
-!write(0,*) '... lsswr        = ', lsswr
-!write(0,*) '... iflip        = ', iflip
-!write(0,*) '... me           = ', me
-!write(0,*) '... lprnt        = ', lprnt
-!write(0,*) '... ipt          = ', nCellsSolve
-!write(0,*) '... np3d         = ', num_p3d
-!write(0,*) '... nfxr         = ', nfxr
-!write(0,*) '... ntcw         = ', ntcw
-!write(0,*) '... ncld         = ', ncld
-!write(0,*) '... ntoz         = ', ntoz
-!write(0,*) '... ntrac        = ', ntrac
-!write(0,*) '... k1oz         = ', k1oz
-!write(0,*) '... k2oz         = ', k2oz
-!write(0,*) '... facoz        = ', facoz
-!write(0,*) '... iovrlw       = ', iovr_lw
-!write(0,*) '... iovrsw       = ', iovr_sw
-!write(0,*) '... dtlw         = ', dt_radtlw
-!write(0,*) '... dtsw         = ', dt_radtsw
-!write(0,*) '... solcon       = ', solcon
-!write(0,*)
-!iCell = nCellsSolve
-!do k = 1, nVertLevels+1
-!   write(0,103) iCell,k,prsi_rad(iCell,k)
-!enddo
-!write(0,*)
-!do k = 1, nVertLevels
-!   write(0,103) iCell,k,prsl_rad(iCell,k),prslk(iCell,k),tgrs(iCell,k),qvrs(iCell,k), & 
-!      qgrs(iCell,k,1),qgrs(iCell,k,2),qgrs(iCell,k,3)
-!enddo
-!write(0,*)
-!do k = 1, nVertLevels
-!   write(0,103) iCell,k,vvel(iCell,k)
-!enddo
-!write(0,*)
-!do iCell = 1, nCellsSolve
-!   write(0,102) iCell,slmsk(iCell),mesh%lonCell%array(iCell),mesh%latCell%array(iCell), &
-!         sfc_input%skintemp%array(iCell),sfc_input%snow%array(iCell),sfc_input%snoalb%array(iCell), &
-!         sfc_input%facsf%array(iCell),sfc_input%facwf%array(iCell)
-!enddo
-!write(0,*)
-!do iCell = 1, nCellsSolve
-!   write(0,102) iCell,diag_physics%zorl%array(iCell),     &
-!         diag_physics%alnsf%array(iCell),diag_physics%alnwf%array(iCell), &
-!         diag_physics%alvsf%array(iCell),diag_physics%alvwf%array(iCell)
-!enddo
-!write(0,*)
-
+!... CALL GFS LONG- AND SHORT-WAVE RADIATION CODES:
  call grrad( &
 !... inputs:
-  kdt          = itimestep,    & ! done.
-  ix           = nCellsSolve,  & ! done.
-  im           = nCellsSolve,  & ! done.
-  lm           = nVertLevels,  & ! done.
-  norad_precip = norad_precip, & ! done.
-  crick_proof  = crick_proof,  & ! done.
-  ccnorm       = ccnorm,       & ! done.
-  lssav        = lssav,        & ! done.
-  sashal       = sas_shal,     & ! done.
-  lslwr        = lslwr,        & ! done.
-  lsswr        = lsswr,        & ! done.
-  iflip        = iflip,        & ! done. 
-  me           = me,           & ! done.
-  lprnt        = lprnt,        & ! done.
-  ipt          = nCellsSolve,  & ! done.
-  np3d         = num_p3d,      & ! done.
-  nfxr         = nfxr,         & ! done.
-  ntcw         = ntcw,         & ! done.
-  ncld         = ncld,         & ! done.
-  ntoz         = ntoz,         & ! done.
-  ntrac        = ntrac,        & ! done.
-  k1oz         = k1oz,         & ! done.
-  k2oz         = k2oz,         & ! done.
-  facoz        = facoz,        & ! done.
-  iovrlw       = iovr_lw,      & ! done.
-  iovrsw       = iovr_sw,      & ! done.
-  dtlw         = dt_radtlw,    & ! done.
-  dtsw         = dt_radtsw,    & ! done.
-  solcon       = solcon,       & ! done.
-  prsi         = prsi_rad,     & ! done.
-  prsl         = prsl_rad,     & ! done.
-  prslk        = prslk,        & 
-  tgrs         = tgrs,         & ! done.
-  qgrs         = qvrs,         & ! done.
-  oz           = qgrs,         &
-  vvl          = vvel,         &
-  slmsk        = slmsk,        & ! done.
-  xlon         = mesh%lonCell%array(1:mesh%nCellsSolve),           & ! done.
-  xlat         = mesh%latCell%array(1:mesh%nCellsSolve),           & ! done.
-  tsfc         = sfc_input%skintemp%array(1:mesh%nCellsSolve),     & ! done.
-  snowd        = sfc_input%snow%array(1:mesh%nCellsSolve),         & ! done.
-  sncovr       = sfc_input%snowc%array(1:mesh%nCellsSolve),        & ! done.
-  snoalb       = sfc_input%snoalb%array(1:mesh%nCellsSolve),       & ! done.
- !hprim        = sfc_input%orogwd%array(1,1:mesh%nCellsSolve),     & ! done.
-  hprim        = hprime_rad,                                       & ! done.
-  facsf        = sfc_input%facsf%array(1:mesh%nCellsSolve),        & ! done.
-  facwf        = sfc_input%facwf%array(1:mesh%nCellsSolve),        & ! done.
-  fice         = sfc_input%xice%array(1:mesh%nCellsSolve),         & ! done.
-  alvsf        = diag_physics%alvsf%array(1:mesh%nCellsSolve),     & ! done.
-  alnsf        = diag_physics%alnsf%array(1:mesh%nCellsSolve),     & ! done.
-  alvwf        = diag_physics%alvwf%array(1:mesh%nCellsSolve),     & ! done.
-  alnwf        = diag_physics%alnwf%array(1:mesh%nCellsSolve),     & ! done.
-  zorl         = diag_physics%zorl%array(1:mesh%nCellsSolve),      & ! done.
-  coszen       = diag_physics%coszen%array(1:mesh%nCellsSolve),    & ! done.
-  coszdg       = diag_physics%coszdg%array(1:mesh%nCellsSolve),    & ! done.
-  cv           = diag_physics%cv%array(1:mesh%nCellsSolve),        & ! done.
-  cvb          = diag_physics%cvb%array(1:mesh%nCellsSolve),       & ! done.
-  cvt          = diag_physics%cvt%array(1:mesh%nCellsSolve),       & ! done.
-  tisfc        = diag_physics%tisfc%array(1:mesh%nCellsSolve),     & ! done.
-  flgmin       = diag_physics%flgmin_2d%array(1:mesh%nCellsSolve), & ! done.
-  icsdsw       = diag_physics%icsdsw%array(1:mesh%nCellsSolve),    & ! done.
-  icsdlw       = diag_physics%icsdlw%array(1:mesh%nCellsSolve),    & ! done.
-  fcice        = fcice,  &                                           ! done.
-  frain        = frain,  &                                           ! done.
-  rrime        = rrime,  &                                           ! done.
+  kdt          = itimestep                , ix           = nCellsSolve             , &
+  im           = nCellsSolve              , lm           = nVertLevels             , & 
+  norad_precip = norad_precip             , crick_proof  = crick_proof             , &
+  ccnorm       = ccnorm                   , lssav        = lssav                   , &
+  sashal       = sas_shal                 , lslwr        = lslwr                   , &
+  lsswr        = lsswr                    , iflip        = iflip                   , & 
+  me           = me                       , lprnt        = lprnt                   , &
+  ipt          = nCellsSolve              , np3d         = num_p3d                 , &
+  nfxr         = nfxr                     , ntcw         = ntcw                    , &
+  ncld         = ncld                     , ntoz         = ntoz                    , &
+  ntrac        = ntrac                    , k1oz         = k1oz                    , &
+  k2oz         = k2oz                     , facoz        = facoz                   , &
+  iovrlw       = iovr_lw                  , iovrsw       = iovr_sw                 , &
+  dtlw         = dt_radtlw                , dtsw         = dt_radtsw               , &
+  solcon       = solcon                   , prsi         = prsi_rad                , &
+  prsl         = prsl_rad                 , prslk        = prslk                   , & 
+  tgrs         = tgrs                     , qgrs         = qvrs                    , &
+  oz           = qgrs                     , vvl          = vvel                    , &
+  slmsk        = slmsk                    , xlon         = lonCell(1:nCellsSolve)  , &
+  xlat         = latCell(1:nCellsSolve)   , tsfc         = skintemp(1:nCellsSolve) , &
+  snowd        = snow(1:nCellsSolve)      , sncovr       = snowc(1:nCellsSolve)    , &
+  snoalb       = snoalb(1:nCellsSolve)    , hprim        = hprime_rad              , &
+  facsf        = facsf(1:nCellsSolve)     , facwf        = facwf(1:nCellsSolve)    , &
+  fice         = xice(1:nCellsSolve)      , alvsf        = alvsf(1:nCellsSolve)    , &
+  alnsf        = alnsf(1:nCellsSolve)     , alvwf        = alvwf(1:nCellsSolve)    , &
+  alnwf        = alnwf(1:nCellsSolve)     , zorl         = zorl(1:nCellsSolve)     , &
+  coszen       = coszen(1:nCellsSolve)    , coszdg       = coszdg(1:nCellsSolve)   , &
+  cv           = cv(1:nCellsSolve)        , cvb          = cvb(1:nCellsSolve)      , &
+  cvt          = cvt(1:nCellsSolve)       , tisfc        = tisfc(1:nCellsSolve)    , &
+  flgmin       = flgmin_2d(1:nCellsSolve) , icsdsw       = icsdsw(1:nCellsSolve)   , &
+  icsdlw       = icsdlw(1:nCellsSolve)    , fcice        = fcice                   , &
+  frain        = frain                    , rrime        = rrime                   , & 
 !... inouts:
-  fluxr        = fluxr,  &
+  fluxr        = fluxr ,                                                             &
 !... outputs:
-  htrswb       = htrswb, &
-  htrlwb       = htrlwb, &
-  htrsw        = htrsw,  &                                           ! done.
-  htrlw        = htrlw,  &                                           ! done.
-  cldcov       = cldcov, &                                           ! done.
-  sfcnsw       = diag_physics%sfcnsw%array(1:nCellsSolve),         & ! done.
-  sfcdsw       = diag_physics%sfcdsw%array(1:nCellsSolve),         & ! done.
-  sfcdlw       = diag_physics%sfcdlw%array(1:nCellsSolve),         & ! done.
-  tsflw        = diag_physics%tsflw%array(1:nCellsSolve),          & ! done.
-  sfalb        = diag_physics%sfcalb%array(1:nCellsSolve),         & ! done.
-  semis        = diag_physics%sfcemis%array(1:nCellsSolve)         & ! done. 
+  htrswb       = htrswb                   , htrlwb       = htrlwb                  , &
+  htrsw        = htrsw                    , htrlw        = htrlw                   , &
+  cldcov       = cldcov                   , sfcnsw       = sfcnsw(1:nCellsSolve)   , &
+  sfcdsw       = sfcdsw(1:nCellsSolve)    , sfcdlw       = sfcdlw(1:nCellsSolve)   , &
+  tsflw        = tsflw(1:nCellsSolve)     , sfalb        = sfcalb(1:nCellsSolve)   , &
+  semis        = sfcemis(1:nCellsSolve)                                              &
            )
-!write(0,*)
-!do iCell = 1,mesh%nCellsSolve
-!do k = 1, mesh%nVertLevels
-!   write(0,103) iCell,k,htrlw(iCell,k),htrsw(iCell,k)
-!enddo
-!write(0,*)
-!enddo
  write(0,*) '--- end subroutine grrad:'
 
 !copy all arrays back to MPAS grid:
  call radiation_to_MPAS(mesh,diag_physics,tend_physics)
  write(0,*) '--- end subroutine mpas_atmphys_grrad'
+
+ if(allocated(sigma)) deallocate(sigma)
 
 !formats:
  102 format(i8,10(1x,e15.8))
@@ -559,6 +553,6 @@
 
  end subroutine mpas_atmphys_grrad
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_driver_grrad
-!==================================================================================================
+!=================================================================================================================

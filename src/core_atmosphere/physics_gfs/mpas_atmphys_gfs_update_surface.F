@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_update_surface
  use mpas_grid_types
  use mpas_kind_types
@@ -28,50 +28,57 @@
 !> physics_gfs_update_surface : update climatological spectral surface albedo,greeness fraction,
 !>                              and mixing length.
 !>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
+!=================================================================================================================
  subroutine physics_gfs_update_surface(current_date,mesh,sfc_input,diag_physics)
-!==================================================================================================
+!=================================================================================================================
 
 !input variables:
- type(mesh_type),intent(in):: mesh
- type(sfc_input_type),intent(in):: sfc_input
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: sfc_input
  character(len=*),intent(in):: current_date
 
 !inout variables:
- type(diag_physics_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: diag_physics
  
-!local variables:
- integer:: iCell,nCellsSolve
+!local pointers:
+ integer,pointer:: nCellsSolve
  integer,dimension(:),pointer:: landmask
 
  real(kind=RKIND),dimension(:),pointer:: xice
  real(kind=RKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,vegfra,zorl
  real(kind=RKIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac,zorl12m
 
-!--------------------------------------------------------------------------------------------------
+!local variables:
+ integer:: iCell
+
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter physics_gfs_update_surface:'
 
- nCellsSolve = mesh % nCellsSolve
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
- landmask  => sfc_input % landmask  % array
- alnsf4s   => sfc_input % alnsf4s   % array
- alnwf4s   => sfc_input % alnwf4s   % array
- alvsf4s   => sfc_input % alvsf4s   % array
- alvwf4s   => sfc_input % alvwf4s   % array
- greenfrac => sfc_input % greenfrac % array
- xice      => sfc_input % xice      % array
- zorl12m   => sfc_input % zorl12m   % array
+ call mpas_pool_get_array(sfc_input,'landmask' ,landmask )
+ call mpas_pool_get_array(sfc_input,'alnsf4s'  ,alnsf4s  )
+ call mpas_pool_get_array(sfc_input,'alnwf4s'  ,alnwf4s  )
+ call mpas_pool_get_array(sfc_input,'alvsf4s'  ,alvsf4s  )
+ call mpas_pool_get_array(sfc_input,'alvwf4s'  ,alvwf4s  )
+ call mpas_pool_get_array(sfc_input,'greenfrac',greenfrac)
+ call mpas_pool_get_array(sfc_input,'xice'     ,xice     )
+ call mpas_pool_get_array(sfc_input,'zorl12m'  ,zorl12m  )
 
- alnsf  => diag_physics % alnsf  % array
- alnwf  => diag_physics % alnwf  % array
- alvsf  => diag_physics % alvsf  % array
- alvwf  => diag_physics % alvwf  % array
- vegfra => diag_physics % vegfra % array
- zorl   => diag_physics % zorl   % array
+ call mpas_pool_get_array(diag_physics,'alnsf' ,alnsf )
+ call mpas_pool_get_array(diag_physics,'alnwf' ,alnwf )
+ call mpas_pool_get_array(diag_physics,'alvsf' ,alvsf )
+ call mpas_pool_get_array(diag_physics,'alvwf' ,alvwf )
+ call mpas_pool_get_array(diag_physics,'vegfra',vegfra)
+ call mpas_pool_get_array(diag_physics,'zorl'  ,zorl  )
 
 !initialization of the green-ness (vegetation) fraction: interpolation of the monthly mean values
 !to the initial date:
@@ -106,8 +113,8 @@
 
  end subroutine physics_gfs_update_surface
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_update_surface
-!==================================================================================================
+!=================================================================================================================
 
 

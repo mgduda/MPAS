@@ -5,9 +5,8 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_manager
- use mpas_configure
  use mpas_kind_types
  use mpas_grid_types
  use mpas_timekeeping
@@ -55,13 +54,17 @@
 !> physics_timetracker: check alarms and update boundary conditions if needed.
 !> physics_run_init   : create and initialize alarms used for GFS physics parameterizations.
 !>
+!> add-ons and modifications to sourcecode:
+!> ----------------------------------------
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
+!=================================================================================================================
  subroutine physics_timetracker(domain,dt,clock,itimestep,xtime_s)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
  integer,intent(in):: itimestep
@@ -72,8 +75,20 @@
  type(MPAS_Clock_type),intent(inout):: clock
  type(domain_type),intent(inout):: domain
 
-!local variables:
+!local pointers:
+ character(len=StrKIND),pointer:: config_radtlw_interval, &
+                                  config_radtsw_interval, &
+                                  config_bucket_update,   &
+                                  config_greeness_update
+
  type(block_type),pointer:: block
+ type(mpas_pool_type),pointer:: mesh
+ type(mpas_pool_type),pointer:: configs
+ type(mpas_pool_type),pointer:: diag_physics
+ type(mpas_pool_type),pointer:: sfc_input
+ type(mpas_pool_type),pointer:: atm_input
+
+!local variables:
  type(MPAS_Time_Type):: currTime
 
  logical:: LeapYear
@@ -82,9 +97,14 @@
  real(kind=RKIND):: utc_s
  real(kind=RKIND):: xtime_m
 
-!==================================================================================================
+!=================================================================================================================
  write(0,*)
  write(0,*) '--- enter subroutine physics_timetracker: itimestep = ', itimestep
+
+ call mpas_pool_get_config(domain%blocklist%configs,'config_radtlw_interval',config_radtlw_interval)
+ call mpas_pool_get_config(domain%blocklist%configs,'config_radtsw_interval',config_radtsw_interval)
+ call mpas_pool_get_config(domain%blocklist%configs,'config_bucket_update'  ,config_bucket_update  )
+ call mpas_pool_get_config(domain%blocklist%configs,'config_greeness_update',config_greeness_update)
 
 !update the current julian day and current year:
  100 format('     YEAR        =', i5   ,/, &
@@ -116,11 +136,16 @@
  block => domain % blocklist
  do while(associated(block))
 
+    call mpas_pool_get_subpool(block%structs,'mesh'        ,mesh        )
+    call mpas_pool_get_subpool(block%structs,'sfc_input'   ,sfc_input   )
+    call mpas_pool_get_subpool(block%structs,'atm_input'   ,atm_input   )
+    call mpas_pool_get_subpool(block%structs,'diag_physics',diag_physics)
+
     !initialize diagnostics accumulated in subroutine gbphys back to zero:
     if(mpas_is_alarm_ringing(clock,acfieldsAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,acfieldsAlarmID,ierr=ierr)
        write(0,*) '--- time to initialize diagnostics accumulated in gbphys.'
-       call physics_gfs_update_diagnostics(block%mesh,block%diag_physics)
+       call physics_gfs_update_diagnostics(mesh,diag_physics)
     endif
 
     !update the background surface albedo and greeness of vegetation: interpolation of input
@@ -128,7 +153,7 @@
     if(mpas_is_alarm_ringing(clock,greenAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,greenAlarmID,ierr=ierr)
        write(0,*) '--- time to update background surface albedo, greeness fraction.'
-       call physics_gfs_update_surface(timeStamp,block%mesh,block%sfc_input,block%diag_physics)
+       call physics_gfs_update_surface(timeStamp,mesh,sfc_input,diag_physics)
     endif
 
     block => block % next
@@ -162,7 +187,7 @@
  
  block => domain % blocklist
  do while(associated(block))
-    call o3climatology_from_MPAS(block%mesh,block%atm_input,block%diag_physics)
+    call o3climatology_from_MPAS(mesh,atm_input,diag_physics)
 
     block => block % next
  end do
@@ -171,23 +196,38 @@
 
  end subroutine physics_timetracker
 
-!==================================================================================================
- subroutine physics_run_init(mesh,state,clock)
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_run_init(configs,mesh,state,clock)
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in) :: mesh
- type(state_type),intent(in):: state
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: configs
+ type(mpas_pool_type),intent(in):: state
  type(MPAS_Clock_type):: clock
+
+!local pointers:
+ character(len=StrKIND),pointer:: config_radtlw_interval, &
+                                  config_radtsw_interval, &
+                                  config_bucket_update,   &
+                                  config_greeness_update
+
+ real(kind=RKIND),pointer:: config_dt
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime
  type(MPAS_TimeInterval_Type):: alarmTimeStep, alarmTimeStepHi
  integer:: ierr
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine physics_run_init'
+
+ call mpas_pool_get_config(configs,'config_radtlw_interval',config_radtlw_interval)
+ call mpas_pool_get_config(configs,'config_radtsw_interval',config_radtsw_interval)
+ call mpas_pool_get_config(configs,'config_bucket_update'  ,config_bucket_update  )
+ call mpas_pool_get_config(configs,'config_greeness_update',config_greeness_update)
+ call mpas_pool_get_config(configs,'config_dt'             ,config_dt             )
 
 !initialization of gmt, julian day, and alarms:
  101 format('     YEAR        =', i5   ,/, &
@@ -276,7 +316,7 @@
 
  end subroutine physics_run_init
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_manager
-!==================================================================================================
+!=================================================================================================================
  

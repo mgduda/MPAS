@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_vars
  use mpas_kind_types
  
@@ -35,9 +35,11 @@
 !> ----------------------------------------
 !>    * Removed non-needed variables.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
-!==================================================================================================
+!=================================================================================================================
 
 !... parameters that should be defined using an input namelist file:
  integer, parameter:: &
@@ -72,9 +74,9 @@
  logical, parameter:: &
     lssav_cc   = .false. !logical flag for save data for ocean coupling.
 
-!==================================================================================================
+!=================================================================================================================
 !INTERFACE BETWEEN MPAS AND THE GFS PHYSICS:
-!==================================================================================================
+!=================================================================================================================
 
  logical:: l_radtlw                   !controls call to longwave radiation parameterization.
  logical:: l_radtsw                   !controls call to shortwave radiation parameterization.
@@ -164,16 +166,16 @@
     du3dt,            &!change in u momentum due to physics processes                         [m/s]
     dv3dt              !change in v momentum due to physics processes                         [m/s]
 
-!==================================================================================================
+!=================================================================================================================
 !OZONE INPUT DATA: This array should be moved to Registry.
-!==================================================================================================
+!=================================================================================================================
 
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: &
     O3data             !input ozone data                                                        [?]
 
-!==================================================================================================
+!=================================================================================================================
 !GFS VARIABLES AND ARRAYS:
-!==================================================================================================
+!=================================================================================================================
 
 !... initial values for the surface roughness length as a function of the vegetation type:
  real(kind=RKIND),dimension(13):: z0_sib
@@ -217,17 +219,17 @@
 
 !... arrays related to deep convection:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    upd_mf,           &!convective updraft mass flux
-    dwn_mf,           &!convective downdraft mass flux
-    det_mf             !detrainment mass flux
+    upd_mf_p,         &!convective updraft mass flux
+    dwn_mf_p,         &!convective downdraft mass flux
+    det_mf_p           !detrainment mass flux
 
 !... arrays related to vertical diffusion:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    dkh                !vertical diffusion coefficient
+    dkh_p              !vertical diffusion coefficient
 
 !... arrays related to precipitation:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    rnp                !n cloud precipitation rate
+    rnp_p              !n cloud precipitation rate
 
 !... array for cloud fraction:
  real(kind=RKIND),dimension(:,:),allocatable:: &
@@ -235,13 +237,13 @@
 
 !... arrays saved for restarts:
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    phy_f2d
+    phy_f2d_p
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    phy_f3d
+    phy_f3d_p
 
-!==================================================================================================
+!=================================================================================================================
 !... variables and arrays related to parameterization of longwave and shortwave radiation:
-!==================================================================================================
+!=================================================================================================================
 
  integer:: &
     idt                !
@@ -270,6 +272,6 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     ozone
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_vars
-!==================================================================================================
+!=================================================================================================================

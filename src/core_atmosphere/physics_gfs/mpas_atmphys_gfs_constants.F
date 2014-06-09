@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_constants
  use mpas_constants, cp => cp, R_d => rgas, g => gravity
 
@@ -14,12 +14,13 @@
  save
  
 !>\brief defines the constants needed for the GFS physics parameterizations.
-!>\author Laura D. Fowler (send comments to laura@mmm.ucar.edu).
+!>\author Laura D. Fowler (send comments to laura@ucar.edu).
 !>\date 2013-11-21.
 !>
 !>\details
+
  
-!==================================================================================================
+!=================================================================================================================
 
  real(kind=RKIND),parameter:: c0      = 0.00000
  real(kind=RKIND),parameter:: c1      = 1.00000
@@ -68,6 +69,6 @@
  real(kind=RKIND),parameter:: degrad   = 3.1415926/180. !conversion from degree to radiant [-]
  real(kind=RKIND),parameter:: dpd      = 360./365.
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_constants
-!==================================================================================================
+!=================================================================================================================

@@ -5,9 +5,8 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_gfs_interface
- use mpas_configure
  use mpas_grid_types
 
  use mpas_atmphys_gfs_constants, grav => g
@@ -36,60 +35,69 @@
 !> ----------------------------------------
 !>    * Added diagnostic for the surface pressure.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-20.
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
+
 
  contains
 
-!==================================================================================================
+!=================================================================================================================
  subroutine allocate_forall_physics(mesh)
-!==================================================================================================
+!=================================================================================================================
 
 !input arguments:
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
-!--------------------------------------------------------------------------------------------------
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
 
- if(.not.allocated(dumphys)  ) allocate(dumphys(1:mesh%nCellsSolve) )
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ if(.not.allocated(dumphys)  ) allocate(dumphys(1:nCellsSolve) )
  
- if(.not.allocated(pgr)      ) allocate(pgr(1:mesh%nCellsSolve) )
- if(.not.allocated(fzm)      ) allocate(fzm(1:mesh%nCellsSolve,1:mesh%nVertLevels)        )
- if(.not.allocated(fzp)      ) allocate(fzp(1:mesh%nCellsSolve,1:mesh%nVertLevels)        )
- if(.not.allocated(ugrs)     ) allocate(ugrs(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(vgrs)     ) allocate(vgrs(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(vvel)     ) allocate(vvel(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
+ if(.not.allocated(pgr)      ) allocate(pgr(1:nCellsSolve) )
+ if(.not.allocated(fzm)      ) allocate(fzm(1:nCellsSolve,1:nVertLevels)       )
+ if(.not.allocated(fzp)      ) allocate(fzp(1:nCellsSolve,1:nVertLevels)       )
+ if(.not.allocated(ugrs)     ) allocate(ugrs(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(vgrs)     ) allocate(vgrs(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(vvel)     ) allocate(vvel(1:nCellsSolve,1:nVertLevels)      )
 
- if(.not.allocated(dzgrid)   ) allocate(dzgrid(1:mesh%nCellsSolve,1:mesh%nVertLevels)     )
- if(.not.allocated(qvrs)     ) allocate(qvrs(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(rhos)     ) allocate(rhos(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(tgrs)     ) allocate(tgrs(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(prsl)     ) allocate(prsl(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
- if(.not.allocated(prslk)    ) allocate(prslk(1:mesh%nCellsSolve,1:mesh%nVertLevels)      )
- if(.not.allocated(phil)     ) allocate(phil(1:mesh%nCellsSolve,1:mesh%nVertLevels)       )
+ if(.not.allocated(dzgrid)   ) allocate(dzgrid(1:nCellsSolve,1:nVertLevels)    )
+ if(.not.allocated(qvrs)     ) allocate(qvrs(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(rhos)     ) allocate(rhos(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(tgrs)     ) allocate(tgrs(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(prsl)     ) allocate(prsl(1:nCellsSolve,1:nVertLevels)      )
+ if(.not.allocated(prslk)    ) allocate(prslk(1:nCellsSolve,1:nVertLevels)     )
+ if(.not.allocated(phil)     ) allocate(phil(1:nCellsSolve,1:nVertLevels)      )
 
- if(.not.allocated(tgrsi)    ) allocate(tgrsi(1:mesh%nCellsSolve,1:mesh%nVertLevels+1)    )
- if(.not.allocated(prsi)     ) allocate(prsi(1:mesh%nCellsSolve,1:mesh%nVertLevels+1)     )
- if(.not.allocated(prsik)    ) allocate(prsik(1:mesh%nCellsSolve,1:mesh%nVertLevels+1)    )
- if(.not.allocated(phii)     ) allocate(phii(1:mesh%nCellsSolve,1:mesh%nVertLevels+1)     )
+ if(.not.allocated(tgrsi)    ) allocate(tgrsi(1:nCellsSolve,1:nVertLevels+1)   )
+ if(.not.allocated(prsi)     ) allocate(prsi(1:nCellsSolve,1:nVertLevels+1)    )
+ if(.not.allocated(prsik)    ) allocate(prsik(1:nCellsSolve,1:nVertLevels+1)   )
+ if(.not.allocated(phii)     ) allocate(phii(1:nCellsSolve,1:nVertLevels+1)    )
 
 !... hydrostatic pressure sounding:
- if(.not.allocated(pgr_hyd)  ) allocate(pgr_hyd(1:mesh%nCellsSolve) )
- if(.not.allocated(prsl_hyd) ) allocate(prsl_hyd(1:mesh%nCellsSolve,1:mesh%nVertLevels)   )
- if(.not.allocated(prsi_hyd) ) allocate(prsi_hyd(1:mesh%nCellsSolve,1:mesh%nVertLevels+1) )
+ if(.not.allocated(pgr_hyd)  ) allocate(pgr_hyd(1:nCellsSolve) )
+ if(.not.allocated(prsl_hyd) ) allocate(prsl_hyd(1:nCellsSolve,1:nVertLevels)  )
+ if(.not.allocated(prsi_hyd) ) allocate(prsi_hyd(1:nCellsSolve,1:nVertLevels+1))
 
 !... pressure for radiation parameterizations:
- if(.not.allocated(pgr_rad)  ) allocate(pgr_rad(1:mesh%nCellsSolve) )
- if(.not.allocated(prsl_rad) ) allocate(prsl_rad(1:mesh%nCellsSolve,1:mesh%nVertLevels)   )
- if(.not.allocated(prsi_rad) ) allocate(prsi_rad(1:mesh%nCellsSolve,1:mesh%nVertLevels+1) )
+ if(.not.allocated(pgr_rad)  ) allocate(pgr_rad(1:nCellsSolve) )
+ if(.not.allocated(prsl_rad) ) allocate(prsl_rad(1:nCellsSolve,1:nVertLevels)  )
+ if(.not.allocated(prsi_rad) ) allocate(prsi_rad(1:nCellsSolve,1:nVertLevels+1))
  
 !... updated arrays after call to gbphys:
- if(.not.allocated(gt0)      ) allocate(gt0(1:mesh%nCellsSolve,1:mesh%nVertLevels)        )
- if(.not.allocated(gu0)      ) allocate(gu0(1:mesh%nCellsSolve,1:mesh%nVertLevels)        )
- if(.not.allocated(gv0)      ) allocate(gv0(1:mesh%nCellsSolve,1:mesh%nVertLevels)        )
+ if(.not.allocated(gt0)      ) allocate(gt0(1:nCellsSolve,1:nVertLevels)       )
+ if(.not.allocated(gu0)      ) allocate(gu0(1:nCellsSolve,1:nVertLevels)       )
+ if(.not.allocated(gv0)      ) allocate(gv0(1:nCellsSolve,1:nVertLevels)       )
 
  end subroutine allocate_forall_physics
 
-!==================================================================================================
+!=================================================================================================================
  subroutine deallocate_forall_physics
-!==================================================================================================
+!=================================================================================================================
 
  if(allocated(dumphys) ) deallocate(dumphys   )
 
@@ -135,47 +143,65 @@
 
  end subroutine deallocate_forall_physics
 
-!==================================================================================================
- subroutine MPAS_to_physics(mesh,state,diag)
-!==================================================================================================
+!=================================================================================================================
+ subroutine MPAS_to_physics(mesh,state,time_lev,diag)
+!=================================================================================================================
 
 !input variables:
- type(mesh_type) ,intent(in):: mesh
- type(state_type),intent(in):: state
+ integer,intent(in):: time_lev
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: state
 
 !inout variables:
- type(diag_type) ,intent(inout):: diag
+ type(mpas_pool_type),intent(inout):: diag
+
+!local pointers:
+ integer,pointer:: nCells,nCellsSolve,nVertLevels
+ integer,pointer:: index_qv,index_qc,index_qo3
+
+ real(kind=RKIND),dimension(:),pointer    :: surface_pressure
+ real(kind=RKIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
+ real(kind=RKIND),dimension(:,:),pointer  :: rho,theta_m,w
+ real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qo3
+ real(kind=RKIND),dimension(:,:),pointer  :: uReconstructZonal,uReconstructMeridional
+ real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
  integer:: k,kk,iCell,i1,i2,nt,it,izgrid
- integer:: nCells,nCellsSolve,nVertLevels
-
- real(kind=RKIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
- real(kind=RKIND),dimension(:,:),pointer  :: rho,theta_m
- real(kind=RKIND),dimension(:,:),pointer  :: qv
- real(kind=RKIND),dimension(:,:,:),pointer:: tracer
 
  real(kind=RKIND):: tem1,z0,z1,z2,w1,w2
  real(kind=RKIND),dimension(:,:),allocatable:: height
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine MPAS_to_physics:'
 
- nCells      = mesh % nCells
- nCellsSolve = mesh % nCellsSolve
- nVertLevels = mesh % nVertLevels
+ call mpas_pool_get_dimension(mesh,'nCells'     ,nCells     )
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
 
- zz    => mesh % zz    % array
- zgrid => mesh % zgrid % array
- exner => diag % exner % array
- pressure_b => diag % pressure_p % array
- pressure_p => diag % pressure_base % array
+ call mpas_pool_get_array(mesh,'zz'   ,zz   )
+ call mpas_pool_get_array(mesh,'zgrid',zgrid)
 
- rho     => state % rho_zz  % array
- theta_m => state % theta_m % array
- qv      => state % scalars % array(state%index_qv,:,:)
- tracer  => state % scalars % array(:,:,:)
+ call mpas_pool_get_array(diag,'exner'                 ,exner                 )
+ call mpas_pool_get_array(diag,'pressure_p'            ,pressure_p            )
+ call mpas_pool_get_array(diag,'pressure_base'         ,pressure_b            )
+ call mpas_pool_get_array(diag,'uReconstructZonal'     ,uReconstructZonal     )
+ call mpas_pool_get_array(diag,'uReconstructMeridional',uReconstructMeridional)
+ call mpas_pool_get_array(diag,'surface_pressure'      ,surface_pressure      )
+
+ call mpas_pool_get_array(state,'rho_zz' ,rho    ,time_lev)
+ call mpas_pool_get_array(state,'theta_m',theta_m,time_lev)
+ call mpas_pool_get_array(state,'w'      ,w      ,time_lev)
+ 
+ call mpas_pool_get_dimension(state,'index_qv' ,index_qv )
+ call mpas_pool_get_dimension(state,'index_qc' ,index_qc )
+ call mpas_pool_get_dimension(state,'index_qo3',index_qo3)
+
+ call mpas_pool_get_array(state,'scalars',scalars,time_lev)
+ qv  => scalars(index_qv,:,:)
+ qc  => scalars(index_qc,:,:)
+ qo3 => scalars(index_qo3,:,:)
 
  if(.not.allocated(height)) allocate(height(nVertLevels+1,nCellsSolve))
  do k = 1, nVertLevels + 1
@@ -187,9 +213,9 @@
 !... zonal and meridional winds, and vertical velocities:
  do k = 1, nVertLevels
  do iCell = 1, nCellsSolve
-    ugrs(iCell,k) = diag  % uReconstructZonal % array(k,iCell)
-    vgrs(iCell,k) = diag  % uReconstructMeridional % array(k,iCell)
-    vvel(iCell,k) = 0.5_RKIND * (state % w % array(k,iCell) + state % w % array(k+1,iCell))
+    ugrs(iCell,k) = uReconstructZonal(k,iCell)
+    vgrs(iCell,k) = uReconstructMeridional(k,iCell)
+    vvel(iCell,k) = 0.5_RKIND * (w(k,iCell) + w(k+1,iCell))
     vvel(iCell,k) = - grav * rho(k,iCell) * zz(k,iCell) * vvel(iCell,k)
  enddo
  enddo
@@ -209,7 +235,7 @@
  enddo
  k = 1
  do iCell = 1, nCellsSolve
-    diag%surface_pressure%array(iCell) = prsl(iCell,k)
+    surface_pressure(iCell) = prsl(iCell,k)
  enddo
 
 !... temperature, pressure, exner function, and geopotential height at layer interfaces:
@@ -323,12 +349,12 @@
 
  do iCell = 1,nCellsSolve
     do k = 1,nVertLevels
-       qgrs(iCell,k,1)    = state % scalars % array(state%index_qv,k,iCell)
-       qgrs(iCell,k,2)    = state % scalars % array(state%index_qo3,k,iCell)
-       qgrs(iCell,k,ntcw) = state % scalars % array(state%index_qc,k,iCell) 
+       qgrs(iCell,k,1)    = qv(k,iCell)
+       qgrs(iCell,k,2)    = qo3(k,iCell)
+       qgrs(iCell,k,ntcw) = qc(k,iCell) 
 
-       qtrcs(iCell,k,1)   = state % scalars % array(state%index_qo3,k,iCell)
-       qtrcs(iCell,k,2)   = state % scalars % array(state%index_qc,k,iCell)
+       qtrcs(iCell,k,1)   = qo3(k,iCell)
+       qtrcs(iCell,k,2)   = qc(k,iCell)
     enddo
  enddo
 
@@ -339,6 +365,6 @@
 
  end subroutine MPAS_to_physics
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_gfs_interface
-!==================================================================================================
+!=================================================================================================================

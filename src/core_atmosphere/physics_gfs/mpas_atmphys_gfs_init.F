@@ -5,9 +5,9 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_atmphys_init
- use mpas_configure
+ use mpas_dmpar
  use mpas_grid_types
  use mpas_timekeeping
 
@@ -35,27 +35,37 @@
 !>      calls per hour to subroutine GFS_initialize in mpas_atmphys_gfs_init.F, to compute the
 !>      variables nslwr and nsswr (number of long- and short-wave radiation calls per hour). 
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-03-19. 
+!>    * Modified sourcecode to use pools.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-06.
 
 
  contains
 
-!==================================================================================================
- subroutine physics_init(dminfo,clock,config_do_restart,mesh,diag,state_1,state_2, &
-                         diag_physics,atm_input,sfc_input)
-!==================================================================================================
+!=================================================================================================================
+ subroutine physics_init(dminfo,clock,configs,mesh,diag,state,time_lev,diag_physics,atm_input,sfc_input)
+!=================================================================================================================
 
 !input arguments:
- logical,intent(in):: config_do_restart
- type (dm_info), intent(in):: dminfo
- type(mesh_type),intent(in):: mesh
- type(diag_type),intent(in):: diag
+ integer,intent(in):: time_lev
+ type(dm_info),intent(in):: dminfo
+ type(mpas_pool_type),intent(in) :: configs
+ type(mpas_pool_type),intent(in) :: mesh
+ type(mpas_pool_type),intent(in) :: diag
  type(MPAS_Clock_type),intent(in):: clock
 
 !inout arguments:
- type(state_type),intent(inout):: state_1,state_2
- type(diag_physics_type),intent(inout):: diag_physics
- type(atm_input_type),intent(inout):: atm_input
- type(sfc_input_type),intent(inout):: sfc_input
+ type(mpas_pool_type),intent(inout):: state
+ type(mpas_pool_type),intent(inout):: diag_physics
+ type(mpas_pool_type),intent(inout):: atm_input
+ type(mpas_pool_type),intent(inout):: sfc_input
+
+!local pointers:
+ logical,pointer:: config_do_restart
+
+ integer,pointer:: nCellsSolve
+ integer,dimension(:),pointer:: ivgtyp
+
+ real(kind=RKIND),dimension(:),pointer:: tisfc,skintemp,zorl
 
 !local variables:
  type(MPAS_Time_Type):: initTime
@@ -66,15 +76,23 @@
  integer:: seed0
  real(kind=kind_evod) wrk(1)
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine physics_init:'
+
+ call mpas_pool_get_config(configs,'config_do_restart',config_do_restart)
+
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+
+ call mpas_pool_get_array(sfc_input   ,'ivgtyp'  ,ivgtyp  )
+ call mpas_pool_get_array(sfc_input   ,'skintemp',skintemp)
+ call mpas_pool_get_array(diag_physics,'tisfc'   ,tisfc   )
+ call mpas_pool_get_array(diag_physics,'zorl'    ,zorl    )
 
 !initialization of east-north directions to convert u-tendencies from cell centers to cell
 !edges:
  call init_dirs_forphys(mesh)
 
 !retrieve the initial starting date and initialize the array idate: 
- call mpas_set_time(curr_time=initTime,dateTimeString=mesh%initial_date%scalar,ierr=ierr)
  call mpas_get_time(curr_time=initTime,YYYY=year,MM=month,DD=day,H=hour)
  idate(1) = hour
  idate(2) = month
@@ -90,7 +108,7 @@
 !call mpas_get_time(curr_time=currTime,DoY=julday,ierr=ierr)
 
 !initialization of GFS non-radiation physics schemes:
- call GFS_initialize(dminfo,mesh)
+ call GFS_initialize(dminfo,configs,mesh)
 
 !abort MPAS if the new SAS convection scheme is not used. If RAS or old SAS are used, we need
 !to compute a random number seed (see additional sourcecode in gloopb.f):
@@ -105,19 +123,19 @@
 !length using the monthly-mean climatological surface roughness length zorl12m (see call to
 !subroutine physics_gfs_update_surface):
  if(.not.config_do_restart) then
-    do iCell = 1, mesh % nCellsSolve
-       if(sfc_input%ivgtyp%array(iCell) >= 1 .and. sfc_input%ivgtyp%array(iCell) <= 13) then
-          diag_physics%zorl%array(iCell) = z0_sib(sfc_input%ivgtyp%array(iCell))
-       elseif(sfc_input%ivgtyp%array(iCell) == 0) then
-          diag_physics%zorl%array(iCell) = 0.01
+    do iCell = 1, nCellsSolve
+       if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
+          zorl(iCell) = z0_sib(ivgtyp(iCell))
+       elseif(ivgtyp(iCell) == 0) then
+          zorl(iCell) = 0.01
        endif
     enddo
  endif
 
 !initialization of surface temperature over sea-ice cells:
  if(.not. config_do_restart) then
-    do iCell = 1, mesh % nCellsSolve
-       diag_physics % tisfc % array(iCell) = sfc_input % skintemp % array(iCell)
+    do iCell = 1, nCellsSolve
+       tisfc(iCell) = skintemp(iCell)
     enddo
  endif
 
@@ -135,13 +153,18 @@
 
  end subroutine physics_init
 
-!==================================================================================================
- subroutine GFS_initialize(dminfo,mesh)
-!==================================================================================================
+!=================================================================================================================
+ subroutine GFS_initialize(dminfo,configs,mesh)
+!=================================================================================================================
 
 !input arguments:
  type(dm_info),intent(in):: dminfo
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels,nSoilLevels,nGwd
+ real(kind=RKIND),pointer:: config_dt
 
 !local variables:
 !character(len=StrKIND):: gfs_namelist
@@ -157,7 +180,14 @@
  write(0,*)
  write(0,*) '--- enter subroutine GFS_initialize: dt_dyn=',dt_dyn
  write(0,*) '--- my_proc_id = ',dminfo % my_proc_id
- write(0,*) '--- IO_NODE    = ',IO_NODE
+!write(0,*) '--- IO_NODE    = ',IO_NODE
+
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+ call mpas_pool_get_dimension(mesh,'nSoilLevels',nSoilLevels)
+ call mpas_pool_get_dimension(mesh,'nGwd'       ,nGwd       )
+
+ call mpas_pool_get_config(configs,'config_dt',config_dt)
 
 !if(dminfo % my_proc_id == IO_NODE) me = 0
  me = dminfo % my_proc_id
@@ -172,9 +202,9 @@
 !the GFS physics. Those are default values used when running the GFS operational model, using
 !gfs_namelist.t574 from FangLin. Those options will be moved to namelist.input.
 
- deltim = config_dt        !model time-step.
- levs  = mesh % nVertLevels!number of model layers.
- lsoil = mesh % nSoilLevels!number of soil layers in the land-surface scheme.
+ deltim = config_dt  !model time-step.
+ levs  = nVertLevels !number of model layers.
+ lsoil = nSoilLevels !number of soil layers in the land-surface scheme.
 
  lssav            = .true. !logical that controls all outputs in subroutine gbphys.
  ldiag3d          = .true. !if set to true, output physics tendencies in subroutine gbphys.
@@ -246,8 +276,8 @@
                            !isubc_sw = 1: sub-grid clouds with prescribed seeds.
                            !isubc_sw = 2: sub-grid clouds with randomly generated seeds.
 !... other dimensions needed in the long- and short-wave radiation codes:
- lonf    = mesh%nCellsSolve
- lonr    = mesh%nCellsSolve
+ lonf    = nCellsSolve
+ lonr    = nCellsSolve
  if(ngptc.gt.lonr) ngptc = lonr
  latg   = 1
  latr   = 1
@@ -268,7 +298,8 @@
  ctei_rm  = 0.50
 
 !number of statistical fields for the parameterization of gravity wave drag:
- nmtvr    = mesh % nMtvr
+ nmtvr    = nGwd
+
 !random number:
  nrcm     = 2 
 
@@ -495,28 +526,32 @@
 
  end subroutine GFS_initialize
 
-!==================================================================================================
+!=================================================================================================================
  subroutine init_dirs_forphys(mesh)
-!==================================================================================================
+!=================================================================================================================
 
 !inout arguments:
-!----------------
- type(mesh_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: mesh
 
-!local variables:
- integer:: iCell
+!local pointers:
+ integer,pointer:: nCells
  real(kind=RKIND),dimension(:),pointer:: latCell,lonCell
  real(kind=RKIND),dimension(:,:),pointer:: east,north
 
-!--------------------------------------------------------------------------------------------------
+!local variables:
+ integer:: iCell
 
- latCell => mesh % latCell % array
- lonCell => mesh % lonCell % array
- east    => mesh % east  % array
- north   => mesh % north % array
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_dimension(mesh,'nCells',nCells)
+
+ call mpas_pool_get_array(mesh,'latCell',latCell)
+ call mpas_pool_get_array(mesh,'lonCell',lonCell)
+ call mpas_pool_get_array(mesh,'east'   ,east   )
+ call mpas_pool_get_array(mesh,'north'  ,north  )
 
 !Compute unit vectors in east and north directions for each cell:
- do iCell = 1, mesh % nCells
+ do iCell = 1, nCells
 
     east(1,iCell) = -sin(lonCell(iCell))
     east(2,iCell) =  cos(lonCell(iCell))
@@ -532,15 +567,15 @@
 
  end subroutine init_dirs_forphys
 
-!==================================================================================================
+!=================================================================================================================
  subroutine r3_normalize(ax, ay, az)
-!==================================================================================================
+!=================================================================================================================
 !normalizes the vector (ax, ay, az)
 
  real (kind=RKIND), intent(inout) :: ax, ay, az
  real (kind=RKIND) :: mi
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
 
  mi = 1.0 / sqrt(ax**2 + ay**2 + az**2)
  ax = ax * mi
@@ -549,8 +584,8 @@
 
  end subroutine r3_normalize
 
-!==================================================================================================
+!=================================================================================================================
  end module mpas_atmphys_init
-!==================================================================================================
+!=================================================================================================================
 
 
