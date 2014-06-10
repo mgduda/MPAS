@@ -234,12 +234,10 @@ ifneq ($(wildcard $(PIO)/lib), ) # Check for newer PIO version
 	CPPINCLUDES = -I$(NETCDF)/include -I$(PIO)/include -I$(PNETCDF)/include
 	FCINCLUDES = -I$(NETCDF)/include -I$(PIO)/include -I$(PNETCDF)/include
 	LIBS = -L$(PIO)/lib -L$(PNETCDF)/lib -L$(NETCDF)/lib -lpio -lpnetcdf
-	LIBS = -L$(PIO) -L$(PNETCDF)/lib -L$(NETCDF)/lib -lpio -lpnetcdf -lnetcdf -L/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/x86_64 -lgcc
 else
 	CPPINCLUDES = -I$(NETCDF)/include -I$(PIO) -I$(PNETCDF)/include
 	FCINCLUDES = -I$(NETCDF)/include -I$(PIO) -I$(PNETCDF)/include
 	LIBS = -L$(PIO) -L$(PNETCDF)/lib -L$(NETCDF)/lib -lpio -lpnetcdf
-	LIBS = -L$(PIO) -L$(PNETCDF)/lib -L$(NETCDF)/lib -lpio -lpnetcdf -lnetcdf -L/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/x86_64 -lgcc
 endif
 
 NCLIB = -lnetcdf

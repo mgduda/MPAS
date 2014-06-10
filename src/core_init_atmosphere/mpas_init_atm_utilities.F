@@ -18,17 +18,15 @@
  contains
 
 !==================================================================================================
- subroutine init_atm_check_read_error(istatus, fname, dminfo)
+ subroutine init_atm_check_read_error(istatus, fname)
 !==================================================================================================
  implicit none
 
  integer, intent(in) :: istatus
  character (len=*), intent(in) :: fname
- type (dm_info), intent(in) :: dminfo
 
- if (istatus /= 0) then
-     write(0,*) 'ERROR: Could not read file '//trim(fname)
-     call mpas_dmpar_abort(dminfo)
+if (istatus /= 0) then
+     call mpas_dmpar_global_abort('ERROR: Could not read file '//trim(fname))
  end if
 
  end subroutine init_atm_check_read_error

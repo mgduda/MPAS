@@ -53,7 +53,6 @@
  integer:: me
  integer:: ierr,iyear,imonth,imonth2,iday,ihour
 
- integer:: nVertLevels
  real(kind=RKIND),dimension(:),allocatable:: sigma
 
 !-----------------------------------------------------------------------------------------------------------------

@@ -5,9 +5,9 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_init_atm_static
-!==================================================================================================
+!=================================================================================================================
  use atm_advection
 ! use mpas_configure
  use mpas_dmpar
@@ -28,70 +28,40 @@
 
  contains
 
-!==================================================================================================
- subroutine init_atm_static(mesh, dims, configs)
-!==================================================================================================
+!=================================================================================================================
+ subroutine init_atm_static(mesh,dims,configs)
+!=================================================================================================================
 
 !inout arguments:
- type (mpas_pool_type), intent(inout) :: mesh
- type (mpas_pool_type), intent(in) :: dims
- type (mpas_pool_type), intent(in) :: configs
+ type (mpas_pool_type),intent(in) :: dims
+ type (mpas_pool_type),intent(in) :: configs
+ type (mpas_pool_type),intent(inout):: mesh
+
+!local pointers:
+ logical,pointer:: on_a_sphere
+ integer,pointer:: nCells,nEdges,nVertices,maxEdges
+ integer,dimension(:),pointer   :: nEdgesOnCell
+ integer,dimension(:,:),pointer :: cellsOnCell
+
+ real(kind=RKIND),pointer:: sphere_radius
+ real(kind=RKIND),dimension(:),pointer:: xCell,yCell,zCell
+ real(kind=RKIND),dimension(:),pointer:: xVertex,yVertex,zVertex
+ real(kind=RKIND),dimension(:),pointer:: xEdge,yEdge,zEdge
+ real(kind=RKIND),dimension(:),pointer:: dvEdge,dcEdge
+ real(kind=RKIND),dimension(:),pointer:: areaCell, areaTriangle
+ real(kind=RKIND),dimension(:),pointer:: latCell, lonCell
+ real(kind=RKIND),dimension(:),pointer:: latVertex, lonVertex
+ real(kind=RKIND),dimension(:),pointer:: latEdge, lonEdge
+ real(kind=RKIND),dimension(:),pointer:: fEdge, fVertex
+ real(kind=RKIND),dimension(:,:),pointer :: kiteAreasOnVertex
 
 !local variables:
- type(proj_info):: proj
-
- character(len=StrKIND) :: fname
  character(len=StrKIND), pointer :: config_geog_data_path
- character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
-
- integer:: nx,ny,nz
- integer:: endian,isigned,istatus,wordsize
- integer:: i,j,k
- integer:: iCell,iEdge,iVtx,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
- integer,dimension(5) :: interp_list
- integer,dimension(:),allocatable  :: nhs
- integer,dimension(:,:),allocatable:: ncat
-      
- real(kind=4):: scalefactor
- real(kind=4),dimension(:,:,:),allocatable:: rarray
-
- real(kind=RKIND):: lat,lon,x,y
- real(kind=RKIND):: lat_pt,lon_pt
- real(kind=RKIND),dimension(:,:),allocatable  :: soiltemp_1deg
- real(kind=RKIND),dimension(:,:),allocatable  :: maxsnowalb
- real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
-
- integer, pointer :: nCells, nEdges, nVertices, maxEdges
- logical, pointer :: on_a_sphere
- real (kind=RKIND), pointer :: sphere_radius
+ character(len=StrKIND+1) :: geog_data_path  ! same as config_geog_data_path, but guaranteed
+                                             !to have a trailing slash
+ integer:: i,iEdge,iVtx
  
- integer, dimension(:), pointer :: nEdgesOnCell
- integer, dimension(:,:), pointer :: cellsOnCell
- real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
- real (kind=RKIND), dimension(:), pointer :: xVertex, yVertex, zVertex
- real (kind=RKIND), dimension(:), pointer :: xEdge, yEdge, zEdge
- real (kind=RKIND), dimension(:), pointer :: dvEdge, dcEdge
- real (kind=RKIND), dimension(:), pointer :: areaCell, areaTriangle
- real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex
- real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
- real (kind=RKIND), dimension(:), pointer :: latVertex, lonVertex
- real (kind=RKIND), dimension(:), pointer :: latEdge, lonEdge
- real (kind=RKIND), dimension(:), pointer :: fEdge, fVertex
-
- real (kind=RKIND), dimension(:), pointer :: ter
- real (kind=RKIND), dimension(:), pointer :: soiltemp
- real (kind=RKIND), dimension(:), pointer :: snoalb
- real (kind=RKIND), dimension(:), pointer :: shdmin, shdmax
- real (kind=RKIND), dimension(:,:), pointer :: greenfrac
- real (kind=RKIND), dimension(:,:), pointer :: albedo12m
- integer, dimension(:), pointer :: lu_index
- integer, dimension(:), pointer :: soilcat_top
- integer, dimension(:), pointer :: soilcat_bot
- integer, dimension(:), pointer :: landmask
-
 !--------------------------------------------------------------------------------------------------
-
-
  write(0,*)
  write(0,*) '--- enter subroutine init_atm_static:'
 
@@ -106,53 +76,38 @@
 !
 ! Scale all distances and areas from a unit sphere to one with radius sphere_radius
 !
+ call mpas_pool_get_array(mesh,'xCell'       , xCell       )
+ call mpas_pool_get_array(mesh,'yCell'       , yCell       )
+ call mpas_pool_get_array(mesh,'zCell'       , zCell       )
+ call mpas_pool_get_array(mesh,'xVertex'     , xVertex     )
+ call mpas_pool_get_array(mesh,'yVertex'     , yVertex     )
+ call mpas_pool_get_array(mesh,'zVertex'     , zVertex     )
+ call mpas_pool_get_array(mesh,'xEdge'       , xEdge       )
+ call mpas_pool_get_array(mesh,'yEdge'       , yEdge       )
+ call mpas_pool_get_array(mesh,'zEdge'       , zEdge       )
+ call mpas_pool_get_array(mesh,'dcEdge'      , dcEdge      )
+ call mpas_pool_get_array(mesh,'dvEdge'      , dvEdge      )
+ call mpas_pool_get_array(mesh,'areaCell'    , areaCell    )
+ call mpas_pool_get_array(mesh,'areaTriangle', areaTriangle)
+ call mpas_pool_get_array(mesh,'latCell'     , latCell     )
+ call mpas_pool_get_array(mesh,'lonCell'     , lonCell     )
+ call mpas_pool_get_array(mesh,'latEdge'     , latEdge     )
+ call mpas_pool_get_array(mesh,'lonEdge'     , lonEdge     )
+ call mpas_pool_get_array(mesh,'latVertex'   , latVertex   )
+ call mpas_pool_get_array(mesh,'lonVertex'   , lonVertex   )
+ call mpas_pool_get_array(mesh,'fEdge'       , fEdge       )
+ call mpas_pool_get_array(mesh,'fVertex'     , fVertex     )
+ call mpas_pool_get_array(mesh,'nEdgesOnCell', nEdgesOnCell)
+ call mpas_pool_get_array(mesh,'cellsOnCell' , cellsOnCell )
+ call mpas_pool_get_array(mesh,'kiteAreasOnVertex',kiteAreasOnVertex)
 
+ call mpas_pool_get_config(mesh,'on_a_sphere'  , on_a_sphere  )
+ call mpas_pool_get_config(mesh,'sphere_radius', sphere_radius)
 
- call mpas_pool_get_array(mesh, 'xCell', xCell)
- call mpas_pool_get_array(mesh, 'yCell', yCell)
- call mpas_pool_get_array(mesh, 'zCell', zCell)
- call mpas_pool_get_array(mesh, 'xVertex', xVertex)
- call mpas_pool_get_array(mesh, 'yVertex', yVertex)
- call mpas_pool_get_array(mesh, 'zVertex', zVertex)
- call mpas_pool_get_array(mesh, 'xEdge', xEdge)
- call mpas_pool_get_array(mesh, 'yEdge', yEdge)
- call mpas_pool_get_array(mesh, 'zEdge', zEdge)
- call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
- call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
- call mpas_pool_get_array(mesh, 'areaCell', areaCell)
- call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
- call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
- call mpas_pool_get_array(mesh, 'latCell', latCell)
- call mpas_pool_get_array(mesh, 'lonCell', lonCell)
- call mpas_pool_get_array(mesh, 'latEdge', latEdge)
- call mpas_pool_get_array(mesh, 'lonEdge', lonEdge)
- call mpas_pool_get_array(mesh, 'latVertex', latVertex)
- call mpas_pool_get_array(mesh, 'lonVertex', lonVertex)
- call mpas_pool_get_array(mesh, 'fEdge', fEdge)
- call mpas_pool_get_array(mesh, 'fVertex', fVertex)
- 
- call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
- call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
-
- call mpas_pool_get_array(mesh, 'ter', ter)
- call mpas_pool_get_array(mesh, 'lu_index', lu_index)
- call mpas_pool_get_array(mesh, 'soilcat_top', soilcat_top)
- call mpas_pool_get_array(mesh, 'soilcat_bot', soilcat_bot)
- call mpas_pool_get_array(mesh, 'landmask', landmask)
- call mpas_pool_get_array(mesh, 'soiltemp', soiltemp)
- call mpas_pool_get_array(mesh, 'snoalb', snoalb)
- call mpas_pool_get_array(mesh, 'greenfrac', greenfrac)
- call mpas_pool_get_array(mesh, 'albedo12m', albedo12m)
- call mpas_pool_get_array(mesh, 'shdmin', shdmin)
- call mpas_pool_get_array(mesh, 'shdmax', shdmax)
-
- call mpas_pool_get_config(mesh, 'on_a_sphere', on_a_sphere)
- call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
-
- call mpas_pool_get_dimension(dims, 'nCells', nCells)
- call mpas_pool_get_dimension(dims, 'nEdges', nEdges)
- call mpas_pool_get_dimension(dims, 'nVertices', nVertices)
- call mpas_pool_get_dimension(dims, 'maxEdges', maxEdges)
+ call mpas_pool_get_dimension(dims,'nCells'   , nCells   )
+ call mpas_pool_get_dimension(dims,'nEdges'   , nEdges   )
+ call mpas_pool_get_dimension(dims,'nVertices', nVertices)
+ call mpas_pool_get_dimension(dims,'maxEdges' , maxEdges )
 
  xCell = xCell * sphere_radius
  yCell = yCell * sphere_radius
@@ -184,49 +139,58 @@
  !
  ! Compute weights used in advection and deformation calculation
  !
- call atm_initialize_advection_rk(mesh, nCells, nEdges, maxEdges, on_a_sphere, sphere_radius) 
- call atm_initialize_deformation_weights(mesh, nCells, on_a_sphere, sphere_radius) 
-
-!
-! Define path to the static fields for the WPS and GFS physics static fields:
-!
- write(geog_data_path, '(a)') config_geog_data_path
- i = len_trim(geog_data_path)
- if (geog_data_path(i:i) /= '/') then
-    geog_data_path(i+1:i+1) = '/'
- end if
+ call atm_initialize_advection_rk(mesh,nCells,nEdges,maxEdges,on_a_sphere,sphere_radius) 
+ call atm_initialize_deformation_weights(mesh,nCells,on_a_sphere,sphere_radius) 
 
 
 #ifdef DO_PHYSICS
 !
 ! Interpolate the static fields using the WPS data base:
 !
- call init_atm_static_fields(mesh,geog_data_path)
- call init_atm_static_orogwd(mesh,geog_data_path)
+ call init_atm_static_fields(dims,mesh,geog_data_path)
+ call init_atm_static_orogwd(dims,mesh,geog_data_path)
 
 #elif DO_PHYSICS_GFS
 !
 ! Interpolate the static fields using the GFS physics data base:
 !
- call init_atm_static_fields_forGFS(mesh,geog_data_path)
- call init_atm_static_orogwd_forGFS(mesh,geog_data_path)
+ call init_atm_static_fields_forGFS(dims,mesh,geog_data_path)
+ call init_atm_static_orogwd_forGFS(dims,mesh,geog_data_path)
+
 #endif
 
  end subroutine init_atm_static
 
-!==================================================================================================
- subroutine init_atm_static_fields(mesh,geog_data_path)
-!==================================================================================================
+!=================================================================================================================
+ subroutine init_atm_static_fields(dims,mesh,geog_data_path)
+!=================================================================================================================
 
 !input arguments:
  character(len=*),intent(in):: geog_data_path
+ type(mpas_pool_type),intent(in):: dims
 
 !inout arguments:
- type(mesh_type),intent(inout):: mesh
+ type(mpas_pool_type),intent(inout):: mesh
+
+!local pointers:
+ integer,pointer:: nCells,maxEdges
+ integer,dimension(:),pointer:: nEdgesOnCell
+ integer,dimension(:),pointer:: lu_index
+ integer,dimension(:),pointer:: soilcat_top
+ integer,dimension(:),pointer:: soilcat_bot
+ integer,dimension(:),pointer:: landmask
+
+ integer,dimension(:,:),pointer:: cellsOnCell
+
+ real(kind=RKIND),dimension(:),pointer:: latCell,lonCell
+ real(kind=RKIND),dimension(:),pointer:: shdmax,shdmin
+ real(kind=RKIND),dimension(:),pointer:: snoalb
+ real(kind=RKIND),dimension(:),pointer:: soiltemp
+ real(kind=RKIND),dimension(:),pointer:: ter
+ real(kind=RKIND),dimension(:,:),pointer:: albedo12m,greenfrac
 
 !local variables:
  type(proj_info):: proj
- type(dm_info),pointer :: dminfo
 
  character(len=StrKIND):: fname
 
@@ -234,7 +198,7 @@
  integer:: endian,isigned,istatus,wordsize
  integer:: i,j,k
  integer:: iCell,iEdge,iVtx,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
- integer,dimension(5) :: interp_list
+ integer,dimension(5):: interp_list
  integer,dimension(:),allocatable  :: nhs
  integer,dimension(:,:),allocatable:: ncat
 
@@ -247,10 +211,28 @@
  real(kind=RKIND),dimension(:,:),allocatable  :: maxsnowalb
  real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
 
-!--------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine init_atm_static_fields:'
 
- dminfo => mesh % block % domain % dminfo
+ call mpas_pool_get_dimension(dims,'nCells'  ,nCells  )
+ call mpas_pool_get_dimension(dims,'maxEdges',maxEdges)
+
+ call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
+ call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
+ call mpas_pool_get_array(mesh,'latCell'     ,latCell     )
+ call mpas_pool_get_array(mesh,'lonCell'     ,lonCell     )
+
+ call mpas_pool_get_array(mesh,'landmask'    ,landmask    )
+ call mpas_pool_get_array(mesh,'lu_index'    ,lu_index    )
+ call mpas_pool_get_array(mesh,'soilcat_top' ,soilcat_top )
+ call mpas_pool_get_array(mesh,'soilcat_bot' ,soilcat_bot )
+ call mpas_pool_get_array(mesh,'albedo12m'   ,albedo12m   )
+ call mpas_pool_get_array(mesh,'greenfrac'   ,greenfrac   )
+ call mpas_pool_get_array(mesh,'shdmax'      ,shdmax      )
+ call mpas_pool_get_array(mesh,'shdmin'      ,shdmin      )
+ call mpas_pool_get_array(mesh,'snoalb'      ,snoalb      )
+ call mpas_pool_get_array(mesh,'soiltemp'    ,soiltemp    )
+ call mpas_pool_get_array(mesh,'ter'         ,ter         )
 
 !
 ! Interpolate HGT
@@ -813,38 +795,41 @@
 
  end subroutine init_atm_static_fields
 
-!==================================================================================================
- subroutine init_atm_static_orogwd(mesh, dims, configs)
-!==================================================================================================
+!=================================================================================================================
+ subroutine init_atm_static_orogwd(dims,mesh,geog_data_path)
+!=================================================================================================================
 
 !input arguments:
  character(len=*),intent(in):: geog_data_path
+ type (mpas_pool_type),intent(in):: dims
 
 !inout arguments:
- type (mpas_pool_type), intent(inout) :: mesh
- type (mpas_pool_type), intent(in) :: dims
- type (mpas_pool_type), intent(in) :: configs
+ type (mpas_pool_type),intent(inout):: mesh
+
+!local pointers:
+ integer,pointer:: nCells,nEdges,maxEdges
+ integer,dimension(:)  ,pointer:: nEdgesOnCell
+ integer,dimension(:,:),pointer:: cellsOnCell
+ integer,dimension(:)  ,pointer:: landmask
+
+ real(kind=RKIND),dimension(:),pointer :: latCell, lonCell
+ real(kind=RKIND),dimension(:),pointer :: meshDensity
+ real(kind=RKIND),dimension(:),pointer :: dcEdge
+ real(kind=RKIND),dimension(:),pointer :: varsso
+ real(kind=RKIND),dimension(:),pointer :: con,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,var2d
 
 !local variables:
  type(proj_info):: proj
 
- character(len=StrKIND) :: mess
- character(len=StrKIND) :: fname
- character(len=StrKIND) :: dir_gwdo
- character(len=StrKIND), pointer :: config_geog_data_path
- character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
-
- integer, pointer :: nCells, nEdges, maxEdges
-
- integer, dimension(:), pointer :: nEdgesOnCell
- integer, dimension(:,:), pointer :: cellsOnCell
- integer, dimension(:), pointer :: landmask
+ character(len=StrKIND):: mess
+ character(len=StrKIND):: fname
+ character(len=StrKIND):: dir_gwdo
 
  integer:: nx,ny,nz
  integer:: endian,isigned,istatus,wordsize
  integer:: i,j
  integer:: iCell,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
- integer,dimension(5) :: interp_list
+ integer,dimension(5):: interp_list
  integer,dimension(:),allocatable:: nhs
 
  real(kind=4):: scalefactor
@@ -857,47 +842,33 @@
  real(kind=RKIND):: mindcEdge,maxdcEdge
  real(kind=RKIND),dimension(:,:),allocatable:: xarray
 
- real(kind=RKIND), dimension(:), pointer :: latCell, lonCell
- real(kind=RKIND), dimension(:), pointer :: meshDensity
- real(kind=RKIND), dimension(:), pointer :: dcEdge
- real(kind=RKIND), dimension(:), pointer :: varsso
- real(kind=RKIND), dimension(:), pointer :: con, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4, var2d
-
-
- call mpas_pool_get_dimension(dims, 'nCells', nCells)
- call mpas_pool_get_dimension(dims, 'nEdges', nEdges)
- call mpas_pool_get_dimension(dims, 'maxEdges', maxEdges)
-
- call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
- call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
- call mpas_pool_get_array(mesh, 'landmask', landmask)
- call mpas_pool_get_array(mesh, 'latCell', latCell)
- call mpas_pool_get_array(mesh, 'lonCell', lonCell)
- call mpas_pool_get_array(mesh, 'varsso', varsso)
- call mpas_pool_get_array(mesh, 'meshDensity', meshDensity)
- call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
- call mpas_pool_get_array(mesh, 'con', con)
- call mpas_pool_get_array(mesh, 'oa1', oa1)
- call mpas_pool_get_array(mesh, 'oa2', oa2)
- call mpas_pool_get_array(mesh, 'oa3', oa3)
- call mpas_pool_get_array(mesh, 'oa4', oa4)
- call mpas_pool_get_array(mesh, 'ol1', ol1)
- call mpas_pool_get_array(mesh, 'ol2', ol2)
- call mpas_pool_get_array(mesh, 'ol3', ol3)
- call mpas_pool_get_array(mesh, 'ol4', ol4)
- call mpas_pool_get_array(mesh, 'var2d', var2d)
-
-
+!-----------------------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine init_atm_static_orogwd:'
 
- call mpas_pool_get_config(configs, 'config_geog_data_path', config_geog_data_path)
+ call mpas_pool_get_dimension(dims,'nCells'  ,nCells  )
+ call mpas_pool_get_dimension(dims,'nEdges'  ,nEdges  )
+ call mpas_pool_get_dimension(dims,'maxEdges',maxEdges)
 
- write(geog_data_path, '(a)') config_geog_data_path
- i = len_trim(geog_data_path)
- if (geog_data_path(i:i) /= '/') then
-    geog_data_path(i+1:i+1) = '/'
- end if
+ call mpas_pool_get_array(mesh,'nEdgesOnCell',nEdgesOnCell)
+ call mpas_pool_get_array(mesh,'cellsOnCell' ,cellsOnCell )
+ call mpas_pool_get_array(mesh,'latCell'     ,latCell     )
+ call mpas_pool_get_array(mesh,'lonCell'     ,lonCell     )
+ call mpas_pool_get_array(mesh,'meshDensity' ,meshDensity )
+ call mpas_pool_get_array(mesh,'dcEdge'      ,dcEdge      )
+
+ call mpas_pool_get_array(mesh,'landmask',landmask)
+ call mpas_pool_get_array(mesh,'varsso'  ,varsso  )
+ call mpas_pool_get_array(mesh,'con'     ,con     )
+ call mpas_pool_get_array(mesh,'oa1'     ,oa1     )
+ call mpas_pool_get_array(mesh,'oa2'     ,oa2     )
+ call mpas_pool_get_array(mesh,'oa3'     ,oa3     )
+ call mpas_pool_get_array(mesh,'oa4'     ,oa4     )
+ call mpas_pool_get_array(mesh,'ol1'     ,ol1     )
+ call mpas_pool_get_array(mesh,'ol2'     ,ol2     )
+ call mpas_pool_get_array(mesh,'ol3'     ,ol3     )
+ call mpas_pool_get_array(mesh,'ol4'     ,ol4     )
+ call mpas_pool_get_array(mesh,'var2d'   ,var2d   )
 
 !
 ! Interpolate VARSSO:
@@ -2032,79 +2003,6 @@
  write(0,*) '--- end interpolate VAR2D'
 
  end subroutine init_atm_static_orogwd
-
-!==================================================================================================
- subroutine init_atm_check_read_error(istatus, fname)
-!==================================================================================================
- implicit none
-
- integer, intent(in) :: istatus
- character (len=*), intent(in) :: fname
-
- if (istatus /= 0) then
-     call mpas_dmpar_global_abort('ERROR: Could not read file '//trim(fname))
- end if
-
- end subroutine init_atm_check_read_error
-
-!==================================================================================================
- integer function nearest_cell(target_lat, target_lon, start_cell, nCells, maxEdges, &
-                               nEdgesOnCell, cellsOnCell, latCell, lonCell)
-!==================================================================================================
- implicit none
-
- real (kind=RKIND), intent(in) :: target_lat, target_lon
- integer, intent(in) :: start_cell
- integer, intent(in) :: nCells, maxEdges
- integer, dimension(nCells), intent(in) :: nEdgesOnCell
- integer, dimension(maxEdges,nCells), intent(in) :: cellsOnCell
- real (kind=RKIND), dimension(nCells), intent(in) :: latCell, lonCell
-
- integer :: i
- integer :: iCell
- integer :: current_cell
- real (kind=RKIND) :: current_distance, d
- real (kind=RKIND) :: nearest_distance
-
- nearest_cell = start_cell
- current_cell = -1
-
- do while (nearest_cell /= current_cell)
-    current_cell = nearest_cell
-    current_distance = sphere_distance(latCell(current_cell), lonCell(current_cell), target_lat, &
-                                       target_lon, 1.0_RKIND)
-    nearest_cell = current_cell
-    nearest_distance = current_distance
-    do i = 1, nEdgesOnCell(current_cell)
-       iCell = cellsOnCell(i,current_cell)
-       if (iCell <= nCells) then
-          d = sphere_distance(latCell(iCell), lonCell(iCell), target_lat, target_lon, 1.0_RKIND)
-          if (d < nearest_distance) then
-             nearest_cell = iCell
-             nearest_distance = d
-          end if
-       end if
-    end do
- end do
-
- end function nearest_cell
-
-!==================================================================================================
- real (kind=RKIND) function sphere_distance(lat1, lon1, lat2, lon2, radius)
-
-!Compute the great-circle distance between (lat1, lon1) and (lat2, lon2) on a
-!sphere with given radius.
-!==================================================================================================
- implicit none
-
- real (kind=RKIND), intent(in) :: lat1, lon1, lat2, lon2, radius
- real (kind=RKIND) :: arg1
-
- arg1 = sqrt( sin(0.5*(lat2-lat1))**2 +  &
-              cos(lat1)*cos(lat2)*sin(0.5*(lon2-lon1))**2 )
- sphere_distance = 2.*radius*asin(arg1)
-
- end function sphere_distance
 
 !==================================================================================================
  end module mpas_init_atm_static

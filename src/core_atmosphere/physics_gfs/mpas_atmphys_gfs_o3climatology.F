@@ -237,7 +237,7 @@
  do k = 1, nOznLevels
     do nc = 1, nOznPlCoeff
        do iCell = 1, nCellsSolve
-          o3clim(k,nc,iCell) = ozmixm(10,k,nc,iCell)
+          o3clim(k,nc,iCell) = ozmixm(9,k,nc,iCell)
        enddo
     enddo
  enddo

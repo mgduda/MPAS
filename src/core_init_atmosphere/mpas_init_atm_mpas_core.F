@@ -25,6 +25,7 @@ module mpas_core
       type (block_type), pointer :: block
       type (mpas_pool_type), pointer :: state, mesh 
       character (len=StrKIND), pointer :: xtime
+      character (len=StrKIND), pointer :: initial_date
       character (len=StrKIND), pointer :: config_start_time
       real (kind=RKIND), pointer :: sphere_radius
 
@@ -36,12 +37,14 @@ module mpas_core
          call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
          call mpas_pool_get_config(block % configs, 'config_start_time', config_start_time)
 
+         call mpas_pool_get_array(mesh,'initial_date',initial_date)
+
          startTimeStamp = config_start_time
          xtime = config_start_time
          domain % sphere_radius = a      ! Appears in output files
          sphere_radius = a               ! Used in setting up test cases
 
-         block % mesh % initial_date % scalar = startTimeStamp
+!        block % mesh % initial_date % scalar = startTimeStamp
          block => block % next
       end do 
 

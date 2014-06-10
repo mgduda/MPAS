@@ -24,7 +24,7 @@
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
                 <dim name="nMonths"            definition="namelist:config_months"/>
                 <dim name="nSeasons"           definition="namelist:config_seasons"/>
-                <dim name="nMtvr"              definition="namelist:config_nmtvr"/>/
+                <dim name="nGwd"               definition="namelist:config_ngwd"/>/
         </dims>
 
 
@@ -49,7 +49,7 @@
                 <nml_option name="config_nfgsoillevels"         type="integer"       default_value="4"/>
                 <nml_option name="config_months"                type="integer"       default_value="12"      in_defaults="false"/>
                 <nml_option name="config_seasons"               type="integer"       default_value="4"       in_defaults="false"/>
-                <nml_option name="config_nmtvr"                 type="integer"       default_value="14"      in_defaults="false"/>
+                <nml_option name="config_ngwd"                  type="integer"       default_value="14"      in_defaults="false"/>
         </nml_record>
 
         <nml_record name="data_sources" in_defaults="true">
@@ -486,7 +486,7 @@
                 <var name="alvwf4s"                              type="real"     dimensions="nSeasons nCells"/>
                 <var name="slope"                                type="real"     dimensions="nCells"/>
                 <var name="zorl12m"                              type="real"     dimensions="nMonths nCells"/>
-                <var name="orogwd"                               type="real"     dimensions="nMtvr nCells"/>
+                <var name="orogwd"                               type="real"     dimensions="nGwd nCells"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="hx"                         type="real"     dimensions="nVertLevelsP1 nCells"/>

@@ -195,7 +195,6 @@ module init_atm_cases
                   call mpas_dmpar_abort(domain % dminfo)
                end if
 
-<<<<<<< HEAD
                call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
             end if
             call init_atm_case_gfs(block_ptr, mesh, nCells, nEdges, nVertLevels, fg, state, &
@@ -203,7 +202,8 @@ module init_atm_cases
 #ifdef DO_PHYSICS
             if (config_met_interp) call physics_initialize_real(mesh, fg, domain % dminfo, block_ptr % dimensions, block_ptr % configs)
 #elif DO_PHYSICS_GFS
-            if (config_met_interp) call physics_gfs_initialize_real(block_ptr % mesh, block_ptr % fg, domain % dminfo)
+            if (config_met_interp) call physics_gfs_initialize_real(block_ptr % configs, block_ptr % dimensions, mesh, &
+                                                                    fg, domain % dminfo)
 #endif
 
             block_ptr => block_ptr % next
