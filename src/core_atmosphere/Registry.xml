@@ -989,6 +989,11 @@
                 <nml_option name="config_bucket_update"           type="character"     default_value="06:00:00"/>
         </nml_record>
 
+        <nml_record name="physics" in_defaults="true">
+                <nml_option name="config_oml1d"                      type="logical"       default_value="false"      in_defaults="false"/>
+                <nml_option name="config_oml_hml0"                   type="real"          default_value="30.0"       in_defaults="false"/>
+        </nml_record>
+
 <!-- =========================================================================================================== -->
 <!--  DECLARATIONS OF ALL GFS PHYSICS VARIABLES:                                                                 -->
 <!-- =========================================================================================================== -->
@@ -1007,6 +1012,40 @@
              <var name="ozmixm" type="real" dimensions="nMonths nOznLevels nOznPlCoeff nCells"
                   units="kg kg^{-1}" description="input climatological ozone mixing ratio"
              />
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... FIELDS CREATED FROM WRF PHYSICS THAT GO INTO DIAGNOSTICS FILES                                 -->
+                <!-- ================================================================================================== -->
+                <var name="refl10cm_max"  type="real"     dimensions="nCells Time"/>
+                <var name="precipw"       type="real"     dimensions="nCells Time"/>
+
+                <var name="u10"           type="real"     dimensions="nCells Time"/>
+                <var name="v10"           type="real"     dimensions="nCells Time"/>
+                <var name="q2"            type="real"     dimensions="nCells Time"/>
+                <var name="t2m"           type="real"     dimensions="nCells Time"/>
+                <var name="th2m"          type="real"     dimensions="nCells Time"/>
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF THE 1D OCEAN MIXED LAYER                                                   -->
+                <!-- ================================================================================================== -->
+
+                <!-- t_oml              :ocean mixed layer temperature                                              [K] -->
+                <!-- t_oml_initial      :ocean mixed layer temperature at initial time                              [K] -->
+                <!-- t_oml_200m_initial :ocean mixed layer 100 m mean temperature at initial time                   [K] -->
+                <!-- h_oml              :ocean mixed layer depth                                                    [m] -->
+                <!-- h_oml_initial      :ocean mixed layer depth at initial time                                    [m] -->
+                <!-- hu_oml             :ocean mixed layer integrated u (zonal velocity)                        [m^2/s] -->
+                <!-- hv_oml             :ocean mixed layer integrated v (meridional velocity)                   [m^2/s] -->
+
+                <var name="t_oml"                 type="real"     dimensions="nCells Time"/>
+                <var name="t_oml_initial"         type="real"     dimensions="nCells Time"/>
+                <var name="t_oml_100m_initial"    type="real"     dimensions="nCells Time"/>
+                <var name="h_oml"                 type="real"     dimensions="nCells Time"/>
+                <var name="h_oml_initial"         type="real"     dimensions="nCells Time"/>
+                <var name="hu_oml"                type="real"     dimensions="nCells Time"/>
+                <var name="hv_oml"                type="real"     dimensions="nCells Time"/>
 
         </var_struct>
         <!-- end var_struct atm_input --> 
