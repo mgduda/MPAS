@@ -543,8 +543,6 @@
                 <var name="q2"                                type="real"     dimensions="nCells Time"/>
                 <var name="t2m"                               type="real"     dimensions="nCells Time"/>
                 <var name="rh2"                               type="real"     dimensions="nCells Time"/>
- 
->>>>>>> Changes to MPAS-A initialization and model to save surface fields in
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
