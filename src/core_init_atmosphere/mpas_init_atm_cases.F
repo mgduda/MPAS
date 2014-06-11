@@ -184,15 +184,15 @@ module init_atm_cases
                !     will have convex partitions, it's safer to just stop if multiple MPI tasks are
                !     detected when performing the static_interp step.
                !  
-!               if (domain % dminfo % nprocs > 1) then
-!                  write(0,*) ' '
-!                  write(0,*) '****************************************************************'
-!                  write(0,*) 'Error: Interpolation of static fields does not work in parallel.'
-!                  write(0,*) 'Please run the static_interp step using only a single MPI task.'
-!                  write(0,*) '****************************************************************'
-!                  write(0,*) ' '
-!                  call mpas_dmpar_abort(domain % dminfo)
-!               end if
+               if (domain % dminfo % nprocs > 1) then
+                  write(0,*) ' '
+                  write(0,*) '****************************************************************'
+                  write(0,*) 'Error: Interpolation of static fields does not work in parallel.'
+                  write(0,*) 'Please run the static_interp step using only a single MPI task.'
+                  write(0,*) '****************************************************************'
+                  write(0,*) ' '
+                  call mpas_dmpar_abort(domain % dminfo)
+               end if
 
                call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
                call init_atm_static_orogwd(mesh, block_ptr % dimensions, block_ptr % configs)
@@ -2587,7 +2587,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: uReconstructMeridional
 
       real (kind=RKIND), dimension(:), pointer :: psfc
-      real (kind=RKIND), dimension(:), pointer :: t2m
+      real (kind=RKIND), dimension(:), pointer :: t2
       real (kind=RKIND), dimension(:), pointer :: q2
       real (kind=RKIND), dimension(:), pointer :: rh2
       real (kind=RKIND), dimension(:), pointer :: skintemp
@@ -2695,7 +2695,7 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'st_fg', st_fg)
       call mpas_pool_get_array(fg, 'sm_fg', sm_fg)
       call mpas_pool_get_array(fg, 'psfc', psfc)
-      call mpas_pool_get_array(fg, 't2m', t2m)
+      call mpas_pool_get_array(fg, 't2', t2)
       call mpas_pool_get_array(fg, 'q2', q2)
       call mpas_pool_get_array(fg, 'rh2', rh2)
       call mpas_pool_get_array(fg, 'skintemp', skintemp)
@@ -3869,7 +3869,7 @@ write(0,*) 'Interpolating SKINTEMP'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 't2m', destField1d)
+               call mpas_pool_get_array(fg, 't2', destField1d)
                ndims = 1
                is_sfc_field = .true.
             else if (index(field % field, 'RH') /= 0 .and. vert_level(k) == 200100.0) then
@@ -4260,7 +4260,7 @@ write(0,*) 'PROCESSING SEAICE'
       do iCell=1,nCells
 
          ! Q2
-         es = 6.112 * exp((17.27*(t2m(iCell) - 273.16))/(t2m(iCell) - 35.86))
+         es = 6.112 * exp((17.27*(t2(iCell) - 273.16))/(t2(iCell) - 35.86))
          rs = 0.622 * es * 100. / (psfc(iCell) - es * 100.)
          q2(iCell) = 0.01 * rs * rh2(iCell)
     
