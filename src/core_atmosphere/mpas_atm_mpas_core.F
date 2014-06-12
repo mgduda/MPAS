@@ -652,6 +652,7 @@ module mpas_core
       type (field1DReal), pointer :: vorticity_200hPa
       type (field1DReal), pointer :: vorticity_500hPa
       type (field1DReal), pointer :: vorticity_850hPa
+      type (field1DReal), pointer :: mslp
 
 
       call MPAS_createStream(hifreq_stream, trim(fname), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, ierr)
@@ -681,6 +682,7 @@ module mpas_core
       call mpas_pool_get_field(diag_physics, 'rainnc', rainnc)
       call mpas_pool_get_field(diag_physics, 'refl10cm_max', refl10cm_max)
       call mpas_pool_get_field(diag_physics, 'precipw', precipw)
+      call mpas_pool_get_field(diag, 'mslp', mslp)
       call mpas_pool_get_field(diag, 'temperature_200hPa', temperature_200hPa)
       call mpas_pool_get_field(diag, 'temperature_500hPa', temperature_500hPa)
       call mpas_pool_get_field(diag, 'temperature_850hPa', temperature_850hPa)
@@ -706,6 +708,7 @@ module mpas_core
       call MPAS_streamAddField(hifreq_stream, rainnc, ierr)
       call MPAS_streamAddField(hifreq_stream, refl10cm_max, ierr)
       call MPAS_streamAddField(hifreq_stream, precipw, ierr)
+      call MPAS_streamAddField(hifreq_stream, mslp, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_500hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_850hPa, ierr)
