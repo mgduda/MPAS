@@ -216,6 +216,7 @@
 			<var name="v10"/>
 			<var name="q2"/>
 			<var name="t2"/>
+			<var name="precipw"/>
 			<var name="dzs"/>
 			<var name="sh2o"/>
 			<var name="smois"/>
