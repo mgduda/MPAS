@@ -636,7 +636,7 @@ module mpas_core
       type (field1DReal), pointer :: glw
       type (field1DReal), pointer :: u10
       type (field1DReal), pointer :: v10
-      type (field1DReal), pointer :: t2m
+      type (field1DReal), pointer :: t2
       type (field1DReal), pointer :: q2
       type (field1DReal), pointer :: cd
       type (field1DReal), pointer :: ck
@@ -708,7 +708,7 @@ module mpas_core
       call mpas_pool_get_field(diag_physics, 'glw', glw)
       call mpas_pool_get_field(diag_physics, 'u10', u10)
       call mpas_pool_get_field(diag_physics, 'v10', v10)
-      call mpas_pool_get_field(diag_physics, 't2m', t2m)
+      call mpas_pool_get_field(diag_physics, 't2', t2)
       call mpas_pool_get_field(diag_physics, 'q2', q2)
       call mpas_pool_get_field(diag_physics, 'cd', cd)
       call mpas_pool_get_field(diag_physics, 'ck', ck)
@@ -757,7 +757,7 @@ module mpas_core
       call MPAS_streamAddField(hifreq_stream, glw, ierr)
       call MPAS_streamAddField(hifreq_stream, u10, ierr)
       call MPAS_streamAddField(hifreq_stream, v10, ierr)
-      call MPAS_streamAddField(hifreq_stream, t2m, ierr)
+      call MPAS_streamAddField(hifreq_stream, t2, ierr)
       call MPAS_streamAddField(hifreq_stream, q2, ierr)
       call MPAS_streamAddField(hifreq_stream, cd, ierr)
       call MPAS_streamAddField(hifreq_stream, ck, ierr)
