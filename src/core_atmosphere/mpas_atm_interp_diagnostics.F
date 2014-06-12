@@ -389,6 +389,7 @@
 
 !... compute SLP (requires temp, height, pressure, qvapor)
  call compute_slp(nCells, nVertLevels, temperature, height, pressure, qvapor, tmp)
+ tmp(:) = tmp(:) * 100.0   ! Convert from hPa to Pa
 !... alternative way
 !do iCell = 1, nCells
 !   tmp(iCell) = diag % surface_pressure % array(iCell) + 11.38*height(1,iCell)
@@ -564,7 +565,7 @@
           write(0,*) 'Troubles finding level ', pconst,' above ground.'
           write(0,*) 'Problems first occur at (',icol,')'
           write(0,*) 'Surface pressure = ',p(1,icol),' hPa.'
-          STOP 'Error_in_finding_100_hPa_up'
+          call mpas_dmpar_global_abort('ERROR: Error_in_finding_100_hPa_up')
        end if
    
     end do
@@ -580,7 +581,7 @@
        if ( klo .eq. khi ) then
           write(0,*) 'Trapping levels are weird.'
           write(0,*) 'klo = ',klo,', khi = ',khi, ': and they should not be equal.'
-          STOP 'Error_trapping_levels'
+          call mpas_dmpar_global_abort('ERROR: Error_trapping_levels')
        end if
    
        plo = p(klo,icol)
