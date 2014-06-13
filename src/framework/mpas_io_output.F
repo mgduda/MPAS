@@ -384,7 +384,7 @@ module mpas_io_output
           write(runCmd,'(a,i0,a,a)') 'mpirun -n ',domain % dminfo % nProcs, ' ', trim(domain % executableName)
       end if
  
-      call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, nferr)
+      call MPAS_createStream(output_obj % io_stream, trim(output_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_WRITE, 1, ierr=nferr)
 
       if (domain % on_a_sphere) then
          call MPAS_writeStreamAtt(output_obj % io_stream, 'on_a_sphere', 'YES             ', nferr)

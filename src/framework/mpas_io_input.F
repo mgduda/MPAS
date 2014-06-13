@@ -470,7 +470,7 @@ module mpas_io_input
  
       integer :: nferr
  
-      call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, nferr)
+      call MPAS_createStream(input_obj % io_stream, trim(input_obj % filename), MPAS_IO_PNETCDF, MPAS_IO_READ, 1, ierr=nferr)
       if (nferr /= MPAS_STREAM_NOERR) then
          write(stderrUnit,*) ' '
          if (input_obj % stream == STREAM_RESTART) then

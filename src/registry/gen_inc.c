@@ -390,7 +390,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r0Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r0Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 1) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), r1Ptr)\n", spacing, pool_name, iterator_name);
@@ -398,7 +398,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r1Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r1Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 2) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), r2Ptr)\n", spacing, pool_name, iterator_name);
@@ -406,7 +406,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r2Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r2Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r2Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r2Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 3) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), r3Ptr)\n", spacing, pool_name, iterator_name);
@@ -414,7 +414,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r3Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r3Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r3Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r3Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 4) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), r4Ptr)\n", spacing, pool_name, iterator_name);
@@ -422,7 +422,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r4Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r4Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r4Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r4Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 5) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), r5Ptr)\n", spacing, pool_name, iterator_name);
@@ -430,7 +430,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (r5Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (r5Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r5Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, r5Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   end if\n", spacing);
 	fortprintf(fd, "%selse if (%s %% fieldType == MPAS_POOL_INTEGER) then\n", spacing, iterator_name);
@@ -440,7 +440,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (i0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (i0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i0Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i0Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 1) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), i1Ptr)\n", spacing, pool_name, iterator_name);
@@ -448,7 +448,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (i1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (i1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i1Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i1Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 2) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), i2Ptr)\n", spacing, pool_name, iterator_name);
@@ -456,7 +456,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (i2Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (i2Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i2Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i2Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 3) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), i3Ptr)\n", spacing, pool_name, iterator_name);
@@ -464,7 +464,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (i3Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (i3Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i3Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, i3Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   end if\n", spacing);
 	fortprintf(fd, "%selse if (%s %% fieldType == MPAS_POOL_CHARACTER) then\n", spacing, iterator_name);
@@ -474,7 +474,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (c0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (c0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, c0Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, c0Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   else if (%s %% nDims == 1) then\n", spacing, iterator_name);
 	fortprintf(fd, "%s      call mpas_pool_get_field(%s, trim(%s %% memberName), c1Ptr)\n", spacing, pool_name, iterator_name);
@@ -482,7 +482,7 @@ int write_set_field_pointer(FILE *fd, const char *spacing, const char *iterator_
 	fortprintf(fd, "%s           .or. (c1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n", spacing);
 	fortprintf(fd, "%s           .or. (c1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n", spacing);
 	fortprintf(fd, "%s           ) ) then\n", spacing);
-	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, c1Ptr, nferr)\n", spacing);
+	fortprintf(fd, "%s         call mpas_streamAddField(input_obj %% io_stream, c1Ptr, ierr=nferr)\n", spacing);
 	fortprintf(fd, "%s      end if\n", spacing);
 	fortprintf(fd, "%s   end if\n", spacing);
 	fortprintf(fd, "%send if\n", spacing);
@@ -2329,7 +2329,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r1Ptr, 1)\n", pool_name, iterator_name);
@@ -2337,7 +2337,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r1Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r1Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 2) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r2Ptr, 1)\n", pool_name, iterator_name);
@@ -2345,7 +2345,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r2Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r2Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r2Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r2Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 3) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r3Ptr, 1)\n", pool_name, iterator_name);
@@ -2353,7 +2353,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r3Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r3Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r3Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r3Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 4) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r4Ptr, 1)\n", pool_name, iterator_name);
@@ -2361,7 +2361,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r4Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r4Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r4Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r4Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 5) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r5Ptr, 1)\n", pool_name, iterator_name);
@@ -2369,7 +2369,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r5Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (r5Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r5Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, r5Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            else if (%s %% dataType == MPAS_POOL_INTEGER) then\n", iterator_name);
@@ -2379,7 +2379,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (i0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i1Ptr, 1)\n", pool_name, iterator_name);
@@ -2387,7 +2387,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (i1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i1Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i1Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 2) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i2Ptr, 1)\n", pool_name, iterator_name);
@@ -2395,7 +2395,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i2Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (i2Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i2Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i2Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 3) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i3Ptr, 1)\n", pool_name, iterator_name);
@@ -2403,7 +2403,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i3Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (i3Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i3Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, i3Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            else if (%s %% dataType == MPAS_POOL_CHARACTER) then\n", iterator_name);
@@ -2413,7 +2413,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (c0Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 		fortprintf(fd, "                       .or. (c0Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, c0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, c0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 	// There isn't a routine for adding a 1D Char field to a stream.
 //		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
@@ -2422,7 +2422,7 @@ int generate_field_inputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 //		fortprintf(fd, "                       .or. (c1Ptr %% ioinfo %% restart .and. input_obj %% stream == STREAM_RESTART) &\n");
 //		fortprintf(fd, "                       .or. (c1Ptr %% ioinfo %% sfc .and. input_obj %% stream == STREAM_SFC) &\n");
 //		fortprintf(fd, "                       ) ) then\n");
-//		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, c1Ptr, nferr)\n");
+//		fortprintf(fd, "                     call mpas_streamAddField(input_obj %% io_stream, c1Ptr, ierr=nferr)\n");
 //		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            end if\n");
@@ -2484,7 +2484,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r0Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r0Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r1Ptr, 1)\n", pool_name, iterator_name);
@@ -2492,7 +2492,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r1Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r1Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r1Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r1Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 2) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r2Ptr, 1)\n", pool_name, iterator_name);
@@ -2500,7 +2500,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r2Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r2Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r2Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r2Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 3) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r3Ptr, 1)\n", pool_name, iterator_name);
@@ -2508,7 +2508,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r3Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r3Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r3Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r3Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 4) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r4Ptr, 1)\n", pool_name, iterator_name);
@@ -2516,7 +2516,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r4Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r4Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r4Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r4Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 5) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), r5Ptr, 1)\n", pool_name, iterator_name);
@@ -2524,7 +2524,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (r5Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (r5Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r5Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, r5Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            else if (%s %% dataType == MPAS_POOL_INTEGER) then\n", iterator_name);
@@ -2534,7 +2534,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i0Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (i0Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i1Ptr, 1)\n", pool_name, iterator_name);
@@ -2542,7 +2542,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i1Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (i1Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i1Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i1Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 2) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i2Ptr, 1)\n", pool_name, iterator_name);
@@ -2550,7 +2550,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i2Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (i2Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i2Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i2Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               else if (%s %% nDims == 3) then\n", iterator_name);
 		fortprintf(fd, "                  call mpas_pool_get_field(%s, trim(%s %% memberName), i3Ptr, 1)\n", pool_name, iterator_name);
@@ -2558,7 +2558,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (i3Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (i3Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i3Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, i3Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            else if (%s %% dataType == MPAS_POOL_CHARACTER) then\n", iterator_name);
@@ -2568,7 +2568,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 		fortprintf(fd, "                       .or. (c0Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 		fortprintf(fd, "                       .or. (c0Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 		fortprintf(fd, "                       ) then\n");
-		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, c0Ptr, nferr)\n");
+		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, c0Ptr, ierr=nferr)\n");
 		fortprintf(fd, "                  end if\n");
 	// There isn't a routine for adding a 1D Char field to a stream.
 //		fortprintf(fd, "               else if (%s %% nDims == 1) then\n", iterator_name);
@@ -2577,7 +2577,7 @@ int generate_field_outputs(FILE *fd, int curLevel, ezxml_t superStruct){/*{{{*/
 //		fortprintf(fd, "                       .or. (c1Ptr %% ioinfo %% restart .and. output_obj %% stream == RESTART) &\n");
 //		fortprintf(fd, "                       .or. (c1Ptr %% ioinfo %% sfc .and. output_obj %% stream == SFC) &\n");
 //		fortprintf(fd, "                       ) ) then\n");
-//		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, c1Ptr, nferr)\n");
+//		fortprintf(fd, "                     call mpas_streamAddField(output_obj %% io_stream, c1Ptr, ierr=nferr)\n");
 //		fortprintf(fd, "                  end if\n");
 		fortprintf(fd, "               end if\n");
 		fortprintf(fd, "            end if\n");
