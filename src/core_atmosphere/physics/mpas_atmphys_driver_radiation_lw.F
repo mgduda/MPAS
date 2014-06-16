@@ -72,6 +72,8 @@
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-22.
 !>    * Modified sourcecode to use pools.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-05-15.
+!>    * Removed diagnostics of the long-wave upward and downward radiative fluxes (flx and flxc).
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-17.
 
 
  contains
@@ -112,11 +114,6 @@
  radiation_lw_select: select case (trim(radt_lw_scheme))
 
     case("rrtmg_lw")
-       if(.not.allocated(lwdnflx_p)    ) allocate(lwdnflx_p(ims:ime,kms:kme+1,jms:jme)     )
-       if(.not.allocated(lwdnflxc_p)   ) allocate(lwdnflxc_p(ims:ime,kms:kme+1,jms:jme)    )
-       if(.not.allocated(lwupflx_p)    ) allocate(lwupflx_p(ims:ime,kms:kme+1,jms:jme)     )
-       if(.not.allocated(lwupflxc_p)   ) allocate(lwupflxc_p(ims:ime,kms:kme+1,jms:jme)    )
-
        if(.not.allocated(pin_p)        ) allocate(pin_p(num_oznlevels)                     )
        if(.not.allocated(o3clim_p)     ) allocate(o3clim_p(ims:ime,1:num_oznlevels,jms:jme))
 
@@ -196,11 +193,6 @@
  radiation_lw_select: select case (trim(radt_lw_scheme))
 
     case("rrtmg_lw")
-       if(allocated(lwdnflx_p)    ) deallocate(lwdnflx_p    )
-       if(allocated(lwdnflxc_p)   ) deallocate(lwdnflxc_p   )
-       if(allocated(lwupflx_p)    ) deallocate(lwupflx_p    )
-       if(allocated(lwupflxc_p)   ) deallocate(lwupflxc_p   )
-
        if(allocated(pin_p)        ) deallocate(pin_p        )
        if(allocated(o3clim_p)     ) deallocate(o3clim_p     )
 
@@ -350,17 +342,6 @@
  radiation_lw_select: select case (trim(radt_lw_scheme))
 
     case("rrtmg_lw")
-       do j = jts,jte
-       do k = kts,kte+2
-       do i = its,ite
-          lwdnflx_p(i,k,j)  = 0.0_RKIND
-          lwdnflxc_p(i,k,j) = 0.0_RKIND
-          lwupflx_p(i,k,j)  = 0.0_RKIND
-          lwupflxc_p(i,k,j) = 0.0_RKIND
-       enddo
-       enddo
-       enddo
-
        if(config_o3climatology) then
           !ozone mixing ratio:
           do k = 1, num_oznLevels

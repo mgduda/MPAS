@@ -70,6 +70,8 @@
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-04-22.
 !>    * Modified sourcecode to use pools.
 !>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-05-15.
+!>    * Removed diagnostics of the short-wave upward and downward radiative fluxes (flx and flxc).
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-17.
 
 
  contains
@@ -121,11 +123,6 @@
        if(.not.allocated(swvisdif_p)   ) allocate(swvisdif_p(ims:ime,jms:jme)              )
        if(.not.allocated(swnirdir_p)   ) allocate(swnirdir_p(ims:ime,jms:jme)              )
        if(.not.allocated(swnirdif_p)   ) allocate(swnirdif_p(ims:ime,jms:jme)              )
-
-       if(.not.allocated(swdnflx_p)    ) allocate(swdnflx_p(ims:ime,kms:kme+1,jms:jme)     )
-       if(.not.allocated(swdnflxc_p)   ) allocate(swdnflxc_p(ims:ime,kms:kme+1,jms:jme)    )
-       if(.not.allocated(swupflx_p)    ) allocate(swupflx_p(ims:ime,kms:kme+1,jms:jme)     )
-       if(.not.allocated(swupflxc_p)   ) allocate(swupflxc_p(ims:ime,kms:kme+1,jms:jme)    )
 
        if(.not.allocated(pin_p)        ) allocate(pin_p(num_oznlevels)                     )
        if(.not.allocated(o3clim_p)     ) allocate(o3clim_p(ims:ime,1:num_oznlevels,jms:jme))
@@ -212,11 +209,6 @@
        if(allocated(alswvisdif_p) ) deallocate(alswvisdif_p )
        if(allocated(alswnirdir_p) ) deallocate(alswnirdir_p )
        if(allocated(alswnirdif_p) ) deallocate(alswnirdif_p )
-
-       if(allocated(swdnflx_p)    ) deallocate(swdnflx_p    )
-       if(allocated(swdnflxc_p)   ) deallocate(swdnflxc_p   )
-       if(allocated(swupflx_p)    ) deallocate(swupflx_p    )
-       if(allocated(swupflxc_p)   ) deallocate(swupflxc_p   )
 
        if(allocated(pin_p)        ) deallocate(pin_p        )
        if(allocated(o3clim_p)     ) deallocate(o3clim_p     )
@@ -363,17 +355,6 @@
  radiation_sw_select: select case (trim(radt_sw_scheme))
 
     case("rrtmg_sw")
-       do j = jts,jte
-       do k = kts,kte+2
-       do i = its,ite
-          swdnflx_p(i,k,j)  = 0.0_RKIND
-          swdnflxc_p(i,k,j) = 0.0_RKIND
-          swupflx_p(i,k,j)  = 0.0_RKIND
-          swupflxc_p(i,k,j) = 0.0_RKIND
-       enddo
-       enddo
-       enddo
-
        !ozone volum mixing ratio:
        if(config_o3climatology) then
           do k = 1, num_oznLevels
@@ -504,7 +485,6 @@
 !local pointers:
  real(kind=RKIND),dimension(:),pointer  :: coszr,gsw,swcf,swdnb,swdnbc,swdnt,swdntc, &
                                            swupb,swupbc,swupt,swuptc
-!real(kind=RKIND),dimension(:,:),pointer:: swdnflx,swdnflxc,swupflx,swupflxc
  real(kind=RKIND),dimension(:,:),pointer:: rthratensw
 
 !--------------------------------------------------------------------------------------------------
@@ -520,10 +500,6 @@
  call mpas_pool_get_array(diag_physics,'swupbc'    , swupbc   )
  call mpas_pool_get_array(diag_physics,'swupt'     ,swupt     )
  call mpas_pool_get_array(diag_physics,'swuptc'    ,swuptc    )
-!call mpas_pool_get_array(diag_physics,'swdnflx'   ,swdnflx   )
-!call mpas_pool_get_array(diag_physics,'swdnflxc'  ,swdnflxc  )
-!call mpas_pool_get_array(diag_physics,'swupflx'   ,swupflx   )
-!call mpas_pool_get_array(diag_physics,'swupflxc'  ,swupflxc  )
  call mpas_pool_get_array(tend_physics,'rthratensw',rthratensw)
 
  do j = jts,jte
@@ -541,15 +517,6 @@
     swupt(i)  = swupt_p(i,j)
     swuptc(i) = swuptc_p(i,j)
  enddo
-!not needed:
-!do k = kts,kte+2
-!do i = its,ite
-!   swdnflx(k,i)  = swdnflx_p(i,k,j)
-!   swdnflxc(k,i) = swdnflxc_p(i,k,j)
-!   swupflx(k,i)  = swupflx_p(i,k,j)
-!   swupflxc(k,i) = swupflxc_p(i,k,j)
-!enddo
-!enddo
 
  do k = kts,kte
  do i = its,ite
