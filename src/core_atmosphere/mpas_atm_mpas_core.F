@@ -641,6 +641,11 @@ module mpas_core
       type (field1DReal), pointer :: cd
       type (field1DReal), pointer :: ck
       type (field1DReal), pointer :: skintemp
+      type (field1DReal), pointer :: t_iso_levels
+      type (field1DReal), pointer :: z_iso_levels
+      type (field2DReal), pointer :: t_isobaric
+      type (field2DReal), pointer :: z_isobaric
+      type (field1DReal), pointer :: meanT_500_300
       type (field1DReal), pointer :: temperature_200hPa
       type (field1DReal), pointer :: temperature_500hPa
       type (field1DReal), pointer :: temperature_700hPa
@@ -715,6 +720,11 @@ module mpas_core
       call mpas_pool_get_field(diag, 'mslp', mslp)
       call mpas_pool_get_field(diag, 'surface_pressure', surface_pressure)
       call mpas_pool_get_field(sfc_input, 'skintemp', skintemp)
+      call mpas_pool_get_field(mesh, 't_iso_levels', t_iso_levels)
+      call mpas_pool_get_field(mesh, 'z_iso_levels', z_iso_levels)
+      call mpas_pool_get_field(diag, 't_isobaric', t_isobaric)
+      call mpas_pool_get_field(diag, 'z_isobaric', z_isobaric)
+      call mpas_pool_get_field(diag, 'meanT_500_300', meanT_500_300)
       call mpas_pool_get_field(diag, 'temperature_200hPa', temperature_200hPa)
       call mpas_pool_get_field(diag, 'temperature_500hPa', temperature_500hPa)
       call mpas_pool_get_field(diag, 'temperature_700hPa', temperature_700hPa)
@@ -764,6 +774,11 @@ module mpas_core
       call MPAS_streamAddField(hifreq_stream, mslp, ierr)
       call MPAS_streamAddField(hifreq_stream, skintemp, ierr)
       call MPAS_streamAddField(hifreq_stream, surface_pressure, ierr)
+      call MPAS_streamAddField(hifreq_stream, t_iso_levels, ierr)
+      call MPAS_streamAddField(hifreq_stream, z_iso_levels, ierr)
+      call MPAS_streamAddField(hifreq_stream, t_isobaric, ierr)
+      call MPAS_streamAddField(hifreq_stream, z_isobaric, ierr)
+      call MPAS_streamAddField(hifreq_stream, meanT_500_300, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_200hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_500hPa, ierr)
       call MPAS_streamAddField(hifreq_stream, temperature_700hPa, ierr)
