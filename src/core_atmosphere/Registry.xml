@@ -603,6 +603,11 @@
 			<var name="ke"/>
 			<var name="pv_vertex"/>
 			<var name="pv_cell"/>
+			<var name="ertel_pv"/>
+			<var name="theta_pv"/>
+			<var name="u_pv"/>
+			<var name="v_pv"/>
+			<var name="vort_pv"/>
 			<var name="uReconstructX"/>
 			<var name="uReconstructY"/>
 			<var name="uReconstructZ"/>
@@ -1041,7 +1046,13 @@
                 <var name="ke"                      type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="pv_vertex"               type="real"     dimensions="nVertLevels nVertices Time"/>
                 <var name="pv_cell"                 type="real"     dimensions="nVertLevels nCells Time"/>
-
+                
+                <var name="ertel_pv" type="real" dimensions="nVertLevels nCells Time"/>
+                <var name="theta_pv" type="real" dimensions="nCells Time"/>
+                <var name="u_pv" type="real" dimensions="nCells Time"/>
+                <var name="v_pv" type="real" dimensions="nCells Time"/>
+                <var name="vort_pv" type="real" dimensions="nCells Time"/>
+                
                 <!-- reconstructed horizontal velocity vectors at cell centers -->
                 <var name="uReconstructX"           type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="uReconstructY"           type="real"     dimensions="nVertLevels nCells Time"/>

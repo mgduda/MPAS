@@ -429,6 +429,7 @@ module mpas_core
             call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
             call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
+            !call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
             call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
 
             call insert_string_suffix('diagnostics.nc', trim(timeStamp), tempfilename)
@@ -535,7 +536,10 @@ module mpas_core
    
       integer :: iCell, k
       integer, pointer :: nCells, nVertLevels, index_qv
+      real (kind=RKIND) :: pvuVal, missingVal
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
+      type (field2DReal), pointer :: theta_f, uReconstructX_f, uReconstructY_f, uReconstructZ_f, w_f
+      type (field2DReal), pointer :: rthratenlw_f, rthratensw_f, rthcuten_f, rthblten_f, dtheta_dt_mp_f, theta_euler_f
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
@@ -559,7 +563,30 @@ module mpas_core
       end do
 
       call interp_diagnostics(mesh, state, time_lev, diag, diag_physics)
-   
+      
+      !nick szapiro
+      write(0,*) "Calculating ertel pv"
+      !need halo cells for everything w/ horizontal derivative
+      call mpas_pool_get_field(state, 'w', w_f, time_lev)
+      call mpas_pool_get_field(diag, 'uReconstructX', uReconstructX_f)
+      call mpas_pool_get_field(diag, 'uReconstructY', uReconstructY_f)
+      call mpas_pool_get_field(diag, 'uReconstructZ', uReconstructZ_f)
+      call mpas_pool_get_field(diag, 'theta', theta_f)
+
+      call mpas_dmpar_exch_halo_field(theta_f)
+      call mpas_dmpar_exch_halo_field(uReconstructX_f)
+      call mpas_dmpar_exch_halo_field(uReconstructY_f)
+      call mpas_dmpar_exch_halo_field(uReconstructZ_f)
+      call mpas_dmpar_exch_halo_field(w_f)
+      
+      call calc_ertel_pv(mesh, time_lev, state, diag)
+      
+      pvuVal = 2.0_RKIND
+      missingVal = -99999.0_RKIND
+      call interp_pv_diagnostics(mesh, diag, pvuVal, missingVal)
+                     
+      write(0,*) "Calculating dpv_dt"
+      
    end subroutine atm_compute_output_diagnostics
    
    
@@ -1168,5 +1195,720 @@ module mpas_core
       ierr = 0
 
    end subroutine mpas_core_setup_packages!}}}
+   
+   subroutine calc_ertel_pv(mesh, time_lev, state, diag)
+
+      implicit none
+      
+      type (mpas_pool_type), intent(in)  :: mesh
+      type (mpas_pool_type), intent(in) :: state
+      type (mpas_pool_type), intent(inout) :: diag
+      integer, intent(in) :: time_lev
+
+      integer :: iCell, k
+      integer, pointer :: nCellsSolve, nVertLevels
+      integer, dimension(:), pointer :: nEdgesOnCell
+      integer, dimension(:,:), pointer :: cellsOnCell, cellsOnEdge, edgesOnCell, verticesOnCell, &
+                                          cellsOnVertex
+      real(kind=RKIND), dimension(:), pointer :: dvEdge, areaCell
+      real(kind=RKIND), dimension(:,:), pointer :: ertel_pv, w, theta, rho, vorticity, zgrid, &
+                                                   localVerticalUnitVectors, edgeNormalVectors, kiteAreasOnVertex, &
+                                                   uReconstructX, uReconstructY, uReconstructZ
+      real(kind=RKIND), dimension(:,:,:), pointer :: cellTangentPlane
+      
+      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      
+      call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
+      call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
+      call mpas_pool_get_array(mesh, 'verticesOnCell', verticesOnCell)
+      call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
+      call mpas_pool_get_array(mesh, 'cellsOnVertex', cellsOnVertex)
+      call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
+      call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'cellTangentPlane', cellTangentPlane)
+      call mpas_pool_get_array(mesh, 'localVerticalUnitVectors', localVerticalUnitVectors)
+      call mpas_pool_get_array(mesh, 'edgeNormalVectors', edgeNormalVectors)
+      call mpas_pool_get_array(mesh, 'zgrid', zgrid)
+      
+      call mpas_pool_get_array(diag, 'ertel_pv', ertel_pv)
+      call mpas_pool_get_array(state, 'w', w, time_lev)
+      call mpas_pool_get_array(diag, 'theta', theta)
+      call mpas_pool_get_array(diag, 'rho', rho)
+      call mpas_pool_get_array(diag, 'vorticity', vorticity)
+      call mpas_pool_get_array(diag, 'uReconstructX', uReconstructX)
+      call mpas_pool_get_array(diag, 'uReconstructY', uReconstructY)
+      call mpas_pool_get_array(diag, 'uReconstructZ', uReconstructZ)
+
+      do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            ertel_pv(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, nEdgesOnCell(iCell), verticesOnCell, &
+                                                  kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,theta,rho(k,iCell),vorticity)
+
+         end do 
+      end do 
+
+   end subroutine calc_ertel_pv
+   
+   real(kind=RKIND) function driver_ertelPV_cell_reconstruct(iCell, level, nVertLevels, nEdgesCell0, verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell0, &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,theta,rho0,vorticity)
+
+      !We'll use the local xyz system for each cell since it's well aligned with physical gradients.
+      !x,y are the tangent plane and z is the radially out.
+      !For velocity du/dz and dv/dz, we'll use the reconstructed horizontal
+      !velocity at cell centers
+
+      !Full curl is (dw/dy-dv/dz)i + (du/dz-dw/dx)j + (dv/dx-du/dy)k
+      !k component is solved for already through circulation to vertices. We'll use
+      !the kite_areas weighting as in pv_cell to get it at the cell centers.
+
+      !The other components of vorticity are:
+      !(dw/dy-dv/dz)i + (du/dz-dw/dx)j where velocities are in the local coordinate system.
+      !We'll also need dTheta/dX, dTheta/dY, dTheta/dZ.
+      !For all these, it's finite volume gradients in the
+      !horizontal and finite differencing in the vertical.
+                                                 
+      implicit none
+
+      real(kind=RKIND), intent(in) :: rho0, areaCell0
+      real(kind=RKIND), dimension(:), intent(in) :: dvEdge
+      real(kind=RKIND), dimension(3,2,*), intent(in) :: cellTangentPlane
+      real(kind=RKIND), dimension(3,*), intent(in) :: localVerticalUnitVectors, edgeNormalVectors
+      real(kind=RKIND), dimension(:,:), intent(in) :: zgrid,uReconstructX, uReconstructY, uReconstructZ, &
+                                                      w, theta, vorticity, kiteAreasOnVertex
+      integer, intent(in) :: iCell, level, nVertLevels, nEdgesCell0
+      integer, dimension(:,:), intent(in) :: cellsOnCell, edgesOnCell, cellsOnEdge, verticesOnCell, cellsOnVertex
+      
+      integer :: i, iNbr, iEdge
+      real(kind=RKIND) :: val0, valNbr, volumeCell, areaFactor, z0, zp, zm, valp, valm, dw_dx, dw_dy, du_dz, dv_dz
+      real(kind=RKIND), dimension(3) :: gradxu, gradtheta, unitDeriv, velCell0, velCellp, velCellm
+      real(kind=RKIND), dimension(3,3) :: xyzLocal
+      real(kind=RKIND), dimension(nEdgesCell0) :: valEdges, dvEdgeCell, dhEdge
+      real(kind=RKIND), dimension(3,nEdgesCell0) :: normalEdgeCell
+
+      !local coordinate system
+      call coordinateSystem_cell(cellTangentPlane, localVerticalUnitVectors, iCell, xyzLocal)
+      !normal vectors at voronoi polygon edges pointing out of cell
+      do i=1,nEdgesCell0
+         iNbr = cellsOnCell(i, iCell)
+         !dhEdge(i) = calc_heightVerticalEdge(iCell, iNbr, level, zgrid) !vertical thickness of that face
+         !if don't want to consider 3d cell since we haven't calculated the cell
+         !volume well, set all thicknesses to be the same
+         dhEdge(i) = 100.0_RKIND
+
+         iEdge = edgesOnCell(i,iCell)
+         dvEdgeCell(i) = dvEdge(iEdge)
+         val0 = fluxSign(iCell, iEdge, cellsOnEdge)
+         normalEdgeCell(:,i) = edgeNormalVectors(:,iEdge)
+         call normalizeVector(normalEdgeCell(:,i),3)
+         normalEdgeCell(:,i) = normalEdgeCell(:,i)*val0
+      end do
+
+      volumeCell = calcVolumeCell(areaCell0, nEdgesCell0, dhEdge)
+
+      !Need to get 3d curl and grad theta
+      !horizontal derivatives
+      !calc_horizDeriv_fv(valEdges, nNbrs, dvEdge, dhEdge, &
+      !                                         normalEdge, unitDeriv, volumeCell)
+      !theta
+      val0 = theta(level, iCell)
+      do i=1,nEdgesCell0
+         iNbr = cellsOnCell(i, iCell)
+         valNbr = theta(level,iNbr)
+         valEdges(i) = 0.5*(valNbr+val0)
+      end do
+      unitDeriv(:) = xyzLocal(:,1)
+      gradtheta(1) = calc_horizDeriv_fv(valEdges, nEdgesCell0, dvEdgeCell, dhEdge, normalEdgeCell, unitDeriv, volumeCell)
+      unitDeriv(:) = xyzLocal(:,2)
+      gradtheta(2) = calc_horizDeriv_fv(valEdges, nEdgesCell0, dvEdgeCell, dhEdge, normalEdgeCell, unitDeriv, volumeCell)
+
+      !w
+      val0 = .5*(w(level+1, iCell)+w(level, iCell))
+      do i=1,nEdgesCell0
+         iNbr = cellsOnCell(i, iCell)
+         valNbr = .5*(w(level+1, iNbr)+w(level, iNbr))
+         valEdges(i) = 0.5*(valNbr+val0)
+      end do
+      unitDeriv(:) = xyzLocal(:,1)
+      dw_dx = calc_horizDeriv_fv(valEdges, nEdgesCell0, dvEdgeCell, dhEdge, normalEdgeCell, unitDeriv, volumeCell)
+      unitDeriv(:) = xyzLocal(:,2)
+      dw_dy = calc_horizDeriv_fv(valEdges, nEdgesCell0, dvEdgeCell, dhEdge, normalEdgeCell, unitDeriv, volumeCell)
+
+      !vertical derivatives
+      !calc_heightCellCenter(c0, level, zgrid) calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+      !theta
+      gradtheta(3) = 0.0_RKIND
+      z0 = calc_heightCellCenter(iCell, level, zgrid)
+      val0 = theta(level, iCell)
+      if (level>1) then
+         !have cell beneath
+         valm = theta(level-1, iCell)
+         zm = calc_heightCellCenter(iCell, level-1, zgrid)
+      end if
+      if (level<nVertLevels) then
+         !have cell above
+         valp = theta(level+1, iCell)
+         zp = calc_heightCellCenter(iCell, level+1, zgrid)
+      end if
+
+      if (level==1) then
+         !calc_vertDeriv_one(valp, valm, dz)
+         gradtheta(3) = calc_vertDeriv_one(valp, val0, zp-z0)
+      else if (level==nVertLevels) then
+         gradtheta(3) = calc_vertDeriv_one(val0, valm, z0-zm)
+      else
+         gradtheta(3) = calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+      end if
+
+      !du/dz and dv/dz
+      velCell0(1) = uReconstructX(level,iCell)
+      velCell0(2) = uReconstructY(level,iCell)
+      velCell0(3) = uReconstructZ(level,iCell)
+      if (level>1) then
+         !have cell beneath
+         velCellm(1) = uReconstructX(level-1,iCell)
+         velCellm(2) = uReconstructY(level-1,iCell)
+         velCellm(3) = uReconstructZ(level-1,iCell)
+      end if
+      if (level<nVertLevels) then
+         !have cell above
+         velCellp(1) = uReconstructX(level+1,iCell)
+         velCellp(2) = uReconstructY(level+1,iCell)
+         velCellp(3) = uReconstructZ(level+1,iCell)
+      end if
+
+      if (level==1) then
+         !calc_vertDeriv_one(valp, valm, dz)
+         !u
+         val0 = dotProduct(velCell0, xyzLocal(:,1),3)
+         valp = dotProduct(velCellp, xyzLocal(:,1),3)
+         du_dz = calc_vertDeriv_one(valp, val0, zp-z0)
+         !v
+         val0 = dotProduct(velCell0, xyzLocal(:,2),3)
+         valp = dotProduct(velCellp, xyzLocal(:,2),3)
+         dv_dz = calc_vertDeriv_one(valp, val0, zp-z0)
+      else if (level==nVertLevels) then
+         !u
+         val0 = dotProduct(velCell0, xyzLocal(:,1),3)
+         valm = dotProduct(velCellm, xyzLocal(:,1),3)
+         du_dz = calc_vertDeriv_one(val0, valm, z0-zm)
+         !v
+         val0 = dotProduct(velCell0, xyzLocal(:,2),3)
+         valm = dotProduct(velCellp, xyzLocal(:,2),3)
+         dv_dz = calc_vertDeriv_one(val0, valm, z0-zm)
+
+      else
+         !u
+         val0 = dotProduct(velCell0, xyzLocal(:,1),3)
+         valp = dotProduct(velCellp, xyzLocal(:,1),3)
+         valm = dotProduct(velCellm, xyzLocal(:,1),3)
+         du_dz = calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+         !v
+         val0 = dotProduct(velCell0, xyzLocal(:,2),3)
+         valp = dotProduct(velCellp, xyzLocal(:,2),3)
+         valm = dotProduct(velCellm, xyzLocal(:,2),3)
+         dv_dz = calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+      end if
+
+      gradxu(3) = calc_verticalVorticity_cell(iCell, level, nEdgesCell0, verticesOnCell, cellsOnVertex, &
+                                              kiteAreasOnVertex, areaCell0, vorticity)
+
+      gradxu(1) = dw_dy-dv_dz
+      gradxu(2) = du_dz-dw_dx
+      
+      driver_ertelPV_cell_reconstruct = formErtelPV(gradxu, gradtheta, rho0, xyzLocal(:,1), xyzLocal(:,2), xyzLocal(:,3))
+   end function driver_ertelPV_cell_reconstruct
+   
+    real(kind=RKIND) function dotProduct(a, b, sz)
+
+      implicit none
+
+      real(kind=RKIND), dimension(:), intent(in) :: a, b
+      integer, intent(in) :: sz
+
+      integer :: i
+      real(kind=RKIND) :: rsum
+
+      rsum = 0.0_RKIND
+
+      do i=1,sz
+         rsum = rsum + a(i)*b(i)
+      end do
+
+      dotProduct = rsum
+   end function dotProduct
+
+   integer function elementIndexInArray(val, array, sz)
+
+      implicit none
+
+      integer, intent(in) :: val
+      integer, dimension(:), intent(in) :: array
+      integer, intent(in) :: sz
+
+      integer :: i, ind
+      ind = -1
+      do i=1,sz
+         if (array(i)==val) then
+            ind = i
+            elementIndexInArray = ind !This returns, right?
+         end if
+      end do
+      elementIndexInArray = ind
+   end function elementIndexInArray
+   
+   real(kind=RKIND) function formErtelPV(gradxu, gradtheta, density, unitX, unitY, unitZ)
+
+      use mpas_constants, only : omega_e => omega
+
+      implicit none
+
+      real(kind=RKIND), dimension(3), intent(inout) :: gradxu
+      real(kind=RKIND), dimension(3), intent(in) :: gradtheta
+      real(kind=RKIND), intent(in) :: density
+      real(kind=RKIND), dimension(3), intent(in) :: unitX, unitY, unitZ
+
+      real(kind=RKIND) :: epv, eVort
+      real(kind=RKIND), dimension(3) :: eVortDir, eVortComponents
+
+      !earth vorticity is in z-direction in global Cartesian space
+      eVort = 2.0 * omega_e
+      eVortDir(1) = 0.0_RKIND
+      eVortDir(2) = 0.0_RKIND
+      eVortDir(3) = eVort
+
+      eVortComponents(1) = dotProduct(eVortDir, unitX,3)
+      eVortComponents(2) = dotProduct(eVortDir, unitY,3)
+      eVortComponents(3) = dotProduct(eVortDir, unitZ,3)
+
+      gradxu(:) = gradxu(:) + eVortComponents(:)
+
+      epv = dotProduct(gradxu, gradtheta,3) / density
+
+      epv = epv * 1.0e6 !SI to PVUs
+    
+      formErtelPV = epv
+   end function formErtelPV
+   
+   real(kind=RKIND) function calc_verticalVorticity_cell(c0, level, nVerticesOnCell, verticesOnCell, cellsOnVertex, &
+                                                         kiteAreasOnVertex, areaCell, vVortVertex)
+      !area weighted average of vorticity at vertices (really midpts of faces) to cell center for the specified cell
+      !
+      implicit none
+
+      real(kind=RKIND), intent(in) :: areaCell
+      integer, intent(in) :: c0, level, nVerticesOnCell
+      integer, dimension(:,:), intent(in) :: verticesOnCell, cellsOnVertex
+      real(kind=RKIND), dimension(:,:), intent(in) :: kiteAreasOnVertex, vVortVertex
+
+      real(kind=RKIND) :: vVortCell
+      integer :: i, iVertex, cellIndOnVertex
+
+      vVortCell = 0.0_RKIND
+      do i = 1,nVerticesOnCell
+         iVertex = verticesOnCell(i,c0)
+         cellIndOnVertex = elementIndexInArray(c0, cellsOnVertex(:,iVertex), 3)
+         vVortCell = vVortCell + kiteAreasOnVertex(cellIndOnVertex, iVertex)*vVortVertex(level, iVertex)/areaCell
+      end do
+
+      calc_verticalVorticity_cell = vVortCell
+   end function calc_verticalVorticity_cell
+
+   subroutine coordinateSystem_cell(cellTangentPlane, localVerticalUnitVectors, c0, xyz)
+
+      implicit none
+
+      real(kind=RKIND), dimension(3,2,*), intent(in) :: cellTangentPlane
+      real(kind=RKIND), dimension(3,*), intent(in) :: localVerticalUnitVectors
+      integer, intent(in) :: c0
+      real(kind=RKIND), dimension(3,3), intent(out) :: xyz
+
+      integer :: i
+
+      xyz(:,1) = cellTangentPlane(:,1,c0) !are these guaranteed unit vectors?
+      xyz(:,2) = cellTangentPlane(:,2,c0)
+      xyz(:,3) = localVerticalUnitVectors(:,c0)
+      do i=1,2
+         call normalizeVector(xyz(:,i), 3)
+      end do
+   end subroutine coordinateSystem_cell
+
+   real(kind=RKIND) function fluxSign(c0, iEdge, cellsOnEdge)
+      
+      !For finite volume computations, we'll use a normal pointing out of the cell
+      implicit none
+
+      integer, intent(in) :: c0
+      integer, intent(in) :: iEdge
+      integer, dimension(:,:), intent(in) :: cellsOnEdge
+
+      if (c0 == cellsOnEdge(1,iEdge)) then
+         fluxSign = 1.0_RKIND
+      else
+         fluxSign = -1.0_RKIND
+      end if
+   end function fluxSign
+
+   real(kind=RKIND) function calc_heightCellCenter(c0, level, zgrid)
+
+      implicit none
+
+      integer, intent(in) :: c0, level
+      real(kind=RKIND), dimension(:,:), intent(in) :: zgrid
+
+      calc_heightCellCenter = 0.5*(zgrid(level,c0)+zgrid(level+1,c0))
+   end function calc_heightCellCenter
+
+   real(kind=RKIND) function calc_heightVerticalEdge(c0, c1, level, zgrid)
+
+      implicit none
+
+      integer, intent(in) :: c0, c1, level
+      real(kind=RKIND), dimension(:,:), intent(in) :: zgrid
+
+      real(kind=RKIND) :: hTop, hBottom
+
+      hTop = .5*(zgrid(level+1,c0)+zgrid(level+1,c1))
+      hBottom = .5*(zgrid(level,c0)+zgrid(level,c1))
+
+      calc_heightVerticalEdge = hTop-hBottom
+   end function calc_heightVerticalEdge
+
+   subroutine normalizeVector(vals, sz)
+      !normalize a vector to unit magnitude
+      implicit none
+
+      real (kind=RKIND), dimension(:), intent(inout) :: vals
+      integer, intent(in) :: sz
+
+      integer :: i
+      real (kind=RKIND) :: mag
+
+      mag = 0.0_RKIND !sqrt(sum(squares))
+      do i=1,sz
+         mag = mag+vals(i)*vals(i)
+      end do
+      mag = sqrt(mag)
+      vals(:) = vals(:)/mag
+   end subroutine normalizeVector
+
+   real(kind=RKIND) function calcVolumeCell(areaCell, nEdges, hEdge)
+
+      implicit none
+
+      integer, intent(in) :: nEdges
+      real(kind=RKIND), intent(in) :: areaCell
+      real(kind=RKIND), dimension(nEdges), intent(in) :: hEdge
+
+      integer :: i
+      real(kind=RKIND) :: avgHt, vol
+
+      avgHt = 0.0_RKIND
+      do i=1,nEdges
+         avgHt = avgHt + hEdge(i)
+      end do
+      avgHt = avgHt/nEdges
+
+      vol = areaCell*avgHt
+      calcVolumeCell = vol
+   end function calcVolumeCell
+
+   real(kind=RKIND) function calc_horizDeriv_fv(valEdges, nNbrs, dvEdge, dhEdge, &
+                                                normalEdge, unitDeriv, volumeCell)
+      !normals to edges point out of cell
+      implicit none
+
+      integer, intent(in) :: nNbrs
+      real(kind=RKIND), dimension(:), intent(in) :: valEdges, dvEdge, dhEdge
+      real(kind=RKIND), dimension(3,nNbrs), intent(in) :: normalEdge
+      real(kind=RKIND), dimension(3), intent(in) :: unitDeriv
+      real(kind=RKIND), intent(in) :: volumeCell
+
+      integer :: i
+      real(kind=RKIND) :: vale, rsum, areaFace
+      real(kind=RKIND), dimension(3) :: unitNormalEdge
+
+      rsum = 0.0_RKIND
+      do i=1,nNbrs
+         vale = valEdges(i) !0.5 * (val0 + valNbrs(i))
+         areaFace = dvEdge(i) * dhEdge(i)
+         unitNormalEdge(:) = normalEdge(:,i)
+         call normalizeVector(unitNormalEdge,3)
+         areaFace = areaFace*dotProduct(unitNormalEdge, unitDeriv,3)  !* abs(dotProduct(unitNormalEdge, unitDeriv,3))
+         rsum = rsum + vale * areaFace
+      end do
+      rsum = rsum / volumeCell
+
+      calc_horizDeriv_fv = rsum
+   end function calc_horizDeriv_fv
+
+   real(kind=RKIND) function calc_vertDeriv_velocity(nEdgesCell0, unitDeriv, hEdge, dvEdge, cellsOnCell, &
+                                                     edgesOnCell, &
+                                                     edgeNormalVectors, u, zgrid, iCell, level, nVertLevels)
+      implicit none
+
+      integer, intent(in) :: nEdgesCell0, iCell, level, nVertLevels
+      integer, dimension(:,:), intent(in) :: cellsOnCell, edgesOnCell
+      real(kind=RKIND), dimension(3), intent(in) :: unitDeriv
+      real(kind=RKIND), dimension(nEdgesCell0), intent(in) :: hEdge, dvEdge
+      real(kind=RKIND), dimension(3,*), intent(in) :: edgeNormalVectors 
+      real(kind=RKIND), dimension(:,:), intent(in) :: u, zgrid
+
+      integer :: i, iNbr, iEdge
+      real(kind=RKIND) :: areaFace, val0, valp, valm, z0, zp, zm, dval_dz, netArea
+      real(kind=RKIND), dimension(3) :: edgeUnitNormal
+      real(kind=RKIND), dimension(nEdgesCell0) :: areaFactor, valEdges
+      
+      if (level==1) then
+         !just cell and above.
+         !get derivatives at faces
+         do i = 1, nEdgesCell0
+            iNbr = cellsOnCell(i, iCell)
+            z0 = .5*(calc_heightCellCenter(iCell, level, zgrid)+calc_heightCellCenter(iNbr, level, zgrid))
+            zp = .5*(calc_heightCellCenter(iCell, level+1, zgrid)+calc_heightCellCenter(iNbr, level+1, zgrid))
+            iEdge = edgesOnCell(i,iCell)
+            val0 = u(level, iEdge)
+            valp = u(level+1, iEdge)
+
+            !velocity component in direction of derivative
+            edgeUnitNormal(:) = edgeNormalVectors(:,iEdge)
+            call normalizeVector(edgeUnitNormal,3)
+            areaFactor(i) = dotProduct(edgeUnitNormal, unitDeriv,3)
+            val0 = val0*areaFactor(i)
+            valp = valp*areaFactor(i)
+            valEdges(i) = calc_vertDeriv_one(valp, valm, zp-z0)
+         end do
+
+      else if (level==nVertLevels) then
+         !cell and below
+         do i = 1, nEdgesCell0
+            iNbr = cellsOnCell(i, iCell)
+            z0 = .5*(calc_heightCellCenter(iCell, level, zgrid)+calc_heightCellCenter(iNbr, level, zgrid))
+            zm = .5*(calc_heightCellCenter(iCell, level-1, zgrid)+calc_heightCellCenter(iNbr, level-1, zgrid))
+            iEdge = edgesOnCell(i,iCell)
+            val0 = u(level, iEdge)
+            valm = u(level-1, iEdge)
+
+            !velocity component in direction of derivative
+            edgeUnitNormal(:) = edgeNormalVectors(:,iEdge)
+            call normalizeVector(edgeUnitNormal,3)
+            areaFactor(i) = dotProduct(edgeUnitNormal, unitDeriv,3)
+            val0 = val0*areaFactor(i)
+            valm = valm*areaFactor(i)
+            valEdges(i) = calc_vertDeriv_one(val0, valm, z0-zm)
+         end do
+
+      else
+         !cells above and below
+         do i = 1, nEdgesCell0
+            iNbr = cellsOnCell(i, iCell)
+            z0 = .5*(calc_heightCellCenter(iCell, level, zgrid)+calc_heightCellCenter(iNbr, level, zgrid))
+            zp = .5*(calc_heightCellCenter(iCell, level+1, zgrid)+calc_heightCellCenter(iNbr, level+1, zgrid))
+            zm = .5*(calc_heightCellCenter(iCell, level-1, zgrid)+calc_heightCellCenter(iNbr, level-1, zgrid))
+            iEdge = edgesOnCell(i,iCell)
+            val0 = u(level, iEdge)
+            valp = u(level+1, iEdge)
+            valm = u(level-1, iEdge)
+
+            !velocity component in direction of derivative
+            edgeUnitNormal(:) = edgeNormalVectors(:,iEdge)
+            call normalizeVector(edgeUnitNormal,3)
+            areaFactor(i) = dotProduct(edgeUnitNormal, unitDeriv,3)
+            val0 = val0*areaFactor(i)
+            valp = valp*areaFactor(i)
+            valm = valm*areaFactor(i)
+            valEdges(i) = calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+         end do
+      end if
+
+      !weight derivatives to cell centers
+      netArea = 0.0_RKIND
+      dval_dz = 0.0_RKIND
+      do i = 1, nEdgesCell0
+         areaFace = hEdge(i)*dvEdge(i)*abs(areaFactor(i))
+         dval_dz = dval_dz + valEdges(i)*areaFace
+         netArea = netArea + areaFace
+      end do
+      dval_dz = dval_dz / netArea
+
+      calc_vertDeriv_velocity = dval_dz
+   end function calc_vertDeriv_velocity
+
+   !cell centers are halfway between w faces
+   real(kind=RKIND) function calc_vertDeriv_center(val0, valp, valm, z0,zp,zm)
+
+      implicit none
+
+      real(kind=RKIND), intent(in) :: val0, valp, valm, z0,zp,zm !center, plus, minus
+      
+      real(kind=RKIND) :: dval_dzp, dval_dzm
+
+      !Average 1 sided differences to below and above since not equally spaced pts
+      dval_dzp = calc_vertDeriv_one(valp, val0, zp-z0)
+      dval_dzm = calc_vertDeriv_one(val0, valm, z0-zm)
+      calc_vertDeriv_center = 0.5*(dval_dzp+dval_dzm)
+
+   end function calc_vertDeriv_center
+
+   real(kind=RKIND) function calc_vertDeriv_one(valp, valm, dz)
+      !1 sided finite difference
+
+      implicit none
+
+      real(kind=RKIND), intent(in) :: valp, valm, dz
+
+      calc_vertDeriv_one = (valp - valm) / dz
+
+   end function calc_vertDeriv_one
+   
+   subroutine interp_pv_diagnostics(mesh, diag, pvuVal, missingVal)
+      !compute various fields on 2pvu surface using calculated PVU field
+      !potential temperature, uZonal, uMeridional, vertical vorticity
+      
+      implicit none
+      
+      type (mpas_pool_type), intent(in)  :: mesh
+      type (mpas_pool_type), intent(inout) :: diag
+      real(kind=RKIND) ::  pvuVal, missingVal
+      
+      integer :: iCell, k
+      integer, pointer :: nCells, nVertLevels
+      integer, dimension(:), pointer :: nEdgesOnCell
+      integer, dimension(:,:), pointer :: cellsOnCell, cellsOnEdge, edgesOnCell, verticesOnCell, &
+                                          cellsOnVertex
+                                          
+      real(kind=RKIND),dimension(:),pointer:: areaCell, latCell, u_pv, v_pv, theta_pv, vort_pv
+      real(kind=RKIND),dimension(:,:),pointer:: uZonal, uMeridional, vorticity, theta, ertel_pv, &
+                                                kiteAreasOnVertex
+      
+      real(kind=RKIND), dimension(:,:), allocatable :: vVort
+      
+      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCells)
+      
+      call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
+      call mpas_pool_get_array(mesh, 'verticesOnCell', verticesOnCell)
+      call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
+      call mpas_pool_get_array(mesh, 'cellsOnVertex', cellsOnVertex)
+      call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'latCell', latCell)
+      
+      call mpas_pool_get_array(diag, 'ertel_pv', ertel_pv)
+      call mpas_pool_get_array(diag, 'theta', theta)
+      call mpas_pool_get_array(diag, 'vorticity', vorticity)
+      call mpas_pool_get_array(diag, 'uReconstructZonal', uZonal)
+      call mpas_pool_get_array(diag, 'uReconstructMeridional', uMeridional)
+      call mpas_pool_get_array(diag, 'u_pv', u_pv)
+      call mpas_pool_get_array(diag, 'v_pv', v_pv)
+      call mpas_pool_get_array(diag, 'theta_pv', theta_pv)
+      call mpas_pool_get_array(diag, 'vort_pv', vort_pv)
+      
+      call interp_pv(nCells, nVertLevels, pvuVal, latCell, &
+                     ertel_pv, uZonal, u_pv, missingVal)
+      call interp_pv(nCells, nVertLevels, pvuVal, latCell, &
+                     ertel_pv, uMeridional, v_pv, missingVal)
+      call interp_pv(nCells, nVertLevels, pvuVal, latCell, &
+                     ertel_pv, theta, theta_pv, missingVal)
+                     
+      allocate(vVort(nVertLevels, nCells))
+      do iCell=1,nCells
+         do k=1,nVertLevels
+            vVort(k,iCell) = calc_verticalVorticity_cell(iCell, k, nEdgesOnCell(iCell), verticesOnCell, cellsOnVertex, &
+                                                         kiteAreasOnVertex, areaCell(iCell), vorticity)
+         end do
+      end do
+      call interp_pv(nCells, nVertLevels, pvuVal, latCell, &
+                     ertel_pv, vVort, vort_pv, missingVal)
+      deallocate(vVort)
+      
+   end subroutine interp_pv_diagnostics
+   
+   subroutine interp_pv( nCells, nLevels, interpVal, &
+                         latCell, field0, field1,field, &
+                         missingVal)
+
+      implicit none
+      ! interpolate columns of field1 to where field0 is interpVal*sign(lat) such that
+      ! vals in cells above index are above interpVal and cells below index are below interpVal.
+      ! to limit higher level spikes (eg from mixing ~17km), require change in sign to persist >1 levels.
+      !if whole column is above value, use surface value.
+      
+      ! input
+
+      integer :: nCells, nLevels
+      real(kind=RKIND) ::  interpVal, missingVal
+      real(kind=RKIND), intent(in) ::latCell(nCells)
+      real(kind=RKIND), intent(in) :: field0(nLevels,nCells), field1(nLevels,nCells)
+      real(kind=RKIND), intent(out) :: field(nCells)
+
+      !  local
+      
+      integer :: iCell, iLev, levInd, indlNbr
+      real(kind=RKIND) :: valh, vall, vallNbr, sgnh, sgnl, sgnlNbr
+      real(kind=RKIND) :: dv_dl, levFrac, valInterpCell, sgnHemi
+
+      do iCell = 1, nCells
+        !starting from top, trap val if values on opposite side
+        levInd = -1 !what should happen with missing values?
+        levFrac = 0.0
+        sgnHemi = sign(1.0_RKIND, latCell(iCell)) !problem at the equator...is sign(0)=0?
+        if (sgnHemi .EQ. 0.0) sgnHemi = 1.0
+        valInterpCell = interpVal*sgnHemi
+        do iLev = nLevels,2,-1
+        !do iLev = 2,nLevels-1,1
+          valh = field0(iLev,iCell)
+          vall = field0(iLev-1,iCell)
+          indlNbr = max(iLev-2,1)
+          vallNbr = field0(indlNbr, iCell)
+          sgnh = (valh-valInterpCell)*sgnHemi
+          sgnl = (vall-valInterpCell)*sgnHemi
+          sgnlNbr = (vallNbr-valInterpCell)*sgnHemi
+          if (sgnh>= 0.0 .AND. sgnl<=0.0 .AND. sgnlNbr<=0.0) then
+            !sandwiched value. equal in case val0 is a vals[l].
+            !get linear interpolation: val0 = vals[l]+dvals/dl * dl
+            !Avoid divide by 0 by just assuming value is 
+            !halfway between...
+     
+            dv_dl = valh-vall;
+            if (abs(dv_dl)<1.e-6) then
+              levFrac = 0.5;
+            else
+              levFrac = (valInterpCell-vall)/dv_dl
+            end if
+            
+            levInd = iLev-1
+            
+            exit !once found, stop searching column
+          end if
+        end do ! done searching column
+
+        !find value of field using index we just found
+        if (levInd<0) then
+          if (sgnl>0.0) then
+            field(iCell) = field1(1,iCell)
+          else
+            field(iCell) = missingVal
+          end if
+        else
+          valh = field1(levInd+1,iCell)
+          vall = field1(levInd,iCell)
+        
+          dv_dl = valh-vall
+          field(iCell) = vall+dv_dl*levFrac
+        end if
+      end do
+      
+   end subroutine interp_pv
 
 end module mpas_core
