@@ -343,7 +343,7 @@ module mpas_core
       integer :: itimestep
       integer :: ierr
 
-      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
+      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh, tend_physics, tend
 
       ! For high-frequency diagnostics output
       character (len=StrKIND) :: tempfilename
@@ -369,7 +369,10 @@ module mpas_core
          call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
          call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
          call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
-         call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
+         call mpas_pool_get_subpool(block_ptr % structs, 'tend_physics', tend_physics)
+         call mpas_pool_get_subpool(block_ptr % structs, 'tend', tend)
+         !call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
+         call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh, tend_physics, tend)
 
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
          call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)
@@ -430,7 +433,7 @@ module mpas_core
             call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             !call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
-            call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
+            call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh, tend_physics, tend)
 
             call insert_string_suffix('diagnostics.nc', trim(timeStamp), tempfilename)
             call write_hifreq_output(block_ptr, tempfilename)
@@ -478,7 +481,7 @@ module mpas_core
    
       type (block_type), pointer :: block_ptr
 
-      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
+      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh, tend_physics, tend
       integer, pointer :: config_frames_per_outfile
 
 
@@ -491,8 +494,11 @@ module mpas_core
          call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
          call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
          call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
+         call mpas_pool_get_subpool(block_ptr % structs, 'tend_physics', tend_physics)
+         call mpas_pool_get_subpool(block_ptr % structs, 'tend', tend)
 
-         call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
+         !call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh)
+         call atm_compute_output_diagnostics(state, 1, diag, diag_physics, mesh, tend_physics, tend)
 
          block_ptr => block_ptr % next
       end do
@@ -512,7 +518,8 @@ module mpas_core
    end subroutine atm_write_output_frame
    
    
-   subroutine atm_compute_output_diagnostics(state, time_lev, diag, diag_physics, mesh)
+   !subroutine atm_compute_output_diagnostics(state, time_lev, diag, diag_physics, mesh)
+   subroutine atm_compute_output_diagnostics(state, time_lev, diag, diag_physics, mesh, tend_physics, tend)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Compute diagnostic fields for a domain to be written to history files
    !
@@ -533,6 +540,8 @@ module mpas_core
       type (mpas_pool_type), intent(inout) :: diag
       type (mpas_pool_type), intent(inout) :: diag_physics
       type (mpas_pool_type), intent(in) :: mesh
+      type (mpas_pool_type), intent(in) :: tend_physics
+      type (mpas_pool_type), intent(in) :: tend
    
       integer :: iCell, k
       integer, pointer :: nCells, nVertLevels, index_qv
@@ -587,6 +596,26 @@ module mpas_core
                      
       write(0,*) "Calculating dpv_dt"
       
+      !Update tendencies in halo cells
+      !call mpas_timer_start("halo updates for depv_dt")
+      call mpas_pool_get_field(tend_physics, 'rthratenlw', rthratenlw_f)
+      call mpas_pool_get_field(tend_physics, 'rthratensw', rthratensw_f)
+      call mpas_pool_get_field(tend_physics, 'rthcuten', rthcuten_f)
+      call mpas_pool_get_field(tend_physics, 'rthblten', rthblten_f)
+      call mpas_pool_get_field(diag, 'dtheta_dt_mp', dtheta_dt_mp_f)
+      call mpas_pool_get_field(tend, 'theta_euler', theta_euler_f)
+      
+      call mpas_dmpar_exch_halo_field(rthratenlw_f)
+      call mpas_dmpar_exch_halo_field(rthratensw_f)
+      call mpas_dmpar_exch_halo_field(rthcuten_f)
+      call mpas_dmpar_exch_halo_field(rthblten_f)
+      call mpas_dmpar_exch_halo_field(dtheta_dt_mp_f)
+      call mpas_dmpar_exch_halo_field(theta_euler_f)
+      
+      !call mpas_timer_stop("halo updates for depv_dt")
+      !add to registry: diag % depv_dt_lw
+      call calc_ertel_dpv_dt(mesh, time_lev, state, diag, tend_physics, tend, diag_physics)
+   
    end subroutine atm_compute_output_diagnostics
    
    
@@ -1833,6 +1862,186 @@ module mpas_core
       deallocate(vVort)
       
    end subroutine interp_pv_diagnostics
+   
+   subroutine calc_ertel_dpv_dt(mesh, time_lev, state, diag, tend_physics, tend, diag_physics)
+      !Driver for Cavallo's way of doing PV budgets.
+      !eg Pedlosky Geophysical Fluid Dynamics, Depv_Dt = gradxu.gradDtheta_Dt/density + FrictionTerm
+      !is linear in the Dtheta_Dt physics forcings so we can piece out the contributions of individual physics params.
+   
+      !this inefficient version is straightforward in that we'll recalculate vorticity and such
+      !for every component.
+      !This function depends on adding depv_dt* terms to registry.
+      !Since the default microphysics tendency rt_diabatic_tend is for theta_m, 
+      !track dtheta_dt_microphysics in addition.
+      
+      use mpas_constants !for rvord
+      
+      implicit none
+      
+      type (mpas_pool_type), intent(inout) :: state
+      integer, intent(in) :: time_lev            ! which time level to use from state
+      type (mpas_pool_type), intent(inout) :: diag
+      type (mpas_pool_type), intent(in) :: diag_physics
+      type (mpas_pool_type), intent(in) :: mesh
+      type (mpas_pool_type), intent(in) :: tend_physics
+      type (mpas_pool_type), intent(in) :: tend
+
+      integer :: iCell, k
+      integer, pointer :: nCellsSolve, nVertLevels, nCells, index_qv
+      integer, dimension(:), pointer :: nEdgesOnCell
+      integer, dimension(:,:), pointer :: cellsOnCell, cellsOnEdge, edgesOnCell, verticesOnCell, &
+                                          cellsOnVertex
+      !real(kind=RKIND) :: rvord
+      real(kind=RKIND), dimension(:), pointer :: dvEdge, areaCell
+      real(kind=RKIND), dimension(:,:), pointer :: w, rho, vorticity, zgrid, &
+                                                   localVerticalUnitVectors, edgeNormalVectors, kiteAreasOnVertex, &
+                                                   theta, uReconstructX, uReconstructY, uReconstructZ
+      real(kind=RKIND), dimension(:,:), pointer :: depv_dt_lw, depv_dt_sw, depv_dt_bl, depv_dt_cu, depv_dt_mp, &
+                                                   depv_dt_mix
+      real(kind=RKIND), dimension(:,:), pointer :: rthblten, rthcuten, rthratenlw, rthratensw, &
+                                                   dtheta_dt_mp, theta_euler, qv
+      real(kind=RKIND), dimension(:,:,:), pointer :: cellTangentPlane, scalars
+      
+      real(kind=RKIND), dimension(:,:), allocatable :: thetaTendency
+      
+      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      
+      call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
+      call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
+      call mpas_pool_get_array(mesh, 'verticesOnCell', verticesOnCell)
+      call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
+      call mpas_pool_get_array(mesh, 'cellsOnVertex', cellsOnVertex)
+      call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
+      call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'cellTangentPlane', cellTangentPlane)
+      call mpas_pool_get_array(mesh, 'localVerticalUnitVectors', localVerticalUnitVectors)
+      call mpas_pool_get_array(mesh, 'edgeNormalVectors', edgeNormalVectors)
+      call mpas_pool_get_array(mesh, 'zgrid', zgrid)
+      
+      call mpas_pool_get_array(state, 'w', w, time_lev)
+      call mpas_pool_get_array(diag, 'theta', theta)
+      call mpas_pool_get_array(diag, 'rho', rho)
+      call mpas_pool_get_array(diag, 'vorticity', vorticity)
+      call mpas_pool_get_array(diag, 'uReconstructX', uReconstructX)
+      call mpas_pool_get_array(diag, 'uReconstructY', uReconstructY)
+      call mpas_pool_get_array(diag, 'uReconstructZ', uReconstructZ)
+      
+      call mpas_pool_get_array(diag, 'depv_dt_lw', depv_dt_lw)
+      call mpas_pool_get_array(diag, 'depv_dt_sw', depv_dt_sw)
+      call mpas_pool_get_array(diag, 'depv_dt_bl', depv_dt_bl)
+      call mpas_pool_get_array(diag, 'depv_dt_cu', depv_dt_cu)
+      call mpas_pool_get_array(diag, 'depv_dt_mp', depv_dt_mp)
+      call mpas_pool_get_array(diag, 'depv_dt_mix', depv_dt_mix)
+      
+      call mpas_pool_get_array(tend_physics, 'rthblten', rthblten)
+      call mpas_pool_get_array(tend_physics, 'rthcuten', rthcuten)
+      call mpas_pool_get_array(tend_physics, 'rthratenlw', rthratenlw)
+      call mpas_pool_get_array(tend_physics, 'rthratensw', rthratensw)
+      call mpas_pool_get_array(diag, 'dtheta_dt_mp', dtheta_dt_mp)
+      call mpas_pool_get_array(tend, 'theta_euler', theta_euler)
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      call mpas_pool_get_array(state, 'scalars', scalars, time_lev)
+      qv => scalars(index_qv,:,:)
+      
+     !Physics schemes ----------------------------- 
+     !radiation ------
+     !lw
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_lw(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,rthratenlw,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     !sw
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_sw(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,rthratensw,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     !boundary layer -----------
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_bl(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,rthblten,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     !convection scheme --------
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_cu(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,rthcuten,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     !microphysics -------
+     !requires adding to /src/core_atmosphere/physics/mpas_atmphys_driver_microphysics.F:microphysics_driver()
+     !to get dtheta/dt instead of dtheta_m/dt
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_mp(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w,dtheta_dt_mp,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     !mixing -----------------------
+     
+     allocate(thetaTendency(nVertLevels,nCells))
+     
+     do iCell=1,nCells
+        do k=1,nVertLevels
+          !if qv not mixed
+          thetaTendency(k,iCell) = theta_euler(k,iCell)/( 1._RKIND+rvord*qv(k,iCell) )
+        end do
+     end do
+     
+     do iCell=1,nCellsSolve
+         do k=1,nVertLevels
+            depv_dt_mix(k,iCell) = driver_ertelPV_cell_reconstruct(iCell, k, nVertLevels, &
+                                                 nEdgesOnCell(iCell), verticesOnCell, kiteAreasOnVertex, &
+                                                 cellsOnCell, edgesOnCell, cellsOnEdge, dvEdge, edgeNormalVectors, &
+                                                 cellsOnVertex, &
+                                                 cellTangentPlane, localVerticalUnitVectors, zgrid, areaCell(iCell), &
+                                                 uReconstructX, uReconstructY, uReconstructZ, w, thetaTendency,rho(k,iCell),vorticity)
+
+        end do 
+     end do
+     
+     deallocate(thetaTendency)
+     
+   end subroutine calc_ertel_dpv_dt
    
    subroutine interp_pv( nCells, nLevels, interpVal, &
                          latCell, field0, field1,field, &
