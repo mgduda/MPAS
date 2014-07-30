@@ -227,6 +227,7 @@
 			<var name="precipw"/>
 			<var name="smois"/>
 			<var name="tslb"/>
+			<var name="h_oml_initial"/>
 		</stream>
 
 		<stream name="restart" type="restart">
