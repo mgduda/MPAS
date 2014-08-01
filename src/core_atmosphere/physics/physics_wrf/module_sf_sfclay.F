@@ -458,7 +458,14 @@ CONTAINS
       DO 60 I=its,ite
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
 !  for land points QSFC can come from previous time step
-        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+!       if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+        IF (xland(i).gt.1.5) THEN
+! ww: effect of salinity (Fairall, ECMWF)
+           QSFC(I)=EP2*E1/(PSFC(I)-E1)*0.98
+!          QSFC(I)=EP2*E1/(PSFC(I)-E1)*1.00
+        ELSE IF (qsfc(i).le.0.0) THEN
+           QSFC(I)=EP2*E1/(PSFC(I)-E1)
+        ENDIF
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
@@ -821,7 +828,9 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
-          ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+! EC version
+          ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+!         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN
@@ -848,13 +857,13 @@ CONTAINS
 !       FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
 !               ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
         DTTHX=ABS(THX(I)-THGB(I))                                            
-        IF(DTTHX.GT.1.E-5)THEN                                                   
+!       IF(DTTHX.GT.1.E-5)THEN                                                   
           FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))          
 !         write(*,1001)FLHC(I),CPM(I),RHOX(I),UST(I),MOL(I),THX(I),THGB(I),I
  1001   format(f8.5,2x,f12.7,2x,f12.10,2x,f12.10,2x,f13.10,2x,f12.8,f12.8,2x,i3)
-        ELSE                                                                     
-          FLHC(I)=0.                                                             
-        ENDIF                                                                    
+!       ELSE                                                                     
+!         FLHC(I)=0.                                                             
+!       ENDIF                                                                    
   360 CONTINUE
 
 !                                                                                
