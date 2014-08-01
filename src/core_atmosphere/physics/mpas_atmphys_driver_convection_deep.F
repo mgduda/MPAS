@@ -132,17 +132,24 @@
        enddo
 
     case ("tiedtke")
+       if(.not.allocated(dx_p)         ) allocate(dx_p(ims:ime,jms:jme)                 )
+       if(.not.allocated(area_p)       ) allocate(area_p(ims:ime,jms:jme)               )
        if(.not.allocated(qfx_p)        ) allocate(qfx_p(ims:ime,jms:jme)                )
+       if(.not.allocated(hfx_p)        ) allocate(hfx_p(ims:ime,jms:jme)                )
        if(.not.allocated(xland_p)      ) allocate(xland_p(ims:ime,jms:jme)              )
        if(.not.allocated(rqvdynten_p)  ) allocate(rqvdynten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(rqvdynblten_p)) allocate(rqvdynblten_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(rucuten_p)    ) allocate(rucuten_p(ims:ime,kms:kme,jms:jme)    )
        if(.not.allocated(rvcuten_p)    ) allocate(rvcuten_p(ims:ime,kms:kme,jms:jme)    )
+       if(.not.allocated(rthblten_p)   ) allocate(rthblten_p(ims:ime,kms:kme,jms:jme)   )
+       if(.not.allocated(rthraten_p)   ) allocate(rthraten_p(ims:ime,kms:kme,jms:jme)   )
+       if(.not.allocated(rthdynten_p)  ) allocate(rthdynten_p(ims:ime,kms:kme,jms:jme)  )
 
        do i = its,ite
        do j = jts,jte
           qfx_p(i,j)   = 0._RKIND
           xland_p(i,j) = 0._RKIND
+          hfx_p(i,j)   = 0._RKIND
        enddo
        enddo
 
@@ -153,6 +160,9 @@
           rqvdynblten_p(i,k,j) = 0._RKIND
           rucuten_p(i,k,j)     = 0._RKIND
           rvcuten_p(i,k,j)     = 0._RKIND
+          rthblten_p(i,k,j)    = 0._RKIND
+          rthraten_p(i,k,j)    = 0._RKIND
+          rthdynten_p(i,k,j)   = 0._RKIND
        enddo
        enddo
        enddo
@@ -188,12 +198,18 @@
        if(allocated(rqscuten_p)   ) deallocate(rqscuten_p   )
 
     case ("tiedtke")
+       if(allocated(dx_p)         ) deallocate(dx_p         )
+       if(allocated(area_p)       ) deallocate(area_p       )
        if(allocated(qfx_p)        ) deallocate(qfx_p        )
+       if(allocated(hfx_p)        ) deallocate(hfx_p        )
        if(allocated(xland_p)      ) deallocate(xland_p      )
        if(allocated(rqvdynten_p)  ) deallocate(rqvdynten_p  )
        if(allocated(rqvdynblten_p)) deallocate(rqvdynblten_p)
        if(allocated(rucuten_p)    ) deallocate(rucuten_p    )
        if(allocated(rvcuten_p)    ) deallocate(rvcuten_p    )
+       if(allocated(rthblten_p)   ) deallocate(rthblten_p   )
+       if(allocated(rthraten_p)   ) deallocate(rthraten_p   )
+       if(allocated(rthdynten_p)  ) deallocate(rthdynten_p  )
 
     case default
 
@@ -365,6 +381,9 @@
              rqvcuten    = rqvcuten_p  , rqccuten        = rqccuten_p      ,         &
              rqicuten    = rqicuten_p  , rucuten         = rucuten_p       ,         &
              rvcuten     = rvcuten_p   ,                                             &
+             dxCell      = dx_p        , areaCell        = area_p          ,         &
+             hfx         = hfx_p       , thften          = rthdynten_p     ,         &
+             thpblten    = rthblten_p  , thraten         = rthraten_p      ,         &
              ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
@@ -399,6 +418,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten 
  real(kind=RKIND),dimension(:,:),pointer:: rqvblten,rqvdynten,rucuten,rvcuten 
+ real(kind=RKIND),dimension(:,:),pointer:: rthblten,rthdynten,rthratensw,rthratenlw
+ real(kind=RKIND),dimension(:),pointer  :: hfx
 
 !--------------------------------------------------------------------------------------------------
  write(0,*)
@@ -416,6 +437,7 @@
  call mpas_pool_get_array(diag_physics,'raincv'   ,raincv   )
  call mpas_pool_get_array(diag_physics,'w0avg'    ,w0avg    )
  call mpas_pool_get_array(diag_physics,'qfx'      ,qfx      )
+ call mpas_pool_get_array(diag_physics,'hfx'      ,hfx      )
 
  call mpas_pool_get_array(tend_physics,'rthcuten' ,rthcuten )
  call mpas_pool_get_array(tend_physics,'rqvcuten' ,rqvcuten )
@@ -427,6 +449,10 @@
  call mpas_pool_get_array(tend_physics,'rvcuten'  ,rvcuten  )
  call mpas_pool_get_array(tend_physics,'rqvblten' ,rqvblten )
  call mpas_pool_get_array(tend_physics,'rqvdynten',rqvdynten)
+ call mpas_pool_get_array(tend_physics,'rthdynten',rthdynten)
+ call mpas_pool_get_array(tend_physics,'rthblten' ,rthblten )
+ call mpas_pool_get_array(tend_physics,'rthratensw' ,rthratensw )
+ call mpas_pool_get_array(tend_physics,'rthratenlw' ,rthratenlw )
 
  do j = jts,jte
  do i = its,ite
@@ -474,6 +500,9 @@
        do i = its,ite
           xland_p(i,j) = xland(i)
           qfx_p(i,j)   = qfx(i)
+          hfx_p(i,j)   = hfx(i)
+          dx_p(i,j)    = dcEdge_m(i)
+          area_p(i,j)  = areaCell(i)
        enddo
 
        do k = kts,kte
@@ -482,6 +511,9 @@
           rqvdynten_p(i,k,j)   = rqvdynten(k,i)
           rucuten_p(i,k,j)     = rucuten(k,i)
           rvcuten_p(i,k,j)     = rvcuten(k,i)
+          rthdynten_p(i,k,j)   = rthdynten(k,i)
+          rthblten_p(i,k,j)    = rthblten(k,i) 
+          rthraten_p(i,k,j)    = rthratensw(k,i)+rthratenlw(k,i) 
        enddo
        enddo
        enddo

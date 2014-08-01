@@ -212,7 +212,9 @@
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     znu_p,            &!
     rqvdynten_p,      &!
-    rqvdynblten_p      !
+    rqvdynblten_p,    &!
+    rthdynten_p,      &!
+    rthraten_p         !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rucuten_p,        &!

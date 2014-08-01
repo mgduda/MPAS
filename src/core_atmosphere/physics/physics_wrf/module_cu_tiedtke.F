@@ -31,7 +31,7 @@ MODULE module_cu_tiedtke
      REAL,PRIVATE :: G,CPV,RV
      REAL :: API,A,EOMEGA,RD,CPD,RCPD,VTMPC1,VTMPC2,      &
              RHOH2O,ALV,ALS,ALF,CLW,TMELT,SOLC,STBO,DAYL,YEARL, &
-             C1ES,C2ES,C3LES,C3IES,C4LES,C4IES,C5LES,C5IES,ZRG 
+             C1ES,C2ES,C3LES,C3IES,C4LES,C4IES,C5LES,C5IES,ZRG
 #else
      REAL,PRIVATE :: G,CPV
      REAL :: API,A,EOMEGA,RD,RV,CPD,RCPD,VTMPC1,VTMPC2,   &
@@ -89,7 +89,7 @@ MODULE module_cu_tiedtke
 !     ENTRSCV: AVERAGE ENTRAINMENT RATE FOR SHALLOW CONVECTION
 !     -------
 !
-      PARAMETER(ENTRSCV=1.2E-3)
+      PARAMETER(ENTRSCV=6.0E-4)
 !
 !     ENTRMID: AVERAGE ENTRAINMENT RATE FOR MIDLEVEL CONVECTION
 !     -------
@@ -135,7 +135,7 @@ MODULE module_cu_tiedtke
 !--------------------
       PARAMETER(RHC=0.80,RHM=1.0,ZBUO0=0.50)
 !--------------------
-      PARAMETER(CRIRH=0.80,fdbk = 1.0,ZTAU = 3600.0)
+      PARAMETER(CRIRH=0.80,fdbk = 0.0,ZTAU = 2400.0)
 !--------------------
       LOGICAL :: LMFPEN,LMFMID,LMFSCV,LMFDD,LMFDUDV
       PARAMETER(LMFPEN=.TRUE.,LMFMID=.TRUE.,LMFSCV=.TRUE.,LMFDD=.TRUE.,LMFDUDV=.TRUE.)
@@ -145,14 +145,16 @@ MODULE module_cu_tiedtke
 !
 CONTAINS
 !-----------------------------------------------------------------------
+#if defined(mpas)
       SUBROUTINE CU_TIEDTKE(                                    &
-                 DT,ITIMESTEP,STEPCU                            &
-                ,RAINCV,PRATEC,QFX,ZNU                          &
+                 dxCell,areaCell,DT,ITIMESTEP,STEPCU            &
+                ,RAINCV,PRATEC,QFX,HFX,ZNU                      &
                 ,U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D        &
+                ,THFTEN,THPBLTEN,THRATEN                        &
                 ,QVFTEN,QVPBLTEN                                &
                 ,DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG                &
                 ,CUDT, CURR_SECS, ADAPT_STEP_FLAG               &
-                ,CUDTACTTIME                                    & 
+                ,CUDTACTTIME                                    &
                 ,ids,ide, jds,jde, kds,kde                      &
                 ,ims,ime, jms,jme, kms,kme                      &
                 ,its,ite, jts,jte, kts,kte                      &
@@ -160,6 +162,24 @@ CONTAINS
                 ,RUCUTEN, RVCUTEN                               &
                 ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
                                                                 )
+#else
+      SUBROUTINE CU_TIEDTKE(                                    &
+                 DX,DT,ITIMESTEP,STEPCU                         &
+                ,RAINCV,PRATEC,QFX,HFX,ZNU                      &
+                ,U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D        &
+                ,THFTEN,THPBLTEN,THRATEN                        &
+                ,QVFTEN,QVPBLTEN                                &
+                ,DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG                &
+                ,CUDT, CURR_SECS, ADAPT_STEP_FLAG               &
+                ,CUDTACTTIME                                    &
+                ,ids,ide, jds,jde, kds,kde                      &
+                ,ims,ime, jms,jme, kms,kme                      &
+                ,its,ite, jts,jte, kts,kte                      &
+                ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN            &
+                ,RUCUTEN, RVCUTEN                               &
+                ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
+                                                                )
+#endif
 
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -222,8 +242,14 @@ CONTAINS
                                         ITIMESTEP,                      &
                                         STEPCU
 
+#if defined(mpas)
+      real,intent(in):: dt
+      real,intent(in),dimension(ims:ime,jms:jme):: areaCell,dxCell
+#else
       REAL,    INTENT(IN) ::                                            &
-                                        DT
+                                        DT,                             &
+                                        DX
+#endif
 
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
@@ -242,6 +268,9 @@ CONTAINS
                                         Pcps,                           &
                                         PI3D,                           &
                                         QC3D,                           &
+                                        THFTEN,                         &
+                                        THPBLTEN,                       &
+                                        THRATEN,                        &
                                         QVFTEN,                         &
                                         QVPBLTEN,                       &
                                         QI3D,                           &
@@ -281,19 +310,20 @@ CONTAINS
       REAL,  INTENT(IN    ):: CUDT
       REAL,  INTENT(IN    ), OPTIONAL:: CURR_SECS
       LOGICAL,INTENT(IN   ), OPTIONAL:: ADAPT_STEP_FLAG
-      REAL,  INTENT (INOUT), OPTIONAL:: CUDTACTTIME       
+      REAL,  INTENT (INOUT), OPTIONAL:: CUDTACTTIME
 #else
 ! Adaptive time-step variables
       REAL,  INTENT(IN   ) :: CUDT
       REAL,  INTENT(IN   ) :: CURR_SECS
-      LOGICAL,INTENT(IN   ) , OPTIONAL :: ADAPT_STEP_FLAG
-      REAL,  INTENT (INOUT) :: CUDTACTTIME       
+      LOGICAL,INTENT(IN   ), OPTIONAL :: ADAPT_STEP_FLAG
+      REAL,  INTENT (INOUT) :: CUDTACTTIME
 #endif
 
 !--------------------------- LOCAL VARS ------------------------------
 
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
-                                        QFX     
+                                        QFX,                            &
+                                        HFX     
 
       REAL      ::                                      &
                                         DELT,                           &
@@ -317,6 +347,9 @@ CONTAINS
                                         Q1,                             & 
                                         Q2,                             &
                                         Q3,                             &
+                                        T1B,                            &
+                                        T1BL,                           &
+                                        T1RA,                           &
                                         Q1B,                            &
                                         Q1BL,                           &
                                         Q11,                            &
@@ -343,20 +376,22 @@ CONTAINS
                                         KX
 
 
-      LOGICAL :: run_param , doing_adapt_dt , decided
+      LOGICAL :: run_param, doing_adapt_dt, decided
 
 !-------other local variables----
 #if defined(mpas)
 !MPAS specific (Laura D. Fowler):
       INTEGER,DIMENSION(its:ite):: KTYPE
       REAL,DIMENSION(its:ite,kts:kte):: SIG1
+      REAL,DIMENSION(its:ite):: dx, dxsq
       REAL,DIMENSION(ims:ime,kms:kme,jms:jme):: ZNU
-      INTEGER:: zz 
+      INTEGER:: zz
 #else
       INTEGER,DIMENSION( its:ite ) :: KTYPE
       REAL, DIMENSION( kts:kte )   :: sig1      ! half sigma levels
       REAL, DIMENSION( kms:kme )   :: ZNU
       INTEGER                      :: zz 
+      REAL                         :: dxsq
 #endif
 !-----------------------------------------------------------------------
 !
@@ -478,12 +513,15 @@ CONTAINS
 #if defined(mpas)
 !MPAS specific
       DO k=kts,kte
-        zz = kte+1-k        
+        zz = kte+1-k
         DO i=its,ite
           U1(i,zz)   = U3D(i,k,j)
           V1(i,zz)   = V3D(i,k,j)
           T1(i,zz)   = T3D(i,k,j)
           Q1(i,zz)   = QV3D(i,k,j)
+          T1B(i,zz)  = THFTEN(i,k,j)
+          T1BL(i,zz) = THPBLTEN(i,k,j)
+          T1RA(i,zz) = THRATEN(i,k,j)
           Q1B(i,zz)  = QVFTEN(i,k,j)
           Q1BL(i,zz) = QVPBLTEN(i,k,j)
           Q2(i,zz)   = QC3D(i,k,j)
@@ -502,9 +540,15 @@ CONTAINS
           T1(i,zz)=T3D(i,k,j)
           Q1(i,zz)= QV3D(i,k,j)
           if(itimestep == 1) then
+             T1B(i,zz)=0.
+             T1BL(i,zz)=0.
+             T1RA(i,zz)=0.
              Q1B(i,zz)=0.
              Q1BL(i,zz)=0.
           else
+             T1B(i,zz)=THFTEN(i,k,j)
+             T1BL(i,zz)=THPBLTEN(i,k,j)
+             T1RA(i,zz)=THRATEN(i,k,j)
              Q1B(i,zz)=QVFTEN(i,k,j)
              Q1BL(i,zz)=QVPBLTEN(i,k,j)
           endif
@@ -532,11 +576,16 @@ CONTAINS
             sig1(i,zz) = znu(i,k,j)
          ENDDO
       ENDDO
+      DO i=its,ite
+         dx(i)   = dxcell(i,j)
+         dxsq(i) = areacell(i,j)
+      ENDDO
 #else
       DO k=kts,kte
          zz = kte+1-k
          sig1(zz) = ZNU(k)
       ENDDO
+      DXSQ = DX*DX
 #endif
 
 !###############before call TIECNV, we need EVAP########################
@@ -547,8 +596,8 @@ CONTAINS
         EVAP(i) = QFX(i,j)
       ENDDO
 !########################################################################
-      CALL TIECNV(U1,V1,T1,Q1,Q2,Q3,Q1B,Q1BL,GHT,OMG,PRSL,PRSI,EVAP,             &
-                  RN,SLIMSK,KTYPE,IM,KX,KX+1,sig1,DELT)                 
+      CALL TIECNV(U1,V1,T1,Q1,Q2,Q3,T1B,T1BL,T1RA,Q1B,Q1BL,GHT,OMG,PRSL,PRSI,EVAP, &
+                  RN,SLIMSK,KTYPE,IM,KX,KX+1,sig1,DELT,DX,DXSQ)
 
       DO I=ITS,ITE
          RAINCV(I,J)=RN(I)/STEPCU
@@ -673,21 +722,22 @@ CONTAINS
 !********************************************************
 !        subroutine TIECNV
 !********************************************************
-      SUBROUTINE TIECNV(pu,pv,pt,pqv,pqc,pqi,pqvf,pqvbl,poz,pomg,  &
-               pap,paph,evap,zprecc,lndj,KTYPE,lq,km,km1,sig1,dt)
+      SUBROUTINE TIECNV(pu,pv,pt,pqv,pqc,pqi,pthf,pthbl,pthra,pqvf,pqvbl,poz,pomg,  &
+               pap,paph,evap,zprecc,lndj,KTYPE,lq,km,km1,sig1,dt,dx,dxsq)
 !-----------------------------------------------------------------
 !  This is the interface between the meso-scale model and the mass 
 !  flux convection module
 !-----------------------------------------------------------------
       implicit none
 
-      real pu(lq,km),pv(lq,km),pt(lq,km),pqv(lq,km),pqvf(lq,km)
-      real poz(lq,km),pomg(lq,km),evap(lq),zprecc(lq),pqvbl(lq,km)
+      real pu(lq,km),pv(lq,km),pt(lq,km),pqv(lq,km)
+      real pthf(lq,km),pthbl(lq,km),pthra(lq,km),pqvf(lq,km),pqvbl(lq,km)
+      real poz(lq,km),pomg(lq,km),evap(lq),zprecc(lq)
 
       REAL PUM1(lq,km),    PVM1(lq,km),                             &
           PTTE(lq,km),    PQTE(lq,km),  PVOM(lq,km),  PVOL(lq,km),  &
           PVERV(lq,km),   PGEO(lq,km),  PAP(lq,km),   PAPH(lq,km1)
-      REAL PQHFL(lq),      ZQQ(lq,km),   PAPRC(lq),    PAPRS(lq),   &
+      REAL PQHFL(lq),      ZTT(lq,km),  ZQQ(lq,km),   PAPRC(lq),    PAPRS(lq),   &
           PRSFC(lq),      PSSFC(lq),    PAPRSM(lq),   PCTE(lq,km)
       REAL ZTP1(lq,km),    ZQP1(lq,km),  ZTU(lq,km),   ZQU(lq,km),  &
           ZLU(lq,km),     ZLUDE(lq,km), ZMFU(lq,km),  ZMFD(lq,km),  &
@@ -697,8 +747,10 @@ CONTAINS
 !MPAS specific (Laura D. Fowler):
       REAL sig(km1)
       REAL sig1(lq,km)
+      REAL dx(lq), dxsq(lq)
 #else
       REAL sig(km1),sig1(km)
+      REAL dx,dxsq
 #endif
       INTEGER ICBOT(lq),   ICTOP(lq),     KTYPE(lq),   lndj(lq)
       REAL  dt
@@ -747,6 +799,8 @@ CONTAINS
           ZQSAT(j,k)=TLUCUA(TT)/PAP(j,k)
           ZQSAT(j,k)=MIN(0.5,ZQSAT(j,k))
           ZQSAT(j,k)=ZQSAT(j,k)/(1.-VTMPC1*ZQSAT(j,k))
+          PTTE(j,k)=pthf(j,k)+pthbl(j,k)+pthra(j,k)
+          ZTT(j,k)=PTTE(j,k) 
           PQTE(j,k)=pqvf(j,k)+pqvbl(j,k)
           ZQQ(j,k)=PQTE(j,k)
    10 CONTINUE
@@ -763,7 +817,7 @@ CONTAINS
           KTYPE,    ICBOT,    ICTOP,    ZTU,     ZQU,    &
           ZLU,      ZLUDE,    ZMFU,     ZMFD,    ZRAIN,  &
           PSRAIN,   PSEVAP,   PSHEAT,   PSDISS,  PSMELT, &
-          PCTE,     sig1,     lndj)
+          PCTE,     sig1,     lndj,     dt,      dx,     dxsq)
 !
 !     TO INCLUDE THE CLOUD WATER AND CLOUD ICE DETRAINED FROM CONVECTION
 !
@@ -793,7 +847,7 @@ CONTAINS
 !
       DO 75 k=1,km
         DO 75 j=1,lq
-          pt(j,k)=ZTP1(j,k)+PTTE(j,k)*ZTMST
+          pt(j,k)=ZTP1(j,k)+(PTTE(j,k)-ZTT(j,k))*ZTMST
           ZQP1(j,k)=ZQP1(j,k)+(PQTE(j,k)-ZQQ(j,k))*ZTMST
           pqv(j,k)=ZQP1(j,k)/(1.0-ZQP1(j,k))
    75 CONTINUE
@@ -828,7 +882,7 @@ CONTAINS
           KTYPE,    KCBOT,    KCTOP,    PTU,      PQU,   &
           PLU,      PLUDE,    PMFU,     PMFD,     PRAIN, &
           PSRAIN,   PSEVAP,   PSHEAT,   PSDISS,   PSMELT,& 
-          PCTE,     sig1,     lndj)
+          PCTE,     sig1,     lndj,     dt,       dx,     dxsq)
 !
 !***CUMASTR*  MASTER ROUTINE FOR CUMULUS MASSFLUX-SCHEME
 !     M.TIEDTKE      E.C.M.W.F.     1986/1987/1989
@@ -908,12 +962,12 @@ CONTAINS
 !-------------------------------------------------------------------
       INTEGER   KLON, KLEV, KLEVP1
       INTEGER   KLEVM1
-      REAL      ZTMST
+      REAL      ZTMST, dt, afrac, radup
       REAL      PSRAIN, PSEVAP, PSHEAT, PSDISS, PSMELT, ZCONS2
       INTEGER   JK,JL,IKB
-      REAL      ZQUMQE, ZDQMIN, ZMFMAX, ZALVDCP, ZQALV
+      REAL      ZQUMQE, ZDQMIN, ZMFMAX, ZALVDCP, ZQALV, ZHENVH, ZDHMIN
       REAL      ZHSAT, ZGAM, ZZZ, ZHHAT, ZBI, ZRO, ZDZ, ZDHDZ, ZDEPTH
-      REAL      ZFAC, ZRH, ZPBMPT, DEPT, ZHT, ZEPS
+      REAL      ZFAC, ZRH, ZPBMPT, DEPT, ZHT, ZEPS, ZUPNORM, CONVTIME
       INTEGER   ICUM, ITOPM2
       REAL     PTEN(KLON,KLEV),        PQEN(KLON,KLEV), &
               PUEN(KLON,KLEV),        PVEN(KLON,KLEV),  &
@@ -939,16 +993,20 @@ CONTAINS
               ZUD(KLON,KLEV),         ZVD(KLON,KLEV)
       REAL     ZENTR(KLON),            ZHCBASE(KLON),   &
               ZMFUB(KLON),            ZMFUB1(KLON),     &
-              ZDQPBL(KLON),           ZDQCV(KLON) 
+              ZDQPBL(KLON),           ZDQCV(KLON),      &
+              ZDHPBL(KLON)
       REAL     ZSFL(KLON),             ZDPMEL(KLON,KLEV), &
               PCTE(KLON,KLEV),        ZCAPE(KLON),        &
               ZHEAT(KLON),            ZHHATT(KLON,KLEV),  &
-              ZHMIN(KLON),            ZRELH(KLON)
+              ZHMIN(KLON),            ZRELH(KLON), &
+              MUPV(KLON)
 #if defined(mpas)
 !MPAS specific (Laura D. Fowler):
       REAL     sig1(KLON,KLEV)
+      REAL     dx(KLON), dxsq(KLON)
 #else
       REAL     sig1(KLEV)
+      REAL     DX, DXSQ
 #endif
       INTEGER  ILAB(KLON,KLEV),        IDTOP(KLON),   &
               ICTOP0(KLON),           ILWMIN(KLON)    
@@ -993,18 +1051,22 @@ CONTAINS
        DO 310 JL=1,KLON
        ZDQCV(JL) =PQTE(JL,JK)*(PAPH(JL,JK+1)-PAPH(JL,JK))
        ZDQPBL(JL)=0.0
+       ZDHPBL(JL)=0.0
        IDTOP(JL)=0
   310  CONTINUE
        DO 320 JK=2,KLEV
        DO 315 JL=1,KLON
        ZDQCV(JL)=ZDQCV(JL)+PQTE(JL,JK)*(PAPH(JL,JK+1)-PAPH(JL,JK))
-       IF(JK.GE.KCBOT(JL)) ZDQPBL(JL)=ZDQPBL(JL)+PQTE(JL,JK)  &
-                                    *(PAPH(JL,JK+1)-PAPH(JL,JK))
+       IF(JK.GE.KCBOT(JL)) then
+         ZDQPBL(JL)=ZDQPBL(JL)+PQTE(JL,JK)*(PAPH(JL,JK+1)-PAPH(JL,JK))
+         ZDHPBL(JL)=ZDHPBL(JL)+(PAPH(JL,JK+1)-PAPH(JL,JK))* &
+                     (CPD*PTTE(JL,JK)+ALV*PQTE(JL,JK))
+       ENDIF
   315 CONTINUE
   320 CONTINUE
       DO 340 JL=1,KLON
          KTYPE(JL)=0
-      IF(ZDQCV(JL).GT.MAX(0.,1.1*PQHFL(JL)*G)) THEN
+      IF(ZDQCV(JL).GT.MAX(0.,0.9*PQHFL(JL)*G)) THEN
          KTYPE(JL)=1
       ELSE
          KTYPE(JL)=2
@@ -1016,12 +1078,22 @@ CONTAINS
       IKB=KCBOT(JL)
       ZQUMQE=PQU(JL,IKB)+PLU(JL,IKB)-ZQENH(JL,IKB)
       ZDQMIN=MAX(0.01*ZQENH(JL,IKB),1.E-10)
-      IF(ZDQPBL(JL).GT.0..AND.ZQUMQE.GT.ZDQMIN.AND.LDCUM(JL)) THEN
-         ZMFUB(JL)=ZDQPBL(JL)/(G*MAX(ZQUMQE,ZDQMIN))
+      ZHCBASE(JL)=CPD*PTU(JL,IKB)+PGEO(JL,IKB)+ALV*PQU(JL,IKB)
+      ZHENVH=CPD*ZTENH(JL,IKB)+PGEO(JL,IKB)+ALV*ZQENH(JL,IKB)      
+      ZDHMIN=MAX(0.01*ZHENVH,1.E-10)
+      IF(ZDHPBL(JL).GT.0..AND.ZQUMQE.GT.ZDQMIN.AND.LDCUM(JL)) THEN
+!      IF(ZDHPBL(JL).GT.0..AND.LDCUM(JL).AND.(ZHCBASE(JL)-ZHENVH).GT.ZDHMIN) THEN
+        ZMFUB(JL)=ZDHPBL(JL)/(G*MAX(ZHCBASE(JL)-ZHENVH,ZDHMIN))
       ELSE
-         ZMFUB(JL)=0.01
-         LDCUM(JL)=.FALSE.
+        ZMFUB(JL)=0.01
+        LDCUM(JL)=.FALSE.
       ENDIF
+!      IF(ZDQPBL(JL).GT.0..AND.ZQUMQE.GT.ZDQMIN.AND.LDCUM(JL)) THEN
+!         ZMFUB(JL)=ZDQPBL(JL)/(G*MAX(ZQUMQE,ZDQMIN))
+!      ELSE
+!         ZMFUB(JL)=0.01
+!         LDCUM(JL)=.FALSE.
+!      ENDIF
       ZMFMAX=(PAPH(JL,IKB)-PAPH(JL,IKB-1))*ZCONS2
       ZMFUB(JL)=MIN(ZMFUB(JL),ZMFMAX)
 !------------------------------------------------------
@@ -1096,8 +1168,10 @@ CONTAINS
       if(nentr.eq.1) then
         IF(KTYPE(JL).EQ.1) THEN
           ZENTR(JL)=ENTRPEN
-        ELSE
+        ELSE IF(KTYPE(JL).EQ.2) THEN
           ZENTR(JL)=ENTRSCV
+        ELSE
+          ZENTR(JL)=ENTRMID
         ENDIF
         if(lndj(JL).eq.1) ZENTR(JL)=ZENTR(JL)*1.1
       else
@@ -1177,12 +1251,14 @@ CONTAINS
         ZHEAT(JL)=0.0
         ZCAPE(JL)=0.0
         ZRELH(JL)=0.0
+        MUPV(JL)=0.0  !  RDT Modification.
         ZMFUB1(JL)=ZMFUB(JL)
   510 CONTINUE
 !
       DO 511 JL=1,KLON
       IF(LDCUM(JL).AND.KTYPE(JL).EQ.1) THEN
       KTOP0=MAX(12,KCTOP(JL))
+      ZDEPTH=0.0
        DO JK=2,KLEV
        IF(JK.LE.KCBOT(JL).AND.JK.GT.KCTOP(JL)) THEN
          ZRO=PAPH(JL,JK)/(RD*ZTENH(JL,JK))
@@ -1193,17 +1269,33 @@ CONTAINS
          ZCAPE(JL)=ZCAPE(JL)+G*((PTU(JL,JK)*(1.+.608*PQU(JL,JK) &
            -PLU(JL,JK)))/(ZTENH(JL,JK)*(1.+.608*ZQENH(JL,JK))) &
            -1.0)*ZDZ
+         dept=(PAPH(JL,JK)-PAPH(JL,JK-1))/(PAPH(JL,KCBOT(JL))-  &  !  RDT Mod.
+            PAPH(JL,KCTOP(JL)))
+         MUPV(JL)=MUPV(JL)+dept*PMFU(JL,JK)/ZRO   ! RDT Mod.
+         if ( JK.EQ.KCBOT(JL) )  ZUPNORM=PMFU(JL,JK)/ZRO
        ENDIF
+
        IF(JK.LE.KCBOT(JL).AND.JK.GT.KTOP0) THEN
          dept=(PAPH(JL,JK)-PAPH(JL,JK-1))/(PAPH(JL,KCBOT(JL))-  &
             PAPH(JL,KTOP0))
          ZRELH(JL)=ZRELH(JL)+dept*PQEN(JL,JK)/PQSEN(JL,JK)
        ENDIF
        ENDDO
-!
+
        IF(ZRELH(JL).GE.CRIRH) THEN
          IKB=KCBOT(JL)
 !         ZHT=MAX(0.0,(ZCAPE(JL)-300.0))/(ZTAU*ZHEAT(JL))
+         ZDEPTH=(PGEO(JL,KCTOP(JL))-PGEO(JL,KCBOT(JL))) / G
+         radup = 0.2 / ZENTR(JL)
+#if defined(mpas)
+         afrac = API * radup * radup / (dxsq(JL))
+         CONVTIME = max(min((ZDEPTH*ZUPNORM)/MUPV(JL)*(1.0+dx(JL)/60000.0),10800.0),dt)  !  RDT Modification
+#else
+         afrac = API * radup * radup / (dxsq)
+         CONVTIME = max(min((ZDEPTH*ZUPNORM)/MUPV(JL)*(1.0+dx/60000.0),10800.0),dt)  !  RDT Modification
+#endif
+!         print*,'CONVTIME',JL,CONVTIME,ZDEPTH,MUPV(JL),ZUPNORM
+!         ZHT=MAX(0.0,(ZCAPE(JL)-0.0))/(CONVTIME*ZHEAT(JL))  !  RDT Modification
          ZHT=MAX(0.0,(ZCAPE(JL)-0.0))/(ZTAU*ZHEAT(JL))
          ZMFUB1(JL)=MAX(ZMFUB(JL)*ZHT,0.01)
          ZMFMAX=(PAPH(JL,IKB)-PAPH(JL,IKB-1))*ZCONS2
@@ -1220,7 +1312,31 @@ CONTAINS
 !         DOWNDRAFTS ON BOUNDARY LAYER MOISTURE BUDGET
 !--------------------------------------------------------
        DO 512 JL=1,KLON
-        IF(KTYPE(JL).NE.1) THEN
+
+        IF(KTYPE(JL).EQ.2) THEN
+           IKB=KCBOT(JL)
+           IF(PMFD(JL,IKB).LT.0.0.AND.LODDRAF(JL)) THEN
+              ZEPS=CMFDEPS
+           ELSE
+              ZEPS=0.
+           ENDIF
+           ZQUMQE=PQU(JL,IKB)+PLU(JL,IKB)-          &
+                 ZEPS*ZQD(JL,IKB)-(1.-ZEPS)*ZQENH(JL,IKB)
+           ZDQMIN=MAX(0.01*ZQENH(JL,IKB),1.E-10)
+           ZHCBASE(JL)=CPD*PTU(JL,IKB)+PGEO(JL,IKB)+ALV*PQU(JL,IKB)
+           ZHENVH=CPD*ZTENH(JL,IKB)+PGEO(JL,IKB)+ALV*ZQENH(JL,IKB)
+           ZDHMIN=MAX(0.01*ZHENVH,1.E-10)
+           ZMFMAX=(PAPH(JL,IKB)-PAPH(JL,IKB-1))*ZCONS2
+           IF(ZDHPBL(JL).GT.0.AND.LDCUM(JL) &
+                           .AND.ZMFUB(JL).LT.ZMFMAX) THEN
+!           IF(ZDHPBL(JL).GT.0..AND.LDCUM(JL).AND.ZMFUB(JL).LT.ZMFMAX &
+!                 .AND.(ZHCBASE(JL)-ZHENVH).GT.ZDHMIN) THEN
+             ZMFUB1(JL)=ZDHPBL(JL)/(G*MAX(ZHCBASE(JL)-ZHENVH,ZDHMIN))
+           ELSE
+             ZMFUB1(JL)=ZMFUB(JL)
+           ENDIF
+           ZMFUB1(JL)=MIN(ZMFUB1(JL),ZMFMAX)
+        ELSEIF(KTYPE(JL).EQ.3) THEN
            IKB=KCBOT(JL)
            IF(PMFD(JL,IKB).LT.0.0.AND.LODDRAF(JL)) THEN
               ZEPS=CMFDEPS
@@ -1639,7 +1755,7 @@ CONTAINS
 !           FLUXES AS WELL AS PRECIPITATION RATES)
 !***INTERFACE
 !   ---------
-!          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+
 !***METHOD.
 !  --------
 !          LIFT SURFACE AIR DRY-ADIABATICALLY TO CLOUD BASE
