@@ -685,8 +685,6 @@
 			<var name="z_isobaric"/>
 			<var name="z_iso_levels"/>
 			<var name="meanT_500_300"/>
-			<var name="rthcuten"/>
-			<var name="rqvcuten"/>
 			<var name="rt_diabatic_tend"/>
 			<var name="euler_tend_theta"/>
 			<var name="tend_theta"/>
@@ -997,7 +995,7 @@
 <!-- =========================================================================================================== -->
 
         <!-- begin var_struct atm_input --> 
-        <var_struct name="atm_input" time_levs="0">
+        <var_struct name="atm_input" time_levs="1">
 
         <!-- declarations of arrays needed to run input ozone data:                                              -->
 
