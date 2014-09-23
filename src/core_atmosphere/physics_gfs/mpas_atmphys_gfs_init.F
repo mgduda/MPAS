@@ -93,6 +93,7 @@
  call init_dirs_forphys(mesh)
 
 !retrieve the initial starting date and initialize the array idate: 
+ initTime = mpas_get_clock_time(clock, MPAS_START_TIME)
  call mpas_get_time(curr_time=initTime,YYYY=year,MM=month,DD=day,H=hour)
  idate(1) = hour
  idate(2) = month
