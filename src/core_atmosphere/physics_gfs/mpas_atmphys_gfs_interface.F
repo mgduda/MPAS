@@ -206,7 +206,8 @@
  if(.not.allocated(height)) allocate(height(nVertLevels+1,nCellsSolve))
  do k = 1, nVertLevels + 1
  do iCell = 1, nCellsSolve
-    height(k,iCell) = max(0._RKIND,zgrid(k,iCell))
+!    height(k,iCell) = max(0._RKIND,zgrid(k,iCell))
+    height(k,iCell) = zgrid(k,iCell)
  enddo
  enddo
 
@@ -302,7 +303,7 @@
     k = nVertLevels+1
     prsi_hyd(iCell,k) = prsi(iCell,k)
     do k = nVertLevels,1,-1
-       prsi_hyd(iCell,k) = prsi_hyd(iCell,k+1) + grav * rhos(iCell,k) * height(k,iCell) 
+       prsi_hyd(iCell,k) = prsi_hyd(iCell,k+1) + grav * rhos(iCell,k) * (height(k+1,iCell)-height(k,iCell))
     enddo
     !surface pressure:
     pgr_hyd(iCell) = prsi_hyd(iCell,1)
