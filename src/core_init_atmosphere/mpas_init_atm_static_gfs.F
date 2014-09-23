@@ -216,14 +216,28 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
-    if(x .gt. nx) x = dble(nx)
+    if (x < 0.5) then
+       lon = lon + 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+       lon = lon - 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
+    if (y < 1.0) y = 1.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     ter(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
-    if(ter(iCell) .eq. -1.e30_RKIND) write(0,101) iCell,lat,y,lon,x,ter(iCell) 
+    if(ter(iCell) < -1.e20_RKIND) write(0,101) iCell,lat,y,lon,x,ter(iCell) 
  enddo
  deallocate(rarray)
  deallocate(xarray)
  write(0,*) '--- end interpolate TER'
  write(0,*)
+
 
 
 !
@@ -272,12 +286,20 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
-    if(y < dble(1) ) y = dble(1)
-    if(y > dble(ny)) y = dble(ny)
-    if(lon > 180._RKIND) then
-       lon = lon - 360._RKIND
-       call latlon_to_ij(proj,lat,lon,x,y)
-    endif
+    if (x < 0.5) then
+       lon = lon + 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+       lon = lon - 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
+    if (y < 1.0) y = 1.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     rPoint = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
     lu_index(iCell) = nint(rPoint)
  enddo
@@ -344,12 +366,20 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
-    if(y < dble(1) ) y = dble(1)
-    if(y > dble(ny)) y = dble(ny)
-    if(lon > 180._RKIND) then
-       lon = lon - 360._RKIND
-       call latlon_to_ij(proj,lat,lon,x,y)
-    endif
+    if (x < 0.5) then
+       lon = lon + 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+       lon = lon - 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
+    if (y < 1.0) y = 1.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     rPoint = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
     soilcat_top(iCell) = nint(rPoint)
  enddo
@@ -439,8 +469,20 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj,lat,lon,x,y)
-    if(y < dble(1) ) y = dble(1 )
-    if(y > dble(ny)) y = dble(ny) 
+    if (x < 0.5) then
+       lon = lon + 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+       lon = lon - 360.0
+       call latlon_to_ij(proj, lat, lon, x, y)
+    end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
+    if (y < 1.0) y = 1.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     soiltemp(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                       -1.e30_RKIND,interp_list,1)
  enddo
@@ -500,12 +542,20 @@
        lat = latCell(iCell)*DEG_PER_RAD
        lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj,lat,lon,x,y)
-       if(x >= dble(nx)) then
-          lon = lon - dble(nx)
-          call latlon_to_ij(proj,lat,lon,x,y)
+       if (x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
        end if
-       if(y < dble(1) ) y = dble(1 )
-       if(y > dble(ny)) y = dble(ny) 
+       if (x <= 0.5) then
+          x = 1.0
+       else if (x >= (real(nx)+0.5)) then
+          x = real(nx)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
        snoalb(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                          0._RKIND,interp_list,1)
        snoalb(iCell) = snoalb(iCell)*0.01_RKIND
@@ -568,15 +618,20 @@
        lat = latCell(iCell)*DEG_PER_RAD
        lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
-       if(x < 0.5) then
+       if (x < 0.5) then
           lon = lon + 360.0
           call latlon_to_ij(proj, lat, lon, x, y)
-       else if(x >= 2500.5) then
+       else if (x >= (real(nx,kind=RKIND) + 0.5)) then
           lon = lon - 360.0
           call latlon_to_ij(proj, lat, lon, x, y)
        end if
+       if (x <= 0.5) then
+          x = 1.0
+       else if (x >= (real(nx)+0.5)) then
+          x = real(nx)
+       end if
        if (y < 1.0) y = 1.0
-       if (y > 1249.0) y = 1249.0
+       if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
        greenfrac(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                             -1.e30_RKIND,interp_list,1)
     enddo
@@ -636,15 +691,20 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj, lat, lon, x, y)
-    if(x < 0.5) then
+    if (x < 0.5) then
        lon = lon + 360.0
        call latlon_to_ij(proj, lat, lon, x, y)
-    else if(x >= 2500.5) then
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
        lon = lon - 360.0
        call latlon_to_ij(proj, lat, lon, x, y)
     end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
     if (y < 1.0) y = 1.0
-    if (y > 1249.0) y = 1249.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     shdmax(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                     -1.e30_RKIND,interp_list,1)
     shdmax(iCell) = shdmax(iCell)*0.01_RKIND
@@ -704,15 +764,20 @@
     lat = latCell(iCell)*DEG_PER_RAD
     lon = lonCell(iCell)*DEG_PER_RAD
     call latlon_to_ij(proj, lat, lon, x, y)
-    if(x < 0.5) then
+    if (x < 0.5) then
        lon = lon + 360.0
        call latlon_to_ij(proj, lat, lon, x, y)
-    else if(x >= 2500.5) then
-       lon = lon - 360.0 
+    else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+       lon = lon - 360.0
        call latlon_to_ij(proj, lat, lon, x, y)
     end if
+    if (x <= 0.5) then
+       x = 1.0
+    else if (x >= (real(nx)+0.5)) then
+       x = real(nx)
+    end if
     if (y < 1.0) y = 1.0
-    if (y > 1249.0) y = 1249.0
+    if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
     shdmin(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                     -1.e30_RKIND,interp_list,1)
     shdmin(iCell) = shdmin(iCell)*0.01_RKIND
@@ -770,9 +835,21 @@
        lat = latCell(iCell)*DEG_PER_RAD
        lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
-       y = 180._RKIND-y
-       if(y < 1._RKIND)   y = 1._RKIND
-       if(y > 180._RKIND) y = 180._RKIND
+       y = real(ny,kind=RKIND) - y
+       if (x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       end if
+       if (x <= 0.5) then
+          x = 1.0
+       else if (x >= (real(nx)+0.5)) then
+          x = real(nx)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
        facsf(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                       0._RKIND,interp_list,1)
        facsf(iCell) = facsf(iCell)*0.01_RKIND
@@ -831,9 +908,21 @@
        lat = latCell(iCell)*DEG_PER_RAD
        lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
-       y = 180._RKIND-y
-       if(y < 1._RKIND)   y = 1._RKIND
-       if(y > 180._RKIND) y = 180._RKIND
+       y = real(ny,kind=RKIND) - y
+       if (x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       end if
+       if (x <= 0.5) then
+          x = 1.0
+       else if (x >= (real(nx)+0.5)) then
+          x = real(nx)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
        facwf(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                       0._RKIND,interp_list,1)
        facwf(iCell) = facwf(iCell)*0.01_RKIND
@@ -895,9 +984,21 @@
           lat = latCell(iCell)*DEG_PER_RAD
           lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
-          y = dble(ny)-y
-          if(y < dble(1) ) y = dble(1)
-          if(y > dble(ny)) y = dble(ny)
+          y = real(ny,kind=RKIND) - y
+          if (x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (x <= 0.5) then
+             x = 1.0
+          else if (x >= (real(nx)+0.5)) then
+             x = real(nx)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
           alnsf4s(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                               0._RKIND,interp_list,1)
           alnsf4s(iz,iCell) = alnsf4s(iz,iCell)*0.01_RKIND
@@ -960,9 +1061,21 @@
           lat = latCell(iCell)*DEG_PER_RAD
           lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
-          y = dble(ny)-y
-          if(y < dble(1) ) y = dble(1)
-          if(y > dble(ny)) y = dble(ny)
+          y = real(ny,kind=RKIND) - y
+          if (x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (x <= 0.5) then
+             x = 1.0
+          else if (x >= (real(nx)+0.5)) then
+             x = real(nx)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
           alnwf4s(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                               0._RKIND,interp_list,1)
           alnwf4s(iz,iCell) = alnwf4s(iz,iCell)*0.01_RKIND
@@ -1025,9 +1138,21 @@
           lat = latCell(iCell)*DEG_PER_RAD
           lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
-          y = dble(ny)-y
-          if(y < dble(1) ) y = dble(1)
-          if(y > dble(ny)) y = dble(ny)
+          y = real(ny,kind=RKIND) - y
+          if (x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (x <= 0.5) then
+             x = 1.0
+          else if (x >= (real(nx)+0.5)) then
+             x = real(nx)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
           alvsf4s(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                               0._RKIND,interp_list,1)
           alvsf4s(iz,iCell) = alvsf4s(iz,iCell)*0.01_RKIND
@@ -1090,9 +1215,21 @@
           lat = latCell(iCell)*DEG_PER_RAD
           lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
-          y = dble(ny)-y
-          if(y < dble(1) ) y = dble(1)
-          if(y > dble(ny)) y = dble(ny)
+          y = real(ny,kind=RKIND) - y
+          if (x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (x <= 0.5) then
+             x = 1.0
+          else if (x >= (real(nx)+0.5)) then
+             x = real(nx)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
           alvwf4s(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                               0._RKIND,interp_list,1)
           alvwf4s(iz,iCell) = alvwf4s(iz,iCell)*0.01_RKIND
@@ -1155,12 +1292,20 @@
        lat = latCell(iCell)*DEG_PER_RAD
        lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj,lat,lon,x,y)
-       if(lon > 180._RKIND) then
-          lon = lon - 360._RKIND
-          call latlon_to_ij(proj,lat,lon,x,y)
-       endif
-       if(y < dble(1) ) y = dble(1)
-       if(y > dble(ny)) y = dble(ny)
+       if (x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       end if
+       if (x <= 0.5) then
+          x = 1.0
+       else if (x >= (real(nx)+0.5)) then
+          x = real(nx)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
        slope(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                       0._RKIND,interp_list,1)
     endif
@@ -1223,12 +1368,20 @@
           lat = latCell(iCell)*DEG_PER_RAD
           lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj,lat,lon,x,y)
-          if(lon > 180._RKIND) then
-             lon = lon - 360._RKIND
-             call latlon_to_ij(proj,lat,lon,x,y)
-          endif
-          if(y < dble(1) ) y = dble(1)
-          if(y > dble(ny)) y = dble(ny)
+          if (x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if (x >= (real(nx,kind=RKIND) + 0.5)) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (x <= 0.5) then
+             x = 1.0
+          else if (x >= (real(nx)+0.5)) then
+             x = real(nx)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > real(ny,kind=RKIND)) y = real(ny,kind=RKIND)
           zorl12m(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1, &
                                               10._RKIND,interp_list,1)
        endif
