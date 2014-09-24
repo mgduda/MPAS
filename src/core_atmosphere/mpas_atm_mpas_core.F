@@ -50,6 +50,9 @@ module mpas_core
       character (len=StrKIND), pointer :: xtime
       character (len=StrKIND), pointer :: config_sfc_update_interval, config_sfc_update_name
 
+      real(kind=RKIND), dimension(:), pointer :: areaCell
+      real(kind=RKIND), dimension(:), pointer :: invAreaCell
+      integer, pointer :: nCells
 
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
@@ -99,6 +102,20 @@ module mpas_core
       call mpas_dmpar_exch_halo_field(rw_field)
 
       current_outfile_frames = 0
+
+      !
+      ! Pre-compute the inverse of cell area
+      !
+      block => domain % blocklist
+      do while (associated(block))
+         call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+         call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+         call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+         call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell)
+         invAreaCell(1:nCells) = 1.0_RKIND / areaCell(1:nCells)
+
+         block => block % next
+      end do
 
       if (config_sfc_update_interval /= "none") then
 
