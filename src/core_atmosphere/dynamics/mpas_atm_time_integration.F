@@ -22,6 +22,30 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
+
    contains
 
 
