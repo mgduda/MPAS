@@ -246,10 +246,13 @@ module mpas_core
       type (mpas_pool_type), pointer :: diag_physics
       type (mpas_pool_type), pointer :: atm_input
       
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
       real (kind=RKIND), dimension(:,:), pointer :: u, uReconstructX, uReconstructY, uReconstructZ, uReconstructZonal, uReconstructMeridional
       real (kind=RKIND), dimension(:), pointer :: meshScalingDel2, meshScalingDel4
 
       integer, pointer :: nEdgesSolve
+      integer, pointer :: passive_start, passive_end, index_qv
+      integer :: is
    
       logical, pointer :: config_do_restart, config_do_DAcycling
 
@@ -268,7 +271,9 @@ module mpas_core
       call mpas_rbf_interp_initialize(mesh)
       call mpas_init_reconstruct(mesh)
 
+
       call mpas_pool_get_array(state, 'u', u, 1)
+      call mpas_pool_get_array(state, 'scalars', scalars, 1)
       call mpas_pool_get_array(diag, 'uReconstructX', uReconstructX)
       call mpas_pool_get_array(diag, 'uReconstructY', uReconstructY)
       call mpas_pool_get_array(diag, 'uReconstructZ', uReconstructZ)
@@ -281,6 +286,20 @@ module mpas_core
                             uReconstructZonal,         &
                             uReconstructMeridional     &
                            )
+
+      !
+      ! Initialize passive tracers with the QV field
+      !
+      nullify(passive_start)
+      call mpas_pool_get_dimension(state, 'passive_start', passive_start)
+      call mpas_pool_get_dimension(state, 'passive_end', passive_end)
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+
+      if (associated(passive_start)) then
+         do is = passive_start, passive_end
+            scalars(is,:,:) = scalars(index_qv,:,:)
+         end do
+      end if
    
 #ifdef DO_PHYSICS
       !check that all the physics options are correctly defined and that at least one physics

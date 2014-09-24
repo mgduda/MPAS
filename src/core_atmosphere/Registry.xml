@@ -992,6 +992,118 @@
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
+
+#if 1
+                        <var name="tracer000"   array_group="passive"/>
+                        <var name="tracer001"   array_group="passive"/>
+                        <var name="tracer002"   array_group="passive"/>
+                        <var name="tracer003"   array_group="passive"/>
+                        <var name="tracer004"   array_group="passive"/>
+                        <var name="tracer005"   array_group="passive"/>
+                        <var name="tracer006"   array_group="passive"/>
+                        <var name="tracer007"   array_group="passive"/>
+                        <var name="tracer008"   array_group="passive"/>
+                        <var name="tracer009"   array_group="passive"/>
+
+                        <var name="tracer010"   array_group="passive"/>
+                        <var name="tracer011"   array_group="passive"/>
+                        <var name="tracer012"   array_group="passive"/>
+                        <var name="tracer013"   array_group="passive"/>
+                        <var name="tracer014"   array_group="passive"/>
+                        <var name="tracer015"   array_group="passive"/>
+                        <var name="tracer016"   array_group="passive"/>
+                        <var name="tracer017"   array_group="passive"/>
+                        <var name="tracer018"   array_group="passive"/>
+                        <var name="tracer019"   array_group="passive"/>
+
+                        <var name="tracer020"   array_group="passive"/>
+                        <var name="tracer021"   array_group="passive"/>
+                        <var name="tracer022"   array_group="passive"/>
+                        <var name="tracer023"   array_group="passive"/>
+                        <var name="tracer024"   array_group="passive"/>
+                        <var name="tracer025"   array_group="passive"/>
+                        <var name="tracer026"   array_group="passive"/>
+                        <var name="tracer027"   array_group="passive"/>
+                        <var name="tracer028"   array_group="passive"/>
+                        <var name="tracer029"   array_group="passive"/>
+
+                        <var name="tracer030"   array_group="passive"/>
+                        <var name="tracer031"   array_group="passive"/>
+                        <var name="tracer032"   array_group="passive"/>
+                        <var name="tracer033"   array_group="passive"/>
+                        <var name="tracer034"   array_group="passive"/>
+                        <var name="tracer035"   array_group="passive"/>
+                        <var name="tracer036"   array_group="passive"/>
+                        <var name="tracer037"   array_group="passive"/>
+                        <var name="tracer038"   array_group="passive"/>
+                        <var name="tracer039"   array_group="passive"/>
+
+                        <var name="tracer040"   array_group="passive"/>
+                        <var name="tracer041"   array_group="passive"/>
+                        <var name="tracer042"   array_group="passive"/>
+                        <var name="tracer043"   array_group="passive"/>
+                        <var name="tracer044"   array_group="passive"/>
+                        <var name="tracer045"   array_group="passive"/>
+                        <var name="tracer046"   array_group="passive"/>
+                        <var name="tracer047"   array_group="passive"/>
+                        <var name="tracer048"   array_group="passive"/>
+                        <var name="tracer049"   array_group="passive"/>
+
+                        <var name="tracer050"   array_group="passive"/>
+                        <var name="tracer051"   array_group="passive"/>
+                        <var name="tracer052"   array_group="passive"/>
+                        <var name="tracer053"   array_group="passive"/>
+                        <var name="tracer054"   array_group="passive"/>
+                        <var name="tracer055"   array_group="passive"/>
+                        <var name="tracer056"   array_group="passive"/>
+                        <var name="tracer057"   array_group="passive"/>
+                        <var name="tracer058"   array_group="passive"/>
+                        <var name="tracer059"   array_group="passive"/>
+
+                        <var name="tracer060"   array_group="passive"/>
+                        <var name="tracer061"   array_group="passive"/>
+                        <var name="tracer062"   array_group="passive"/>
+                        <var name="tracer063"   array_group="passive"/>
+                        <var name="tracer064"   array_group="passive"/>
+                        <var name="tracer065"   array_group="passive"/>
+                        <var name="tracer066"   array_group="passive"/>
+                        <var name="tracer067"   array_group="passive"/>
+                        <var name="tracer068"   array_group="passive"/>
+                        <var name="tracer069"   array_group="passive"/>
+
+                        <var name="tracer070"   array_group="passive"/>
+                        <var name="tracer071"   array_group="passive"/>
+                        <var name="tracer072"   array_group="passive"/>
+                        <var name="tracer073"   array_group="passive"/>
+                        <var name="tracer074"   array_group="passive"/>
+                        <var name="tracer075"   array_group="passive"/>
+                        <var name="tracer076"   array_group="passive"/>
+                        <var name="tracer077"   array_group="passive"/>
+                        <var name="tracer078"   array_group="passive"/>
+                        <var name="tracer079"   array_group="passive"/>
+
+                        <var name="tracer080"   array_group="passive"/>
+                        <var name="tracer081"   array_group="passive"/>
+                        <var name="tracer082"   array_group="passive"/>
+                        <var name="tracer083"   array_group="passive"/>
+                        <var name="tracer084"   array_group="passive"/>
+                        <var name="tracer085"   array_group="passive"/>
+                        <var name="tracer086"   array_group="passive"/>
+                        <var name="tracer087"   array_group="passive"/>
+                        <var name="tracer088"   array_group="passive"/>
+                        <var name="tracer089"   array_group="passive"/>
+
+                        <var name="tracer090"   array_group="passive"/>
+                        <var name="tracer091"   array_group="passive"/>
+                        <var name="tracer092"   array_group="passive"/>
+                        <var name="tracer093"   array_group="passive"/>
+                        <var name="tracer094"   array_group="passive"/>
+                        <var name="tracer095"   array_group="passive"/>
+                        <var name="tracer096"   array_group="passive"/>
+                        <var name="tracer097"   array_group="passive"/>
+                        <var name="tracer098"   array_group="passive"/>
+                        <var name="tracer099"   array_group="passive"/>
+#endif
                 </var_array>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
@@ -1143,6 +1255,117 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+#if 1
+                        <var name="tend_tracer000"   array_group="passive"/>
+                        <var name="tend_tracer001"   array_group="passive"/>
+                        <var name="tend_tracer002"   array_group="passive"/>
+                        <var name="tend_tracer003"   array_group="passive"/>
+                        <var name="tend_tracer004"   array_group="passive"/>
+                        <var name="tend_tracer005"   array_group="passive"/>
+                        <var name="tend_tracer006"   array_group="passive"/>
+                        <var name="tend_tracer007"   array_group="passive"/>
+                        <var name="tend_tracer008"   array_group="passive"/>
+                        <var name="tend_tracer009"   array_group="passive"/>
+
+                        <var name="tend_tracer010"   array_group="passive"/>
+                        <var name="tend_tracer011"   array_group="passive"/>
+                        <var name="tend_tracer012"   array_group="passive"/>
+                        <var name="tend_tracer013"   array_group="passive"/>
+                        <var name="tend_tracer014"   array_group="passive"/>
+                        <var name="tend_tracer015"   array_group="passive"/>
+                        <var name="tend_tracer016"   array_group="passive"/>
+                        <var name="tend_tracer017"   array_group="passive"/>
+                        <var name="tend_tracer018"   array_group="passive"/>
+                        <var name="tend_tracer019"   array_group="passive"/>
+
+                        <var name="tend_tracer020"   array_group="passive"/>
+                        <var name="tend_tracer021"   array_group="passive"/>
+                        <var name="tend_tracer022"   array_group="passive"/>
+                        <var name="tend_tracer023"   array_group="passive"/>
+                        <var name="tend_tracer024"   array_group="passive"/>
+                        <var name="tend_tracer025"   array_group="passive"/>
+                        <var name="tend_tracer026"   array_group="passive"/>
+                        <var name="tend_tracer027"   array_group="passive"/>
+                        <var name="tend_tracer028"   array_group="passive"/>
+                        <var name="tend_tracer029"   array_group="passive"/>
+
+                        <var name="tend_tracer030"   array_group="passive"/>
+                        <var name="tend_tracer031"   array_group="passive"/>
+                        <var name="tend_tracer032"   array_group="passive"/>
+                        <var name="tend_tracer033"   array_group="passive"/>
+                        <var name="tend_tracer034"   array_group="passive"/>
+                        <var name="tend_tracer035"   array_group="passive"/>
+                        <var name="tend_tracer036"   array_group="passive"/>
+                        <var name="tend_tracer037"   array_group="passive"/>
+                        <var name="tend_tracer038"   array_group="passive"/>
+                        <var name="tend_tracer039"   array_group="passive"/>
+
+                        <var name="tend_tracer040"   array_group="passive"/>
+                        <var name="tend_tracer041"   array_group="passive"/>
+                        <var name="tend_tracer042"   array_group="passive"/>
+                        <var name="tend_tracer043"   array_group="passive"/>
+                        <var name="tend_tracer044"   array_group="passive"/>
+                        <var name="tend_tracer045"   array_group="passive"/>
+                        <var name="tend_tracer046"   array_group="passive"/>
+                        <var name="tend_tracer047"   array_group="passive"/>
+                        <var name="tend_tracer048"   array_group="passive"/>
+                        <var name="tend_tracer049"   array_group="passive"/>
+
+                        <var name="tend_tracer050"   array_group="passive"/>
+                        <var name="tend_tracer051"   array_group="passive"/>
+                        <var name="tend_tracer052"   array_group="passive"/>
+                        <var name="tend_tracer053"   array_group="passive"/>
+                        <var name="tend_tracer054"   array_group="passive"/>
+                        <var name="tend_tracer055"   array_group="passive"/>
+                        <var name="tend_tracer056"   array_group="passive"/>
+                        <var name="tend_tracer057"   array_group="passive"/>
+                        <var name="tend_tracer058"   array_group="passive"/>
+                        <var name="tend_tracer059"   array_group="passive"/>
+
+                        <var name="tend_tracer060"   array_group="passive"/>
+                        <var name="tend_tracer061"   array_group="passive"/>
+                        <var name="tend_tracer062"   array_group="passive"/>
+                        <var name="tend_tracer063"   array_group="passive"/>
+                        <var name="tend_tracer064"   array_group="passive"/>
+                        <var name="tend_tracer065"   array_group="passive"/>
+                        <var name="tend_tracer066"   array_group="passive"/>
+                        <var name="tend_tracer067"   array_group="passive"/>
+                        <var name="tend_tracer068"   array_group="passive"/>
+                        <var name="tend_tracer069"   array_group="passive"/>
+
+                        <var name="tend_tracer070"   array_group="passive"/>
+                        <var name="tend_tracer071"   array_group="passive"/>
+                        <var name="tend_tracer072"   array_group="passive"/>
+                        <var name="tend_tracer073"   array_group="passive"/>
+                        <var name="tend_tracer074"   array_group="passive"/>
+                        <var name="tend_tracer075"   array_group="passive"/>
+                        <var name="tend_tracer076"   array_group="passive"/>
+                        <var name="tend_tracer077"   array_group="passive"/>
+                        <var name="tend_tracer078"   array_group="passive"/>
+                        <var name="tend_tracer079"   array_group="passive"/>
+
+                        <var name="tend_tracer080"   array_group="passive"/>
+                        <var name="tend_tracer081"   array_group="passive"/>
+                        <var name="tend_tracer082"   array_group="passive"/>
+                        <var name="tend_tracer083"   array_group="passive"/>
+                        <var name="tend_tracer084"   array_group="passive"/>
+                        <var name="tend_tracer085"   array_group="passive"/>
+                        <var name="tend_tracer086"   array_group="passive"/>
+                        <var name="tend_tracer087"   array_group="passive"/>
+                        <var name="tend_tracer088"   array_group="passive"/>
+                        <var name="tend_tracer089"   array_group="passive"/>
+
+                        <var name="tend_tracer090"   array_group="passive"/>
+                        <var name="tend_tracer091"   array_group="passive"/>
+                        <var name="tend_tracer092"   array_group="passive"/>
+                        <var name="tend_tracer093"   array_group="passive"/>
+                        <var name="tend_tracer094"   array_group="passive"/>
+                        <var name="tend_tracer095"   array_group="passive"/>
+                        <var name="tend_tracer096"   array_group="passive"/>
+                        <var name="tend_tracer097"   array_group="passive"/>
+                        <var name="tend_tracer098"   array_group="passive"/>
+                        <var name="tend_tracer099"   array_group="passive"/>
+#endif
                 </var_array>
         </var_struct>
 
