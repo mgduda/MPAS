@@ -24,6 +24,7 @@ OBJS = mpas_kind_types.o \
        mpas_io_units.o \
        random_id.o \
        streams.o \
+       timer.o \
        pool_hash.o
 
 all: framework $(DEPS)
