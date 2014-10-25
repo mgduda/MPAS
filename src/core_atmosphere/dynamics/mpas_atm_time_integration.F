@@ -2189,6 +2189,8 @@ module atm_time_integration
 !
 !  rescale the fluxes
 !
+         !RSS2E - moved assignment to scalar_new from separate loop (see commented code below)
+         !RSS2E - into the following loops. Avoids having to save elements of flux array
          do iEdge = 1, nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2197,7 +2199,9 @@ module atm_time_integration
                   flux = flux_arr(k,iEdge)
                   flux = max(0.0_RKIND,flux) * min(scale_arr(SCALE_OUT,k,cell1), scale_arr(SCALE_IN, k,cell2)) &
                        + min(0.0_RKIND,flux) * min(scale_arr(SCALE_IN, k,cell1), scale_arr(SCALE_OUT,k,cell2))
-                  flux_arr(k,iEdge) = flux
+                  !RSS2E flux_arr(k,iEdge) = flux
+                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux/areaCell(cell1) !RSS2E
+                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux/areaCell(cell2) !RSS2E
                end do
             end if
          end do
@@ -2215,16 +2219,16 @@ module atm_time_integration
 !
 !  do the scalar update now that we have the fluxes
 !
-         do iEdge=1,nEdges
-            cell1 = cellsOnEdge(1,iEdge)
-            cell2 = cellsOnEdge(2,iEdge)
-            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
-               do k=1,nVertLevels
-                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
-                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
-               end do
-            end if
-         end do
+!RSS2E         do iEdge=1,nEdges
+!RSS2E            cell1 = cellsOnEdge(1,iEdge)
+!RSS2E            cell2 = cellsOnEdge(2,iEdge)
+!RSS2E            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
+!RSS2E               do k=1,nVertLevels
+!RSS2E                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
+!RSS2E                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
+!RSS2E               end do
+!RSS2E            end if
+!RSS2E         end do
 
          do iCell=1,nCellsSolve
             do k=1,nVertLevels
