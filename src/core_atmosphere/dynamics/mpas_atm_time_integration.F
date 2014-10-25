@@ -45,7 +45,6 @@ module atm_time_integration
 
    end interface
 
-
    contains
 
 
@@ -415,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1740,6 +1745,10 @@ module atm_time_integration
       integer, intent(in)                  :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND), intent(in)        :: dt
 
+      integer :: ii,jj                          !RSS2B
+      integer, dimension(10) :: ica             !RSS2B
+      real (kind=RKIND), dimension(10,2) :: swa !RSS2B
+
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: flux, scalar_weight
 
@@ -1940,7 +1949,7 @@ module atm_time_integration
       !
       !  horizontal flux divergence
 
-         flux_arr(:,:) = 0.
+         !RSS2B flux_arr(:,:) = 0. ! Now only nitialized as needed (see default case)
          do iEdge=1,nEdges
 
             cell1 = cellsOnEdge(1,iEdge)
@@ -1948,13 +1957,39 @@ module atm_time_integration
 
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
   
-               do i=1,nAdvCellsForEdge(iEdge)
-                  iCell = advCellsForEdge(i,iEdge)
-                  do k=1,nVertLevels
-                     scalar_weight = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
-                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + scalar_weight* scalar_new(k,iCell)
+               !RSS2B - speclal treatment of calculations involving edges between hexagonal cells
+               !RSS2B - also took advantage of fact that coef_3rd_order is never negative
+               !RSS2B - original code retained in select "default" case
+               !RSS2B - be sure to see additional declarations near top of subroutine
+               select case(nAdvCellsForEdge(iEdge))                                               !RSS2B - new code
+               case(10)                                                                           !RSS2B - new code
+                  do jj=1,10                                                                      !RSS2B - new code
+                     ica(jj)    = advCellsForEdge(jj,iEdge)                                       !RSS2B - new code
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)  !RSS2B - new code
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)  !RSS2B - new code
+                  enddo                                                                           !RSS2B - new code
+                  do k=1,nVertLevels                                                              !RSS2B - new code
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)                                         !RSS2B - new code
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &                     !RSS2B - new code
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &     !RSS2B - new code
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &     !RSS2B - new code
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &     !RSS2B - new code
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &     !RSS2B - new code
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)))      !RSS2B - new code
+                  enddo                                                                           !RSS2B - new code
+                                                                                                  !RSS2B - new code
+               case default                                                                       !RSS2B - new code
+                  do k=1,nVertLevels                                                              !RSS2B - new code
+                     flux_arr(k,iEdge) = 0.0_RKIND                                                !RSS2B - new code
+                  enddo                                                                           !RSS2B - new code
+                  do i=1,nAdvCellsForEdge(iEdge)
+                     iCell = advCellsForEdge(i,iEdge)
+                     do k=1,nVertLevels
+                        scalar_weight = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                        flux_arr(k,iEdge) = flux_arr(k,iEdge) + scalar_weight* scalar_new(k,iCell)
+                     end do
                   end do
-               end do
+               end select                                                                         !RSS2B - new code
 
             end if
 
