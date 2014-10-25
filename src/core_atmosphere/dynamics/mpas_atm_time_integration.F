@@ -45,7 +45,6 @@ module atm_time_integration
 
    end interface
 
-
    contains
 
 
@@ -415,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1491,6 +1496,13 @@ module atm_time_integration
       integer, intent(in) :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND) :: dt
 
+      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
+      real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
+      integer, dimension(nVertLevels*num_scalars) :: indx             !RSS2C
+      integer:: ks, jj                                                !RSS2C
+      integer, dimension(10) :: ica                                   !RSS2C
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell         !RSS2C
+
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: scalar_weight
 
@@ -1545,6 +1557,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS2C
       call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
 
       call mpas_pool_get_array(mesh, 'fzm', fnm)
@@ -1578,6 +1591,10 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
+      do ks = 1,nVertLevels*num_scalars     !RSS2C
+         indx(ks) = (ks-1)/num_scalars + 1  !RSS2C
+      enddo                                 !RSS2C
+
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1586,28 +1603,80 @@ module atm_time_integration
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
 
-            flux_arr(:,:) = 0.
-            do i=1,nAdvCellsForEdge(iEdge)
-               iCell = advCellsForEdge(i,iEdge)
-               do k=1,nVertLevels
-                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
-                  do iScalar=1,num_scalars
-                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
-                  end do
-               end do
-            end do
+!RSS2C            flux_arr(:,:) = 0.
+!RSS2C            do i=1,nAdvCellsForEdge(iEdge)
+!RSS2C               iCell = advCellsForEdge(i,iEdge)
+!RSS2C               do k=1,nVertLevels
+!RSS2C                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
+!RSS2C                  do iScalar=1,num_scalars
+!RSS2C                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+!RSS2C                  end do
+!RSS2C               end do
+!RSS2C            end do
+
+            select case(nAdvCellsForEdge(iEdge))                                           !RSS2C
+            case(10)                                                                       !RSS2C
+               do jj=1,10                                                                  !RSS2C
+                  do k=1,nVertLevels                                                       !RSS2C
+                     scalar_weight2(k,jj) = uhAvg(k,iEdge)*(adv_coefs(jj,iEdge) + &        !RSS2C
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(jj,iEdge))     !RSS2C
+                  enddo                                                                    !RSS2C
+               enddo                                                                       !RSS2C
+               do jj=1,10                                                                  !RSS2C
+                  ica(jj) = advCellsForEdge(jj,iEdge)                                      !RSS2C
+               enddo                                                                       !RSS2C
+               do ks = 1,nVertLevels*num_scalars                                           !RSS2C
+                  flux_arr(ks,1) = &                                                       !RSS2C
+                       scalar_weight2(indx(ks),1)  * scalar_new(ks,1,ica(1)) + &           !RSS2C
+                       scalar_weight2(indx(ks),2)  * scalar_new(ks,1,ica(2)) + &           !RSS2C
+                       scalar_weight2(indx(ks),3)  * scalar_new(ks,1,ica(3)) + &           !RSS2C
+                       scalar_weight2(indx(ks),4)  * scalar_new(ks,1,ica(4)) + &           !RSS2C
+                       scalar_weight2(indx(ks),5)  * scalar_new(ks,1,ica(5)) + &           !RSS2C
+                       scalar_weight2(indx(ks),6)  * scalar_new(ks,1,ica(6)) + &           !RSS2C
+                       scalar_weight2(indx(ks),7)  * scalar_new(ks,1,ica(7)) + &           !RSS2C
+                       scalar_weight2(indx(ks),8)  * scalar_new(ks,1,ica(8)) + &           !RSS2C
+                       scalar_weight2(indx(ks),9)  * scalar_new(ks,1,ica(9)) + &           !RSS2C
+                       scalar_weight2(indx(ks),10) * scalar_new(ks,1,ica(10))              !RSS2C
+               end do                                                                      !RSS2C
+                                                                                           !RSS2C
+            case default                                                                   !RSS2C
+               do i=1,nAdvCellsForEdge(iEdge)                                              !RSS2C
+                  iCell = advCellsForEdge(i,iEdge)                                         !RSS2C
+                  do k=1,nVertLevels                                                       !RSS2C
+                     scalar_weight1(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + &            !RSS2C
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))      !RSS2C
+                  enddo                                                                    !RSS2C
+                  if(i == 1) then                                                          !RSS2C
+                     do ks = 1,nVertLevels*num_scalars                                     !RSS2C
+                        flux_arr(ks,1) = scalar_weight1(indx(ks)) * scalar_new(ks,1,iCell) !RSS2C
+                     end do                                                                !RSS2C
+                  else                                                                     !RSS2C
+                     do ks = 1,nVertLevels*num_scalars                                     !RSS2C
+                        flux_arr(ks,1) = flux_arr(ks,1) + &                                !RSS2C
+                             scalar_weight1(indx(ks)) * scalar_new(ks,1,iCell)             !RSS2C
+                     end do                                                                !RSS2C
+                  endif                                                                    !RSS2C
+               enddo                                                                       !RSS2C
+            end select                                                                     !RSS2C
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
 
-            do k=1,nVertLevels
-            do iScalar=1,num_scalars
-                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
-                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
-                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
-                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
-            end do
-            end do
+!RSS2C            do k=1,nVertLevels
+!RSS2C            do iScalar=1,num_scalars
+!RSS2C                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
+!RSS2C                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
+!RSS2C                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
+!RSS2C                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
+!RSS2C            end do
+!RSS2C            end do
+
+            do ks = 1,nVertLevels*num_scalars                                              !RSS2C
+               scalar_tend(ks,1,cell1) = scalar_tend(ks,1,cell1) - &                       !RSS2C
+                    flux_arr(ks,1) * invAreaCell(cell1)                                    !RSS2C
+               scalar_tend(ks,1,cell2) = scalar_tend(ks,1,cell2) + &                       !RSS2C
+                    flux_arr(ks,1) * invAreaCell(cell2)                                    !RSS2C
+            end do                                                                         !RSS2C
 
          end if
       end do
