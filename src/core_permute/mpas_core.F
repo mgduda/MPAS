@@ -78,9 +78,12 @@ module mpas_core
       type (mpas_pool_type), pointer :: statePool
       type (mpas_pool_type), pointer :: meshPool
 
-      integer :: iCell
+      integer :: i
       integer, pointer :: nCells, nEdges, nVertices
+      integer, pointer :: nCellsSolve, nEdgesSolve, nVerticesSolve
+      integer :: cellStart, edgeStart, vertexStart
       integer, dimension(:), pointer :: indexToCellID, indexToEdgeID, indexToVertexID
+      type (field1DInteger), pointer :: indexToCellIDField, indexToEdgeIDField, indexToVertexIDField
       integer :: ierr
 
 
@@ -89,13 +92,45 @@ module mpas_core
       call mpas_pool_get_dimension(meshPool, 'nCells', nCells)
       call mpas_pool_get_dimension(meshPool, 'nEdges', nEdges)
       call mpas_pool_get_dimension(meshPool, 'nVertices', nVertices)
+
+      call mpas_pool_get_dimension(meshPool, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(meshPool, 'nEdgesSolve', nEdgesSolve)
+      call mpas_pool_get_dimension(meshPool, 'nVerticesSolve', nVerticesSolve)
+
       call mpas_pool_get_array(meshPool, 'indexToCellID', indexToCellID)
       call mpas_pool_get_array(meshPool, 'indexToEdgeID', indexToEdgeID)
       call mpas_pool_get_array(meshPool, 'indexToVertexID', indexToVertexID)
 
-      write(0,*) 'nCells = ', nCells
-      write(0,*) 'nEdges = ', nEdges
-      write(0,*) 'nVertices = ', nVertices
+      call mpas_pool_get_field(meshPool, 'indexToCellID', indexToCellIDField)
+      call mpas_pool_get_field(meshPool, 'indexToEdgeID', indexToEdgeIDField)
+      call mpas_pool_get_field(meshPool, 'indexToVertexID', indexToVertexIDField)
+
+      write(0,*) 'nCellsSolve = ', nCellsSolve
+      write(0,*) 'nEdgesSolve = ', nEdgesSolve
+      write(0,*) 'nVerticesSolve = ', nVerticesSolve
+
+      call mpas_dmpar_get_start(domain % dminfo, nCellsSolve, cellStart, write_partition=.true.)
+      call mpas_dmpar_get_start(domain % dminfo, nEdgesSolve, edgeStart)
+      call mpas_dmpar_get_start(domain % dminfo, nVerticesSolve, vertexStart)
+
+      write(0,*) 'cellStart=', cellStart
+      write(0,*) 'edgeStart=', edgeStart
+      write(0,*) 'vertexStart=', vertexStart
+
+      do i=1,nCellsSolve
+         indexToCellID(i) = cellStart + i - 1
+      end do
+      call mpas_dmpar_exch_halo_field(indexToCellIDField)
+
+      do i=1,nEdgesSolve
+         indexToEdgeID(i) = edgeStart + i - 1
+      end do
+      call mpas_dmpar_exch_halo_field(indexToEdgeIDField)
+
+      do i=1,nVerticesSolve
+         indexToVertexID(i) = vertexStart + i - 1
+      end do
+      call mpas_dmpar_exch_halo_field(indexToVertexIDField)
 
    end subroutine mpas_core_run
 
