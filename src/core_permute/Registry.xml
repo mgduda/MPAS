@@ -15,7 +15,7 @@
 
 	<nml_record name="time_control" in_defaults="true">
 		<nml_option name="config_calendar_type"              type="character"     default_value="gregorian" in_defaults="false"/>
-		<nml_option name="config_num_halos"                  type="integer"       default_value="1" in_defaults="false"/>
+		<nml_option name="config_num_halos"                  type="integer"       default_value="2" in_defaults="false"/>
 	</nml_record>
 	<nml_record name="io" in_defaults="true">
 		<nml_option name="config_pio_num_iotasks"            type="integer"       default_value="0"/>
@@ -78,8 +78,10 @@
                         filename_template="grid_permuted.nc"
                         output_interval="initial_only"
                         runtime_format="single_file"
+                        clobber_mode="truncate"
                         immutable="true">
 
+			<var name="xtime"/>
 			<var name="latCell"/>
 			<var name="lonCell"/>
 			<var name="xCell"/>
