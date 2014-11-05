@@ -858,6 +858,77 @@ include 'mpif.h'
    
    end subroutine mpas_dmpar_compute_index_range!}}}
 
+
+!-----------------------------------------------------------------------
+!  routine mpas_dmpar_get_start
+!
+!> \brief Computes the starting offset for owned elements
+!> \author Michael Duda
+!> \date   3 November 2014
+!> \details
+!>  Given the number of elements owned by a task, this routine computes
+!>  the global starting offset for the task's elements assuming all tasks 
+!>  were assigned a contiguous range of elements in order of their rank.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_dmpar_get_start(dminfo, nElements, start, write_partition)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      integer, intent(in) :: nElements
+      integer, intent(out) :: start
+      logical, intent(in), optional :: write_partition
+
+      integer :: i
+      integer :: j
+      integer :: mpi_ierr
+      integer, dimension(:), pointer :: all_start, all_count
+         
+#ifdef _MPI
+      if (dminfo % my_proc_id == 0) then
+         allocate(all_start(dminfo % nprocs))
+         allocate(all_count(dminfo % nprocs))
+      end if
+
+      call MPI_Gather(nElements, 1, MPI_INTEGER, all_count, 1, MPI_INTEGER, 0, dminfo % comm, mpi_ierr)
+
+      if (dminfo % my_proc_id == 0) then
+
+         if (present(write_partition)) then
+            if (write_partition) then
+               open(67,file='graph_permuted',form='formatted')
+   
+               do i=1,dminfo % nprocs
+                  do j=1,all_count(i)
+                     write(67,*) i-1
+                  end do
+               end do
+
+               close(67)
+            end if
+         end if
+
+         all_start(1) = 1
+         do i=2,dminfo % nprocs
+            all_start(i) = all_start(i-1) + all_count(i-1)
+         end do
+      end if
+
+      call MPI_Scatter(all_start, 1, MPI_INTEGER, start, 1, MPI_INTEGER, 0, dminfo % comm, mpi_ierr)
+
+      if (dminfo % my_proc_id == 0) then
+         deallocate(all_start)
+         deallocate(all_count)
+      end if
+#else
+      start = 1 
+      count = nElements 
+#endif
+   
+   end subroutine mpas_dmpar_get_start
+
+
 !-----------------------------------------------------------------------
 !  routine mpas_dmpar_get_exch_list
 !
