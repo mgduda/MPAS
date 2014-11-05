@@ -72,8 +72,10 @@
 
    type decomphandle_type
       integer :: field_type
+      logical :: structured = .false.
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
+      integer, dimension(:), pointer :: start, count
       type (io_desc_t) :: pio_iodesc
    end type decomphandle_type
 
