@@ -23,8 +23,10 @@ OBJS = mpas_kind_types.o \
        mpas_stream_list.o \
        mpas_forcing.o \
        mpas_c_interfacing.o \
+       mpas_performance.o \
        random_id.o \
        streams.o \
+       timer.o \
        pool_hash.o \
        mpas_derived_types.o \
        mpas_domain_routines.o \
