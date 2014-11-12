@@ -64,7 +64,10 @@
 !>    * In subroutine microphysics_to_MPAS, reverted the calculation of cloud microphysics tendency
 !>      rt_diabatic_tend, and update of the state variables to git hash identifier 7a66f273e182f4.
 !>      This change reflects the fact that we want to compute rt_diabatic_tend at constant volume.
-!>      Laura D. Fowler (laura@ucar.edu) / 2014-1-015. 
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
+!>    * Removed the diagnostic plrad since it is no longer passed in the call to the subroutine
+!>      rrtmg_lwrad.
+!>      Laura D. Fowler (birch.mmm.ucar.edu) / 2014-06-17.
 
 
  contains
@@ -179,7 +182,7 @@
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: fzm,fzp,rdzw
- real(kind=RKIND),dimension(:),pointer    :: surface_pressure,plrad
+ real(kind=RKIND),dimension(:),pointer    :: surface_pressure
  real(kind=RKIND),dimension(:,:),pointer  :: zgrid
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
@@ -240,8 +243,6 @@
  qi => scalars(index_qi,:,:)
  qs => scalars(index_qs,:,:)
  qg => scalars(index_qg,:,:)
-
- call mpas_pool_get_array(diag_physics,'plrad',plrad)
 
  do j = jts, jte
  do k = kts, kte
@@ -393,13 +394,6 @@
     do k = kte,1,-1
        znu_hyd_p(i,k,j) = pres_hyd_p(i,k,j) / psfc_hyd_p(i,j) 
     enddo
- enddo
- enddo
-
-!save the model-top pressure:
- do j = jts,jte
- do i = its,ite
-    plrad(i) = pres2_p(i,kte+1,j) 
  enddo
  enddo
 

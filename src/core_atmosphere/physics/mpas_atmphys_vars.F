@@ -33,6 +33,10 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-08.
 !>    * corrected definition of local variable dx_p.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-08-23.
+!>    * Removed diagnostics of the long- and short-wave upward and downward radiative fluxes (flx
+!>      and flxc). Removed diagnostics of plrad and nlrad since they are no longer passed in the
+!>      call to the subroutine rrtmg_lwrad.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-06-17. 
 !>    * renamed local variable conv_deep_scheme to convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
 
@@ -347,22 +351,11 @@
     swnirdif_p         !near-IR diffuse downward flux                                       [W m-2]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    swdnflx_p,        &!
-    swdnflxc_p,       &!
-    swupflx_p,        &!
-    swupflxc_p         !
-
- real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthratensw_p       !uncoupled theta tendency due to shortwave radiation                 [K s-1]
 
 !==================================================================================================
 !... variables and arrays related to parameterization of long-wave radiation:
 !==================================================================================================
-
- integer,dimension(:,:),allocatable:: &
-    nlrad_p            !number of layers added above the model top                              [-]
- real(kind=RKIND),dimension(:,:),allocatable:: &
-    plrad_p            !pressure at model_top                                                  [Pa]
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
     glw_p,            &!net longwave flux at surface                                        [W m-2]
@@ -376,12 +369,6 @@
     lwupt_p,          &!all-sky upwelling longwave flux at top-of-atmosphere                [J m-2]
     lwuptc_p,         &!clear-sky upwelling longwave flux at top-of-atmosphere              [J m-2]
     olrtoa_p           !outgoing longwave radiation at top-of-the-atmosphere                [W m-2]
-
-  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    lwdnflx_p,        &!
-    lwdnflxc_p,       &!
-    lwupflx_p,        &!
-    lwupflxc_p         !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rthratenlw_p       !uncoupled theta tendency due to longwave radiation                  [K s-1]
