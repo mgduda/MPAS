@@ -27,7 +27,7 @@
                 <dim name="TWENTYONE"          definition="21"
                      description="A constant value of 21"/>
                 <dim name="R3"                 definition="3"
-                     description="The dimensionality (3) of vectors in $\Real^3$"/>
+                     description="The dimensionality (3) of vectors in $\Re^3$"/>
                 <dim name="nVertLevels"
                      description="The number of atmospheric layers"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"
@@ -92,32 +92,32 @@
 
                 <nml_option name="config_h_mom_eddy_visc2" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^2 eddy viscosity for horizontal diffusion of momentum"
+                     description="$\nabla^2$ eddy viscosity for horizontal diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_mom_eddy_visc4" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^4 eddy hyper-viscosity for horizontal diffusion of momentum"
+                     description="$\nabla^4$ eddy hyper-viscosity for horizontal diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_v_mom_eddy_visc2" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^2 eddy viscosity for vertical diffusion of momentum"
+                     description="$\nabla^2$ eddy viscosity for vertical diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc2" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^2 eddy viscosity for horizontal diffusion of theta"
+                     description="$\nabla^2$ eddy viscosity for horizontal diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc4" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^4 eddy hyper-viscosity for horizontal diffusion of theta"
+                     description="$\nabla^4$ eddy hyper-viscosity for horizontal diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_v_theta_eddy_visc2" type="real" default_value="0.0"
                      units="ZZZ"
-                     description="\Del^2 eddy viscosity for vertical diffusion of theta"
+                     description="$\nabla^2$ eddy viscosity for vertical diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_horiz_mixing" type="character" default_value="2d_smagorinsky"
@@ -193,11 +193,11 @@
                 <nml_option name="config_coef_3rd_order" type="real" default_value="0.25"
                      units="-"
                      description="Upwinding coefficient in the 3rd order advection scheme"
-                     possible_values="0 \le config_coef_3rd_order \le 1"/>
+                     possible_values="0 $\leq$ config_coef_3rd_order $\leq$ 1"/>
 
                 <nml_option name="config_mix_full" type="logical" default_value="true" in_defaults="false"
                      units="-"
-                     description="Mix full \theta and u fields, or mix perturbation from intitial state"
+                     description="Mix full $\theta$ and $u$ fields, or mix perturbation from intitial state"
                      possible_values=".true. or .false."/>
 
                 <nml_option name="config_epssm" type="real" default_value="0.1"
@@ -218,7 +218,7 @@
                 <nml_option name="config_apvm_upwinding" type="real" default_value="0.5" in_defaults="false"
                      units="-"
                      description="Amount of upwinding in APVM"
-                     possible_values="0 \le config_apvm_upwinding \le 1"/>
+                     possible_values="0 $\leq$ config_apvm_upwinding $\leq$ 1"/>
 
                 <nml_option name="config_h_ScaleWithMesh" type="logical" default_value="true"
                      units="-"
@@ -242,7 +242,7 @@
                 <nml_option name="config_xnutr" type="real" default_value="0.2"
                      units="-"
                      description="Maximum w-damping coefficient at model top"
-                     possible_values="0 \le config_xnutr \le 1"/>
+                     possible_values="0 $\leq$ config_xnutr $\leq$ 1"/>
 
         </nml_record>
 
@@ -256,12 +256,12 @@
                 <nml_option name="config_pio_num_iotasks" type="integer" default_value="0"
                      units="-"
                      description="Number of tasks to perform file I/O"
-                     possible_values="Integer valued, 0 \le config_pio_num_iotasks \le # MPI tasks, 0 indicates all tasks perform I/O"/>
+                     possible_values="Integer valued, 0 $\leq$ config_pio_num_iotasks $\leq$ \# MPI tasks, 0 indicates all tasks perform I/O"/>
 
                 <nml_option name="config_pio_stride" type="integer" default_value="1"
                      units="-"
                      description="Stride between file I/O tasks"
-                     possible_values="Integer valued, \le (# MPI tasks) / config_pio_num_iotasks"/>
+                     possible_values="Integer valued, $\leq$ (\# MPI tasks) / config_pio_num_iotasks"/>
 
                 <nml_option name="config_pio_format" type="character" default_value="pnetcdf" in_defaults="false"
                      units="-"
@@ -303,7 +303,7 @@
 
                 <nml_option name="config_do_DAcycling" type="logical" default_value="false" in_defaults="false"
                      units="-"
-                     description="Whether to re-compute coupled fields \theta_m, \tilde{\rho}, $\rho u$, etc. from uncoupled fields when restarting the model; used for cycling DA experiments that analyze uncoupled fields in restart files"
+                     description="Whether to re-compute coupled fields $\theta_m$, $\tilde{\rho}$, $\rho u$, etc. from uncoupled fields when restarting the model; used for cycling DA experiments that analyze uncoupled fields in restart files"
                      possible_values=".true. or .false."/>
 
         </nml_record>
@@ -1010,10 +1010,10 @@
                      description="Mesh density function (used when generating the mesh) evaluated at a cell"/>
 
                 <var name="meshScalingDel2" type="real" dimensions="nEdges" units="unitless"
-                     description="Scaling coefficient for \Del^2 eddy viscosity"/>
+                     description="Scaling coefficient for $\nabla^2$ eddy viscosity"/>
 
                 <var name="meshScalingDel4" type="real" dimensions="nEdges" units="unitless"
-                     description="Scaling coefficient for \Del^4 eddy hyper-viscosity"/>
+                     description="Scaling coefficient for $\nabla^4$ eddy hyper-viscosity"/>
 
 
                 <!-- coefficients for vertical extrapolation to the surface -->
@@ -1262,7 +1262,7 @@
                 <var name="theta" type="real" dimensions="nVertLevels nCells Time" units="K"
                      description="Potential temperature"/>
 
-                <var name="rh" type="real" dimensions="nVertLevels nCells Time" units="%"
+                <var name="rh" type="real" dimensions="nVertLevels nCells Time" units="percent"
                      description="Relative humidity"/>
 
                 <var name="v" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
@@ -1418,16 +1418,16 @@
                 <var name="temperature_850hPa" type="real" dimensions="nCells Time" units="K"
                      description="Temperature vertically interpolated to 850 hPa"/>
 
-                <var name="relhum_200hPa" type="real" dimensions="nCells Time" units="%"
+                <var name="relhum_200hPa" type="real" dimensions="nCells Time" units="percent"
                      description="Relative humidity vertically interpolated to 200 hPa"/>
 
-                <var name="relhum_500hPa" type="real" dimensions="nCells Time" units="%"
+                <var name="relhum_500hPa" type="real" dimensions="nCells Time" units="percent"
                      description="Relative humidity vertically interpolated to 500 hPa"/>
 
-                <var name="relhum_700hPa" type="real" dimensions="nCells Time" units="%"
+                <var name="relhum_700hPa" type="real" dimensions="nCells Time" units="percent"
                      description="Relative humidity vertically interpolated to 700 hPa"/>
 
-                <var name="relhum_850hPa" type="real" dimensions="nCells Time" units="%"
+                <var name="relhum_850hPa" type="real" dimensions="nCells Time" units="percent"
                      description="Relative humidity vertically interpolated to 850 hPa"/>
 
                 <var name="height_200hPa" type="real" dimensions="nCells Time" units="m"
