@@ -36,220 +36,269 @@
         <nml_record name="nhyd_model" in_defaults="true">
 
                 <nml_option name="config_time_integration" type="character" default_value="SRK3" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Time integration scheme"
+                     possible_values="'SRK3'"/>
 
                 <nml_option name="config_dt" type="real" default_value="450.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="s"
+                     description="Model time step, seconds"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Simulation calendar"
+                     possible_values="'gregorian','gregorian_noleap'"/>
 
                 <nml_option name="config_start_time" type="character" default_value="2010-10-23_00:00:00"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Starting time for model simulation"
+                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_stop_time" type="character" default_value="none" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Stopping time for model simulation"
+                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_run_duration" type="character" default_value="5_00:00:00"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Length of model simulation"
+                     possible_values="[DDD_]hh:mm:ss"/>
 
                 <nml_option name="config_number_of_sub_steps" type="integer" default_value="6"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Number of acoustic steps per large RK step"
+                     possible_values="Positive integer values, typically 4 or 6"/>
 
                 <nml_option name="config_h_mom_eddy_visc2" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^2 eddy viscosity for horizontal diffusion of momentum"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_h_mom_eddy_visc4" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^4 eddy hyper-viscosity for horizontal diffusion of momentum"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_v_mom_eddy_visc2" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^2 eddy viscosity for vertical diffusion of momentum"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc2" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^2 eddy viscosity for horizontal diffusion of theta"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc4" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^4 eddy hyper-viscosity for horizontal diffusion of theta"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_v_theta_eddy_visc2" type="real" default_value="0.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="\Del^2 eddy viscosity for vertical diffusion of theta"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_horiz_mixing" type="character" default_value="2d_smagorinsky"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="ZZZ"
+                     description="Formulation of horizontal mixing"
+                     possible_values="'2d_fixed' or '2d_smagorinsky'"/>
 
                 <nml_option name="config_len_disp" type="real" default_value="120000.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="m"
+                     description="Horizontal length scale for Smagorinsky formulation of horizontal diffusion"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_visc4_2dsmag" type="real" default_value="0.05"
+                     units="-"
                      description="XXX"
                      possible_values="XXX"/>
 
                 <nml_option name="config_del4u_div_factor" type="real" default_value="1.0" in_defaults="false"
+                     units="-"
                      description="XXX"
                      possible_values="XXX"/>
 
                 <nml_option name="config_w_adv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Horizontal advection order for w"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_theta_adv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Horizontal advection order for theta"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_scalar_adv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Horizontal advection order for scalars"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_u_vadv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Vertical advection order for normal velocities (u)"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_w_vadv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Vertical advection order for w"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_theta_vadv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Vertical advection order for theta"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_scalar_vadv_order" type="integer" default_value="3"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Vertical advection order for scalars"
+                     possible_values="2, 3, or 4"/>
 
                 <nml_option name="config_scalar_advection" type="logical" default_value="true"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to advect scalar fields"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_positive_definite" type="logical" default_value="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to enable positive-definite advection of scalars"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_monotonic" type="logical" default_value="true"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to enable monotonic limiter in scalar advection"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_coef_3rd_order" type="real" default_value="0.25"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Upwinding coefficient in the 3rd order advection scheme"
+                     possible_values="0 \le config_coef_3rd_order \le 1"/>
 
                 <nml_option name="config_mix_full" type="logical" default_value="true" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Mix full \theta and u fields, or mix perturbation from intitial state"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_epssm" type="real" default_value="0.1"
-                     description="XXX"
+                     units="-"
+                     description="Off-centering parameter for the vertically implicit acoustic integration"
                      possible_values="XXX"/>
 
                 <nml_option name="config_smdiv" type="real" default_value="0.1"
-                     description="XXX"
+                     units="-"
+                     description="3-d divergence damping coefficient"
                      possible_values="XXX"/>
 
-                <nml_option name="config_newpx" type="logical" default_value="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                <nml_option name="config_newpx" type="logical" default_value="false" in_defaults="false"
+                     units="-"
+                     description="Whether to use experimental formulation for horizontal pressure gradient computation"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_apvm_upwinding" type="real" default_value="0.5" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Amount of upwinding in APVM"
+                     possible_values="0 \le config_apvm_upwinding \le 1"/>
 
                 <nml_option name="config_h_ScaleWithMesh" type="logical" default_value="true"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Scale eddy viscosities with mesh-density function for horizontal diffusion"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_num_halos" type="integer" default_value="2" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Number of halo layers for fields"
+                     possible_values="Integer values, typically 2 or 3; DO NOT CHANGE"/>
 
         </nml_record>
 
         <nml_record name="damping" in_defaults="true">
 
                 <nml_option name="config_zd" type="real" default_value="22000.0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="m"
+                     description="Height MSL to begin w-damping profile"
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_xnutr" type="real" default_value="0.2"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Maximum w-damping coefficient at model top"
+                     possible_values="0 \le config_xnutr \le 1"/>
 
         </nml_record>
 
         <nml_record name="io" in_defaults="true">
 
                 <nml_option name="config_restart_timestamp_name" type="character" default_value="restart_timestamp" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Filename used to store most recent restart time stamp"
+                     possible_values="Any valid filename"/>
 
                 <nml_option name="config_pio_num_iotasks" type="integer" default_value="0"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Number of tasks to perform file I/O"
+                     possible_values="Integer valued, 0 \le config_pio_num_iotasks \le # MPI tasks, 0 indicates all tasks perform I/O"/>
 
                 <nml_option name="config_pio_stride" type="integer" default_value="1"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Stride between file I/O tasks"
+                     possible_values="Integer valued, \le (# MPI tasks) / config_pio_num_iotasks"/>
 
                 <nml_option name="config_pio_format" type="character" default_value="pnetcdf" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="File API to use for reading/writing"
+                     possible_values="'pnetcdf', 'netcdf'"/>
 
         </nml_record>
 
         <nml_record name="decomposition" in_defaults="true">
 
                 <nml_option name="config_block_decomp_file_prefix" type="character" default_value="x1.40962.graph.info.part."
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Prefix of graph decomposition file, to be suffixed with the MPI task count"
+                     possible_values="Any valid filename"/>
 
                 <nml_option name="config_number_of_blocks" type="integer" default_value="0" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Number of blocks to assign to each MPI task"
+                     possible_values="Positive integer values"/>
 
                 <nml_option name="config_explicit_proc_decomp" type="logical" default_value="false" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to use an explicit mapping of blocks to MPI tasks"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_proc_decomp_file_prefix" type="character" default_value="graph.info.part." in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Prefix of block mapping file"
+                     possible_values="Any valid filename"/>
 
         </nml_record>
 
         <nml_record name="restart" in_defaults="true">
 
                 <nml_option name="config_do_restart" type="logical" default_value="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether this run of the model is to restart from a previous restart file or not"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_do_DAcycling" type="logical" default_value="false" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to re-compute coupled fields \theta_m, \tilde{\rho}, $\rho u$, etc. from uncoupled fields when restarting the model; used for cycling DA experiments that analyze uncoupled fields in restart files"
+                     possible_values=".true. or .false."/>
 
         </nml_record>
 
         <nml_record name="printout" in_defaults="true">
 
                 <nml_option name="config_print_global_minmax_vel" type="logical" default_value="true"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to print the global min/max of horizontal normal velocity and vertical velocity each timestep"
+                     possible_values=".true. or .false."/>
 
                 <nml_option name="config_print_global_minmax_sca" type="logical" default_value="false" in_defaults="false"
-                     description="XXX"
-                     possible_values="XXX"/>
+                     units="-"
+                     description="Whether to print the global min/max of scalar fields each timestep"
+                     possible_values=".true. or .false."/>
 
         </nml_record>
 
@@ -817,185 +866,185 @@
         <var_struct name="mesh" time_levs="1">
 
                 <!-- horizontal grid structure -->
-                <var name="latCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="latCell" type="real" dimensions="nCells" units="rad"
+                     description="Latitude of cells"/>
 
-                <var name="lonCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="lonCell" type="real" dimensions="nCells" units="rad"
+                     description="Longitude of cells"/>
 
-                <var name="xCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="xCell" type="real" dimensions="nCells" units="m"
+                     description="Cartesian x-coordinate of cells"/>
 
-                <var name="yCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="yCell" type="real" dimensions="nCells" units="m"
+                     description="Cartesian y-coordinate of cells"/>
 
-                <var name="zCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="zCell" type="real" dimensions="nCells" units="m"
+                     description="Cartesian z-coordinate of cells"/>
 
-                <var name="indexToCellID" type="integer" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="indexToCellID" type="integer" dimensions="nCells" units="-"
+                     description="Mapping from local array index to global cell ID"/>
 
-                <var name="latEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="latEdge" type="real" dimensions="nEdges" units="rad"
+                     description="Latitude of edges"/>
 
-                <var name="lonEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="lonEdge" type="real" dimensions="nEdges" units="rad"
+                     description="Longitude of edges"/>
 
-                <var name="xEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="xEdge" type="real" dimensions="nEdges" units="m"
+                     description="Cartesian x-coordinate of edges"/>
 
-                <var name="yEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="yEdge" type="real" dimensions="nEdges" units="m"
+                     description="Cartesian y-coordinate of edges"/>
 
-                <var name="zEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="zEdge" type="real" dimensions="nEdges" units="m"
+                     description="Cartesian z-coordinate of edges"/>
 
-                <var name="indexToEdgeID" type="integer" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="indexToEdgeID" type="integer" dimensions="nEdges" units="-"
+                     description="Mapping from local array index to global edge ID"/>
 
-                <var name="latVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="latVertex" type="real" dimensions="nVertices" units="rad"
+                     description="Latitude of vertices"/>
 
-                <var name="lonVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="lonVertex" type="real" dimensions="nVertices" units="rad"
+                     description="Longitude of vertices"/>
 
-                <var name="xVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="xVertex" type="real" dimensions="nVertices" units="m"
+                     description="Cartesian x-coordinate of vertices"/>
 
-                <var name="yVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="yVertex" type="real" dimensions="nVertices" units="m"
+                     description="Cartesian y-coordinate of vertices"/>
 
-                <var name="zVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="zVertex" type="real" dimensions="nVertices" units="m"
+                     description="Cartesian z-coordinate of vertices"/>
 
-                <var name="indexToVertexID" type="integer" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="indexToVertexID" type="integer" dimensions="nVertices" units="-"
+                     description="Mapping from local array index to global vertex ID"/>
 
-                <var name="cellsOnEdge" type="integer" dimensions="TWO nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="cellsOnEdge" type="integer" dimensions="TWO nEdges" units="-"
+                     description="IDs of cells divided by an edge"/>
 
-                <var name="nEdgesOnCell" type="integer" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="nEdgesOnCell" type="integer" dimensions="nCells" units="-"
+                     description="Number of edges forming the boundary of a cell"/>
 
-                <var name="nEdgesOnEdge" type="integer" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="nEdgesOnEdge" type="integer" dimensions="nEdges" units="-"
+                     description="Number of edges involved in reconstruction of tangential velocity for an edge"/>
 
-                <var name="edgesOnCell" type="integer" dimensions="maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="edgesOnCell" type="integer" dimensions="maxEdges nCells" units="-"
+                     description="IDs of edges forming the boundary of a cell"/>
 
-                <var name="edgesOnEdge" type="integer" dimensions="maxEdges2 nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="edgesOnEdge" type="integer" dimensions="maxEdges2 nEdges" units="-"
+                     description="IDs of edges involved in reconstruction of tangential velocity for an edge"/>
 
-                <var name="weightsOnEdge" type="real" dimensions="maxEdges2 nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="weightsOnEdge" type="real" dimensions="maxEdges2 nEdges" units="unitless"
+                     description="Weights used in reconstruction of tangential velocity for an edge"/>
 
-                <var name="dvEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="dvEdge" type="real" dimensions="nEdges" units="m"
+                     description="Spherical distance between vertex endpoints of an edge"/>
 
-                <var name="dcEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="dcEdge" type="real" dimensions="nEdges" units="m"
+                     description="Spherical distance between cells separated by an edge "/>
 
-                <var name="angleEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="angleEdge" type="real" dimensions="nEdges" units="rad"
+                     description="Angle between local north and the positive tangential direction of an edge"/>
 
-                <var name="areaCell" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="areaCell" type="real" dimensions="nCells" units="m^2"
+                     description="Spherical area of a Voronoi cell"/>
 
-                <var name="areaTriangle" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="areaTriangle" type="real" dimensions="nVertices" units="m^2"
+                     description="Spherical area of a Delaunay triangle"/>
 
-                <var name="edgeNormalVectors" type="real" dimensions="R3 nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="edgeNormalVectors" type="real" dimensions="R3 nEdges" units="unitless"
+                     description="Cartesian components of the vector normal to an edge and tangential to the surface of the sphere"/>
 
-                <var name="localVerticalUnitVectors" type="real" dimensions="R3 nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="localVerticalUnitVectors" type="real" dimensions="R3 nCells" units="unitless"
+                     description="Cartesian components of the vector pointing in the local vertical direction for a cell"/>
 
-                <var name="cellTangentPlane" type="real" dimensions="R3 TWO nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="cellTangentPlane" type="real" dimensions="R3 TWO nCells" units="unitless"
+                     description="Components of a pair of vectors defining the tangent plane at a cell"/>
 
-                <var name="cellsOnCell" type="integer" dimensions="maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="cellsOnCell" type="integer" dimensions="maxEdges nCells" units="-"
+                     description="IDs of cells neighboring a cell"/>
 
-                <var name="verticesOnCell" type="integer" dimensions="maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="verticesOnCell" type="integer" dimensions="maxEdges nCells" units="-"
+                     description="IDs of vertices (corner points) of a cell"/>
 
-                <var name="verticesOnEdge" type="integer" dimensions="TWO nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="verticesOnEdge" type="integer" dimensions="TWO nEdges" units="-"
+                     description="IDs of the two vertex endpoints of an edge"/>
 
-                <var name="edgesOnVertex" type="integer" dimensions="vertexDegree nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="edgesOnVertex" type="integer" dimensions="vertexDegree nVertices" units="-"
+                     description="IDs of the edges that meet at a vertex"/>
 
-                <var name="cellsOnVertex" type="integer" dimensions="vertexDegree nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="cellsOnVertex" type="integer" dimensions="vertexDegree nVertices" units="-"
+                     description="IDs of the cells that meet at a vertex"/>
 
-                <var name="kiteAreasOnVertex" type="real" dimensions="vertexDegree nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="kiteAreasOnVertex" type="real" dimensions="vertexDegree nVertices" units="m^2"
+                     description="Intersection areas between primal (Voronoi) and dual (triangular) mesh cells"/>
 
-                <var name="fEdge" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="fEdge" type="real" dimensions="nEdges" units="unitless"
+                     description="Coriolis parameter at an edge"/>
 
-                <var name="fVertex" type="real" dimensions="nVertices" units="ZZZ"
-                     description="YYY"/>
+                <var name="fVertex" type="real" dimensions="nVertices" units="unitless"
+                     description="Coriolis parameter at a vertex"/>
 
-                <var name="meshDensity" type="real" dimensions="nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="meshDensity" type="real" dimensions="nCells" units="unitless"
+                     description="Mesh density function (used when generating the mesh) evaluated at a cell"/>
 
-                <var name="meshScalingDel2" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="meshScalingDel2" type="real" dimensions="nEdges" units="unitless"
+                     description="Scaling coefficient for \Del^2 eddy viscosity"/>
 
-                <var name="meshScalingDel4" type="real" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="meshScalingDel4" type="real" dimensions="nEdges" units="unitless"
+                     description="Scaling coefficient for \Del^4 eddy hyper-viscosity"/>
 
 
                 <!-- coefficients for vertical extrapolation to the surface -->
-                <var name="cf1" type="real" dimensions="" units="ZZZ"
-                     description="YYY"/>
+                <var name="cf1" type="real" dimensions="" units="unitless"
+                     description="Surface interpolation weight for level k=1 value"/>
 
-                <var name="cf2" type="real" dimensions="" units="ZZZ"
-                     description="YYY"/>
+                <var name="cf2" type="real" dimensions="" units="unitless"
+                     description="Surface interpolation weight for level k=2 value"/>
 
-                <var name="cf3" type="real" dimensions="" units="ZZZ"
-                     description="YYY"/>
+                <var name="cf3" type="real" dimensions="" units="unitless"
+                     description="Surface interpolation weight for level k=3 value"/>
 
 
                 <!-- coefficients used by "newpx" horizontal pressure gradient option -->
-                <var name="cpr" type="real" dimensions="THREE nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="cpr" type="real" dimensions="THREE nEdges" units="unitless"
+                     description="?"/>
 
-                <var name="cpl" type="real" dimensions="THREE nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="cpl" type="real" dimensions="THREE nEdges" units="unitless"
+                     description="?"/>
 
 
                 <!-- description of the vertical grid structure -->
-                <var name="zgrid" type="real" dimensions="nVertLevelsP1 nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="zgrid" type="real" dimensions="nVertLevelsP1 nCells" units="m MSL"
+                     description="Geometric height of layer interfaces"/>
 
-                <var name="rdzw" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="rdzw" type="real" dimensions="nVertLevels" units="unitless"
+                     description="Reciprocal dzw"/>
 
-                <var name="dzu" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="dzu" type="real" dimensions="nVertLevels" units="unitless"
+                     description="d(zeta) at w levels"/>
 
-                <var name="rdzu" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="rdzu" type="real" dimensions="nVertLevels" units="unitless"
+                     description="Reciprocal dzu"/>
 
-                <var name="fzm" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="fzm" type="real" dimensions="nVertLevels" units="unitless"
+                     description="Weight for linear interpolation to w(k) point for u(k) level variable"/>
 
-                <var name="fzp" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="fzp" type="real" dimensions="nVertLevels" units="unitless"
+                     description="Weight for linear interpolation to w(k) point for u(k-1) level variable"/>
 
-                <var name="zx" type="real" dimensions="nVertLevelsP1 nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="zx" type="real" dimensions="nVertLevelsP1 nEdges" units="m"
+                     description="dz/dx"/>
 
-                <var name="zz" type="real" dimensions="nVertLevelsP1 nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="zz" type="real" dimensions="nVertLevelsP1 nCells" units="m^{-1}"
+                     description="d(zeta)/dz"/>
 
-                <var name="zb" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="zb" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="unitless"
+                     description="Coefficients for contribution from u to w diagnosis"/>
 
-                <var name="zb3" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="zb3" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="unitless"
+                     description="Coefficients for 3rd-order contribution from u to w diagnosis"/>
 
                 <var name="pzm" type="real" dimensions="nVertLevels nCells" units="ZZZ"
                      description="YYY"/>
@@ -1005,144 +1054,144 @@
 
 
                 <!-- W-Rayleigh damping coefficients -->
-                <var name="dss" type="real" dimensions="nVertLevels nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="dss" type="real" dimensions="nVertLevels nCells" units="unitless"
+                     description="w-damping coefficient"/>
 
 
-                <var name="u_init" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="u_init" type="real" dimensions="nVertLevels" units="m s^{-1}"
+                     description="u reference profile"/>
 
-                <var name="t_init" type="real" dimensions="nVertLevels nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="t_init" type="real" dimensions="nVertLevels nCells" units="K"
+                     description="theta reference profile"/>
 
-                <var name="qv_init" type="real" dimensions="nVertLevels" units="ZZZ"
-                     description="YYY"/>
+                <var name="qv_init" type="real" dimensions="nVertLevels" units="kg kg^{-1}"
+                     description="qv reference profile"/>
 
 
                 <!-- Space needed for advection -->
-                <var name="deriv_two" type="real" dimensions="FIFTEEN TWO nEdges" units="ZZZ"
+                <var name="deriv_two" type="real" dimensions="FIFTEEN TWO nEdges" units="unitless"
+                     description="weights for cell-centered second derivative, normal to edge, for transport scheme"/>
+
+                <var name="advCells" type="integer" dimensions="TWENTYONE nCells" units="-"
                      description="YYY"/>
 
-                <var name="advCells" type="integer" dimensions="TWENTYONE nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="adv_coefs" type="real" dimensions="FIFTEEN nEdges" units="unitless"
+                     description="Weighting coefficents used for reconstructing cell-based foelds at edges"/>
 
-                <var name="adv_coefs" type="real" dimensions="FIFTEEN nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="adv_coefs_3rd" type="real" dimensions="FIFTEEN nEdges" units="unitless"
+                     description="Weighting coefficents used for reconstructing cell-based foelds at edges"/>
 
-                <var name="adv_coefs_3rd" type="real" dimensions="FIFTEEN nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="advCellsForEdge" type="integer" dimensions="FIFTEEN nEdges" units="-"
+                     description="Cells used to reconstruct a cell-based field at an edge"/>
 
-                <var name="advCellsForEdge" type="integer" dimensions="FIFTEEN nEdges" units="ZZZ"
-                     description="YYY"/>
-
-                <var name="nAdvCellsForEdge" type="integer" dimensions="nEdges" units="ZZZ"
-                     description="YYY"/>
+                <var name="nAdvCellsForEdge" type="integer" dimensions="nEdges" units="-"
+                     description="Number of cells used to reconstruct a cell-based field at an edge"/>
 
 
                 <!-- Space needed for deformation calculation weights -->
-                <var name="defc_a" type="real" dimensions="maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="defc_a" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the off-diagonal components of the horizontal deformation"/>
 
-                <var name="defc_b" type="real" dimensions="maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="defc_b" type="real" dimensions="maxEdges nCells" units="unitless"
+                     description="Coefficients for computing the diagonal components of the horizontal deformation"/>
 
 
                 <!-- Arrays required for reconstruction of velocity field -->
-                <var name="coeffs_reconstruct" type="real" dimensions="R3 maxEdges nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="coeffs_reconstruct" type="real" dimensions="R3 maxEdges nCells" units="unitless"
+                     description="Coefficients to reconstruct velocity vectors at cell centers"/>
 
-                <var name="east" type="real" dimensions="R3 nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="east" type="real" dimensions="R3 nCells" units="unitless"
+                     description="Cartesian components of the local unit vector pointing east"/>
 
-                <var name="north" type="real" dimensions="R3 nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="north" type="real" dimensions="R3 nCells" units="unitless"
+                     description="Cartesian components of the unit vector pointing north"/>
 
 
                 <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
-                <var name="m_hybi" type="real" dimensions="nAerLevels nCells" units="ZZZ"
+                <var name="m_hybi" type="real" dimensions="nAerLevels nCells" units="unitless"
                      description="YYY"/>
 
         </var_struct>
 
         <var_struct name="state" time_levs="2">
 
-                <var name="xtime" type="text" dimensions="Time" units="ZZZ"
+                <var name="xtime" type="text" dimensions="Time" units="YYYY-MM-DD_hh:mm:ss"
                      description="YYY"/>
 
 
                 <!-- Prognostic variables: read from input, saved in restart, and written to output -->
-                <var name="u" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
+                     description="Horizontal normal velocity at edges"/>
 
-                <var name="w" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="w" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-1}"
+                     description="Vertical velocity at vertical cell faces"/>
 
-                <var name="rho_zz" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_zz" type="real" dimensions="nVertLevels nCells Time" units="?"
+                     description="Dry density divided by d(zeta)/dz"/>
 
-                <var name="theta_m" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="theta_m" type="real" dimensions="nVertLevels nCells Time" units="K"
+                     description="Moist potential temperature"/>
 
-                <var name="m_ps" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="m_ps" type="real" dimensions="nCells Time" units="Pa"
+                     description="Surface pressure from match on MPAS grid"/>
 
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
-                        <var name="qv"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qv"      array_group="moist" units="kg kg^{-1}"
+                             description="Water vapor mixing ratio"/>
 
-                        <var name="qc"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qc"      array_group="moist" units="kg kg^{-1}"
+                             description="Cloud water mixing ratio"/>
 
-                        <var name="qr"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qr"      array_group="moist" units="kg kg^{-1}"
+                             description="Rain water mixing ratio"/>
 
-                        <var name="qi"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qi"      array_group="moist" units="kg kg^{-1}"
+                             description="Ice mixing ratio"/>
 
-                        <var name="qs"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qs"      array_group="moist" units="kg kg^{-1}"
+                             description="Snow mixing ratio"/>
 
-                        <var name="qg"      array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="qg"      array_group="moist" units="kg kg^{-1}"
+                             description="Graupel mixing ratio"/>
 
                 </var_array>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
-                        <var name="sul"     array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="sul"     array_group="aer_cam" units="kg m^{-3}"
+                             description="Sulfate soluble (SUL) aerosol concentration"/>
 
-                        <var name="sslt"    array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="sslt"    array_group="aer_cam" units="kg m^{-3}"
+                             description="Sea-salt (SSLT) aerosol concentration"/>
 
-                        <var name="dust1"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="dust1"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Dust type 1 (DUST1) aerosol concentration"/>
 
-                        <var name="dust2"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="dust2"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Dust type 2 (DUST2) aerosol concentration"/>
 
-                        <var name="dust3"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="dust3"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Dust type 3 (DUST3) aerosol concentration"/>
 
-                        <var name="dust4"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="dust4"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Dust type 4 (DUST4) aerosol concentration"/>
 
-                        <var name="ocpho"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="ocpho"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Hydrophobic organic carbon (OCPHO) aerosol concentration"/>
 
-                        <var name="bcpho"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="bcpho"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Hydrophobic black carbon (BCPHO) aerosol concentration"/>
 
-                        <var name="ocphi"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="ocphi"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Hydrophilic organic carbon (OCPHI) aerosol concentration"/>
 
-                        <var name="bcphi"   array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="bcphi"   array_group="aer_cam" units="kg m^{-3}"
+                             description="Hydrophilic black carbon (BCPHI) aerosol concentration"/>
 
-                        <var name="bg"      array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="bg"      array_group="aer_cam" units="kg m^{-3}"
+                             description="Background (BG) aerosol concentration"/>
 
-                        <var name="volc"    array_group="aer_cam" units="ZZZ"
-                             description="YYY"/>
+                        <var name="volc"    array_group="aer_cam" units="kg m^{-3}"
+                             description="Volcanic (VOLC) aerosol concentration"/>
 
                 </var_array>
         </var_struct>
@@ -1177,40 +1226,42 @@
 
 
                 <!-- state variables diagnosed from prognostic state -->
-                <var name="pressure_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+
+                <var name="pressure_p" type="real" dimensions="nVertLevels nCells Time" units="Pa"
+                     description="Perturbation pressure"/>
 
 
                 <!-- Diagnostic fields: only written to output                                                           -->
                 <!-- NOTE: added the "r" option to rho,theta,uReconstructZonal,and uReconstructMeridional for use of the -->
                 <!-- non-hydrostatic dynamical core in a data assimilation framework. NOTE that the "r" option is not    -->
                 <!-- needed for those 4 variables to get bit for bit restart capabilities, otherwise.                    -->
-                <var name="rho" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
 
-                <var name="theta" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho" type="real" dimensions="nVertLevels nCells Time" units="kg m^{-3}"
+                     description="Dry air density"/>
 
-                <var name="rh" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="theta" type="real" dimensions="nVertLevels nCells Time" units="K"
+                     description="Potential temperature"/>
 
-                <var name="v" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rh" type="real" dimensions="nVertLevels nCells Time" units="%"
+                     description="Relative humidity"/>
+
+                <var name="v" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
+                     description="Horizontal tangential velocity at edges"/>
 
                 <var name="divergence" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                     description="Horizontal divergence at cells"/>
 
                 <var name="vorticity" type="real" dimensions="nVertLevels nVertices Time" units="ZZZ"
-                     description="YYY"/>
+                     description="Relative vorticity at vertices"/>
 
                 <var name="pv_edge" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
                      description="YYY"/>
 
-                <var name="rho_edge" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
+                <var name="rho_edge" type="real" dimensions="nVertLevels nEdges Time" units="kg m^{-3}"
                      description="YYY"/>
 
                 <var name="ke" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                     description="Kinetic energy"/>
 
                 <var name="pv_vertex" type="real" dimensions="nVertLevels nVertices Time" units="ZZZ"
                      description="YYY"/>
@@ -1220,20 +1271,20 @@
 
 
                 <!-- reconstructed horizontal velocity vectors at cell centers -->
-                <var name="uReconstructX" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uReconstructX" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="Cartesian x-component of reconstructed horizontal velocity at cell centers"/>
 
-                <var name="uReconstructY" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uReconstructY" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="Cartesian y-component of reconstructed horizontal velocity at cell centers"/>
 
-                <var name="uReconstructZ" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uReconstructZ" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="Cartesian z-component of reconstructed horizontal velocity at cell centers"/>
 
-                <var name="uReconstructZonal" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uReconstructZonal" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="Zonal component of reconstructed horizontal velocity at cell centers"/>
 
-                <var name="uReconstructMeridional" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uReconstructMeridional" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+                     description="Meridional component of reconstructed horizontal velocity at cell centers"/>
 
 
                 <!-- Other diagnostic variables -->
@@ -1254,7 +1305,7 @@
 
 
                 <var name="exner" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                     description="Exner function"/>
 
                 <var name="exner_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
@@ -1262,17 +1313,17 @@
                 <var name="rtheta_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
-                <var name="pressure" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="pressure" type="real" dimensions="nVertLevels nCells Time" units="Pa"
+                     description="Pressure"/>
 
-                <var name="pressure_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="pressure_base" type="real" dimensions="nVertLevels nCells Time" units="Pa"
+                     description="Base state pressure"/>
 
-                <var name="rho_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_base" type="real" dimensions="nVertLevels nCells Time" units="kg m^{-3}"
+                     description="Base state dry air density"/>
 
-                <var name="theta_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="theta_base" type="real" dimensions="nVertLevels nCells Time" units="K"
+                     description="Base state potential temperature"/>
 
 
                 <var name="ruAvg" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
@@ -1308,7 +1359,6 @@
                 <var name="rw_save" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
                      description="YYY"/>
 
-
                 <var name="rtheta_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
@@ -1321,7 +1371,6 @@
                 <var name="rtheta_pp_old" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
-
                 <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
@@ -1331,157 +1380,154 @@
                 <var name="rho_p_save" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
-
                 <var name="kdiff" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
                      description="YYY"/>
 
+                <var name="surface_pressure" type="real" dimensions="nCells Time" units="Pa"
+                     description="Diagnosed surface pressure"/>
 
-                <var name="surface_pressure" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="temperature_200hPa" type="real" dimensions="nCells Time" units="K"
+                     description="Temperature vertically interpolated to 200 hPa"/>
 
+                <var name="temperature_500hPa" type="real" dimensions="nCells Time" units="K"
+                     description="Temperature vertically interpolated to 500 hPa"/>
 
-                <var name="temperature_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="temperature_700hPa" type="real" dimensions="nCells Time" units="K"
+                     description="Temperature vertically interpolated to 700 hPa"/>
 
-                <var name="temperature_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="temperature_850hPa" type="real" dimensions="nCells Time" units="K"
+                     description="Temperature vertically interpolated to 850 hPa"/>
 
-                <var name="temperature_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="relhum_200hPa" type="real" dimensions="nCells Time" units="%"
+                     description="Relative humidity vertically interpolated to 200 hPa"/>
 
-                <var name="temperature_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="relhum_500hPa" type="real" dimensions="nCells Time" units="%"
+                     description="Relative humidity vertically interpolated to 500 hPa"/>
 
-                <var name="relhum_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="relhum_700hPa" type="real" dimensions="nCells Time" units="%"
+                     description="Relative humidity vertically interpolated to 700 hPa"/>
 
-                <var name="relhum_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="relhum_850hPa" type="real" dimensions="nCells Time" units="%"
+                     description="Relative humidity vertically interpolated to 850 hPa"/>
 
-                <var name="relhum_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="height_200hPa" type="real" dimensions="nCells Time" units="m"
+                     description="Geometric height interpolated to 200 hPa"/>
 
-                <var name="relhum_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="height_500hPa" type="real" dimensions="nCells Time" units="m"
+                     description="Geometric height interpolated to 500 hPa"/>
 
-                <var name="height_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="height_700hPa" type="real" dimensions="nCells Time" units="m"
+                     description="Geometric height interpolated to 700 hPa"/>
 
-                <var name="height_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="height_850hPa" type="real" dimensions="nCells Time" units="m"
+                     description="Geometric height interpolated to 850 hPa"/>
 
-                <var name="height_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uzonal_200hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed zonal wind at cell centers, vertically interpolated to 200 hPa"/>
 
-                <var name="height_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uzonal_500hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed zonal wind at cell centers, vertically interpolated to 500 hPa"/>
 
-                <var name="uzonal_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uzonal_700hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed zonal wind at cell centers, vertically interpolated to 700 hPa"/>
 
-                <var name="uzonal_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="uzonal_850hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed zonal wind at cell centers, vertically interpolated to 850 hPa"/>
 
-                <var name="uzonal_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="umeridional_200hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed meridional wind at cell centers, vertically interpolated to 200 hPa"/>
 
-                <var name="uzonal_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="umeridional_500hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed meridional wind at cell centers, vertically interpolated to 500 hPa"/>
 
-                <var name="umeridional_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="umeridional_700hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed meridional wind at cell centers, vertically interpolated to 700 hPa"/>
 
-                <var name="umeridional_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="umeridional_850hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Reconstructed meridional wind at cell centers, vertically interpolated to 850 hPa"/>
 
-                <var name="umeridional_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="w_200hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Vertical velocity vertically interpolated to 200 hPa"/>
 
-                <var name="umeridional_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="w_500hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Vertical velocity vertically interpolated to 500 hPa"/>
 
-                <var name="w_200hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="w_700hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Vertical velocity vertically interpolated to 700 hPa"/>
 
-                <var name="w_500hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="w_850hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="Vertical velocity vertically interpolated to 850 hPa"/>
 
-                <var name="w_700hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="vorticity_200hPa" type="real" dimensions="nVertices Time" units="s^{-1}"
+                     description="Relative vorticity vertically interpolated to 200 hPa"/>
 
-                <var name="w_850hPa" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="vorticity_500hPa" type="real" dimensions="nVertices Time" units="s^{-1}"
+                     description="Relative vorticity vertically interpolated to 500 hPa"/>
 
-                <var name="vorticity_200hPa" type="real" dimensions="nVertices Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="vorticity_700hPa" type="real" dimensions="nVertices Time" units="s^{-1}"
+                     description="Relative vorticity vertically interpolated to 700 hPa"/>
 
-                <var name="vorticity_500hPa" type="real" dimensions="nVertices Time" units="ZZZ"
-                     description="YYY"/>
-
-                <var name="vorticity_700hPa" type="real" dimensions="nVertices Time" units="ZZZ"
-                     description="YYY"/>
-
-                <var name="vorticity_850hPa" type="real" dimensions="nVertices Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="vorticity_850hPa" type="real" dimensions="nVertices Time" units="s^{-1}"
+                     description="Relative vorticity vertically interpolated to 850 hPa"/>
 
         </var_struct>
 
         <var_struct name="tend" time_levs="1">
 
                 <!-- tendencies for prognostic variables -->
-                <var name="tend_u" name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_u" name_in_code="u" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
+                     description="Tendency of u from dynamics"/>
 
-                <var name="tend_w" name_in_code="w" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_w" name_in_code="w" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-2}"
+                     description="Tendency of w from dynamics"/>
 
-                <var name="tend_rho" name_in_code="rho_zz" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_rho" name_in_code="rho_zz" type="real" dimensions="nVertLevels nCells Time" units="kg m^{-3} s^{-1}"
+                     description="Tendency of dry density from dynamics"/>
 
-                <var name="tend_theta" name_in_code="theta_m" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_theta" name_in_code="theta_m" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="Tendency of potential temperature from dynamics"/>
 
-                <var name="rt_diabatic_tend" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rt_diabatic_tend" type="real" dimensions="nVertLevels nCells Time" units="kg K s^{-1}"
+                     description="Tendency of coupled potential temperature from physics"/>
 
-                <var name="euler_tend_u" name_in_code="u_euler" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="euler_tend_u" name_in_code="u_euler" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-2}"
+                     description="Tendency of u from dynamics"/>
 
-                <var name="euler_tend_w" name_in_code="w_euler" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="euler_tend_w" name_in_code="w_euler" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-2}"
+                     description="Tendency of w from dynamics"/>
 
-                <var name="euler_tend_theta" name_in_code="theta_euler" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="euler_tend_theta" name_in_code="theta_euler" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+                     description="Tendency of potential temperature from dynamics"/>
 
-                <var name="tend_w_pgf" name_in_code="w_pgf" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_w_pgf" name_in_code="w_pgf" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-2}"
+                     description="Tendency of w due to pressure gradient force"/>
 
-                <var name="tend_w_buoy" name_in_code="w_buoy" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_w_buoy" name_in_code="w_buoy" type="real" dimensions="nVertLevelsP1 nCells Time" units="m s^{-2}"
+                     description="Tendency of w due to buoyancy force"/>
 
-                <var name="tend_sfc_pressure" type="real" dimensions="nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="tend_sfc_pressure" type="real" dimensions="nCells Time" units="Pa s^{-1}"
+                     description="Tendency of surface pressure"/>
 
 
                 <!-- scalar tendencies -->
                 <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
-                        <var name="tend_qv"    name_in_code="qv"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qv"    name_in_code="qv"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of water vapor mixing ratio"/>
 
-                        <var name="tend_qc"    name_in_code="qc"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qc"    name_in_code="qc"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of cloud water mixing ratio"/>
 
-                        <var name="tend_qr"    name_in_code="qr"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qr"    name_in_code="qr"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of rain water mixing ratio"/>
 
-                        <var name="tend_qi"    name_in_code="qi"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qi"    name_in_code="qi"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of ice mixing ratio"/>
 
-                        <var name="tend_qs"    name_in_code="qs"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qs"    name_in_code="qs"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of snow ratio"/>
 
-                        <var name="tend_qg"    name_in_code="qg"        array_group="moist" units="ZZZ"
-                             description="YYY"/>
+                        <var name="tend_qg"    name_in_code="qg"        array_group="moist" units="kg kg^{-1} s^{-1}"
+                             description="Tendency of graupel mixing ratio"/>
 
                 </var_array>
         </var_struct>
@@ -1497,134 +1543,169 @@
 
                 <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
                 <nml_option name="input_landuse_data" type="character" default_value="USGS" in_defaults="false"
+                     units="-"
                      description="input land use clasification"/>
 
                 <nml_option name="input_soil_data" type="character" default_value="STAS" in_defaults="false"
+                     units="-"
                      description="input soil use classification"/>
 
                 <nml_option name="input_soil_temperature_lag" type="integer" default_value="140" units="unitless" in_defaults="false"
+                     units="-"
                      description="days over which the deep soil temperature is computed using skin temperature"/>
 
                 <nml_option name="num_soil_layers" type="integer" default_value="4" in_defaults="false"
+                     units="-"
                      description="number of soil layers in Noah land surface scheme"/>
 
                 <nml_option name="months" type="integer" default_value="12" in_defaults="false"
+                     units="-"
                      description="number of months per year"/>
 
                 <!-- ... DIMENSION NEEDED FOR OZONE AND AEROSOLS CONCENTRATIONS IN THE CAM LONGWAVE AND SHORTWAVE -->
                 <!-- ... RADIATION PARAMETERIZATIONS.                                                             -->
                 <nml_option name="noznlev" type="integer" default_value="59" in_defaults="false"
+                     units="-"
                      description="number of prescribed pressure levels for input climatological ozone volume mixing ratios"/>
 
                 <nml_option name="naerlev" type="integer" default_value="29" in_defaults="false"
+                     units="-"
                      description="number of prescribed pressure levels for input climatological aerosol mixing ratio"/>
 
                 <nml_option name="camdim1" type="integer"default_value="4" in_defaults="false"
+                     units="-"
                      description="dimension of CAM radiation absorption save array"/>
 
                 <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
                 <nml_option name="config_frac_seaice" type="logical" default_value="false" in_defaults="false"
+                     units="-"
                      description="logical for configuration of fractional sea-ice"
                      possible_values=".true. for sea-ice between 0 or 1; .false. for sea-ice equal to 0 or 1 (flag)." />
 
                 <nml_option name="config_sfc_albedo" type="logical" default_value="true" in_defaults="false"
+                     units="-"
                      description="logical for configuration of surface albedo"
                      possible_values=".true. for climatologically varying surface albedo; .false. for fixed input data"/>
 
                 <nml_option name="config_sfc_snowalbedo" type="logical" default_value="true" in_defaults="false"
+                     units="-"
                      description="logical for configuration of maximum surface albedo for snow"
                      possible_values=".true. for geographical distribution; .false. for fixed input data"/>
 
                 <nml_option name="config_sst_update" type="logical" default_value="false"
+                     units="-"
                      description="logical for configuration of sea-surface temperature"
                      possible_values=".true. for time-varying sea-surface temperatures; .false., otherwise"/>
 
                 <nml_option name="config_sstdiurn_update" type="logical" default_value="false"
+                     units="-"
                      description="logical for configuration of diurnal cycle of sea-surface temperatures"
                      possible_values=".true. for applying a diurnal cycle to sea-surface temperatures; .false., otherwise"/>
 
                 <nml_option name="config_deepsoiltemp_update" type="logical" default_value="false"
+                     units="-"
                      description="logical for configuration of deep soil temperatures"
                      possible_values=".true. for slowly time-varying deep soil temperatures; .false. otherwise"/>
 
                 <nml_option name="config_o3climatology" type="logical" default_value="false" in_defaults="false"
+                     units="-"
                      description="logical for configuration of input ozone data in RRMTG long- and short-wave radiation"
                      possible_values=".true. for using monthly-varying ozone data; .false. for using fixed vertical profile"/>
 
                 <nml_option name="config_n_microp" type="integer" default_value="1" in_defaults="false"
+                     units="-"
                      description="number of microphysics time-steps per physics time-steps"/>
 
                 <nml_option name="config_radtlw_interval" type="character" default_value="00:30:00"
+                     units="-"
                      description="time interval between calls to parameterization of long-wave radiation"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_radtsw_interval" type="character" default_value="00:30:00"
+                     units="-"
                      description="time interval between calls to parameterization of short-wave radiation"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_conv_interval" type="character" default_value="none" in_defaults="false"
+                     units="-"
                      description="time interval between calls to parameterization of convection"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_pbl_interval" type="character" default_value="none" in_defaults="false"
+                     units="-"
                      description="time interval between calls to parameterization of planetary boundary layer"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_camrad_abs_update" type="character" default_value="06:00:00" in_defaults="false"
+                     units="-"
                      description="time interval between updates of absorption/emission coefficients in CAM radiation"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_greeness_update" type="character" default_value="24:00:00" in_defaults="false"
+                     units="-"
                      description="time interval between updates of greeness fraction"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_bucket_update" type="character" default_value="none"
+                     units="-"
                      description="time interval between updates of accumulated rain and radiation diagnostics"
                      possible_values="'DD_HH:MM:SS' or 'none'"/>
 
                 <nml_option name="config_microp_scheme" type="character" default_value="wsm6"
+                     units="-"
                      description="configuration for cloud microphysics schemes"
                      possible_values="'wsm6','off'"/>
 
                 <nml_option name="config_conv_deep_scheme" type="character" default_value="kain_fritsch"
+                     units="-"
                      description="configuration for convection schemes"
                      possible_values="'kain_fritsch','tiedtke','off'"/>
 
                 <nml_option name="config_lsm_scheme" type="character" default_value="noah"
+                     units="-"
                      description="configuration for land-surface schemes"
                      possible_values="'noah','off'"/>
 
                 <nml_option name="config_pbl_scheme" type="character" default_value="ysu"
+                     units="-"
                      description="configuration for planetary boundary layer schemes"
                      possible_values="'ysu','off'"/>
 
                 <nml_option name="config_gwdo_scheme" type="character" default_value="off"
+                     units="-"
                      description="configuration of gravity wave drag over orography"
                      possible_values="'ysu_gwdo','off'"/>
 
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="cld_fraction"
+                     units="-"
                      description="configuration for calculation of horizontal cloud fraction"
                      possible_values="'cld_fraction','cld_incidence'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="rrtmg_lw"
+                     units="-"
                      description="configuration for long-wave radiation schemes"
                      possible_values="'rrtmg_lw','cam_lw','off'"/>
 
                 <nml_option name="config_radt_sw_scheme" type="character" default_value="rrtmg_sw"
+                     units="-"
                      description="configuration for short-wave radiation schemes"
                      possible_values="'rrtmg_sw','cam_sw','off'"/>
 
                 <nml_option name="config_sfclayer_scheme" type="character" default_value="monin_obukhov"
+                     units="-"
                      description="configuration for surface layer-scheme"
                      possible_values="'monin_obukhov','off'"/>
 
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
+                     units="-"
                      description="threshold above which accumulated radiation diagnostics are reset"/>
 
                 <nml_option name="config_bucket_rainc" type="real" default_value="100.0" in_defaults="false"
+                     units="-"
                      description="threshold above which the accumulated convective precipitation is reset"/>
 
                 <nml_option name="config_bucket_rainnc" type="real" default_value="100.0" in_defaults="false"
+                     units="-"
                      description="threshold above which the accumulated grid-scale precipitation is reset"/>
  
         </nml_record>
