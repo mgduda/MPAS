@@ -1550,7 +1550,7 @@
                      units="-"
                      description="input soil use classification"/>
 
-                <nml_option name="input_soil_temperature_lag" type="integer" default_value="140" units="unitless" in_defaults="false"
+                <nml_option name="input_soil_temperature_lag" type="integer" default_value="140" in_defaults="false"
                      units="-"
                      description="days over which the deep soil temperature is computed using skin temperature"/>
 
@@ -1572,7 +1572,7 @@
                      units="-"
                      description="number of prescribed pressure levels for input climatological aerosol mixing ratio"/>
 
-                <nml_option name="camdim1" type="integer"default_value="4" in_defaults="false"
+                <nml_option name="camdim1" type="integer" default_value="4" in_defaults="false"
                      units="-"
                      description="dimension of CAM radiation absorption save array"/>
 
@@ -1757,7 +1757,7 @@
                      description="time-step grid-scale precipitation of snow"/>
 
                 <var name="graupelncv" type="real" dimensions="nCells Time" units="mm"
-                     descrition="time-step grid-scale precipitation of graupel"/>
+                     description="time-step grid-scale precipitation of graupel"/>
 
                 <var name="rainnc" type="real" dimensions="nCells Time" units="mm"
                      description="accumulated total grid-scale precipitation"/>
@@ -1896,10 +1896,10 @@
                      description="latent heat flux at the surface"/>
 
                 <var name="psim" type="real" dimensions="nCells Time" units="unitless"
-                     descrption="similarity stability function for momentum"/>
+                     description="similarity stability function for momentum"/>
 
                 <var name="psih" type="real" dimensions="nCells Time" units="unitless"
-                     descrption="similarity stability function for heat"/>
+                     description="similarity stability function for heat"/>
 
                 <var name="qgh" type="real" dimensions="nCells Time" units="kg kg^{-1}"
                      description="lowest level saturation mixing ratio"/>
@@ -2291,10 +2291,10 @@
                 <!-- ================================================================================================== -->
 
                 <var name="rthratensw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
-                     description=""tendency of potential temperature due to short wave radiation"/>
+                     description="tendency of potential temperature due to short wave radiation"/>
 
                 <var name="rthratenlw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
-                     description=""tendency of potential temperature due to short wave radiation"/>
+                     description="tendency of potential temperature due to short wave radiation"/>
 
         </var_struct>
 
