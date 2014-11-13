@@ -1887,7 +1887,7 @@
                      description="exchange coefficient for heat"/>
 
                 <var name="flqc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
-                     descrption="exchange coefficient for moisture"/>
+                     description="exchange coefficient for moisture"/>
 
                 <var name="gz1oz0" type="real" dimensions="nCells Time" units="unitless"
                      description="log(z/z0) where z0 is roughness length"/>
@@ -1907,7 +1907,8 @@
                 <var name="regime" type="real" dimensions="nCells Time" units="unitless"
                      description="flag indicating the PBL regime (stable,unstable,...)"/>
 
-                <var name="rmol" type="real" dimensions="nCells Time"/>
+                <var name="rmol" type="real" dimensions="nCells Time" units="?"
+                     description="?"/>
 
                 <var name="wspd" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="wind speed at lowest model level"/>
