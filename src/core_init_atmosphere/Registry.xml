@@ -56,17 +56,17 @@
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"
                      units="-"
                      description="Simulation calendar"
-                     possible_values="'gregorian','gregorian_noleap'"/>
+                     possible_values="`gregorian',`gregorian_noleap'"/>
 
                 <nml_option name="config_start_time" type="character" default_value="2010-10-23_00:00:00"
                      units="-"
                      description="Valid time of first-guess data, or time to begin processing SST and sea-ice fields; used only by init_case 7 and 8"
-                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
+                     possible_values="`YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_stop_time" type="character" default_value="none" in_defaults="false"
                      units="-"
                      description="Time to end processing processing of SST and sea-ice fields; used only by init_case 8"
-                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
+                     possible_values="`YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_theta_adv_order" type="integer" default_value="3"
                      units="-"
@@ -137,7 +137,7 @@
                 <nml_option name="config_landuse_data" type="character" default_value="USGS"
                      units="-"
                      description="Land use data source"
-                     possible_values="'USGS' or 'MODIFIED_IGBP_MODIS_NOAH'"/>
+                     possible_values="`USGS' or `MODIFIED_IGBP_MODIS_NOAH'"/>
 
         </nml_record>
 

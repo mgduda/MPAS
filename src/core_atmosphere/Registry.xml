@@ -58,7 +58,7 @@
                 <nml_option name="config_time_integration" type="character" default_value="SRK3" in_defaults="false"
                      units="-"
                      description="Time integration scheme"
-                     possible_values="'SRK3'"/>
+                     possible_values="`SRK3'"/>
 
                 <nml_option name="config_dt" type="real" default_value="450.0"
                      units="s"
@@ -68,17 +68,17 @@
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"
                      units="-"
                      description="Simulation calendar"
-                     possible_values="'gregorian','gregorian_noleap'"/>
+                     possible_values="`gregorian',`gregorian_noleap'"/>
 
                 <nml_option name="config_start_time" type="character" default_value="2010-10-23_00:00:00"
                      units="-"
                      description="Starting time for model simulation"
-                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
+                     possible_values="`YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_stop_time" type="character" default_value="none" in_defaults="false"
                      units="-"
                      description="Stopping time for model simulation"
-                     possible_values="'YYYY-MM-DD_hh:mm:ss'"/>
+                     possible_values="`YYYY-MM-DD_hh:mm:ss'"/>
 
                 <nml_option name="config_run_duration" type="character" default_value="5_00:00:00"
                      units="-"
@@ -123,7 +123,7 @@
                 <nml_option name="config_horiz_mixing" type="character" default_value="2d_smagorinsky"
                      units="ZZZ"
                      description="Formulation of horizontal mixing"
-                     possible_values="'2d_fixed' or '2d_smagorinsky'"/>
+                     possible_values="`2d_fixed' or `2d_smagorinsky'"/>
 
                 <nml_option name="config_len_disp" type="real" default_value="120000.0"
                      units="m"
@@ -266,7 +266,7 @@
                 <nml_option name="config_pio_format" type="character" default_value="pnetcdf" in_defaults="false"
                      units="-"
                      description="File API to use for reading/writing"
-                     possible_values="'pnetcdf', 'netcdf'"/>
+                     possible_values="`pnetcdf', `netcdf'"/>
 
         </nml_record>
 
@@ -1639,82 +1639,82 @@
                 <nml_option name="config_radtlw_interval" type="character" default_value="00:30:00"
                      units="-"
                      description="time interval between calls to parameterization of long-wave radiation"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_radtsw_interval" type="character" default_value="00:30:00"
                      units="-"
                      description="time interval between calls to parameterization of short-wave radiation"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_conv_interval" type="character" default_value="none" in_defaults="false"
                      units="-"
                      description="time interval between calls to parameterization of convection"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_pbl_interval" type="character" default_value="none" in_defaults="false"
                      units="-"
                      description="time interval between calls to parameterization of planetary boundary layer"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_camrad_abs_update" type="character" default_value="06:00:00" in_defaults="false"
                      units="-"
                      description="time interval between updates of absorption/emission coefficients in CAM radiation"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_greeness_update" type="character" default_value="24:00:00" in_defaults="false"
                      units="-"
                      description="time interval between updates of greeness fraction"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_bucket_update" type="character" default_value="none"
                      units="-"
                      description="time interval between updates of accumulated rain and radiation diagnostics"
-                     possible_values="'DD_HH:MM:SS' or 'none'"/>
+                     possible_values="`DD_HH:MM:SS' or `none'"/>
 
                 <nml_option name="config_microp_scheme" type="character" default_value="wsm6"
                      units="-"
                      description="configuration for cloud microphysics schemes"
-                     possible_values="'wsm6','off'"/>
+                     possible_values="`wsm6',`off'"/>
 
                 <nml_option name="config_conv_deep_scheme" type="character" default_value="kain_fritsch"
                      units="-"
                      description="configuration for convection schemes"
-                     possible_values="'kain_fritsch','tiedtke','off'"/>
+                     possible_values="`kain_fritsch',`tiedtke',`off'"/>
 
                 <nml_option name="config_lsm_scheme" type="character" default_value="noah"
                      units="-"
                      description="configuration for land-surface schemes"
-                     possible_values="'noah','off'"/>
+                     possible_values="`noah',`off'"/>
 
                 <nml_option name="config_pbl_scheme" type="character" default_value="ysu"
                      units="-"
                      description="configuration for planetary boundary layer schemes"
-                     possible_values="'ysu','off'"/>
+                     possible_values="`ysu',`off'"/>
 
                 <nml_option name="config_gwdo_scheme" type="character" default_value="off"
                      units="-"
                      description="configuration of gravity wave drag over orography"
-                     possible_values="'ysu_gwdo','off'"/>
+                     possible_values="`ysu_gwdo',`off'"/>
 
                 <nml_option name="config_radt_cld_scheme" type="character" default_value="cld_fraction"
                      units="-"
                      description="configuration for calculation of horizontal cloud fraction"
-                     possible_values="'cld_fraction','cld_incidence'"/>
+                     possible_values="`cld_fraction',`cld_incidence'"/>
 
                 <nml_option name="config_radt_lw_scheme" type="character" default_value="rrtmg_lw"
                      units="-"
                      description="configuration for long-wave radiation schemes"
-                     possible_values="'rrtmg_lw','cam_lw','off'"/>
+                     possible_values="`rrtmg_lw',`cam_lw',`off'"/>
 
                 <nml_option name="config_radt_sw_scheme" type="character" default_value="rrtmg_sw"
                      units="-"
                      description="configuration for short-wave radiation schemes"
-                     possible_values="'rrtmg_sw','cam_sw','off'"/>
+                     possible_values="`rrtmg_sw',`cam_sw',`off'"/>
 
                 <nml_option name="config_sfclayer_scheme" type="character" default_value="monin_obukhov"
                      units="-"
                      description="configuration for surface layer-scheme"
-                     possible_values="'monin_obukhov','off'"/>
+                     possible_values="`monin_obukhov',`off'"/>
 
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
