@@ -91,37 +91,37 @@
                      possible_values="Positive integer values, typically 4 or 6"/>
 
                 <nml_option name="config_h_mom_eddy_visc2" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^2$ eddy viscosity for horizontal diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_mom_eddy_visc4" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^4$ eddy hyper-viscosity for horizontal diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_v_mom_eddy_visc2" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^2$ eddy viscosity for vertical diffusion of momentum"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc2" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^2$ eddy viscosity for horizontal diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_h_theta_eddy_visc4" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^4$ eddy hyper-viscosity for horizontal diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_v_theta_eddy_visc2" type="real" default_value="0.0"
-                     units="ZZZ"
+                     units="XXX"
                      description="$\nabla^2$ eddy viscosity for vertical diffusion of theta"
                      possible_values="Positive real values"/>
 
                 <nml_option name="config_horiz_mixing" type="character" default_value="2d_smagorinsky"
-                     units="ZZZ"
+                     units="XXX"
                      description="Formulation of horizontal mixing"
                      possible_values="`2d_fixed' or `2d_smagorinsky'"/>
 
@@ -203,12 +203,12 @@
                 <nml_option name="config_epssm" type="real" default_value="0.1"
                      units="-"
                      description="Off-centering parameter for the vertically implicit acoustic integration"
-                     possible_values="XXX"/>
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_smdiv" type="real" default_value="0.1"
                      units="-"
                      description="3-d divergence damping coefficient"
-                     possible_values="XXX"/>
+                     possible_values="Positive real values"/>
 
                 <nml_option name="config_newpx" type="logical" default_value="false" in_defaults="false"
                      units="-"
@@ -1066,11 +1066,11 @@
                 <var name="zb3" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="unitless"
                      description="Coefficients for 3rd-order contribution from u to w diagnosis"/>
 
-                <var name="pzm" type="real" dimensions="nVertLevels nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="pzm" type="real" dimensions="nVertLevels nCells" units="-"
+                     description="Used by newpx formulation"/>
 
-                <var name="pzp" type="real" dimensions="nVertLevels nCells" units="ZZZ"
-                     description="YYY"/>
+                <var name="pzp" type="real" dimensions="nVertLevels nCells" units="-"
+                     description="Used by newpx formulation"/>
 
 
                 <!-- W-Rayleigh damping coefficients -->
@@ -1093,7 +1093,7 @@
                      description="weights for cell-centered second derivative, normal to edge, for transport scheme"/>
 
                 <var name="advCells" type="integer" dimensions="TWENTYONE nCells" units="-"
-                     description="YYY"/>
+                     description="Cells used to compute a second-order polynomial fit for a field at each cell"/>
 
                 <var name="adv_coefs" type="real" dimensions="FIFTEEN nEdges" units="unitless"
                      description="Weighting coefficents used for reconstructing cell-based foelds at edges"/>
@@ -1129,14 +1129,14 @@
 
                 <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
                 <var name="m_hybi" type="real" dimensions="nAerLevels nCells" units="unitless"
-                     description="YYY"/>
+                     description="Matched hybi (needs to be re-checked)"/>
 
         </var_struct>
 
         <var_struct name="state" time_levs="2">
 
                 <var name="xtime" type="text" dimensions="Time" units="YYYY-MM-DD_hh:mm:ss"
-                     description="YYY"/>
+                     description="Model valid time"/>
 
 
                 <!-- Prognostic variables: read from input, saved in restart, and written to output -->
@@ -1220,29 +1220,29 @@
 
                 <!-- coefficients for the vertical tridiagonal solve -->
                 <!-- Note:  these could be local but...              -->
-                <var name="cofrz" type="real" dimensions="nVertLevels Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cofrz" type="real" dimensions="nVertLevels Time" units="-"
+                     description="XXX"/>
 
-                <var name="cofwr" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cofwr" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="cofwz" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cofwz" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="coftz" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="coftz" type="real" dimensions="nVertLevelsP1 nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="cofwt" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cofwt" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="a_tri" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="a_tri" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="alpha_tri" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="alpha_tri" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
-                <var name="gamma_tri" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="gamma_tri" type="real" dimensions="nVertLevels nCells Time" units="-"
+                     description="XXX"/>
 
 
                 <!-- state variables diagnosed from prognostic state -->
@@ -1268,26 +1268,26 @@
                 <var name="v" type="real" dimensions="nVertLevels nEdges Time" units="m s^{-1}"
                      description="Horizontal tangential velocity at edges"/>
 
-                <var name="divergence" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
+                <var name="divergence" type="real" dimensions="nVertLevels nCells Time" units="s^{-1}"
                      description="Horizontal divergence at cells"/>
 
-                <var name="vorticity" type="real" dimensions="nVertLevels nVertices Time" units="ZZZ"
+                <var name="vorticity" type="real" dimensions="nVertLevels nVertices Time" units="s^{-1}"
                      description="Relative vorticity at vertices"/>
 
-                <var name="pv_edge" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="pv_edge" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
                 <var name="rho_edge" type="real" dimensions="nVertLevels nEdges Time" units="kg m^{-3}"
-                     description="YYY"/>
+                     description="XXX"/>
 
-                <var name="ke" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
+                <var name="ke" type="real" dimensions="nVertLevels nCells Time" units="XXX"
                      description="Kinetic energy"/>
 
-                <var name="pv_vertex" type="real" dimensions="nVertLevels nVertices Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="pv_vertex" type="real" dimensions="nVertLevels nVertices Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="pv_cell" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="pv_cell" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
 
                 <!-- reconstructed horizontal velocity vectors at cell centers -->
@@ -1308,30 +1308,30 @@
 
 
                 <!-- Other diagnostic variables -->
-                <var name="rv" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rv" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="circulation" type="real" dimensions="nVertLevels nVertices Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="circulation" type="real" dimensions="nVertLevels nVertices Time" units="m^2 s^{-1}"
+                     description="Horizontal circulation at vertices"/>
 
-                <var name="gradPVt" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="gradPVt" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="Gradient in the tangential direction of PV at edge locations"/>
 
-                <var name="gradPVn" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="gradPVn" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="Gradient in the normal direction of PV at edge locations"/>
 
-                <var name="h_divergence" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="h_divergence" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
 
-                <var name="exner" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
+                <var name="exner" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="Exner function"/>
 
-                <var name="exner_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="exner_base" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="Base-state Exner function"/>
 
-                <var name="rtheta_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_base" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
                 <var name="pressure" type="real" dimensions="nVertLevels nCells Time" units="Pa"
                      description="Pressure"/>
@@ -1346,62 +1346,62 @@
                      description="Base state potential temperature"/>
 
 
-                <var name="ruAvg" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="ruAvg" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="wwAvg" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="wwAvg" type="real" dimensions="nVertLevelsP1 nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="cqu" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cqu" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="cqw" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cqw" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
 
                 <!-- coupled variables needed by solver, but not output -->
-                <var name="ru" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="ru" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="ru_p" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="ru_p" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="ru_save" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="ru_save" type="real" dimensions="nVertLevels nEdges Time" units="XXX"
+                     description="XXX"/>
 
 
-                <var name="rw" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rw" type="real" dimensions="nVertLevelsP1 nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rw_p" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rw_p" type="real" dimensions="nVertLevelsP1 nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rw_save" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rw_save" type="real" dimensions="nVertLevelsP1 nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rtheta_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_p" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rtheta_pp" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_pp" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rtheta_p_save" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_p_save" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rtheta_pp_old" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_pp_old" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rho_pp" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_pp" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="rho_p_save" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_p_save" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
-                <var name="kdiff" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="kdiff" type="real" dimensions="nVertLevels nCells Time" units="XXX"
+                     description="XXX"/>
 
                 <var name="surface_pressure" type="real" dimensions="nCells Time" units="Pa"
                      description="Diagnosed surface pressure"/>

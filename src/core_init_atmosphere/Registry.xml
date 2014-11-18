@@ -51,7 +51,7 @@
                 <nml_option name="config_init_case" type="integer" default_value="7"
                      units="-"
                      description="Type of initial condition to be created"
-                     possible_values="1 (Jablonowski and Williamson baroclinic wave -- no initial perturbation) \newline 2 (Jablonowski and Williamson baroclinic wave -- with initial perturbation) \newline 3 (Jablonowski and Williamson baroclinic wave -- with normal-mode perturbation) \newline 4 (squall line) \newline 5 (super-cell) \newline 6 (mountain wave) \newline 7 (real-data initial conditions from, e.g., GFS) \newline 8 (SST and sea-ice update file for use with real-data simulations)"/>
+                     possible_values="1 = Jablonowski and Williamson baroclinic wave, no initial perturbation \newline 2 = Jablonowski and Williamson baroclinic wave, with initial perturbation \newline 3 = Jablonowski and Williamson baroclinic wave, with normal-mode perturbation \newline 4 = squall line \newline 5 = super-cell \newline 6 = mountain wave \newline 7 = real-data initial conditions from, e.g., GFS \newline 8 = SST and sea-ice update file for use with real-data simulations"/>
 
                 <nml_option name="config_calendar_type" type="character" default_value="gregorian" in_defaults="false"
                      units="-"
@@ -789,7 +789,7 @@
                      description="weights for cell-centered second derivative, normal to edge, for transport scheme"/>
 
                 <var name="advCells" type="integer" dimensions="TWENTYONE nCells" units="-"
-                     description="YYY"/>
+                     description="Cells used to compute a second-order polynomial fit for a field at each cell"/>
 
                 <!-- deformation calculation weights -->
                 <var name="defc_a" type="real" dimensions="maxEdges nCells" units="unitless"
@@ -972,14 +972,14 @@
                 <var name="uReconstructMeridional" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
                      description="Meridional component of reconstructed horizontal velocity at cell centers"/>
 
-                <var name="exner" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
+                <var name="exner" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="Exner function"/>
 
-                <var name="exner_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="exner_base" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="Base-state Exner function"/>
 
-                <var name="rtheta_base" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_base" type="real" dimensions="nVertLevels nCells Time" units="?"
+                     description="?"/>
 
                 <var name="pressure" type="real" dimensions="nVertLevels nCells Time" units="Pa"
                      description="Pressure"/>
@@ -993,25 +993,25 @@
                 <var name="theta_base" type="real" dimensions="nVertLevels nCells Time" units="K"
                      description="Base state potential temperature"/>
 
-                <var name="cqw" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="cqw" type="real" dimensions="nVertLevels nCells Time" units="?"
+                     description="?"/>
 
                 <var name="surface_pressure" type="real" dimensions="nCells Time" units="Pa"
                      description="Diagnosed surface pressure"/>
 
 
                 <!-- coupled variables needed by the solver, but not output -->
-                <var name="ru" type="real" dimensions="nVertLevels nEdges Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="ru" type="real" dimensions="nVertLevels nEdges Time" units="?"
+                     description="?"/>
 
-                <var name="rw" type="real" dimensions="nVertLevelsP1 nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rw" type="real" dimensions="nVertLevelsP1 nCells Time" units="?"
+                     description="?"/>
 
-                <var name="rtheta_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rtheta_p" type="real" dimensions="nVertLevels nCells Time" units="?"
+                     description="?"/>
 
-                <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="ZZZ"
-                     description="YYY"/>
+                <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="?"
+                     description="?"/>
 
         </var_struct>
 
