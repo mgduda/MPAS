@@ -1043,6 +1043,7 @@ module mpas_io
       integer :: ndims
       integer :: i 
       integer :: is_structured, is_structured_global
+      integer :: early_return, early_return_global
       integer, dimension(:), pointer :: dimlist
       type (decomplist_type), pointer :: decomp_cursor, new_decomp
 
@@ -1088,6 +1089,7 @@ module mpas_io
       !
       decomp_cursor => decomp_list
 !if (.not. associated(decomp_cursor)) write(stderrUnit,*) 'No existing decompositions to check...'
+      early_return = 0
       DECOMP_LOOP: do while (associated(decomp_cursor))
          if (decomp_cursor % decomphandle % field_type == field_cursor % fieldhandle % field_type) then
          if (size(decomp_cursor % decomphandle % dims) == field_cursor % fieldhandle % ndims) then
@@ -1117,7 +1119,8 @@ module mpas_io
             ! OK, we have a match... just use this decomposition for the field and return
             field_cursor % fieldhandle % decomp => decomp_cursor % decomphandle 
 !write(stderrUnit,*) 'Found a matching decomposition that we can use'
-            return
+            early_return = 1
+            exit DECOMP_LOOP
          else if ((size(decomp_cursor % decomphandle % dims) == field_cursor % fieldhandle % ndims - 1)  &
                   .and. field_cursor % fieldhandle % has_unlimited_dim  &
                  ) then
@@ -1149,11 +1152,21 @@ module mpas_io
             ! OK, we have a match... just use this decomposition for the field and return
             field_cursor % fieldhandle % decomp => decomp_cursor % decomphandle 
 !write(stderrUnit,*) 'Found a matching decomposition that we can use (aside from record dimension)'
-            return
+            early_return = 1
+            exit DECOMP_LOOP
          end if
          end if
          decomp_cursor => decomp_cursor % next
       end do DECOMP_LOOP
+
+      ! 
+      ! If all tasks have set early_return to 1, then we have a usable decomposition and can return
+      ! 
+      call mpas_dmpar_min_int(local_dminfo, early_return, early_return_global)
+      if (early_return_global == 1) then
+         return
+      end if
+
 
 !write(stderrUnit,*) 'Creating a new decomposition'
 
