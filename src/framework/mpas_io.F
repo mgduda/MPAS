@@ -276,7 +276,6 @@ module mpas_io
       MPAS_io_open % filename = filename
       MPAS_io_open % iomode   = mode
       MPAS_io_open % ioformat = ioformat
-write(0,*) 'OPEN 1'
 
       nf_iotype = ior(NF90_NETCDF4, NF90_MPIIO)
 
@@ -300,34 +299,24 @@ write(0,*) 'OPEN 1'
             end if
          end if
       else
-write(0,*) 'OPEN 2'
          nf_ierr = nf90_open(trim(filename), nf_iotype, MPAS_io_open % ncid, comm=local_dminfo % comm, info=MPI_INFO_NULL)
-write(0,*) 'OPEN 3'
       endif
       if (nf_ierr /= NF90_NOERR) then
-write(0,*) 'OPEN 4 (error)'
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
 
-write(0,*) 'OPEN 5'
       if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
-write(0,*) 'OPEN 6'
 !         MPAS_io_open % unlimited_dimid = NF90_UNLIMITED
          nf_ierr = nf90_inq_dimid(MPAS_io_open % ncid, 'Time', MPAS_io_open % unlimited_dimid)
 
-write(0,*) 'OPEN 7'
          nf_ierr = nf90_inquire_dimension(MPAS_io_open % ncid, MPAS_io_open % unlimited_dimid, len=MPAS_io_open % preexisting_records)
-write(0,*) 'OPEN 8'
          if (nf_ierr /= NF90_NOERR) then
-write(0,*) 'OPEN 9 (error)'
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
          end if
-write(0,*) 'OPEN 10'
       end if
 
-write(0,*) 'OPEN 11'
       MPAS_io_open % initialized = .true.
 
       return
