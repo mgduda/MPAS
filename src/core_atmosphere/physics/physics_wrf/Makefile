@@ -8,6 +8,7 @@ dummy:
 OBJS = \
 	libmassv.o                   \
 	module_bl_gwdo.o             \
+	module_bl_mynn.o             \
 	module_bl_ysu.o              \
 	module_cam_shr_kind_mod.o    \
 	module_cam_support.o         \
@@ -25,6 +26,7 @@ OBJS = \
 	module_sf_bem.o              \
 	module_sf_bep.o              \
 	module_sf_bep_bem.o          \
+	module_sf_mynn.o             \
 	module_sf_noahdrv.o          \
 	module_sf_noahlsm.o          \
 	module_sf_sfclay.o           \
@@ -34,6 +36,9 @@ physics_wrf: $(OBJS)
 	ar -ru ./../libphys.a $(OBJS)
 
 # DEPENDENCIES:
+module_bl_mynn.o: \
+	../mpas_atmphys_constants.o
+
 module_cam_support.o: \
 	module_cam_shr_kind_mod.o  \
 	../mpas_atmphys_utilities.o
@@ -65,6 +70,11 @@ module_sf_bep.o: \
 module_sf_bep_bem.o: \
 	module_sf_bem.o \
 	module_sf_urban.o
+
+module_sf_mynn.o: \
+	module_bl_mynn.o \
+	module_sf_sfclay.o \
+	../mpas_atmphys_constants.o
 
 module_sf_noahdrv.o: \
  	module_sf_bem.o \
