@@ -312,6 +312,10 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 !.. end initialization of moisture.
 
+!  scalars for scaling test
+      integer, pointer :: index_p0,index_p1,index_p2,index_p3,index_p4,index_p5,index_p6,index_p7,index_p8,index_p9
+      real (kind=RKIND) :: stmp
+
       integer :: iCell, iCell1, iCell2 , iEdge, vtx1, vtx2, ivtx, i, k, nz, itr, itrp, cell1, cell2
       integer, pointer :: nz1, nCellsSolve, nEdges, maxEdges, nVertices
 
@@ -362,7 +366,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:), pointer :: dcEdge, dvEdge, areaCell, areaTriangle
       real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex
 
-      real (kind=RKIND), dimension(:), pointer :: latCell, latVertex, lonVertex, latEdge, lonEdge
+      real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, latVertex, lonVertex, latEdge, lonEdge
       real (kind=RKIND), dimension(:), pointer :: fEdge, fVertex
 
       real (kind=RKIND), pointer :: sphere_radius
@@ -464,6 +468,7 @@ module init_atm_cases
       call mpas_pool_get_array(state, 'w', w)
 
       call mpas_pool_get_array(mesh, 'latCell', latCell)
+      call mpas_pool_get_array(mesh, 'lonCell', lonCell)
       call mpas_pool_get_array(mesh, 'latVertex', latVertex)
       call mpas_pool_get_array(mesh, 'lonVertex', lonVertex)
       call mpas_pool_get_array(mesh, 'latEdge', latEdge)
@@ -481,6 +486,34 @@ module init_atm_cases
       relhum(:,:)    = 0.0
       qv_2d(:,:)     = 0.0
 !.. end initialization of moisture.
+
+!  initialization of passive scalars for scaling tests
+!  WCS 5 dec 2014
+      call mpas_pool_get_dimension(state, 'index_p0', index_p0) 
+      call mpas_pool_get_dimension(state, 'index_p1', index_p1) 
+      call mpas_pool_get_dimension(state, 'index_p2', index_p2) 
+      call mpas_pool_get_dimension(state, 'index_p3', index_p3) 
+      call mpas_pool_get_dimension(state, 'index_p4', index_p4) 
+      call mpas_pool_get_dimension(state, 'index_p5', index_p5) 
+      call mpas_pool_get_dimension(state, 'index_p6', index_p6) 
+      call mpas_pool_get_dimension(state, 'index_p7', index_p7) 
+      call mpas_pool_get_dimension(state, 'index_p8', index_p8) 
+      call mpas_pool_get_dimension(state, 'index_p9', index_p9) 
+      do iCell=1,nCells
+        stmp = max(0.,sin(9.*latCell(iCell))*sin(9.*lonCell(iCell)))
+        do k=1,nz1
+          scalars(index_p0,k,iCell) = stmp
+          scalars(index_p1,k,iCell) = stmp
+          scalars(index_p2,k,iCell) = stmp
+          scalars(index_p3,k,iCell) = stmp
+          scalars(index_p4,k,iCell) = stmp
+          scalars(index_p5,k,iCell) = stmp
+          scalars(index_p6,k,iCell) = stmp
+          scalars(index_p7,k,iCell) = stmp
+          scalars(index_p8,k,iCell) = stmp
+          scalars(index_p9,k,iCell) = stmp
+        end do
+      end do
 
       surface_pressure(:) = 0.0
 
