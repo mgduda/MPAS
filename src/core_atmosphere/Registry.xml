@@ -768,11 +768,16 @@
                 <var name="m_ps"      type="real"     dimensions="nCells Time"/>
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="qv"      array_group="moist"/>
-                        <var name="qc"      array_group="moist"/>
-                        <var name="qr"      array_group="moist"/>
-                        <var name="qi"      array_group="moist"/>
-                        <var name="qs"      array_group="moist"/>
-                        <var name="qg"      array_group="moist"/>
+                        <var name="p0"      array_group="passive"/>
+                        <var name="p1"      array_group="passive"/>
+                        <var name="p2"      array_group="passive"/>
+                        <var name="p3"      array_group="passive"/>
+                        <var name="p4"      array_group="passive"/>
+                        <var name="p5"      array_group="passive"/>
+                        <var name="p6"      array_group="passive"/>
+                        <var name="p7"      array_group="passive"/>
+                        <var name="p8"      array_group="passive"/>
+                        <var name="p9"      array_group="passive"/>
                 </var_array>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
@@ -921,11 +926,16 @@
                 <!-- scalar tendencies -->
                 <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
                         <var name="tend_qv"    name_in_code="qv"        array_group="moist"/>
-                        <var name="tend_qc"    name_in_code="qc"        array_group="moist"/>
-                        <var name="tend_qr"    name_in_code="qr"        array_group="moist"/>
-                        <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
-                        <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
-                        <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+                        <var name="tend_p0"    name_in_code="p0"        array_group="passive"/>
+                        <var name="tend_p1"    name_in_code="p1"        array_group="passive"/>
+                        <var name="tend_p2"    name_in_code="p2"        array_group="passive"/>
+                        <var name="tend_p3"    name_in_code="p3"        array_group="passive"/>
+                        <var name="tend_p4"    name_in_code="p4"        array_group="passive"/>
+                        <var name="tend_p5"    name_in_code="p5"        array_group="passive"/>
+                        <var name="tend_p6"    name_in_code="p6"        array_group="passive"/>
+                        <var name="tend_p7"    name_in_code="p7"        array_group="passive"/>
+                        <var name="tend_p8"    name_in_code="p8"        array_group="passive"/>
+                        <var name="tend_p9"    name_in_code="p9"        array_group="passive"/>
                 </var_array>
         </var_struct>
 

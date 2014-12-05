@@ -505,8 +505,16 @@
 
                 <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
                         <var name="qv"      array_group="moist"/>
-                        <var name="qc"      array_group="moist"/>
-                        <var name="qr"      array_group="moist"/>
+                        <var name="p0"      array_group="passive"/>
+                        <var name="p1"      array_group="passive"/>
+                        <var name="p2"      array_group="passive"/>
+                        <var name="p3"      array_group="passive"/>
+                        <var name="p4"      array_group="passive"/>
+                        <var name="p5"      array_group="passive"/>
+                        <var name="p6"      array_group="passive"/>
+                        <var name="p7"      array_group="passive"/>
+                        <var name="p8"      array_group="passive"/>
+                        <var name="p9"      array_group="passive"/>
                 </var_array>
         </var_struct>
 
