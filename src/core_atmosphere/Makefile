@@ -25,7 +25,7 @@ dycore:
 
 #atmcore: physcore dycore $(OBJS)
 #	ar -ru libdycore.a $(OBJS) dynamics/*.o libphys/*.o
-atmcore: physcore dycore $(OBJS)
+atmcore: dycore $(OBJS)
 	ar -ru libdycore.a $(OBJS) dynamics/*.o
 
 mpas_atm_mpas_core.o: dycore mpas_atm_interp_diagnostics.o mpas_init_atm_cases.o
