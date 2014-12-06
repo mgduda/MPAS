@@ -4,7 +4,9 @@
 PHYSICS=
 
 OBJS = mpas_atm_mpas_core.o \
-       mpas_atm_interp_diagnostics.o
+       mpas_atm_interp_diagnostics.o \
+       mpas_atm_advection.o \
+       mpas_init_atm_cases.o
 
 #all: physcore dycore atmcore
 all: dycore atmcore
@@ -26,7 +28,9 @@ dycore:
 atmcore: physcore dycore $(OBJS)
 	ar -ru libdycore.a $(OBJS) dynamics/*.o
 
-mpas_atm_mpas_core.o: dycore mpas_atm_interp_diagnostics.o
+mpas_atm_mpas_core.o: dycore mpas_atm_interp_diagnostics.o mpas_init_atm_cases.o
+
+mpas_init_atm_cases.o: mpas_atm_advection.o
 
 clean:
 	( cd physics; $(MAKE) clean )

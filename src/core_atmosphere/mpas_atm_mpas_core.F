@@ -20,6 +20,7 @@ module mpas_core
       use mpas_kind_types
       use mpas_stream_manager
       use mpas_grid_types
+      use init_atm_cases
 
       implicit none
 
@@ -40,6 +41,7 @@ module mpas_core
       type (mpas_pool_type), pointer :: diag
       type (field2DReal), pointer :: u_field, pv_edge_field, ru_field, rw_field
       character (len=StrKIND), pointer :: xtime
+      real (kind=RKIND), pointer :: sphere_radius
       type (MPAS_Time_Type) :: startTime
 
 
@@ -74,15 +76,26 @@ module mpas_core
       call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='input', direction=MPAS_STREAM_INPUT, ierr=ierr)
       call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='restart', direction=MPAS_STREAM_INPUT, ierr=ierr)
 
-      !
-      ! Read all other inputs
-      ! For now we don't do this here to match results with previous code; to match requires 
-      ! that we read in SST and seaice fields after the call to atm_mpas_init_block()
-      !
-!      call MPAS_stream_mgr_read(stream_manager, ierr=ierr)
-!      call MPAS_stream_mgr_reset_alarms(stream_manager, direction=MPAS_STREAM_INPUT, ierr=ierr) 
 
+      !
+      ! Create initial conditions
+      !
       if (.not. config_do_restart) then
+         block => domain % blocklist
+         do while (associated(block))
+            call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+            call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
+            sphere_radius = a
+            domain % sphere_radius = a
+            block => block % next
+         end do
+
+         call MPAS_stream_mgr_add_att(stream_manager, 'sphere_radius', domain % sphere_radius, streamID='output', ierr=ierr)
+         call MPAS_stream_mgr_add_att(stream_manager, 'sphere_radius', domain % sphere_radius, streamID='diagnostics', ierr=ierr)
+         call MPAS_stream_mgr_add_att(stream_manager, 'sphere_radius', domain % sphere_radius, streamID='restart', ierr=ierr)
+
+         call init_atm_setup_case(domain)
+
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'state', state)
