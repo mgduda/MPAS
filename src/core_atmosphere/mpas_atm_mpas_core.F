@@ -478,6 +478,8 @@ module mpas_core
          call mpas_stream_mgr_reset_alarms(stream_manager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)
 
       end do
+
+      call avec_verification(domain, stream_manager)
    
    end subroutine mpas_core_run
    
@@ -1098,5 +1100,159 @@ module mpas_core
       end if
 
    end subroutine mpas_core_get_mesh_stream
+
+
+   subroutine avec_verification(domain, stream_manager)
+   
+      use mpas_grid_types
+      use mpas_kind_types
+      use mpas_constants, only : gravity
+      use mpas_stream_manager
+   
+      implicit none
+   
+      type (domain_type), intent(inout) :: domain
+      type (MPAS_streamManager_type), intent(inout) :: stream_manager
+
+      type (mpas_pool_type), pointer :: reference, mesh, state, diag
+      real(kind=RKIND), dimension(:), pointer :: reference_p0, reference_u, reference_rho, reference_theta, reference_w, reference_psfc
+      real(kind=RKIND), dimension(:), pointer :: computed_p0, computed_u, computed_rho, computed_theta, computed_w, computed_psfc
+      real(kind=RKIND), dimension(:,:), pointer :: zgrid, zz, u, w, rho_zz, theta_m, pressure_p, pressure_base
+      real(kind=RKIND), dimension(:,:,:), pointer :: scalars
+      character(len=StrKIND) :: status
+      real(kind=RKIND) :: rho1, rho2, tem1, tem2
+      real(kind=RKIND) :: rms
+      integer, pointer :: index_p0
+      integer, pointer :: nCellsSolve, nEdgesSolve
+      integer :: i, klev
+      integer :: ierr
+
+
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'reference', reference)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'diag', diag)
+
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'nEdgesSolve', nEdgesSolve)
+      call mpas_pool_get_dimension(state, 'index_p0', index_p0)
+
+      call mpas_pool_get_array(reference, 'computed_p0',    computed_p0)
+      call mpas_pool_get_array(reference, 'computed_u',     computed_u)
+      call mpas_pool_get_array(reference, 'computed_rho',   computed_rho)
+      call mpas_pool_get_array(reference, 'computed_theta', computed_theta)
+      call mpas_pool_get_array(reference, 'computed_w',     computed_w)
+      call mpas_pool_get_array(reference, 'computed_psfc',  computed_psfc)
+
+      call mpas_pool_get_array(reference, 'reference_p0',    reference_p0)
+      call mpas_pool_get_array(reference, 'reference_u',     reference_u)
+      call mpas_pool_get_array(reference, 'reference_rho',   reference_rho)
+      call mpas_pool_get_array(reference, 'reference_theta', reference_theta)
+      call mpas_pool_get_array(reference, 'reference_w',     reference_w)
+      call mpas_pool_get_array(reference, 'reference_psfc',  reference_psfc)
+
+      call mpas_pool_get_array(mesh, 'zgrid', zgrid)
+      call mpas_pool_get_array(mesh, 'zz', zz)
+
+      call mpas_pool_get_array(state, 'scalars', scalars, 1)
+      call mpas_pool_get_array(state, 'u', u, 1)
+      call mpas_pool_get_array(state, 'w', w, 1)
+      call mpas_pool_get_array(state, 'rho_zz', rho_zz, 1)
+      call mpas_pool_get_array(state, 'theta_m', theta_m, 1)
+
+      call mpas_pool_get_array(diag, 'pressure_p', pressure_p)
+      call mpas_pool_get_array(diag, 'pressure_base', pressure_base)
+
+
+      !
+      ! Compute fields to be compared
+      !
+      klev = 47
+      computed_p0(:) = scalars(index_p0,klev,:)
+      computed_u(:) = u(klev,:)
+      computed_w(:) = w(klev,:)
+      computed_rho(:) = rho_zz(klev,:)
+      computed_theta(:) = theta_m(klev,:)
+
+      do i=1,nCellsSolve
+         tem1 = zgrid(2,i) - zgrid(1,i)
+         tem2 = zgrid(3,i) - zgrid(2,i)
+         rho1 = rho_zz(1,i) * zz(1,i)
+         rho2 = rho_zz(2,i) * zz(2,i)
+         computed_psfc(i) = 0.5*gravity*(zgrid(2,i)-zgrid(1,i)) * (rho1 + 0.5*(rho2-rho1)*tem1/(tem1+tem2))
+         computed_psfc(i) = computed_psfc(i) + pressure_p(1,i) + pressure_base(1,i)
+      end do
+
+
+      !
+      ! Compute RMS difference between computed fields and reference fields
+      !
+      write(stderrUnit,'(a)') '********************************************************************************'
+      write(stderrUnit,'(a)') '***************************** AVEC verification ********************************'
+      write(stderrUnit,'(a)') '********************************************************************************'
+
+      call compute_rms(domain, nCellsSolve, computed_p0, reference_p0, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error p0    = ', rms, trim(status)
+
+      call compute_rms(domain, nCellsSolve, computed_u, reference_u, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error u     = ', rms, trim(status)
+
+      call compute_rms(domain, nCellsSolve, computed_w, reference_w, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error w     = ', rms, trim(status)
+
+      call compute_rms(domain, nCellsSolve, computed_rho, reference_rho, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error rho   = ', rms, trim(status)
+
+      call compute_rms(domain, nCellsSolve, computed_theta, reference_theta, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error theta = ', rms, trim(status)
+
+      call compute_rms(domain, nCellsSolve, computed_psfc, reference_psfc, 1.0e-10, rms, status)
+      write(stderrUnit,*) 'RMS error psfc  = ', rms, trim(status)
+
+      write(stderrUnit,'(a)') '********************************************************************************'
+      write(stderrUnit,'(a)') '********************************************************************************'
+
+     
+      !
+      ! Write out fields for possible comparison with reference fields
+      !
+      call mpas_stream_mgr_write(stream_manager, streamID='benchmark', forceWriteNow=.true., ierr=ierr)
+
+   end subroutine avec_verification
+
+
+   subroutine compute_rms(domain, nElems, field1, field2, thresh, rms, status)
+   
+      use mpas_grid_types
+      use mpas_kind_types
+
+      implicit none
+
+      type (domain_type), intent(inout) :: domain
+      integer, intent(in) :: nElems
+      real(kind=RKIND), dimension(nElems), intent(in) :: field1, field2
+      real(kind=RKIND), intent(in) :: thresh
+      real(kind=RKIND), intent(out) :: rms
+      character(len=StrKIND), intent(out) :: status
+
+      integer :: i
+      integer :: n
+      real(kind=RKIND) :: rms_local
+
+
+      rms_local = 0.0
+      do i=1,nElems
+         rms_local = rms_local + (field1(i) - field2(i))**2
+      end do
+      call mpas_dmpar_sum_int(domain % dminfo, nElems, n)
+      call mpas_dmpar_sum_real(domain % dminfo, rms_local, rms)
+      rms = sqrt(rms / n)
+      if (rms < thresh) then
+         status = 'PASSED'
+      else
+         status = 'FAILED'
+      end if
+
+   end subroutine compute_rms
 
 end module mpas_core
