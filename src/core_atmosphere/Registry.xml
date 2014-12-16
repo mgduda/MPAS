@@ -115,7 +115,7 @@
 	<streams>
 		<stream name="input" 
                         type="input" 
-                        filename_template="x1.40962.grid.nc" 
+                        filename_template="SET_ME" 
                         input_interval="initial_only"
                         immutable="true">
 
@@ -271,7 +271,7 @@
 		<stream name="output" 
                         type="output" 
                         filename_template="history.$Y-$M-$D_$h.$m.$s.nc" 
-                        output_interval="6:00:00"
+                        output_interval="none"
                         runtime_format="separate_file">
 
 			<var name="latCell"/>
@@ -333,7 +333,7 @@
 		<stream name="diagnostics" 
                         type="output" 
                         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc" 
-                        output_interval="3:00:00"
+                        output_interval="none"
                         runtime_format="separate_file">
 
 			<var name="xtime"/>
@@ -359,7 +359,8 @@
 
 		<stream name="benchmark" 
                         type="output" 
-                        filename_template="benchmark.$Y-$M-$D_$h.$m.$s.nc" 
+                        filename_template="benchmark.nc" 
+                        filename_interval="none"
                         output_interval="none"
                         runtime_format="separate_file">
 
