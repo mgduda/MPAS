@@ -50,7 +50,9 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-08-11.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
-
+!>    * added controls for the MYNN surface layer scheme (sfc_mynn) and planetary boundary layer
+!>      scheme (pbl_mynn).
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06.
 
  contains
 
@@ -123,8 +125,9 @@
  endif
 
 !pbl scheme:
- if(.not. (config_pbl_scheme .eq. 'off' .or. &
-           config_pbl_scheme .eq. 'ysu')) then
+ if(.not. (config_pbl_scheme .eq. 'off'      .or. &
+           config_pbl_scheme .eq. 'ysu'      .or. &
+           config_pbl_scheme .eq. 'pbl_mynn' )) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for pbl_scheme: ', &
           trim(config_pbl_scheme)
@@ -195,8 +198,9 @@
  endif
 
 !surface-layer scheme:
- if(.not. (config_sfclayer_scheme .eq. 'off'  .or. &
-           config_sfclayer_scheme .eq. 'monin_obukhov')) then
+ if(.not. (config_sfclayer_scheme .eq. 'off'          .or. &
+           config_sfclayer_scheme .eq. 'monin_obukhov'.or. &
+           config_sfclayer_scheme .eq. 'sfc_mynn')) then
  
     write(mpas_err_message,'(A,A10)') 'illegal value for surface layer scheme: ', &
           trim(config_sfclayer_scheme)
