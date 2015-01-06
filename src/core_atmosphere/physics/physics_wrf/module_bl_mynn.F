@@ -2745,13 +2745,11 @@ ENDIF
           delta(i,j) = min(d1*pblh(i,j) + d2*wm2/delb, 100.)
 !!!!! end GRIMS
 
-          write(0,*) '--- enter subroutine mym_condensation:'
           CALL  mym_condensation ( kts,kte,&
                &dz1,thl,sqw,p1,ex1, &
                &tsq1, qsq1, cov1, &
                &Sh,el,bl_mynn_cloudpdf, & !JOE-added for cloud PDF testing (from Kuwano-Yoshida et al. 2010)
                &Vt, Vq)
-          write(0,*) '--- exit subroutine mym_condensation'
 
           CALL mym_turbulence ( kts,kte,levflag, &
                &dz1, zw, u1, v1, thl, sqc, sqw, &

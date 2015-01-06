@@ -86,10 +86,13 @@
 !>    * added block%configs in the call to driver_convection_deep.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
-!>    * Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
 !>    * added call to subroutine interp_pFixed to interpolate physics tendencies to fixed pressure
 !>      levels.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-29.
+!>    * modified the call to the subroutines driver_sfclayer and driver_pbl for the implementation
+!>      of the MYNN surface layer scheme and PBL schemes. itimestep is added to the argument list.
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06. 
 
 
  contains
@@ -207,7 +210,7 @@
     !call to surface-layer scheme:
     if(config_sfclayer_scheme .ne. 'off') then
        call allocate_sfclayer
-       call driver_sfclayer(mesh,diag_physics,sfc_input)
+       call driver_sfclayer(itimestep,mesh,diag_physics,sfc_input)
        call deallocate_sfclayer
     endif
 
@@ -221,7 +224,7 @@
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
        call allocate_pbl
-       call driver_pbl(sfc_input,diag_physics,tend_physics)
+       call driver_pbl(itimestep,sfc_input,diag_physics,tend_physics)
        call deallocate_pbl
     endif
 

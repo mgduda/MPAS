@@ -72,6 +72,8 @@
 !>      rt_diabatic_tend, and update of the state variables to git hash identifier 7a66f273e182f4.
 !>      This change reflects the fact that we want to compute rt_diabatic_tend at constant volume.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-10-15. 
+!>    * added the local variables qnc_p and qni_p needed in the MYNN PBL scheme (module_bl_mynn.F).
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06.
 
 
  contains
@@ -111,6 +113,9 @@
  if(.not.allocated(qi_p)   ) allocate(qi_p(ims:ime,kms:kme,jms:jme)   )
  if(.not.allocated(qs_p)   ) allocate(qs_p(ims:ime,kms:kme,jms:jme)   )
  if(.not.allocated(qg_p)   ) allocate(qg_p(ims:ime,kms:kme,jms:jme)   )
+
+ if(.not.allocated(qnc_p)  ) allocate(qnc_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(qni_p)  ) allocate(qni_p(ims:ime,kms:kme,jms:jme)  )
 
 !... arrays used for calculating the hydrostatic pressure and exner function:
  if(.not.allocated(psfc_hyd_p)  ) allocate(psfc_hyd_p(ims:ime,jms:jme)          )
@@ -158,6 +163,9 @@
  if(allocated(qs_p)    ) deallocate(qs_p    )
  if(allocated(qg_p)    ) deallocate(qg_p    )
 
+ if(allocated(qnc_p)   ) deallocate(qnc_p   )
+ if(allocated(qni_p)   ) deallocate(qni_p   )
+
  if(allocated(psfc_hyd_p)  ) deallocate(psfc_hyd_p  )
  if(allocated(psfc_hydd_p) ) deallocate(psfc_hydd_p )
  if(allocated(pres_hyd_p)  ) deallocate(pres_hyd_p  )
@@ -184,6 +192,7 @@
 
 !local pointers:
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
+ integer,pointer:: index_qnc,index_qni
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: fzm,fzp,rdzw
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,plrad
@@ -191,6 +200,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
+ real(kind=RKIND),dimension(:,:),pointer  :: qnc,qni
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -240,6 +250,9 @@
  call mpas_pool_get_dimension(state,'index_qs',index_qs)
  call mpas_pool_get_dimension(state,'index_qg',index_qg)
 
+ call mpas_pool_get_dimension(state,'index_qnc',index_qnc)
+ call mpas_pool_get_dimension(state,'index_qni',index_qni)
+
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  qv => scalars(index_qv,:,:)
  qc => scalars(index_qc,:,:)
@@ -247,6 +260,9 @@
  qi => scalars(index_qi,:,:)
  qs => scalars(index_qs,:,:)
  qg => scalars(index_qg,:,:)
+
+ qnc => scalars(index_qnc,:,:)
+ qni => scalars(index_qni,:,:)
 
  call mpas_pool_get_array(diag_physics,'plrad',plrad)
 
@@ -261,7 +277,11 @@
     qi_p(i,k,j) = max(0.,qi(k,i))
     qs_p(i,k,j) = max(0.,qs(k,i))
     qg_p(i,k,j) = max(0.,qg(k,i))
-    
+
+    !number concentrations:
+    qnc_p(i,k,j) = max(0.,qnc(k,i))
+    qni_p(i,k,j) = max(0.,qni(k,i))
+ 
     !arrays located at theta points:
     u_p(i,k,j) = u(k,i)
     v_p(i,k,j) = v(k,i)

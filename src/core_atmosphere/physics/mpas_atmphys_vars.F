@@ -47,6 +47,8 @@
 !>      ktop_deep to ktop_deep_p, kbcon_shallow to kbcon_shallow_p, ktop_shallow to ktop_shallow_p, 
 !>      and kbot_shallow to kbot_shallow_p after "rebasing" the sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
+!>    * added local arrays needed in the MYNN surface layer scheme and PBL scheme.
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06. 
 
 
 !==================================================================================================
@@ -132,6 +134,10 @@
     qs_p,             &!snow mixing ratio                                                   [kg/kg]
     qg_p               !graupel mixing ratio                                                [kg/kg]
  
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    qnc_p,            &!cloud liquid water number concentration                               [m-3]
+    qni_p              !cloud ice number concentration                                        [m-3]
+
 !... arrays located at w (vertical velocity) points, or at interface between layers:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     w_p,              &!vertical velocity                                                     [m/s]
@@ -179,6 +185,10 @@
     f_qi = .true.,    &!
     f_qs = .true.,    &!
     f_qg = .true.      !
+
+ logical,parameter:: &
+    f_qnc = .true.,   &!
+    f_qni = .true.     !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     f_ice,            &!fraction of cloud ice (used in WRF only).
@@ -318,6 +328,33 @@
     kzm_p,            &!
     kzq_p              !
 
+!... MYNN PBL scheme (module_bl_mynn.F):
+ integer,parameter:: grav_settling = 0
+
+ logical,parameter:: bl_mynn_tkeadvect = .false.!
+ integer,parameter:: bl_mynn_tkebudget = 0      !
+ integer,parameter:: bl_mynn_cloudpdf  = 0      !
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    delta_p,          &
+    uoce_p,           &!
+    voce_p,           &!
+    vdfg_p,           &!
+    wstar_p            !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    dqke_p,           &!
+    qbuoy_p,          &!
+    qdiss_p,          &!
+    qke_p,            &!
+    qkeadv_p,         &!
+    qshear_p,         &!
+    qwt_p,            &!
+    tkepbl_p           !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    rqniblten_p        !
+
 !==================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
 !==================================================================================================
@@ -362,8 +399,6 @@
     flhc_p,           &!exchange coefficient for heat                                           [-]
     flqc_p,           &!exchange coefficient for moisture                                       [-]
     hfx_p,            &!upward heat flux at the surface                                      [W/m2]
-    fh_p,             &!integrated stability function for heat                                  [-]
-    fm_p,             &!integrated stability function for momentum                              [-]             
     lh_p,             &!latent heat flux at the surface                                      [W/m2]
     mavail_p,         &!surface moisture availability                                           [-]
     mol_p,            &!T* in similarity theory                                                 [K]
@@ -386,6 +421,22 @@
     znt_p,            &!time-varying roughness length                                           [m]
     zol_p              !
 
+!... arrays only in monin_obukohv (module_sf_sfclay.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    fh_p,             &!integrated stability function for heat                                  [-]
+    fm_p               !integrated stability function for momentum                              [-]             
+
+!... arrays only in mynn surface layer scheme (module_sf_mynn.F):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    ch_p,             &!surface exchange coeff for heat                                       [m/s]
+    qcg_p              !cloud water mixing ratio at the ground surface                      [kg/kg]
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    cov_p,            &!liquid water-liquid water potential temperature covariance        [K kg/kg]
+    qsq_p,            &!liquid water variance                                           [(kg/kg)^2]
+    tsq_p,            &!liquid water potential temperature variance                           [K^2]
+    sh3d_p,           &!stability function for heat                                             [-]
+    elpbl_p            !length scale from PBL                                                   [m]
 
 !==================================================================================================
 !... variables and arrays related to parameterization of short-wave radiation:
