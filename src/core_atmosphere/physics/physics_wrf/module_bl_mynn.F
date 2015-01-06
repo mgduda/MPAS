@@ -54,6 +54,7 @@ MODULE module_bl_mynn
         svpt0,         &
         ep_1,          &
         ep_2
+  USE error_function, only: erf
 #else
   USE module_model_constants, only: &
        &karman, g, p1000mb, &
@@ -2426,8 +2427,8 @@ ENDIF
        &Tsq,Qsq,Cov,&
        &Du,Dv,Dth,&
        &Dqv,Dqc,Dqi,Dqni,& !Dqnc,&         !JOE: ice & nim conc mixing
-!       &K_m,K_h,K_q&
-       &K_h,k_m,&
+       &K_m,K_h,K_q,&
+!      &K_h,k_m,&
        &Pblh,kpbl&                      !JOE-added kpbl for coupling
        &,el_pbl&
        &,dqke,qWT,qSHEAR,qBUOY,qDISS    & !JOE-TKE BUDGET
@@ -2744,11 +2745,13 @@ ENDIF
           delta(i,j) = min(d1*pblh(i,j) + d2*wm2/delb, 100.)
 !!!!! end GRIMS
 
+          write(0,*) '--- enter subroutine mym_condensation:'
           CALL  mym_condensation ( kts,kte,&
                &dz1,thl,sqw,p1,ex1, &
                &tsq1, qsq1, cov1, &
                &Sh,el,bl_mynn_cloudpdf, & !JOE-added for cloud PDF testing (from Kuwano-Yoshida et al. 2010)
                &Vt, Vq)
+          write(0,*) '--- exit subroutine mym_condensation'
 
           CALL mym_turbulence ( kts,kte,levflag, &
                &dz1, zw, u1, v1, thl, sqc, sqw, &

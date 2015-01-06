@@ -10,6 +10,7 @@ OBJS = \
 	module_bl_gwdo.o             \
 	module_bl_mynn.o             \
 	module_bl_ysu.o              \
+	module_cam_error_function.o  \
 	module_cam_shr_kind_mod.o    \
 	module_cam_support.o         \
 	module_cu_gf.o               \
@@ -37,6 +38,7 @@ physics_wrf: $(OBJS)
 
 # DEPENDENCIES:
 module_bl_mynn.o: \
+	module_cam_error_function.o \
 	../mpas_atmphys_constants.o
 
 module_cam_support.o: \
