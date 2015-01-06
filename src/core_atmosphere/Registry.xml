@@ -354,6 +354,15 @@
 			<var name="cubot"/>
 			<var name="cutop"/>
 			<var name="w0avg"/>
+			<var name="qke"/>
+			<var name="qke_adv"/>
+			<var name="cov"/>
+			<var name="qsq"/>
+			<var name="tsq"/>
+			<var name="tke_pbl"/>
+			<var name="delta"/>
+			<var name="el_pbl"/>
+                        <var name="wstar"/>
 			<var name="kpbl"/>
 			<var name="hpbl"/>
 			<var name="hfx"/>
@@ -496,6 +505,7 @@
 			<var name="rqvblten"/>
 			<var name="rqcblten"/>
 			<var name="rqiblten"/>
+			<var name="rqniblten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
 			<var name="pin"/>
@@ -857,6 +867,8 @@
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
+                        <var name="qni"     array_group="number"/>
+                        <var name="qnc"     array_group="number"/>
                 </var_array>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
@@ -1010,7 +1022,10 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+                        <var name="tend_qni"   name_in_code="qni"       array_group="number"/>
+                        <var name="tend_qnc"   name_in_code="qnc"       array_group="number"/>
                 </var_array>
+
         </var_struct>
 
 
@@ -1264,18 +1279,51 @@
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                                        -->
                 <!-- ================================================================================================== -->
-                <!-- kpbl      : index of PBL top                                                                  (-)  -->
-                <!-- hpbl      : PBL height                                                                        (m)  -->
-                <!-- exch_h    : exchange coefficient                                                              (-)  -->
+                <!-- kpbl      : index of PBL top                                                                   [-] -->
+                <!-- hpbl      : PBL height                                                                         [m] -->
+                <!-- exch_h    : exchange coefficient                                                               [-] -->
 
                 <var name="kpbl"          type="integer"  dimensions="nCells Time"/>
                 <var name="hpbl"          type="real"     dimensions="nCells Time"/>
+		<var name="kzh"           type="real"     dimensions="nVertLevels nCells Time"/>
+		<var name="kzm"           type="real"     dimensions="nVertLevels nCells Time"/>
+		<var name="kzq"           type="real"     dimensions="nVertLevels nCells Time"/>
+
+                <!-- YSU PBL SCHEME: -->
                 <var name="exch_h"        type="real"     dimensions="nVertLevels nCells Time"/>
 
-                <!-- TEMPORARY: -->
-		<var name="kzh"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzm"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzq"                               type="real"     dimensions="nVertLevels nCells Time"/>
+                <!-- MYNN PBL SCHEME: -->
+                <!-- delta     : entrainment layer depth from PBL scheme                                            [m] -->
+                <!-- el_pbl    : mixing length from PBL scheme                                                      [m] -->
+                <!-- wstar     : mixed velocity scale from PBL scheme                                             [m/s] -->
+                <!-- cov       : liquid water - liquid water potential temperature covariance                 [K kg/kg] -->
+                <!-- qke       : twice turbulent kinetic energy                                                [m2 s-2] -->
+                <!-- qke_adv   : twice turbulent kinetic energy                                                [m2 s-2] -->
+                <!-- qsq       : liquid water variance                                                       [(kg/kg)2] -->
+                <!-- tsq       : liquid water potential temperature variance                                       [K2] -->
+                <!-- tke_pbl   : turbulent kinetic energy from PBL                                             [m2/s-2] -->
+
+                <!-- dqke      : TKE change                                                                    [m2/s-2] -->
+                <!-- qbuoy     : TKE production - buoyancy                                                     [m2/s-2] -->
+                <!-- qdiss     : TKE dissipation                                                               [m2/s-2] -->
+                <!-- qshear    : TKE production - shear                                                        [m2/s-2] -->
+                <!-- qwt       : TKE vertical distribution                                                     [m2/s-2] --> 
+
+                <var name="delta"         type="real"    dimensions="nCells Time"/>
+                <var name="wstar"         type="real"    dimensions="nCells Time"/>
+                <var name="cov"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="el_pbl"        type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qke"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qke_adv"       type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qsq"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="tsq"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="tke_pbl"       type="real"    dimensions="nVertLevels nCells Time"/>
+
+                <var name="dqke"          type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qbuoy"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qdiss"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qshear"        type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qwt"           type="real"    dimensions="nVertLevels nCells Time"/>
 
 
                 <!-- ================================================================================================== -->
@@ -1347,8 +1395,18 @@
                 <var name="regime"        type="real"     dimensions="nCells Time"/>
                 <var name="rmol"          type="real"     dimensions="nCells Time"/>
                 <var name="wspd"          type="real"     dimensions="nCells Time"/>
+
+                <!-- ADDITIONAL VARIABLES ONLY NEEDED IN THE MONIN_OBUKOHV SURFACE LAYER SCHEME (SFCLAY): -->
+                <!--  fh        :integrated function for heat                                                       [-] -->
+                <!--  fm        :integrated function for momentum                                                   [-] -->
+
                 <var name="fh"            type="real"     dimensions="nCells Time"/>
                 <var name="fm"            type="real"     dimensions="nCells Time"/>
+
+                <!-- ADDITIONAL VARIABLES ONLY NEEDED IN THE MYNN SURFACE LAYER SCHEME (SFCLAY_MYNN): -->
+                <var name="ch"            type="real"     dimensions="nCells Time"/>
+                <var name="qcg"           type="real"     dimensions="nCells Time"/>
+                <var name="sh3d"          type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- DIAGNOSTICS: -->
                 <var name="u10"           type="real"     dimensions="nCells Time"/>
@@ -1662,6 +1720,7 @@
                 <!-- rqvblten  : tendency of water vapor mixing ratio due to pbl processes                 (kg/kg s-1)  -->
                 <!-- rqcblten  : tendency of cloud water mixing ratio due to pbl processes                 (kg/kg s-1)  -->
                 <!-- rqiblten  : tendency of cloud ice mixing ratio due to pbl processes                   (kg/kg s-1)  -->
+                <!-- rqniblten : tendency of cloud ice number concentration due to pbl processes             (m-3 s-1)  -->
 
                 <var name="rublten"     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rvblten"     type="real"     dimensions="nVertLevels nCells Time"/>
@@ -1669,6 +1728,7 @@
                 <var name="rqvblten"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rqcblten"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rqiblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqniblten"   type="real"     dimensions="nVertLevels nCells Time"/>
 
 
                 <!-- ================================================================================================== -->
