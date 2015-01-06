@@ -4,6 +4,8 @@
 ! modifications made to sourcecode:
 ! * used preprocessing option to replace module_model_constants with mpas_atmphys_constants.
 !   Laura D. Fowler (laura@ucar.edu / 2014-09-25).
+! * used preprocessing option to include the actual mean distance between cell centers.
+!   Laura D. Fowler (laura@ucar.edu / 2015-01-06).
 
 !==================================================================================================
 
@@ -372,9 +374,16 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
+#if defined(mpas)
+!MPAS specific (Laura D. Fowler - 2014-12-02):
+                ,isftcflx,iz0tlnd,                                 &
+                USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
+                CD(ims,j),CDA(ims,j),dxCell(ims,j)                 &
+#else
                 ,isftcflx,iz0tlnd,                                 &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
+#endif
                                                                    )
 
       ENDDO
@@ -397,7 +406,12 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     &
                      ,isftcflx, iz0tlnd,                           &
+#if defined(mpas)
+!MPAS specific (Laura D. Fowler - 2014-12-02):
+                     ustm,ck,cka,cd,cda,dxCell                     &
+#else
                      ustm,ck,cka,cd,cda                            &
+#endif
                      )
 
 !-------------------------------------------------------------------
@@ -503,6 +517,13 @@ CONTAINS
       REAL    ::  FLUXC,VSGD
       REAL    ::  restar,VISC,DQG,OLDUST,OLDTST
       REAL, PARAMETER :: psilim = -10.  ! ONLY AFFECTS z/L > 2.0
+
+#if defined(mpas)
+!MPAS specific (Laura D. Fowler - 2014-12-02):
+      real,intent(in),dimension(ims:ime),optional:: dxCell
+!MPAS specific end.
+#endif
+
 !-------------------------------------------------------------------
 
       DO I=its,ite
@@ -616,7 +637,13 @@ CONTAINS
          ! Mahrt and Sun low-res correction
          ! (for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
          !--------------------------------------------------------
-         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+!MPAS specific (Laura D. Fowler): We take into accound the actual size of individual
+!grid-boxes:
+        if(present(dxCell)) then
+           VSGD = 0.32 * (max(dxCell(i)/5000.-1.,0.))**.33
+         else
+           VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+         endif
          WSPD(I)=SQRT(WSPD(I)*WSPD(I)+WSTAR(I)*WSTAR(I)+vsgd*vsgd)
          WSPD(I)=MAX(WSPD(I),wmin)
 
