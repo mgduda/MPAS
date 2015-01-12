@@ -354,15 +354,14 @@
 			<var name="cubot"/>
 			<var name="cutop"/>
 			<var name="w0avg"/>
+			<var name="qcg"/>
+			<var name="sh3d"/>
 			<var name="qke"/>
 			<var name="qke_adv"/>
 			<var name="cov"/>
 			<var name="qsq"/>
 			<var name="tsq"/>
 			<var name="tke_pbl"/>
-			<var name="delta"/>
-			<var name="el_pbl"/>
-                        <var name="wstar"/>
 			<var name="kpbl"/>
 			<var name="hpbl"/>
 			<var name="hfx"/>
@@ -1357,8 +1356,6 @@
                 <!--  zol       :z/L height over Monin-Obukhov length                                               [-] -->
                 <!--  znt       :time-varying roughness length                                                      [m] -->
                 <!--  wspd      :wind speed                                                                       [m/s] -->
-                <!--  fh        :integrated function for heat                                                       [-] -->
-                <!--  fm        :integrated function for momentum                                                   [-] -->
                 <!--  DIAGNOSTICS:                                                                                      -->
                 <!--  q2        :specific humidity at 2m                                                        [kg/kg] -->
                 <!--  u10       :u at 10 m                                                                        [m/s] -->
@@ -1404,6 +1401,10 @@
                 <var name="fm"            type="real"     dimensions="nCells Time"/>
 
                 <!-- ADDITIONAL VARIABLES ONLY NEEDED IN THE MYNN SURFACE LAYER SCHEME (SFCLAY_MYNN): -->
+                <!--  ch        :surface exchange coefficient for heat                                            [m/s] -->
+                <!--  qcg       :cloud water mixing ratio at the ground surface                                 [kg/kg] -->
+                <!--  sh3d      :stability function for heat                                                        [-] -->
+
                 <var name="ch"            type="real"     dimensions="nCells Time"/>
                 <var name="qcg"           type="real"     dimensions="nCells Time"/>
                 <var name="sh3d"          type="real"     dimensions="nVertLevels nCells Time"/>
