@@ -249,8 +249,6 @@
  call mpas_pool_get_array(diag_physics,'chs'     ,chs     )
  call mpas_pool_get_array(diag_physics,'chs2'    ,chs2    )
  call mpas_pool_get_array(diag_physics,'cqs2'    ,cqs2    )
- call mpas_pool_get_array(diag_physics,'fh'      ,fh      )
- call mpas_pool_get_array(diag_physics,'fm'      ,fm      )
  call mpas_pool_get_array(diag_physics,'flhc'    ,flhc    )
  call mpas_pool_get_array(diag_physics,'flqc'    ,flqc    )
  call mpas_pool_get_array(diag_physics,'gz1oz0'  ,gz1oz0  )
