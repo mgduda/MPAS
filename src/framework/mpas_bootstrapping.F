@@ -126,7 +126,9 @@ module mpas_bootstrapping
       integer, pointer :: config_num_halos, config_number_of_blocks
       logical, pointer :: config_explicit_proc_decomp
       character (len=StrKIND), pointer :: config_block_decomp_file_prefix, config_proc_decomp_file_prefix
+      character (len=StrKIND), pointer :: config_pio_format
       integer :: nHalos
+      integer :: ioformat
 
 
       call mpas_pool_get_config(domain % configs, 'config_num_halos', config_num_halos)
@@ -134,11 +136,26 @@ module mpas_bootstrapping
       call mpas_pool_get_config(domain % configs, 'config_explicit_proc_decomp', config_explicit_proc_decomp)
       call mpas_pool_get_config(domain % configs, 'config_block_decomp_file_prefix', config_block_decomp_file_prefix)
       call mpas_pool_get_config(domain % configs, 'config_proc_decomp_file_prefix', config_proc_decomp_file_prefix)
+      call mpas_pool_get_config(domain % configs, 'config_pio_format', config_pio_format)
 
       nHalos = config_num_halos
 
+      if (trim(config_pio_format) == 'netcdf') then
+         ioformat = MPAS_IO_NETCDF
+      else if (trim(config_pio_format) == 'pnetcdf') then
+         ioformat = MPAS_IO_PNETCDF
+      else if (trim(config_pio_format) == 'netcdf4p') then
+         ioformat = MPAS_IO_NETCDF4P
+      else
+         write(stderrUnit,*) ' '
+         write(stderrUnit,*) '************************************************************************************'
+         write(stderrUnit,*) 'Error: Invalid specification for config_pio_format.'
+         write(stderrUnit,*) '       Valid options are: netcdf, pnetcdf, netcdf4p'
+         write(stderrUnit,*) '************************************************************************************'
+         call mpas_dmpar_abort(domain % dminfo)
+      end if
 
-      inputHandle = MPAS_io_open(trim(mesh_filename), MPAS_IO_READ, MPAS_IO_PNETCDF, ierr=ierr)
+      inputHandle = MPAS_io_open(trim(mesh_filename), MPAS_IO_READ, ioformat, ierr=ierr)
       if (ierr /= MPAS_IO_NOERR) then
          write(stderrUnit,*) ' '
          write(stderrUnit,*) '************************************************************************************'
