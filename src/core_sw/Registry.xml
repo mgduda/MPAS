@@ -40,6 +40,7 @@
 	<nml_record name="io" in_defaults="true">
 		<nml_option name="config_pio_num_iotasks"            type="integer"       default_value="0"/>
 		<nml_option name="config_pio_stride"                 type="integer"       default_value="1"/>
+		<nml_option name="config_pio_format"                 type="character"     default_value="pnetcdf"/>
 	</nml_record>
 	<nml_record name="decomposition" in_defaults="true">
 		<nml_option name="config_block_decomp_file_prefix"   type="character"     default_value="graph.info.part."/>
