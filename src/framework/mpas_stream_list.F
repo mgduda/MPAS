@@ -9,7 +9,7 @@ module mpas_stream_list
     use mpas_io_units, only : stderrUnit
     use mpas_grid_types, only : mpas_pool_type
     use mpas_io_streams, only : MPAS_Stream_type
-    use mpas_io, only : MPAS_IO_NATIVE_PRECISION
+    use mpas_io, only : MPAS_IO_NATIVE_PRECISION, MPAS_IO_NETCDF, MPAS_IO_NETCDF4P, MPAS_IO_PNETCDF
     use mpas_timekeeping, only : MPAS_Time_type, MPAS_TimeInterval_type
 
 
@@ -32,6 +32,7 @@ module mpas_stream_list
         character(len=StrKIND) :: filename
         character(len=StrKIND) :: filename_template
         character(len=StrKIND) :: filename_interval
+        integer :: ioformat = MPAS_IO_PNETCDF
         type (MPAS_Stream_type), pointer :: stream => null()
         integer :: timeLevel = 0
         integer :: nRecords

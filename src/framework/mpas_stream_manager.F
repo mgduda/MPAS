@@ -313,7 +313,7 @@ module mpas_stream_manager
     !>  existing files (MPAS_STREAM_CLOBBER_NEVER).
     !
     !-----------------------------------------------------------------------
-    subroutine MPAS_stream_mgr_create_stream(manager, streamID, direction, filename, &
+    subroutine MPAS_stream_mgr_create_stream(manager, streamID, direction, filename, ioformat, &
                                              filenameInterval, referenceTime, recordInterval, &
                                              realPrecision, clobberMode, ierr) !{{{
 
@@ -325,6 +325,7 @@ module mpas_stream_manager
         character (len=*), intent(in) :: streamID
         integer, intent(in) :: direction
         character (len=*), intent(in) :: filename
+        integer, intent(in), optional :: ioformat
         character (len=*), intent(in), optional :: filenameInterval
         type (MPAS_Time_type), intent(in), optional :: referenceTime
         type (MPAS_TimeInterval_type), intent(in), optional :: recordInterval
@@ -359,7 +360,22 @@ module mpas_stream_manager
 !TODO: ensure that filename does not contain ':' characters, which PNETCDF does not like...
         new_stream % filename_template = filename
 
-        ! Filename interval is 'none' by deault, but is set through the set_property routine.
+        if (present(ioformat)) then
+            if (ioformat /= MPAS_IO_NETCDF .and. &
+                ioformat /= MPAS_IO_PNETCDF .and. &
+                ioformat /= MPAS_IO_NETCDF4P) then
+                if (present(ierr)) ierr = MPAS_STREAM_MGR_ERROR
+                STREAM_ERROR_WRITE('Invalid ioformat provided to MPAS_stream_mgr_create_stream()')
+                deallocate(new_stream)
+                return 
+            else
+                new_stream % ioformat = ioformat
+            end if
+        else
+            new_stream % ioformat = MPAS_IO_PNETCDF
+        end if
+
+        ! Filename interval is 'none' by default, but is set through the set_property routine.
         if (present(filenameInterval)) then
             new_stream % filename_interval = filenameInterval
         else
@@ -2452,7 +2468,7 @@ module mpas_stream_manager
             ! Build stream from pools of fields and attributes
             !
             allocate(stream % stream)
-            call MPAS_createStream(stream % stream, stream % filename, MPAS_IO_PNETCDF, MPAS_IO_WRITE,  &
+            call MPAS_createStream(stream % stream, stream % filename, stream % ioformat, MPAS_IO_WRITE,  &
                                    precision=stream % precision, clobberRecords=clobberRecords, &
                                    clobberFiles=clobberFiles, truncateFiles=truncateFiles, ierr=local_ierr)
             if (local_ierr /= MPAS_STREAM_NOERR) then
@@ -2538,7 +2554,7 @@ module mpas_stream_manager
                 !
                 ! Build new stream from pools of fields and attributes
                 !
-                call MPAS_createStream(stream % stream, stream % filename, MPAS_IO_PNETCDF, MPAS_IO_WRITE, &
+                call MPAS_createStream(stream % stream, stream % filename, stream % ioformat, MPAS_IO_WRITE, &
                                        precision=stream % precision, clobberRecords=clobberRecords, &
                                        clobberFiles=clobberFiles, truncateFiles=truncateFiles, ierr=local_ierr)
                 if (local_ierr /= MPAS_STREAM_NOERR) then
@@ -2780,8 +2796,8 @@ module mpas_stream_manager
                     return 
                 end if
 
-                call read_stream(manager, stream_cursor, local_timeLevel, local_mgLevel, local_rightNow, local_when, local_whence, &
-                                 actualWhen, local_ierr)
+                call read_stream(manager, stream_cursor, local_timeLevel, local_mgLevel, local_rightNow, &
+                                 local_when, local_whence, actualWhen, local_ierr)
             else
                 STREAM_ERROR_WRITE('Stream '//trim(streamID)//' does not exist in call to MPAS_stream_mgr_read().')
                 if (present(ierr)) ierr = MPAS_STREAM_MGR_ERROR
@@ -2925,7 +2941,7 @@ module mpas_stream_manager
             ! Build stream from pools of fields and attributes
             !
             allocate(stream % stream)
-            call MPAS_createStream(stream % stream, stream % filename, MPAS_IO_PNETCDF, MPAS_IO_READ, &
+            call MPAS_createStream(stream % stream, stream % filename, stream % ioformat, MPAS_IO_READ, &
                                    precision=stream % precision, ierr=local_ierr)
             if (local_ierr /= MPAS_STREAM_NOERR) then
                 ierr = MPAS_STREAM_MGR_ERROR
@@ -2957,7 +2973,8 @@ module mpas_stream_manager
            !
            ! Build new stream from pools of fields and attributes
            !
-           call MPAS_createStream(stream % stream, stream % filename, MPAS_IO_PNETCDF, MPAS_IO_READ, precision=stream % precision, ierr=local_ierr)
+           call MPAS_createStream(stream % stream, stream % filename, stream % ioformat, MPAS_IO_READ, &
+                                  precision=stream % precision, ierr=local_ierr)
            if (local_ierr /= MPAS_STREAM_NOERR) then
                ierr = MPAS_STREAM_MGR_ERROR
                return
@@ -3064,7 +3081,8 @@ module mpas_stream_manager
 
            call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
            
-           call build_filename(stream % referenceTime, filenameTime, filename_interval, stream % filename_template, test_filename, ierr=local_ierr)
+           call build_filename(stream % referenceTime, filenameTime, filename_interval, stream % filename_template, test_filename, &
+                               ierr=local_ierr)
 
            STREAM_DEBUG_WRITE(' --- Retesting filename is ' COMMA trim(test_filename))
 
@@ -3072,7 +3090,8 @@ module mpas_stream_manager
 
            ! If file exists, the testing stream needs to be built.
            if ( retestFile ) then
-               call mpas_createStream(testStream, test_filename, MPAS_IO_PNETCDF, MPAS_IO_READ, precision=stream % precision, ierr=local_ierr)
+               call mpas_createStream(testStream, test_filename, stream % ioformat, MPAS_IO_READ, precision=stream % precision, &
+                                      ierr=local_ierr)
            else
                STREAM_DEBUG_WRITE(' Filename: ' COMMA trim(test_filename) COMMA ' does not exist.')
            end if
@@ -3146,7 +3165,7 @@ module mpas_stream_manager
            !
            ! Build new stream from pools of fields and attributes
            !
-           call MPAS_createStream(stream % stream, stream % filename, MPAS_IO_PNETCDF, MPAS_IO_READ, precision=stream % precision, ierr=local_ierr)
+           call MPAS_createStream(stream % stream, stream % filename, stream % ioformat, MPAS_IO_READ, precision=stream % precision, ierr=local_ierr)
            if (local_ierr /= MPAS_STREAM_NOERR) then
                ierr = MPAS_STREAM_MGR_ERROR
                return
