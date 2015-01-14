@@ -26,6 +26,7 @@ OBJS = mpas_kind_types.o \
        mpas_c_interfacing.o \
        random_id.o \
        streams.o \
+       timer.o \
        pool_hash.o \
        xml_stream_parser.o \
        ../registry/ezxml/ezxml.o
