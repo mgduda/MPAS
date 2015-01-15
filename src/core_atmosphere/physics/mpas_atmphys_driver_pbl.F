@@ -490,15 +490,19 @@
  end subroutine pbl_to_MPAS
  
 !==================================================================================================
- subroutine driver_pbl(itimestep,sfc_input,diag_physics,tend_physics)
+ subroutine driver_pbl(itimestep,configs,sfc_input,diag_physics,tend_physics)
 !==================================================================================================
 
 !input and output arguments:
+ type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(inout):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend_physics
 
  integer,intent(in):: itimestep
+
+!local pointers:
+ logical,pointer:: config_do_restart
 
 !local variables:
  integer:: initflag
@@ -507,8 +511,13 @@
  write(0,*)
  write(0,*) '--- enter subroutine driver_pbl: dt_pbl=',dt_pbl
 
+ call mpas_pool_get_config(configs,'config_do_restart',config_do_restart)
+
 !copy MPAS arrays to local arrays:
  call pbl_from_MPAS(sfc_input,diag_physics)
+
+ initflag = 1
+ if(config_do_restart .or. itimestep > 1) initflag = 0
 
  pbl_select: select case (trim(pbl_scheme))
 

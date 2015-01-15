@@ -536,32 +536,39 @@
  end subroutine init_sfclayer
 
 !==================================================================================================
- subroutine driver_sfclayer(itimestep,mesh,diag_physics,sfc_input)
+ subroutine driver_sfclayer(itimestep,configs,mesh,diag_physics,sfc_input)
 !==================================================================================================
 
 !input and inout arguments:
  type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: sfc_input
  type(mpas_pool_type),intent(inout):: diag_physics
 
  integer,intent(in):: itimestep
 
 !local pointers:
+ logical,pointer:: config_do_restart
  real(kind=RKIND),dimension(:),pointer:: areaCell
 
 !local variables:
+ integer:: initflag
  real(kind=RKIND):: dx
 
 !--------------------------------------------------------------------------------------------------
  write(0,*)
  write(0,*) '--- enter subroutine driver_sfclayer:'
 
+ call mpas_pool_get_config(configs,'config_do_restart',config_do_restart)
  call mpas_pool_get_array(mesh,'areaCell',areaCell)
 
 !copy all MPAS arrays to rectanguler grid:
  call sfclayer_from_MPAS(mesh,diag_physics,sfc_input)
 
  dx = sqrt(maxval(areaCell))
+
+ initflag = 1
+ if(config_do_restart .or. itimestep > 1) initflag = 0
 
  sfclayer_select: select case (trim(sfclayer_scheme))
 
@@ -618,7 +625,7 @@
                    ep1      = ep_1       , ep2      = ep_2       , karman    = karman     , &
                    dxCell   = dx_p       , ustm     = ustm_p     , ck        = ck_p       , &
                    cka      = cka_p      , cd       = cd_p       , cda       = cda_p      , &
-                   isftcflx = isftcflx   , iz0tlnd  = iz0tlnd    , itimestep = itimestep  , &
+                   isftcflx = isftcflx   , iz0tlnd  = iz0tlnd    , itimestep = initflag   , &
                    ch       = ch_p       , cov      = cov_p      , tsq       = tsq_p      , &
                    qsq      = qsq_p      , sh3d     = sh3d_p     , el_pbl    = elpbl_p    , &
                    qcg      = qcg_p      , bl_mynn_cloudpdf = bl_mynn_cloudpdf            , &
