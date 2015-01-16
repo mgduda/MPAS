@@ -15,7 +15,7 @@ module mpas_core
    
       use mpas_grid_types
       use mpas_stream_manager
-      use mpas_io_streams, only : MPAS_STREAM_NEAREST
+      use mpas_io_streams
       use mpas_configure
       use init_atm_cases
    
@@ -32,6 +32,10 @@ module mpas_core
       real (kind=RKIND), pointer :: sphere_radius
       integer :: ierr
 
+
+      call MPAS_stream_mgr_set_property(stream_manager, 'input', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
+      call MPAS_stream_mgr_set_property(stream_manager, 'output', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
+      call MPAS_stream_mgr_set_property(stream_manager, 'surface', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
 
       block => domain % blocklist
       do while (associated(block))
