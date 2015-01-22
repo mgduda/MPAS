@@ -2558,7 +2558,6 @@ module atm_time_integration
       end do
 #endif
 
-!$OMP BARRIER
 
       ! compute horiontal mass-flux divergence, add vertical mass flux divergence to complete tend_rho
 
@@ -2689,7 +2688,6 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
 
       !
       !  horizontal mixing for u
@@ -2756,7 +2754,6 @@ module atm_time_integration
 
       end if ! delsq_horiz_mixing for u
 
-!$OMP BARRIER
 
       if ((h_mom_eddy_visc4 > 0.0 .and. config_horiz_mixing == '2d_fixed') .or. &
           (h_mom_eddy_visc4 > 0.0 .and. config_horiz_mixing == '2d_smagorinsky')) then
@@ -2820,7 +2817,6 @@ module atm_time_integration
          end do
 #endif
 
-!$OMP BARRIER
 
 #if MPI_ONLY
          delsq_divergence(:,:) = 0.0
@@ -2884,7 +2880,6 @@ module atm_time_integration
 
       end if
 
-!$OMP BARRIER
 
       !
       !  vertical mixing for u - 2nd order filter in physical (z) space
@@ -2963,17 +2958,17 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
 
 !----------- rhs for w
 
+#if MPI_ONLY
       tend_w(1:nVertLevels+1,cellStart:cellEnd) = 0.0
-      if (rk_step == 1) then
-         tend_w_pgf(1:nVertLevels+1,cellStart:cellEnd)  = 0.0
-         tend_w_buoy(1:nVertLevels+1,cellStart:cellEnd) = 0.0
-      end if
+#endif
+!      if (rk_step == 1) then
+!         tend_w_pgf(1:nVertLevels+1,cellStart:cellEnd)  = 0.0
+!         tend_w_buoy(1:nVertLevels+1,cellStart:cellEnd) = 0.0
+!      end if
 
-!$OMP BARRIER
 
       !
       !  horizontal advection for w
@@ -2996,6 +2991,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_w(1:nVertLevels+1,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                edge_sign = edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * 0.5
@@ -3040,6 +3036,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_w(1:nVertLevels+1,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                edge_sign = edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * 0.5
@@ -3102,6 +3099,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_w(1:nVertLevels+1,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                cell1 = cellsOnEdge(1,iEdge)
@@ -3131,7 +3129,6 @@ module atm_time_integration
 #endif
       end if
 
-!$OMP BARRIER
 
       if (curvature) then
 
@@ -3149,7 +3146,6 @@ module atm_time_integration
 
       end if
 
-!$OMP BARRIER
 
       !
       !  horizontal mixing for w - we could combine this with advection directly (i.e. as a turbulent flux),
@@ -3158,13 +3154,13 @@ module atm_time_integration
 
       if (rk_step == 1 .or. rk_diffusion) then
 
-         tend_w_euler(1:nVertLevels+1,cellStart:cellEnd) = 0.0
-
          if (delsq_horiz_mixing) then
 
             if ((h_mom_eddy_visc2 > 0.0) .and. (config_horiz_mixing == '2d_fixed')) then
 
 #ifdef MPI_ONLY
+               tend_w_euler(1:nVertLevels+1,cellStart:cellEnd) = 0.0
+
                do iEdge=1,nEdges
                   cell1 = cellsOnEdge(1,iEdge)
                   cell2 = cellsOnEdge(2,iEdge)
@@ -3184,6 +3180,7 @@ module atm_time_integration
                end do
 #else
                do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+                  tend_w_euler(1:nVertLevels+1,iCell) = 0.0
                   do i=1,nEdgesOnCell(iCell)
                      iEdge = edgesOnCell(i,iCell)
                      cell1 = cellsOnEdge(1,iEdge)
@@ -3203,6 +3200,8 @@ module atm_time_integration
             else if (config_horiz_mixing == '2d_smagorinsky') then
 
 #ifdef MPI_ONLY
+               tend_w_euler(1:nVertLevels+1,cellStart:cellEnd) = 0.0
+
                do iEdge=1,nEdges
                   cell1 = cellsOnEdge(1,iEdge)
                   cell2 = cellsOnEdge(2,iEdge)
@@ -3221,6 +3220,7 @@ module atm_time_integration
                end do
 #else
                do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+                  tend_w_euler(1:nVertLevels+1,iCell) = 0.0
                   do i=1,nEdgesOnCell(iCell)
                      iEdge = edgesOnCell(i,iCell)
                      cell1 = cellsOnEdge(1,iEdge)
@@ -3240,8 +3240,6 @@ module atm_time_integration
 
             end if
          end if   ! delsq_horiz_mixing
-
-!$OMP BARRIER
 
 
          if ((h_mom_eddy_visc4 > 0.0 .and. config_horiz_mixing == '2d_fixed') .or. &
@@ -3281,7 +3279,6 @@ module atm_time_integration
             end do
 #endif
 
-!$OMP BARRIER
 
             do iCell = cellStart,cellEnd
                r = 1.0 / areaCell(iCell)
@@ -3330,13 +3327,14 @@ module atm_time_integration
 
       end if ! horizontal mixing for w computed in first rk_step
 
-!$OMP BARRIER
+! OMP BARRIER
 
       !
       !  vertical advection, pressure gradient and buoyancy for w
       !
 
-      do iCell=cellStart,cellEnd
+!MGD      do iCell=cellStart,cellEnd
+      do iCell=cellSolveStart,cellSolveEnd
 
          wdwz(1) = 0.0
 
@@ -3394,7 +3392,7 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
+! OMP BARRIER
 
       !
       !  vertical mixing for w - 2nd order 
@@ -3416,8 +3414,6 @@ module atm_time_integration
 
       end if ! mixing term computed first rk_step
 
-!$OMP BARRIER
-
 
 ! add in mixing terms for w
 
@@ -3427,12 +3423,10 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
 
 
 !----------- rhs for theta
 
-      tend_theta(1:nVertLevels,cellStart:cellEnd) = 0.0
 
       !
       !  horizontal advection for theta
@@ -3441,6 +3435,8 @@ module atm_time_integration
       if (config_theta_adv_order == 2) then
 
 #if MPI_ONLY
+         tend_theta(1:nVertLevels,cellStart:cellEnd) = 0.0
+
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -3454,6 +3450,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_theta(1:nVertLevels,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                cell1 = cellsOnEdge(1,iEdge)
@@ -3469,6 +3466,8 @@ module atm_time_integration
       else if (config_theta_adv_order == 3) then
 
 #if MPI_ONLY
+         tend_theta(1:nVertLevels,cellStart:cellEnd) = 0.0
+
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -3492,6 +3491,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_theta(1:nVertLevels,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
 
@@ -3516,6 +3516,8 @@ module atm_time_integration
       else  if (config_theta_adv_order == 4) then
 
 #if MPI_ONLY
+         tend_theta(1:nVertLevels,cellStart:cellEnd) = 0.0
+
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -3547,6 +3549,7 @@ module atm_time_integration
          end do
 #else
          do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+            tend_theta(1:nVertLevels,iCell) = 0.0
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                cell1 = cellsOnEdge(1,iEdge)
@@ -3578,7 +3581,6 @@ module atm_time_integration
 
       end if
 
-!$OMP BARRIER
 
       !
       !  horizontal mixing for theta_m - we could combine this with advection directly (i.e. as a turbulent flux),
@@ -3587,12 +3589,13 @@ module atm_time_integration
 
       if (rk_step == 1 .or. rk_diffusion) then
 
-      tend_theta_euler(1:nVertLevels,cellStart:cellEnd) = 0.0
 
       if (delsq_horiz_mixing) then
          if ( (h_theta_eddy_visc2 > 0.0) .and. (config_horiz_mixing == '2d_fixed') ) then
 
 #if MPI_ONLY
+            tend_theta_euler(1:nVertLevels,cellStart:cellEnd) = 0.0
+
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -3610,6 +3613,7 @@ module atm_time_integration
             end do
 #else
             do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+               tend_theta_euler(1:nVertLevels,iCell) = 0.0
                do i=1,nEdgesOnCell(iCell)
                   iEdge = edgesOnCell(i,iCell)
                   cell1 = cellsOnEdge(1,iEdge)
@@ -3629,6 +3633,8 @@ module atm_time_integration
          else if (  ( config_horiz_mixing == '2d_smagorinsky') ) then
 
 #if MPI_ONLY
+            tend_theta_euler(1:nVertLevels,cellStart:cellEnd) = 0.0
+
             do iEdge=1,nEdges
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
@@ -3647,6 +3653,7 @@ module atm_time_integration
             end do
 #else
             do iCell=cellSolveStart,cellSolveEnd    ! Technically updating fewer cells than before...
+               tend_theta_euler(1:nVertLevels,iCell) = 0.0
                do i=1,nEdgesOnCell(iCell)
                   iEdge = edgesOnCell(i,iCell)
                   cell1 = cellsOnEdge(1,iEdge)
@@ -3667,7 +3674,6 @@ module atm_time_integration
 
       end if
 
-!$OMP BARRIER
 
       if ((h_theta_eddy_visc4 > 0.0 .and. config_horiz_mixing == '2d_fixed') .or. &
           (h_theta_eddy_visc4 > 0.0 .and. config_horiz_mixing == '2d_smagorinsky')) then
@@ -3749,13 +3755,13 @@ module atm_time_integration
 
       end if ! theta mixing calculated first rk_step
 
-!$OMP BARRIER
 
       !
       !  vertical advection plus diabatic term
       !  Note: we are also dividing through by the cell area after the horizontal flux divergence
       !
-      do iCell = cellStart,cellEnd
+!MGD      do iCell = cellStart,cellEnd
+      do iCell = cellSolveStart,cellSolveEnd
 
          wdtz(1) = 0.0
 !MGD split this if-block outside the loop
@@ -3796,7 +3802,6 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
 
       !
       !  vertical mixing for theta - 2nd order 
@@ -3850,7 +3855,6 @@ module atm_time_integration
 
       end if ! compute theta mixing on first rk_step
 
-!$OMP BARRIER
 
       do iCell = cellSolveStart,cellSolveEnd
          do k=1,nVertLevels
