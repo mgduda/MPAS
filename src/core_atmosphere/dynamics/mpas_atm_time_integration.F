@@ -3945,9 +3945,6 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
       call mpas_pool_get_dimension(mesh, 'vertexDegree', vertexDegree)
 
-!write(0,*) 'cell start/end = ', cellStart, cellEnd
-!write(0,*) 'edge start/end = ', edgeStart, edgeEnd
-!write(0,*) 'vertex start/end = ', vertexStart, vertexEnd
 
 
       !
@@ -3995,7 +3992,6 @@ module atm_time_integration
       end do
 #endif
 
-!$OMP BARRIER
 
       !
       ! Compute the divergence at each cell center
@@ -4033,7 +4029,6 @@ module atm_time_integration
       end do
 #endif
 
-!$OMP BARRIER
 
       !
       ! Compute kinetic energy in each cell (Ringler et al JCP 2009)
@@ -4052,7 +4047,6 @@ module atm_time_integration
          end do
       end do
 
-!$OMP BARRIER
 
       if (hollingsworth) then
 
@@ -4073,24 +4067,24 @@ module atm_time_integration
             end do
          end do
 
+!$OMP BARRIER
+
          ! adjust ke at cell vertices - AG's new KE construction, part 2
          !
 
          ke_fact = 1.0 - .375
 
-!$OMP BARRIER
          do iCell=cellStart,cellEnd
             do k=1,nVertLevels
                ke(k,iCell) = ke_fact * ke(k,iCell)
             end do
          end do
-!$OMP BARRIER
+
 
          ! Avoid FP errors caused by a potential division by zero below by 
          ! initializing the "garbage cell" of areaCell to a non-zero value
          areaCell(nCells+1) = 1.0
 
-!$OMP BARRIER
 #ifdef MPI_ONLY
          do iVertex = 1, nVertices
             do i=1,vertexDegree
@@ -4114,7 +4108,6 @@ module atm_time_integration
 #endif
 
       end if
-!$OMP BARRIER
 
       !
       ! Compute v (tangential) velocities following Thuburn et al JCP 2009
@@ -4171,7 +4164,6 @@ module atm_time_integration
          end do
       end do
 #endif
-!$OMP BARRIER
 
       !
       ! Compute pv at cell centers
@@ -4201,10 +4193,11 @@ module atm_time_integration
       end do
 #endif
 
-!$OMP BARRIER
 
 
       if (config_apvm_upwinding > 0.0) then
+
+!$OMP BARRIER
 
          !
          ! Modify PV edge with upstream bias. 
@@ -4218,7 +4211,6 @@ module atm_time_integration
                gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) * r
             end do
          end do
-!$OMP BARRIER
 
          !
          ! Compute gradient of PV in normal direction
@@ -4231,7 +4223,6 @@ module atm_time_integration
             end do
          end do
 
-!$OMP BARRIER
          r = config_apvm_upwinding * dt
          do iEdge = edgeStart,edgeEnd
             do k = 1,nVertLevels
