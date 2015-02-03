@@ -33,11 +33,20 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-08.
 !>    * corrected definition of local variable dx_p.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-08-23.
+!>    * added local arrays needed in the "Grell GF" multi-scale convection scheme (module_cu_gf.F).
+!>      Laura D. Fowler (laura@ucar.edu) / 2013-11-08.
 !>    * renamed local variable conv_deep_scheme to convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
-!>    * added empty subroutine atmphys_vars_init that does not do anything, but needed for 
-!>      compiling MPAS with some compilers.
-!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-12.
+!>    * added empty subroutine dummy that does not do anything, but needed for compiling MPAS with
+!>      some compilers.
+!>      Laura D. Fowler (laurs@ucar.edu) / 2014-12-02.
+!>    * for the "Grell GF" multi-scale convection scheme, changed the definition of periodic_x and
+!>      and periodic_y from .false. to .true.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-04-10.
+!>    * for the "Grell GF" multi-scale convection scheme, renamed k22_shallow to k22_shallow_p,
+!>      ktop_deep to ktop_deep_p, kbcon_shallow to kbcon_shallow_p, ktop_shallow to ktop_shallow_p, 
+!>      and kbot_shallow to kbot_shallow_p after "rebasing" the sourcecode to use pools.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
 
 
 !==================================================================================================
@@ -70,6 +79,7 @@
  integer,public:: ids,ide,jds,jde,kds,kde
  integer,public:: ims,ime,jms,jme,kms,kme
  integer,public:: its,ite,jts,jte,kts,kte
+ integer,public:: ips,ipe,jps,jpe,kps,kpe
  integer,public:: iall
  integer,public:: n_microp
 
@@ -87,6 +97,7 @@
 
 !... arrays related to surface:
  real(kind=RKIND),dimension(:,:),allocatable:: &
+    ht_p,             &!
     psfc_p,           &!surface pressure                                                       [Pa]
     ptop_p             !model-top pressure                                                     [Pa]
 
@@ -189,7 +200,7 @@
  real(kind=RKIND),public:: dt_cu
 
  logical,dimension(:,:),allocatable:: &
- 	cu_act_flag
+    cu_act_flag
  real(kind=RKIND),dimension(:,:),allocatable::   &
     rainc_p,          &!
     raincv_p,         &!
@@ -215,13 +226,67 @@
 
 !... tiedtke specific arrays:
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    znu_p,            &!
-    rqvdynten_p,      &!
-    rqvdynblten_p      !
+    znu_p              !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     rucuten_p,        &!
     rvcuten_p          !
+
+!... grell-freitas specific parameters and arrays:
+    logical, parameter:: periodic_x  = .true.
+    logical, parameter:: periodic_y  = .true.
+
+    integer, parameter:: cugd_avedx  = 1 !number of grid-boxes over which subsidence is spread.
+                                         != 1, default for large grid distances.
+                                         != 3, for small grid distances (dx < 5 km).
+    integer, parameter:: imomentum   = 0 !momentum transport in G3 scheme (not used).
+    integer, parameter:: clos_choice = 0 !closure choice (place holder only).
+    integer, parameter:: ishallow    = 1 !shallow convection used with grell scheme.
+
+    integer, parameter:: ensdim  = 144
+    integer, parameter:: maxiens = 1 
+    integer, parameter:: maxens  = 3
+    integer, parameter:: maxens2 = 3
+    integer, parameter:: maxens3 = 16
+
+ integer,dimension(:,:),allocatable:: &
+    k22_shallow_p,    &!
+    kbcon_shallow_p,  &!
+    ktop_shallow_p,   &!
+    kbot_shallow_p,   &!
+    ktop_deep_p        !
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    aprgr_p,          &!
+    aprw_p,           &!
+    aprmc_p,          &!
+    aprst_p,          &!
+    apras_p,          &!
+    aprcapma_p,       &!
+    aprcapme_p,       &!
+    aprcapmi_p,       &!
+    edtout_p,         &!
+    massflux_p,       &!
+    xmb_shallow_p      !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    gdcloud_p,        &!
+    gdcloud2_p,       &!
+    cugdtten_p,       &!
+    cugdttens_p,      &!
+    cugdqvten_p,      &!
+    cugdqvtens_p,     &!
+    cugdqcten_p        !
+
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    rthraten_p         !
+
+!... grell and tiedkte specific arrays:
+ real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    rqvdynten_p,      &!
+    rqvdynblten_p,    &!
+    rthdynten_p,      &!
+    rthdynblten_p      !
 
 !==================================================================================================
 !... variables and arrays related to parameterization of pbl:
@@ -515,11 +580,11 @@
  contains
 
 !==================================================================================================
- subroutine atmphys_vars_init()
+ subroutine dummy()
 !==================================================================================================
 !dummy subroutine that does not do anything.
 
- end subroutine atmphys_vars_init
+ end subroutine dummy
 
 !==================================================================================================
  end module mpas_atmphys_vars

@@ -87,8 +87,10 @@ mpas_atmphys_driver_convection.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_utilities.o \
 	mpas_atmphys_vars.o \
+	./physics_wrf/module_cu_gf.o \
 	./physics_wrf/module_cu_kfeta.o \
-	./physics_wrf/module_cu_tiedtke.o
+	./physics_wrf/module_cu_tiedtke.o \
+	./physics_wrf/module_cu_tiedtke.WRF3.3.1.o
 
 mpas_atmphys_driver_gwdo.o: \
 	mpas_atmphys_vars.o \

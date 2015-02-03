@@ -21,7 +21,7 @@
  use mpas_atmphys_constants
  use mpas_atmphys_interface
  use mpas_atmphys_update
- use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw
+ use mpas_atmphys_vars, only: dt_dyn,l_camlw,l_conv,l_radtlw,l_radtsw
 
  implicit none
  private
@@ -82,8 +82,10 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-03.
 !>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
+!>    * added block%configs in the call to driver_convection_deep.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
-!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
+!>    * Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
 
 
  contains
@@ -227,11 +229,11 @@
     call update_convection_step1(mesh,diag_physics,tend_physics)
     if(l_conv) then
        call allocate_convection
-       call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics)
+       call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics)
        call deallocate_convection
     endif
     !update diagnostics:
-    call update_convection_step2(block%configs,mesh,diag_physics)
+    call update_convection_step2(block%configs,mesh,state,time_lev,diag_physics,tend_physics)
 
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics
