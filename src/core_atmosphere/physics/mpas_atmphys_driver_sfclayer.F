@@ -281,6 +281,7 @@
                                          qfx,qgh,qsfc,lh,mol,psim,psih,regime,rmol,ust,ustm, &
                                          wspd,znt,zol
  real(kind=RKIND),dimension(:),pointer:: q2,t2m,th2m,u10,v10
+ real(kind=RKIND),dimension(:),pointer:: cd,cda,ck,cka
 
 !--------------------------------------------------------------------------------------------------
 
@@ -316,6 +317,12 @@
  call mpas_pool_get_array(diag_physics,'u10'   , u10   )
  call mpas_pool_get_array(diag_physics,'v10'   , v10   )
 
+!output variables (optional):
+ call mpas_pool_get_array(diag_physics,'cd'    ,cd    )
+ call mpas_pool_get_array(diag_physics,'cda'   ,cda   )
+ call mpas_pool_get_array(diag_physics,'ck'    ,ck    )
+ call mpas_pool_get_array(diag_physics,'cka'   ,cka   )
+
  do j = jts,jte
  do i = its,ite
     br(i)     = br_p(i,j)
@@ -349,6 +356,12 @@
     th2m(i)   = th2m_p(i,j)
     u10(i)    = u10_p(i,j)
     v10(i)    = v10_p(i,j)
+    !output variables (optional):
+    cd(i)     = cd_p(i,j)
+    cda(i)    = cda_p(i,j)
+    ck(i)     = ck_p(i,j)
+    cka(i)    = cka_p(i,j)
+    ustm(i)   = ustm_p(i,j)
  enddo
  enddo
 
