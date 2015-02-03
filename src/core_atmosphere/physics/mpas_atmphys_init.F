@@ -18,6 +18,7 @@
  use mpas_atmphys_driver_radiation_sw, only: init_radiation_sw
  use mpas_atmphys_driver_sfclayer
 
+ use mpas_atmphys_interp_diagnostics
  use mpas_atmphys_landuse
  use mpas_atmphys_o3climatology
 
@@ -55,9 +56,14 @@
 !>    * added initialization of the accumulated surface pressure. Added initialization of the 
 !>      tendency and accumulated tendency of the surface pressure.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
+!>    * added initialization of the accumulated grid-scale precipitation when no convection is
+!>      present.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-06-19.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
-
+!>    * added call to init_pFixed for initialization of interpolation of diagnostics to fixed
+!>      pressure levels.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-29.
 
  contains
 
@@ -97,7 +103,7 @@
 
  integer,pointer:: nCellsSolve,nLags
  integer,dimension(:),pointer  :: nEdgesOnCell
- integer,dimension(:),pointer  :: i_rainc,i_rainnc
+ integer,dimension(:),pointer  :: i_rainc,i_rainnc,i_rainnc_mp
  integer,dimension(:),pointer  :: i_acswdnb,i_acswdnbc,i_acswdnt,i_acswdntc, &
                                   i_acswupb,i_acswupbc,i_acswupt,i_acswuptc, &
                                   i_aclwdnb,i_aclwdnbc,i_aclwdnt,i_aclwdntc, &
@@ -145,6 +151,7 @@
  call mpas_pool_get_array(diag_physics,'dcEdge_m'    ,dcEdge_m    )
  call mpas_pool_get_array(diag_physics,'i_rainc'     ,i_rainc     )
  call mpas_pool_get_array(diag_physics,'i_rainnc'    ,i_rainnc    )
+ call mpas_pool_get_array(diag_physics,'i_rainnc_mp' ,i_rainnc_mp )
 
  call mpas_pool_get_array(diag_physics,'i_acswdnb'   ,i_acswdnb   )
  call mpas_pool_get_array(diag_physics,'i_acswdnbc'  ,i_acswdnbc  )
@@ -220,8 +227,9 @@
 !threshold value:
  if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
-       i_rainc(iCell)  = 0
-       i_rainnc(iCell) = 0
+       i_rainc(iCell)     = 0
+       i_rainnc(iCell)    = 0
+       i_rainnc_mp(iCell) = 0
     enddo
  endif
 
@@ -298,6 +306,10 @@
        enddo
     enddo
  endif
+
+!initialization of fixed pressure levels (in hPa) for interpolation of 2D diagnostics:
+ if(.not. config_do_restart) &
+    call init_pFixed(mesh,state,time_lev,diag,diag_physics)
 
 !read the input files that contain the monthly-mean ozone climatology on fixed pressure levels:
  if(config_o3climatology .and. (.not. config_do_restart)) &

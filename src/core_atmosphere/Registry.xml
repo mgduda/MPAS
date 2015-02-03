@@ -19,6 +19,7 @@
                 <dim name="R3"                 definition="3"/>
                 <dim name="nVertLevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
+                <dim name="nIntP"              definition="namelist:num_pressure_levels"/>
                 <dim name="nMonths"            definition="namelist:months"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
                 <dim name="nLags"              definition="namelist:input_soil_temperature_lag"/>
@@ -535,6 +536,62 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+			<var name="pFixed"/>
+			<var name="dtcup_interp"/>
+			<var name="dqvcup_interp"/>
+			<var name="dqccup_interp"/>
+			<var name="dqrcup_interp"/>
+			<var name="dqicup_interp"/>
+			<var name="dqscup_interp"/>
+			<var name="dtpbl_interp"/>
+			<var name="dqvpbl_interp"/>
+			<var name="dqcpbl_interp"/>
+			<var name="dqipbl_interp"/>
+			<var name="dtradlw_interp"/>
+			<var name="dtradsw_interp"/>
+			<var name="dtmp_interp"/>
+			<var name="dqvmp_interp"/>
+			<var name="dqcmp_interp"/>
+			<var name="dqrmp_interp"/>
+			<var name="dqimp_interp"/>
+			<var name="dqsmp_interp"/>
+			<var name="dqgmp_interp"/>
+			<var name="cld_interp"/>
+			<var name="th_interp"/>
+			<var name="qv_interp"/>
+			<var name="qc_interp"/>
+			<var name="qr_interp"/>
+			<var name="qi_interp"/>
+			<var name="qs_interp"/>
+			<var name="qg_interp"/>
+			<var name="acdtcup_interp"/>
+			<var name="acdqvcup_interp"/>
+			<var name="acdqccup_interp"/>
+			<var name="acdqrcup_interp"/>
+			<var name="acdqicup_interp"/>
+			<var name="acdqscup_interp"/>
+			<var name="acdtpbl_interp"/>
+			<var name="acdqvpbl_interp"/>
+			<var name="acdqcpbl_interp"/>
+			<var name="acdqipbl_interp"/>
+			<var name="acdtradlw_interp"/>
+			<var name="acdtradsw_interp"/>
+			<var name="acdtmp_interp"/>
+			<var name="acdqvmp_interp"/>
+			<var name="acdqcmp_interp"/>
+			<var name="acdqrmp_interp"/>
+			<var name="acdqimp_interp"/>
+			<var name="acdqsmp_interp"/>
+			<var name="acdqgmp_interp"/>
+			<var name="accld_interp"/>
+			<var name="acth_interp"/>
+			<var name="acqv_interp"/>
+			<var name="acqc_interp"/>
+			<var name="acqr_interp"/>
+			<var name="acqi_interp"/>
+			<var name="acqs_interp"/>
+			<var name="acqg_interp"/>
+			<var name="i_acth_interp"/>
 		</stream>
 
 		<stream name="output" 
@@ -971,6 +1028,9 @@
                 <nml_option name="num_soil_layers"                   type="integer"       default_value="4"          in_defaults="false"/>
                 <nml_option name="months"                            type="integer"       default_value="12"         in_defaults="false"/>
 
+                <!-- ... NUMBER OF PRESSURE LEVELS FOR VERTICAL INTERPOLATION OF PHYSICS DIAGNOSTICS: -->
+                <nml_option name="num_pressure_levels"               type="integer"       default_value="34"         in_defaults="false"/>
+
                 <!-- ... DIMENSION NEEDED FOR OZONE AND AEROSOLS CONCENTRATIONS IN THE CAM LONGWAVE AND SHORTWAVE -->
                 <!-- ... RADIATION PARAMETERIZATIONS.                                                             -->
                 <nml_option name="noznlev"                           type="integer"       default_value="59"         in_defaults="false"/>
@@ -985,6 +1045,7 @@
                 <nml_option name="config_sstdiurn_update"            type="logical"       default_value="false"/>
                 <nml_option name="config_deepsoiltemp_update"        type="logical"       default_value="false"/>
                 <nml_option name="config_o3climatology"              type="logical"       default_value="false"      in_defaults="false"/>
+                <nml_option name="config_physics_interp"             type="logical"       default_value="false"      in_defaults="false"/> 
 
                 <nml_option name="config_n_microp"                   type="integer"       default_value="1"          in_defaults="false"/>
 
@@ -1017,6 +1078,81 @@
         <var_struct name="diag_physics" time_levs="1">
 
                 <var name="dcEdge_m"      type="real"     dimensions="nCells"/>
+
+
+                <!-- ================================================================================================== -->
+                <!-- PHYSICS DIAGNOSTICS INTERPOLATED ON PRESSURE LEVELS:                                               -->
+                <!-- ================================================================================================== -->
+
+                <var name="pFixed"           type="real"    dimensions="nIntP"/>
+
+                <var name="rthmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqvmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqcmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqrmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqimpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqsmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqgmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+
+                <var name="dtcup_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvcup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqccup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqrcup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqicup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqscup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtmp_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqcmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqrmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqimp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqsmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqgmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtpbl_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvpbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqcpbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqipbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtradlw_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtradsw_interp"   type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="acdtcup_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvcup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqccup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqrcup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqicup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqscup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtmp_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqcmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqrmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqimp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqsmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqgmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtpbl_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvpbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqcpbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqipbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtradlw_interp" type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtradsw_interp" type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="cld_interp"       type="real"    dimensions="nIntP nCells Time"/>
+                <var name="th_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qv_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qc_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qr_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qi_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qs_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qg_interp"        type="real"    dimensions="nIntP nCells Time"/>
+ 
+                <var name="accld_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acth_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqv_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqc_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqr_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqi_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqs_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqg_interp"      type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="i_acth_interp"    type="integer" dimensions="nIntP nCells Time"/>
 
                 <!-- ================================================================================================= -->
                 <!-- ... ARRAYS AND VARIABLES FOR UPDATING THE DEEP SOIL TEMPERATURE:                                  -->
