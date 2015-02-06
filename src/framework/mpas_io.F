@@ -28,19 +28,20 @@ module mpas_io
                          MPAS_IO_WRITE = 2
 
    ! I/O formats
-   integer, parameter :: MPAS_IO_NETCDF  = 3, &
-                         MPAS_IO_PNETCDF = 4
+   integer, parameter :: MPAS_IO_NETCDF   = 3, &
+                         MPAS_IO_NETCDF4P = 4, &
+                         MPAS_IO_PNETCDF  = 5
 
    ! Field and attribute types
-   integer, parameter :: MPAS_IO_REAL     = 5,  &
-                         MPAS_IO_DOUBLE   = 6,  &
-                         MPAS_IO_INT      = 7,  &
-                         MPAS_IO_LOGICAL  = 8,  &
-                         MPAS_IO_CHAR     = 9
+   integer, parameter :: MPAS_IO_REAL     = 6,  &
+                         MPAS_IO_DOUBLE   = 7,  &
+                         MPAS_IO_INT      = 8,  &
+                         MPAS_IO_LOGICAL  = 9,  &
+                         MPAS_IO_CHAR     = 10
 
    ! Field precision
-   integer, parameter :: MPAS_IO_SINGLE_PRECISION = 10, &
-                         MPAS_IO_DOUBLE_PRECISION = 11, &
+   integer, parameter :: MPAS_IO_SINGLE_PRECISION = 11, &
+                         MPAS_IO_DOUBLE_PRECISION = 12, &
 #ifdef SINGLE_PRECISION
                          MPAS_IO_NATIVE_PRECISION = MPAS_IO_SINGLE_PRECISION
 #else
@@ -342,6 +343,7 @@ module mpas_io
          return 
       end if
       if (ioformat /= MPAS_IO_NETCDF .and. &
+          ioformat /= MPAS_IO_NETCDF4P .and. &
           ioformat /= MPAS_IO_PNETCDF) then
          if (present(ierr)) ierr = MPAS_IO_ERR_INVALID_FORMAT
          return 
@@ -360,6 +362,8 @@ module mpas_io
       else
          if (ioformat == MPAS_IO_PNETCDF) then
             pio_iotype = PIO_iotype_pnetcdf
+         else if (ioformat == MPAS_IO_NETCDF4P) then
+            pio_iotype = PIO_iotype_netcdf4p
          else
             pio_iotype = PIO_iotype_netcdf
          end if
@@ -2202,11 +2206,11 @@ module mpas_io
       else if (present(charVal)) then
          if (field_cursor % fieldhandle % has_unlimited_dim) then
             count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
-            pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start2, count2, (/charVal/))
+            pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start2, charVal(1:count2(1)))
          else
             start1(1) = 1
             count1(1) = field_cursor % fieldhandle % dims(1) % dimsize
-            pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start1, count1, (/charVal/))
+            pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, charVal(1:count1(1)))
          end if
       else if (present(realArray1d)) then
          if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
