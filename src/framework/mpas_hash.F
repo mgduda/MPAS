@@ -19,7 +19,7 @@
 module mpas_hash
 
    ! Parameters
-   integer, parameter :: TABLESIZE=27183     !< Number of spaces in the table (the number of linked lists)
+   integer, parameter :: TABLESIZE=6000001     !< Number of spaces in the table (the number of linked lists)
  
    type hashnode
       integer :: key
