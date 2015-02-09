@@ -1121,7 +1121,8 @@ module mpas_core
       real(kind=RKIND), dimension(:,:,:), pointer :: scalars
       character(len=StrKIND) :: status
       real(kind=RKIND) :: rho1, rho2, tem1, tem2
-      real(kind=RKIND) :: rms
+      real(kind=RKIND) :: rms, linf
+      real(kind=RKIND) :: thresh
       integer, pointer :: index_p0
       integer, pointer :: nCellsSolve, nEdgesSolve
       integer :: i, klev
@@ -1165,6 +1166,16 @@ module mpas_core
 
 
       !
+      ! Set threshold for relative difference in rms fields
+      !
+#ifdef SINGLE_PRECISION
+      thresh = 1.0e-4
+#else
+      thresh = 1.0e-8
+#endif
+
+
+      !
       ! Compute fields to be compared
       !
       klev = 47
@@ -1191,23 +1202,23 @@ module mpas_core
       write(stderrUnit,'(a)') '***************************** AVEC verification ********************************'
       write(stderrUnit,'(a)') '********************************************************************************'
 
-      call compute_rms(domain, nCellsSolve, computed_p0, reference_p0, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error p0    = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_p0, reference_p0, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error p0    = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_u, reference_u, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error u     = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_u, reference_u, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error u     = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_w, reference_w, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error w     = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_w, reference_w, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error w     = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_rho, reference_rho, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error rho   = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_rho, reference_rho, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error rho   = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_theta, reference_theta, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error theta = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_theta, reference_theta, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error theta = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_psfc, reference_psfc, 1.0e-10, rms, status)
-      write(stderrUnit,*) 'RMS error psfc  = ', rms, trim(status)
+      call compute_rms(domain, nCellsSolve, computed_psfc, reference_psfc, thresh, rms, linf, status)
+      write(stderrUnit,*) 'RMS error psfc  = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
       write(stderrUnit,'(a)') '********************************************************************************'
       write(stderrUnit,'(a)') '********************************************************************************'
@@ -1221,7 +1232,7 @@ module mpas_core
    end subroutine avec_verification
 
 
-   subroutine compute_rms(domain, nElems, field1, field2, thresh, rms, status)
+   subroutine compute_rms(domain, nElems, field1, field2, thresh, rms, linf, status)
    
       use mpas_grid_types
       use mpas_kind_types
@@ -1232,22 +1243,29 @@ module mpas_core
       integer, intent(in) :: nElems
       real(kind=RKIND), dimension(nElems), intent(in) :: field1, field2
       real(kind=RKIND), intent(in) :: thresh
-      real(kind=RKIND), intent(out) :: rms
+      real(kind=RKIND), intent(out) :: rms, linf
       character(len=StrKIND), intent(out) :: status
 
       integer :: i
       integer :: n
-      real(kind=RKIND) :: rms_local
+      real(kind=RKIND) :: r
+      real(kind=RKIND) :: rms_local, linf_local
 
 
       rms_local = 0.0
+      linf_local = 0.0
       do i=1,nElems
          rms_local = rms_local + (field1(i) - field2(i))**2
+         r = abs(field2(i))
+         if (r > linf_local) then
+            linf_local = r
+         end if
       end do
       call mpas_dmpar_sum_int(domain % dminfo, nElems, n)
       call mpas_dmpar_sum_real(domain % dminfo, rms_local, rms)
+      call mpas_dmpar_max_real(domain % dminfo, linf_local, linf)
       rms = sqrt(rms / n)
-      if (rms < thresh) then
+      if (rms < thresh*linf) then
          status = 'PASSED'
       else
          status = 'FAILED'
