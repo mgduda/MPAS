@@ -24,6 +24,7 @@ OBJS = mpas_kind_types.o \
        mpas_stream_manager.o \
        mpas_stream_list.o \
        mpas_c_interfacing.o \
+       mpas_debugging.o \
        random_id.o \
        streams.o \
        pool_hash.o \
@@ -84,6 +85,8 @@ mpas_stream_manager.o: mpas_io_streams.o mpas_timekeeping.o mpas_grid_types.o mp
 
 xml_stream_parser.o: xml_stream_parser.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPINCLUDES) -I../registry -c xml_stream_parser.c
+
+mpas_debugging.o: mpas_grid_types.o mpas_dmpar_types.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libframework.a
