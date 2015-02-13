@@ -481,7 +481,7 @@
                         <var name="apr_capme"/>
                         <var name="apr_capmi"/>
                         <var name="edt_out"/>
-                        <var name="mass_flux"/>
+                        <var name="xmb_total"/>
                         <var name="xmb_shallow"/>
                         <var name="gd_cloud"/>
                         <var name="gd_cloud2"/>
@@ -1274,7 +1274,7 @@
                 <var name="apr_capmi"     type="real"     dimensions="nCells Time"/>
 
                 <var name="edt_out"       type="real"     dimensions="nCells Time"/>
-                <var name="mass_flux"     type="real"     dimensions="nCells Time"/>
+                <var name="xmb_total"     type="real"     dimensions="nCells Time"/>
                 <var name="xmb_shallow"   type="real"     dimensions="nCells Time"/>
 
                 <var name="gd_cloud"      type="real"     dimensions="nVertLevels nCells Time"/>

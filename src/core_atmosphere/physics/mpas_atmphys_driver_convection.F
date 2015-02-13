@@ -162,9 +162,9 @@
        if(.not.allocated(aprmc_p)        ) allocate(aprmc_p(ims:ime,jms:jme)             )
        if(.not.allocated(aprst_p)        ) allocate(aprst_p(ims:ime,jms:jme)             )
        if(.not.allocated(aprw_p)         ) allocate(aprw_p(ims:ime,jms:jme)              )
-       if(.not.allocated(massflux_p)     ) allocate(massflux_p(ims:ime,jms:jme)          )
-       if(.not.allocated(edtout_p)       ) allocate(edtout_p(ims:ime,jms:jme)            )
+       if(.not.allocated(xmb_total_p)    ) allocate(xmb_total_p(ims:ime,jms:jme)         )
        if(.not.allocated(xmb_shallow_p)  ) allocate(xmb_shallow_p(ims:ime,jms:jme)       )
+       if(.not.allocated(edtout_p)       ) allocate(edtout_p(ims:ime,jms:jme)            )
 
        if(.not.allocated(cugdtten_p)     ) allocate(cugdtten_p(ims:ime,kms:kme,jms:jme)  )
        if(.not.allocated(cugdttens_p)    ) allocate(cugdttens_p(ims:ime,kms:kme,jms:jme) )
@@ -279,9 +279,9 @@
        if(allocated(aprmc_p)        ) deallocate(aprmc_p        )
        if(allocated(aprst_p)        ) deallocate(aprst_p        )
        if(allocated(aprw_p)         ) deallocate(aprw_p         )
-       if(allocated(massflux_p)     ) deallocate(massflux_p     )
-       if(allocated(edtout_p)       ) deallocate(edtout_p       )
+       if(allocated(xmb_total_p)    ) deallocate(xmb_total_p    )
        if(allocated(xmb_shallow_p)  ) deallocate(xmb_shallow_p  )
+       if(allocated(edtout_p)       ) deallocate(edtout_p       )
        if(allocated(cugdtten_p)     ) deallocate(cugdtten_p     )
        if(allocated(cugdttens_p)    ) deallocate(cugdttens_p    )
        if(allocated(cugdqvten_p)    ) deallocate(cugdqvten_p    )
@@ -456,7 +456,7 @@
              apr_capmi     = aprcapmi_p          , cugd_tten       = cugdtten_p             , &
              cugd_qvten    = cugdqvten_p         , cugd_ttens      = cugdttens_p            , &
              cugd_qvtens   = cugdqvtens_p        , cugd_qcten      = cugdqcten_p            , &
-             cugd_avedx    = cugd_avedx          , mass_flux       = massflux_p             , &
+             cugd_avedx    = cugd_avedx          , mass_flux       = xmb_total_p            , &
              edt_out       = edtout_p            , rthcuten        = rthcuten_p             , &
              rqvcuten      = rqvcuten_p          , rqccuten        = rqccuten_p             , &
              rqicuten      = rqicuten_p          , htop            = cutop_p                , &
@@ -596,7 +596,7 @@
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
  real(kind=RKIND),dimension(:),pointer  :: gsw,hfx,qfx,xland,ter
  real(kind=RKIND),dimension(:),pointer  :: apr_as,apr_capma,apr_capme,apr_capmi,apr_gr,apr_mc, &
-                                           apr_st,apr_w,edt_out,mass_flux,xmb_shallow
+                                           apr_st,apr_w,edt_out,xmb_total,xmb_shallow
  real(kind=RKIND),dimension(:,:),pointer:: gd_cloud,gd_cloud2
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten
@@ -640,7 +640,7 @@
  call mpas_pool_get_array(diag_physics,'apr_st'       ,apr_st       )
  call mpas_pool_get_array(diag_physics,'apr_w'        ,apr_w        )
  call mpas_pool_get_array(diag_physics,'edt_out'      ,edt_out      )
- call mpas_pool_get_array(diag_physics,'mass_flux'    ,mass_flux    )
+ call mpas_pool_get_array(diag_physics,'xmb_total'    ,xmb_total    )
  call mpas_pool_get_array(diag_physics,'xmb_shallow'  ,xmb_shallow  )
  call mpas_pool_get_array(diag_physics,'k22_shallow'  ,k22_shallow  )
  call mpas_pool_get_array(diag_physics,'kbcon_shallow',kbcon_shallow)
@@ -706,7 +706,7 @@
           aprst_p(i,j)         = apr_st(i)
           aprw_p(i,j)          = apr_w(i)
           edtout_p(i,j)        = edt_out(i)
-          massflux_p(i,j)      = mass_flux(i)
+          xmb_total_p(i,j)     = xmb_total(i)
           xmb_shallow_p(i,j)   = xmb_shallow(i)
 
           k22_shallow_p(i,j)   = k22_shallow(i)
@@ -794,7 +794,7 @@
  integer,dimension(:),pointer:: k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
  real(kind=RKIND),dimension(:),pointer  :: apr_as,apr_capma,apr_capme,apr_capmi,apr_gr,apr_mc, &
-                                           apr_st,apr_w,edt_out,mass_flux,xmb_shallow
+                                           apr_st,apr_w,edt_out,xmb_total,xmb_shallow
  real(kind=RKIND),dimension(:,:),pointer:: gd_cloud,gd_cloud2
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: cugd_tten,cugd_ttens,cugd_qvten,cugd_qvtens,cugd_qcten
@@ -818,7 +818,7 @@
  call mpas_pool_get_array(diag_physics,'apr_st'       ,apr_st       )
  call mpas_pool_get_array(diag_physics,'apr_w'        ,apr_w        )
  call mpas_pool_get_array(diag_physics,'edt_out'      ,edt_out      )
- call mpas_pool_get_array(diag_physics,'mass_flux'    ,mass_flux    )
+ call mpas_pool_get_array(diag_physics,'xmb_total'    ,xmb_total    )
  call mpas_pool_get_array(diag_physics,'xmb_shallow'  ,xmb_shallow  )
  call mpas_pool_get_array(diag_physics,'k22_shallow'  ,k22_shallow  )
  call mpas_pool_get_array(diag_physics,'kbcon_shallow',kbcon_shallow)
@@ -884,7 +884,7 @@
           apr_st(i)        = aprst_p(i,j)
           apr_w(i)         = aprw_p(i,j)
           edt_out(i)       = edtout_p(i,j)
-          mass_flux(i)     = massflux_p(i,j)
+          xmb_total(i)     = xmb_total_p(i,j)
           xmb_shallow(i)   = xmb_shallow_p(i,j)
           k22_shallow(i)   = k22_shallow_p(i,j)
           kbcon_shallow(i) = kbcon_shallow_p(i,j)

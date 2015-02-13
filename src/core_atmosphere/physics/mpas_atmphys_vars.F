@@ -276,7 +276,7 @@
     aprcapme_p,       &!
     aprcapmi_p,       &!
     edtout_p,         &!
-    massflux_p,       &!
+    xmb_total_p,      &!
     xmb_shallow_p      !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
