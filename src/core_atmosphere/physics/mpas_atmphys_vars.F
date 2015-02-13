@@ -49,6 +49,9 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
 !>    * added local arrays needed in the MYNN surface layer scheme and PBL scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06. 
+!>    * for the "Grell GF" convection scheme, replaced the variable gdcloud_p by qccu_p and the
+!>      variable gdcloud2_p with qicu_p.
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-02-13. 
 
 
 !==================================================================================================
@@ -280,8 +283,8 @@
     xmb_shallow_p      !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    gdcloud_p,        &!
-    gdcloud2_p,       &!
+    qccu_p,           &!
+    qicu_p,           &!
     cugdtten_p,       &!
     cugdttens_p,      &!
     cugdqvten_p,      &!

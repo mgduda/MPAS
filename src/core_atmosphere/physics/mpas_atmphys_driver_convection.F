@@ -93,6 +93,9 @@
 !>    * for the "Grell GF" convection scheme, added the calculation of the distance between cell
 !>      centers for variable resolution meshes. 
 !>      Laura D. Fowler (laura@ucar.edu) / 2014.10-03.
+!>    * for the "Grell GF" convection scheme, replaced the variable gdcloud_p by qccu_p and the
+!>      variable gdcloud2_p with qicu_p.
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-02-13. 
 
 
  contains
@@ -171,8 +174,8 @@
        if(.not.allocated(cugdqvten_p)    ) allocate(cugdqvten_p(ims:ime,kms:kme,jms:jme) )
        if(.not.allocated(cugdqvtens_p)   ) allocate(cugdqvtens_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(cugdqcten_p)    ) allocate(cugdqcten_p(ims:ime,kms:kme,jms:jme) )
-       if(.not.allocated(gdcloud_p)      ) allocate(gdcloud_p(ims:ime,kms:kme,jms:jme)   )
-       if(.not.allocated(gdcloud2_p)     ) allocate(gdcloud2_p(ims:ime,kms:kme,jms:jme)  )
+       if(.not.allocated(qccu_p)         ) allocate(qccu_p(ims:ime,kms:kme,jms:jme)      )
+       if(.not.allocated(qicu_p)         ) allocate(qicu_p(ims:ime,kms:kme,jms:jme)      )
 
     case ("kain_fritsch")
        if(.not.allocated(dx_p)       ) allocate(dx_p(ims:ime,jms:jme)              )
@@ -287,8 +290,8 @@
        if(allocated(cugdqvten_p)    ) deallocate(cugdqvten_p    )
        if(allocated(cugdqvtens_p)   ) deallocate(cugdqvtens_p   )
        if(allocated(cugdqcten_p)    ) deallocate(cugdqcten_p    )
-       if(allocated(gdcloud_p)      ) deallocate(gdcloud_p      )
-       if(allocated(gdcloud2_p)     ) deallocate(gdcloud2_p     )
+       if(allocated(qccu_p)         ) deallocate(qccu_p         )
+       if(allocated(qicu_p)         ) deallocate(qicu_p         )
 
     case ("kain_fritsch")
        if(allocated(dx_p)           ) deallocate(dx_p           )
@@ -460,8 +463,8 @@
              edt_out       = edtout_p            , rthcuten        = rthcuten_p             , &
              rqvcuten      = rqvcuten_p          , rqccuten        = rqccuten_p             , &
              rqicuten      = rqicuten_p          , htop            = cutop_p                , &
-             hbot          = cubot_p             , gdc             = gdcloud_p              , &
-             gdc2          = gdcloud2_p          , ktop_shallow    = ktop_shallow_p         , &
+             hbot          = cubot_p             , gdc             = qccu_p                 , &
+             gdc2          = qicu_p              , ktop_shallow    = ktop_shallow_p         , &
              ktop_deep     = ktop_deep_p         , k22_shallow     = k22_shallow_p          , &
              kbcon_shallow = kbcon_shallow_p     , xmb_shallow     = xmb_shallow_p          , &
              imomentum     = imomentum           , ishallow_g3     = ishallow               , &
@@ -597,7 +600,7 @@
  real(kind=RKIND),dimension(:),pointer  :: gsw,hfx,qfx,xland,ter
  real(kind=RKIND),dimension(:),pointer  :: apr_as,apr_capma,apr_capme,apr_capmi,apr_gr,apr_mc, &
                                            apr_st,apr_w,edt_out,xmb_total,xmb_shallow
- real(kind=RKIND),dimension(:,:),pointer:: gd_cloud,gd_cloud2
+ real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten
  real(kind=RKIND),dimension(:,:),pointer:: cugd_tten,cugd_ttens,cugd_qvten,cugd_qvtens,cugd_qcten
@@ -646,8 +649,8 @@
  call mpas_pool_get_array(diag_physics,'kbcon_shallow',kbcon_shallow)
  call mpas_pool_get_array(diag_physics,'ktop_shallow' ,ktop_shallow )
  call mpas_pool_get_array(diag_physics,'ktop_deep'    ,ktop_deep    )
- call mpas_pool_get_array(diag_physics,'gd_cloud'     ,gd_cloud     )
- call mpas_pool_get_array(diag_physics,'gd_cloud2'    ,gd_cloud2    )
+ call mpas_pool_get_array(diag_physics,'qc_cu'        ,qc_cu        )
+ call mpas_pool_get_array(diag_physics,'qi_cu'        ,qi_cu        )
 
  call mpas_pool_get_array(tend_physics,'rthblten'   ,rthblten   )
  call mpas_pool_get_array(tend_physics,'rthdynten'  ,rthdynten  )
@@ -715,8 +718,8 @@
           ktop_deep_p(i,j)     = ktop_deep(i)
 
           do k = kts,kte
-             gdcloud_p(i,k,j)  = gd_cloud(k,i)
-             gdcloud2_p(i,k,j) = gd_cloud2(k,i)
+             qccu_p(i,k,j)     = qc_cu(k,i)
+             qicu_p(i,k,j)     = qi_cu(k,i)
 
              rthblten_p(i,k,j)   = rthblten(k,i)
              rthdynten_p(i,k,j)  = rthdynten(k,i)
@@ -795,7 +798,7 @@
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
  real(kind=RKIND),dimension(:),pointer  :: apr_as,apr_capma,apr_capme,apr_capmi,apr_gr,apr_mc, &
                                            apr_st,apr_w,edt_out,xmb_total,xmb_shallow
- real(kind=RKIND),dimension(:,:),pointer:: gd_cloud,gd_cloud2
+ real(kind=RKIND),dimension(:,:),pointer:: qc_cu,qi_cu
  real(kind=RKIND),dimension(:,:),pointer:: w0avg
  real(kind=RKIND),dimension(:,:),pointer:: cugd_tten,cugd_ttens,cugd_qvten,cugd_qvtens,cugd_qcten
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten
@@ -824,8 +827,8 @@
  call mpas_pool_get_array(diag_physics,'kbcon_shallow',kbcon_shallow)
  call mpas_pool_get_array(diag_physics,'ktop_shallow' ,ktop_shallow )
  call mpas_pool_get_array(diag_physics,'ktop_deep'    ,ktop_deep    )
- call mpas_pool_get_array(diag_physics,'gd_cloud'     ,gd_cloud     )
- call mpas_pool_get_array(diag_physics,'gd_cloud2'    ,gd_cloud2    )
+ call mpas_pool_get_array(diag_physics,'qc_cu'        ,qc_cu        )
+ call mpas_pool_get_array(diag_physics,'qi_cu'        ,qi_cu        )
 
  call mpas_pool_get_array(tend_physics,'rthcuten'   ,rthcuten   )
  call mpas_pool_get_array(tend_physics,'rqvcuten'   ,rqvcuten   )
@@ -892,8 +895,8 @@
           ktop_deep(i)     = ktop_deep_p(i,j)
 
           do k = kts,kte
-             gd_cloud(k,i)  = gdcloud_p(i,k,j)
-             gd_cloud2(k,i) = gdcloud2_p(i,k,j)
+             qc_cu(k,i)    = qccu_p(i,k,j)
+             qi_cu(k,i)    = qicu_p(i,k,j)
 
              cugd_tten(k,i)   = cugdtten_p(i,k,j)
              cugd_ttens(k,i)  = cugdttens_p(i,k,j)

@@ -483,8 +483,8 @@
                         <var name="edt_out"/>
                         <var name="xmb_total"/>
                         <var name="xmb_shallow"/>
-                        <var name="gd_cloud"/>
-                        <var name="gd_cloud2"/>
+                        <var name="qc_cu"/>
+                        <var name="qi_cu"/>
                         <var name="cugd_tten"/>
                         <var name="cugd_qvten"/>
                         <var name="cugd_qcten"/>
@@ -1277,8 +1277,8 @@
                 <var name="xmb_total"     type="real"     dimensions="nCells Time"/>
                 <var name="xmb_shallow"   type="real"     dimensions="nCells Time"/>
 
-                <var name="gd_cloud"      type="real"     dimensions="nVertLevels nCells Time"/>
-                <var name="gd_cloud2"     type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="qc_cu"         type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="qi_cu"         type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                                        -->
