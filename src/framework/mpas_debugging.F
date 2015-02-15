@@ -151,11 +151,11 @@ include 'mpif.h'
 
         integer :: i, j, k, outdim, outdimglobal
         type (mpas_pool_iterator_type) :: poolItr
-        type (field1DInteger), pointer :: int1DField, int1DField_comp
-        type (field2DInteger), pointer :: int2DField, int2DField_comp
-        type (field1DReal), pointer :: real1DField, real1DField_comp
-        type (field2DReal), pointer :: real2DField, real2DField_comp
-        type (field3DReal), pointer :: real3DField, real3DField_comp
+        type (field1DInteger), pointer :: int1DField
+        type (field2DInteger), pointer :: int2DField
+        type (field1DReal), pointer :: real1DField
+        type (field2DReal), pointer :: real2DField
+        type (field3DReal), pointer :: real3DField
         character(len=*), intent(in), optional :: fieldname
 
         integer, dimension(:), pointer   :: arrayOut_i1, arrayComp_i1
@@ -169,624 +169,85 @@ include 'mpif.h'
 
         if (.not. present(fieldname)) then
 
-        call mpas_pool_begin_iteration(all_fields)
-        do while (mpas_pool_get_next_member(all_fields, poolItr))
-            if (poolItr % memberType == MPAS_POOL_FIELD) then
-                if (poolItr % dataType == MPAS_POOL_REAL) then
-
-                    if (poolItr % nDims == 1) then
-                        call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField)
-
-                        if (trim(real1DField % dimnames(1)) == 'nCells') then
-                           outdim = nCellsSolve
-                           outdimglobal = nCellsGlobal
-                           sendList => cellSendList
-                           recvList => cellRecvList
-                        else if (trim(real1DField % dimnames(1)) == 'nEdges') then
-                           outdim = nEdgesSolve
-                           outdimglobal = nEdgesGlobal
-                           sendList => edgeSendList
-                           recvList => edgeRecvList
-                        else if (trim(real1DField % dimnames(1)) == 'nVertices') then
-                           outdim = nVerticesSolve
-                           outdimglobal = nVerticesGlobal
-                           sendList => vertexSendList
-                           recvList => vertexRecvList
-                        else
-                           nullify(sendList)
-                           nullify(recvList)
+           call mpas_pool_begin_iteration(all_fields)
+           do while (mpas_pool_get_next_member(all_fields, poolItr))
+               if (poolItr % memberType == MPAS_POOL_FIELD) then
+                   if (poolItr % dataType == MPAS_POOL_REAL) then
+   
+                       if (poolItr % nDims == 1) then
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField)
+                           call compare_r1(real1DField, checkpoint)
+   
+                       else if (poolItr % nDims == 2) then
+   
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField)
+                           call compare_r2(real2DField, checkpoint)
+   
+                       else if (poolItr % nDims == 3) then
+   
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField)
+                           call compare_r3(real3DField, checkpoint)
+   
+                       end if
+   
+                   else if (poolItr % dataType == MPAS_POOL_INTEGER) then
+   
+                       if (poolItr % nDims == 1) then
+   
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, int1DField)
+                           call compare_i1(int1DField, checkpoint)
+   
+                       else if (poolItr % nDims == 2) then
+   
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, int2DField)
+                           call compare_i2(int2DField, checkpoint)
+   
                         end if
-
-                        if (dminfo % my_proc_id == 0) then
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r1(outdimglobal))
-                           allocate(arrayComp_r1(outdimglobal))
-                           call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                                               outdim, outdimglobal, sendList, recvList)
-                           if (write_fields) then
-                              write(91) arrayOut_r1
-                           else
-                              read(91) arrayComp_r1
-
-                              OUT1D: do i=1,size(arrayComp_r1)
-                                 if (arrayComp_r1(i) /= arrayOut_r1(i)) then
-                                    write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real1DField % fieldName)//' differs'
-                                    exit OUT1D
-                                 end if
-                              end do OUT1D
-                           end if
-                           deallocate(arrayOut_r1)
-                           deallocate(arrayComp_r1)
-
-                           end if
-                        else
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r1(0))
-                           call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                                               outdim, 0, sendList, recvList)
-                           deallocate(arrayOut_r1)
-
-                           end if
-                        end if
-
-                    else if (poolItr % nDims == 2) then
-                        call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField)
-
-                        if (trim(real2DField % dimnames(2)) == 'nCells') then
-                           outdim = nCellsSolve
-                           outdimglobal = nCellsGlobal
-                           sendList => cellSendList
-                           recvList => cellRecvList
-                        else if (trim(real2DField % dimnames(2)) == 'nEdges') then
-                           outdim = nEdgesSolve
-                           outdimglobal = nEdgesGlobal
-                           sendList => edgeSendList
-                           recvList => edgeRecvList
-                        else if (trim(real2DField % dimnames(2)) == 'nVertices') then
-                           outdim = nVerticesSolve
-                           outdimglobal = nVerticesGlobal
-                           sendList => vertexSendList
-                           recvList => vertexRecvList
-                        else
-                           nullify(sendList)
-                           nullify(recvList)
-                        end if
-
-                        if (dminfo % my_proc_id == 0) then
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r2(real2DField % dimsizes(1),outdimglobal))
-                           allocate(arrayComp_r2(real2DField % dimsizes(1),outdimglobal))
-                           call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                                               real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
-                           if (write_fields) then
-                              write(91) arrayOut_r2
-                           else
-                              read(91) arrayComp_r2
-
-                              OUT2D: do j=1,size(arrayComp_r2,2)
-                              do i=1,size(arrayComp_r2,1)
-                                 if (arrayComp_r2(i,j) /= arrayOut_r2(i,j)) then
-                                    write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real2DField % fieldName)//' differs'
-                                    exit OUT2D
-                                 end if
-                              end do
-                              end do OUT2D
-                           end if
-                           deallocate(arrayOut_r2)
-                           deallocate(arrayComp_r2)
-
-                           end if
-                        else
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r2(0,0))
-                           call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                                               real2DField % dimsizes(1), outdim, 0, sendList, recvList)
-                           deallocate(arrayOut_r2)
-
-                           end if
-                        end if
-
-                    else if (poolItr % nDims == 3) then
-                        call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField)
-
-                        if (trim(real3DField % dimnames(3)) == 'nCells') then
-                           outdim = nCellsSolve
-                           outdimglobal = nCellsGlobal
-                           sendList => cellSendList
-                           recvList => cellRecvList
-                        else if (trim(real3DField % dimnames(3)) == 'nEdges') then
-                           outdim = nEdgesSolve
-                           outdimglobal = nEdgesGlobal
-                           sendList => edgeSendList
-                           recvList => edgeRecvList
-                        else if (trim(real3DField % dimnames(3)) == 'nVertices') then
-                           outdim = nVerticesSolve
-                           outdimglobal = nVerticesGlobal
-                           sendList => vertexSendList
-                           recvList => vertexRecvList
-                        else
-                           nullify(sendList)
-                           nullify(recvList)
-                        end if
-
-                        if (dminfo % my_proc_id == 0) then
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
-                           allocate(arrayComp_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
-                           call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                                               real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
-                           if (write_fields) then
-                              write(91) arrayOut_r3
-                           else
-                              read(91) arrayComp_r3
-
-                              OUT3D: do k=1,size(arrayComp_r3,3)
-                              do j=1,size(arrayComp_r3,2)
-                              do i=1,size(arrayComp_r3,1)
-                                 if (arrayComp_r3(i,j,k) /= arrayOut_r3(i,j,k)) then
-                                    write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real3DField % fieldName)//' differs'
-                                    exit OUT3D
-                                 end if
-                              end do
-                              end do
-                              end do OUT3D
-                           end if
-                           deallocate(arrayOut_r3)
-                           deallocate(arrayComp_r3)
-
-                           end if
-                        else
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_r3(0,0,0))
-                           call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                                               real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
-                           deallocate(arrayOut_r3)
-
-                           end if
-                        end if
-
-                    end if
-
-                else if (poolItr % dataType == MPAS_POOL_INTEGER) then
-
-                    if (poolItr % nDims == 1) then
-                        call mpas_pool_get_field(all_fields, poolItr % memberName, int1DField)
-
-                        if (trim(int1DField % dimnames(1)) == 'nCells') then
-                           outdim = nCellsSolve
-                           outdimglobal = nCellsGlobal
-                           sendList => cellSendList
-                           recvList => cellRecvList
-                        else if (trim(int1DField % dimnames(1)) == 'nEdges') then
-                           outdim = nEdgesSolve
-                           outdimglobal = nEdgesGlobal
-                           sendList => edgeSendList
-                           recvList => edgeRecvList
-                        else if (trim(int1DField % dimnames(1)) == 'nVertices') then
-                           outdim = nVerticesSolve
-                           outdimglobal = nVerticesGlobal
-                           sendList => vertexSendList
-                           recvList => vertexRecvList
-                        else
-                           nullify(sendList)
-                           nullify(recvList)
-                        end if
-
-                        if (dminfo % my_proc_id == 0) then
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_i1(outdimglobal))
-                           allocate(arrayComp_i1(outdimglobal))
-                           call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
-                                               outdim, outdimglobal, sendList, recvList)
-                           if (write_fields) then
-                              write(91) arrayOut_i1
-                           else
-                              read(91) arrayComp_i1
-
-                              OUT1DI: do i=1,size(arrayComp_i1)
-                                 if (arrayComp_i1(i) /= arrayOut_i1(i)) then
-                                    write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int1DField % fieldName)//' differs'
-                                    exit OUT1DI
-                                 end if
-                              end do OUT1DI
-                           end if
-                           deallocate(arrayOut_i1)
-                           deallocate(arrayComp_i1)
-
-                           end if
-                        else
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_i1(0))
-                           call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
-                                               outdim, 0, sendList, recvList)
-                           deallocate(arrayOut_i1)
-
-                           end if
-                        end if
-
-                    else if (poolItr % nDims == 2) then
-                        call mpas_pool_get_field(all_fields, poolItr % memberName, int2DField)
-
-                        if (trim(int2DField % dimnames(2)) == 'nCells') then
-                           outdim = nCellsSolve
-                           outdimglobal = nCellsGlobal
-                           sendList => cellSendList
-                           recvList => cellRecvList
-                        else if (trim(int2DField % dimnames(2)) == 'nEdges') then
-                           outdim = nEdgesSolve
-                           outdimglobal = nEdgesGlobal
-                           sendList => edgeSendList
-                           recvList => edgeRecvList
-                        else if (trim(int2DField % dimnames(2)) == 'nVertices') then
-                           outdim = nVerticesSolve
-                           outdimglobal = nVerticesGlobal
-                           sendList => vertexSendList
-                           recvList => vertexRecvList
-                        else
-                           nullify(sendList)
-                           nullify(recvList)
-                        end if
-
-                        if (dminfo % my_proc_id == 0) then
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_i2(int2DField % dimsizes(1),outdimglobal))
-                           allocate(arrayComp_i2(int2DField % dimsizes(1),outdimglobal))
-                           call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
-                                               int2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
-                           if (write_fields) then
-                              write(91) arrayOut_i2
-                           else
-                              read(91) arrayComp_i2
-
-                              OUT2DI: do j=1,size(arrayComp_i2,2)
-                              do i=1,size(arrayComp_i2,1)
-                                 if (arrayComp_i2(i,j) /= arrayOut_i2(i,j)) then
-                                    write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int2DField % fieldName)//' differs'
-                                    exit OUT2DI
-                                 end if
-                              end do
-                              end do OUT2DI
-                           end if
-                           deallocate(arrayOut_i2)
-                           deallocate(arrayComp_i2)
-
-                           end if
-                        else
-                           if (associated(sendList)) then
-
-                           allocate(arrayOut_i2(0,0))
-                           call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
-                                               int2DField % dimsizes(1), outdim, 0, sendList, recvList)
-                           deallocate(arrayOut_i2)
-
-                           end if
-                        end if
-
-                     end if
-
-                end if
-            end if
-        end do
+   
+                   end if
+               end if
+           end do
 
         else
 
-        call mpas_pool_get_field_info(all_fields, fieldname, field_info)
+           call mpas_pool_get_field_info(all_fields, fieldname, field_info)
+   
+           select case(field_info % fieldType)
+   
+              case (MPAS_POOL_REAL)
+   
+                 if (field_info % nDims == 1) then
+   
+                    call mpas_pool_get_field(all_fields, fieldname, real1DField)
+                    call compare_r1(real1DField, checkpoint)
+   
+                 else if (field_info % nDims == 2) then
+   
+                    call mpas_pool_get_field(all_fields, fieldname, real2DField)
+                    call compare_r2(real2DField, checkpoint)
+   
+                 else if (field_info % nDims == 3) then
+   
+                    call mpas_pool_get_field(all_fields, fieldname, real3DField)
+                    call compare_r3(real3DField, checkpoint)
 
-        select case(field_info % fieldType)
-
-           case (MPAS_POOL_REAL)
-
-              if (field_info % nDims == 1) then
-
-                 call mpas_pool_get_field(all_fields, fieldname, real1DField)
-
-                 if (trim(real1DField % dimnames(1)) == 'nCells') then
-                    outdim = nCellsSolve
-                    outdimglobal = nCellsGlobal
-                    sendList => cellSendList
-                    recvList => cellRecvList
-                 else if (trim(real1DField % dimnames(1)) == 'nEdges') then
-                    outdim = nEdgesSolve
-                    outdimglobal = nEdgesGlobal
-                    sendList => edgeSendList
-                    recvList => edgeRecvList
-                 else if (trim(real1DField % dimnames(1)) == 'nVertices') then
-                    outdim = nVerticesSolve
-                    outdimglobal = nVerticesGlobal
-                    sendList => vertexSendList
-                    recvList => vertexRecvList
-                 else
-                    nullify(sendList)
-                    nullify(recvList)
                  end if
-
-                 if (dminfo % my_proc_id == 0) then
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r1(outdimglobal))
-                    allocate(arrayComp_r1(outdimglobal))
-                    call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                                        outdim, outdimglobal, sendList, recvList)
-                    if (write_fields) then
-                       write(91) arrayOut_r1
-                    else
-                       read(91) arrayComp_r1
-
-                       OUT1DF: do i=1,size(arrayComp_r1)
-                          if (arrayComp_r1(i) /= arrayOut_r1(i)) then
-                             write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real1DField % fieldName)//' differs'
-                             exit OUT1DF
-                          end if
-                       end do OUT1DF
-                    end if
-                    deallocate(arrayOut_r1)
-                    deallocate(arrayComp_r1)
-
-                    end if
-                 else
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r1(0))
-                    call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                                        outdim, 0, sendList, recvList)
-                    deallocate(arrayOut_r1)
-
-                    end if
+   
+              case (MPAS_POOL_INTEGER)
+   
+                 if (field_info % nDims == 1) then
+   
+                    call mpas_pool_get_field(all_fields, fieldname, int1DField)
+                    call compare_i1(int1DField, checkpoint)
+   
+                 else if (field_info % nDims == 2) then
+   
+                    call mpas_pool_get_field(all_fields, fieldname, int2DField)
+                    call compare_i2(int2DField, checkpoint)
+   
                  end if
-
-              else if (field_info % nDims == 2) then
-
-                 call mpas_pool_get_field(all_fields, fieldname, real2DField)
-
-                 if (trim(real2DField % dimnames(2)) == 'nCells') then
-                    outdim = nCellsSolve
-                    outdimglobal = nCellsGlobal
-                    sendList => cellSendList
-                    recvList => cellRecvList
-                 else if (trim(real2DField % dimnames(2)) == 'nEdges') then
-                    outdim = nEdgesSolve
-                    outdimglobal = nEdgesGlobal
-                    sendList => edgeSendList
-                    recvList => edgeRecvList
-                 else if (trim(real2DField % dimnames(2)) == 'nVertices') then
-                    outdim = nVerticesSolve
-                    outdimglobal = nVerticesGlobal
-                    sendList => vertexSendList
-                    recvList => vertexRecvList
-                 else
-                    nullify(sendList)
-                    nullify(recvList)
-                 end if
-
-                 if (dminfo % my_proc_id == 0) then
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r2(real2DField % dimsizes(1),outdimglobal))
-                    allocate(arrayComp_r2(real2DField % dimsizes(1),outdimglobal))
-                    call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                                        real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
-                    if (write_fields) then
-                       write(91) arrayOut_r2
-                    else
-                       read(91) arrayComp_r2
-
-                       OUT2DF: do j=1,size(arrayComp_r2,2)
-                       do i=1,size(arrayComp_r2,1)
-                          if (arrayComp_r2(i,j) /= arrayOut_r2(i,j)) then
-                             write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real2DField % fieldName)//' differs'
-                             exit OUT2DF
-                          end if
-                       end do
-                       end do OUT2DF
-                    end if
-                    deallocate(arrayOut_r2)
-                    deallocate(arrayComp_r2)
-
-                    end if
-                 else
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r2(0,0))
-                    call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                                        real2DField % dimsizes(1), outdim, 0, sendList, recvList)
-                    deallocate(arrayOut_r2)
-
-                    end if
-                 end if
-
-              else if (field_info % nDims == 3) then
-
-                 call mpas_pool_get_field(all_fields, fieldname, real3DField)
-
-                 if (trim(real3DField % dimnames(3)) == 'nCells') then
-                    outdim = nCellsSolve
-                    outdimglobal = nCellsGlobal
-                    sendList => cellSendList
-                    recvList => cellRecvList
-                 else if (trim(real3DField % dimnames(3)) == 'nEdges') then
-                    outdim = nEdgesSolve
-                    outdimglobal = nEdgesGlobal
-                    sendList => edgeSendList
-                    recvList => edgeRecvList
-                 else if (trim(real3DField % dimnames(3)) == 'nVertices') then
-                    outdim = nVerticesSolve
-                    outdimglobal = nVerticesGlobal
-                    sendList => vertexSendList
-                    recvList => vertexRecvList
-                 else
-                    nullify(sendList)
-                    nullify(recvList)
-                 end if
-
-                 if (dminfo % my_proc_id == 0) then
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
-                    allocate(arrayComp_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
-                    call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                                        real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
-                    if (write_fields) then
-                       write(91) arrayOut_r3
-                    else
-                       read(91) arrayComp_r3
-
-                       OUT3DF: do k=1,size(arrayComp_r3,3)
-                       do j=1,size(arrayComp_r3,2)
-                       do i=1,size(arrayComp_r3,1)
-                          if (arrayComp_r3(i,j,k) /= arrayOut_r3(i,j,k)) then
-                             write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real3DField % fieldName)//' differs'
-                             exit OUT3DF
-                          end if
-                       end do
-                       end do
-                       end do OUT3DF
-                    end if
-                    deallocate(arrayOut_r3)
-                    deallocate(arrayComp_r3)
-
-                    end if
-                 else
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_r3(0,0,0))
-                    call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                                        real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
-                    deallocate(arrayOut_r3)
-
-                    end if
-                 end if
-              end if
-
-           case (MPAS_POOL_INTEGER)
-
-              if (field_info % nDims == 1) then
-                 call mpas_pool_get_field(all_fields, fieldname, int1DField)
-
-                 if (trim(int1DField % dimnames(1)) == 'nCells') then
-                    outdim = nCellsSolve
-                    outdimglobal = nCellsGlobal
-                    sendList => cellSendList
-                    recvList => cellRecvList
-                 else if (trim(int1DField % dimnames(1)) == 'nEdges') then
-                    outdim = nEdgesSolve
-                    outdimglobal = nEdgesGlobal
-                    sendList => edgeSendList
-                    recvList => edgeRecvList
-                 else if (trim(int1DField % dimnames(1)) == 'nVertices') then
-                    outdim = nVerticesSolve
-                    outdimglobal = nVerticesGlobal
-                    sendList => vertexSendList
-                    recvList => vertexRecvList
-                 else
-                    nullify(sendList)
-                    nullify(recvList)
-                 end if
-
-                 if (dminfo % my_proc_id == 0) then
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_i1(outdimglobal))
-                    allocate(arrayComp_i1(outdimglobal))
-                    call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
-                                        outdim, outdimglobal, sendList, recvList)
-                    if (write_fields) then
-                       write(91) arrayOut_i1
-                    else
-                       read(91) arrayComp_i1
-
-                       OUT1DIF: do i=1,size(arrayComp_i1)
-                          if (arrayComp_i1(i) /= arrayOut_i1(i)) then
-                             write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int1DField % fieldName)//' differs'
-                             exit OUT1DIF
-                          end if
-                       end do OUT1DIF
-                    end if
-                    deallocate(arrayOut_i1)
-                    deallocate(arrayComp_i1)
-
-                    end if
-                 else
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_i1(0))
-                    call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
-                                        outdim, 0, sendList, recvList)
-                    deallocate(arrayOut_i1)
-
-                    end if
-                 end if
-
-              else if (field_info % nDims == 2) then
-                 call mpas_pool_get_field(all_fields, fieldname, int2DField)
-
-                 if (trim(int2DField % dimnames(2)) == 'nCells') then
-                    outdim = nCellsSolve
-                    outdimglobal = nCellsGlobal
-                    sendList => cellSendList
-                    recvList => cellRecvList
-                 else if (trim(int2DField % dimnames(2)) == 'nEdges') then
-                    outdim = nEdgesSolve
-                    outdimglobal = nEdgesGlobal
-                    sendList => edgeSendList
-                    recvList => edgeRecvList
-                 else if (trim(int2DField % dimnames(2)) == 'nVertices') then
-                    outdim = nVerticesSolve
-                    outdimglobal = nVerticesGlobal
-                    sendList => vertexSendList
-                    recvList => vertexRecvList
-                 else
-                    nullify(sendList)
-                    nullify(recvList)
-                 end if
-
-                 if (dminfo % my_proc_id == 0) then
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_i2(int2DField % dimsizes(1),outdimglobal))
-                    allocate(arrayComp_i2(int2DField % dimsizes(1),outdimglobal))
-                    call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
-                                        int2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
-                    if (write_fields) then
-                       write(91) arrayOut_i2
-                    else
-                       read(91) arrayComp_i2
-
-                       OUT2DIF: do j=1,size(arrayComp_i2,2)
-                       do i=1,size(arrayComp_i2,1)
-                          if (arrayComp_i2(i,j) /= arrayOut_i2(i,j)) then
-                             write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int2DField % fieldName)//' differs'
-                             exit OUT2DIF
-                          end if
-                       end do
-                       end do OUT2DIF
-                    end if
-                    deallocate(arrayOut_i2)
-                    deallocate(arrayComp_i2)
-
-                    end if
-                 else
-                    if (associated(sendList)) then
-
-                    allocate(arrayOut_i2(0,0))
-                    call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
-                                        int2DField % dimsizes(1), outdim, 0, sendList, recvList)
-                    deallocate(arrayOut_i2)
-
-                    end if
-                 end if
-
-              end if
-
-        end select
+   
+           end select
 
         end if
 
@@ -1807,5 +1268,357 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
       end do
 
    end subroutine quicksort
+
+
+   subroutine compare_r1(real1DField, checkpoint)
+
+      implicit none
+
+      type (field1DReal), pointer :: real1DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=RKIND), dimension(:), pointer :: arrayOut_r1, arrayComp_r1
+      integer :: i, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(real1DField % dimnames(1)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real1DField % dimnames(1)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real1DField % dimnames(1)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r1(outdimglobal))
+         allocate(arrayComp_r1(outdimglobal))
+         call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                             outdim, outdimglobal, sendList, recvList)
+         if (write_fields) then
+            write(91) arrayOut_r1
+         else
+            read(91) arrayComp_r1
+
+            OUT1D: do i=1,size(arrayComp_r1)
+               if (arrayComp_r1(i) /= arrayOut_r1(i)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real1DField % fieldName)//' differs'
+                  exit OUT1D
+               end if
+            end do OUT1D
+         end if
+         deallocate(arrayOut_r1)
+         deallocate(arrayComp_r1)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r1(0))
+         call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                             outdim, 0, sendList, recvList)
+         deallocate(arrayOut_r1)
+
+         end if
+      end if
+
+   end subroutine compare_r1
+
+
+   subroutine compare_r2(real2DField, checkpoint)
+
+      implicit none
+
+      type (field2DReal), pointer :: real2DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=RKIND), dimension(:,:), pointer :: arrayOut_r2, arrayComp_r2
+      integer :: i, j, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+      if (trim(real2DField % dimnames(2)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real2DField % dimnames(2)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real2DField % dimnames(2)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r2(real2DField % dimsizes(1),outdimglobal))
+         allocate(arrayComp_r2(real2DField % dimsizes(1),outdimglobal))
+         call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                             real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+         if (write_fields) then
+            write(91) arrayOut_r2
+         else
+            read(91) arrayComp_r2
+
+            OUT2D: do j=1,size(arrayComp_r2,2)
+            do i=1,size(arrayComp_r2,1)
+               if (arrayComp_r2(i,j) /= arrayOut_r2(i,j)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real2DField % fieldName)//' differs'
+                  exit OUT2D
+               end if
+            end do
+            end do OUT2D
+         end if
+         deallocate(arrayOut_r2)
+         deallocate(arrayComp_r2)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r2(0,0))
+         call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                             real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+         deallocate(arrayOut_r2)
+
+         end if
+      end if
+
+   end subroutine compare_r2
+
+
+   subroutine compare_r3(real3DField, checkpoint)
+
+      implicit none
+
+      type (field3DReal), pointer :: real3DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=RKIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
+      integer :: i, j, k, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(real3DField % dimnames(3)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real3DField % dimnames(3)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real3DField % dimnames(3)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
+         allocate(arrayComp_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
+         call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                             real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+         if (write_fields) then
+            write(91) arrayOut_r3
+         else
+            read(91) arrayComp_r3
+
+            OUT3D: do k=1,size(arrayComp_r3,3)
+            do j=1,size(arrayComp_r3,2)
+            do i=1,size(arrayComp_r3,1)
+               if (arrayComp_r3(i,j,k) /= arrayOut_r3(i,j,k)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real3DField % fieldName)//' differs'
+                  exit OUT3D
+               end if
+            end do
+            end do
+            end do OUT3D
+         end if
+         deallocate(arrayOut_r3)
+         deallocate(arrayComp_r3)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r3(0,0,0))
+         call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                             real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+         deallocate(arrayOut_r3)
+
+         end if
+      end if
+
+   end subroutine compare_r3
+
+
+   subroutine compare_i1(int1DField, checkpoint)
+
+      implicit none
+
+      type (field1DInteger), pointer :: int1DField
+      character(len=*), intent(in) :: checkpoint
+
+      integer, dimension(:), pointer :: arrayOut_i1, arrayComp_i1
+      integer :: i, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(int1DField % dimnames(1)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(int1DField % dimnames(1)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(int1DField % dimnames(1)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_i1(outdimglobal))
+         allocate(arrayComp_i1(outdimglobal))
+         call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
+                             outdim, outdimglobal, sendList, recvList)
+         if (write_fields) then
+            write(91) arrayOut_i1
+         else
+            read(91) arrayComp_i1
+
+            OUT1DI: do i=1,size(arrayComp_i1)
+               if (arrayComp_i1(i) /= arrayOut_i1(i)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int1DField % fieldName)//' differs'
+                  exit OUT1DI
+               end if
+            end do OUT1DI
+         end if
+         deallocate(arrayOut_i1)
+         deallocate(arrayComp_i1)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_i1(0))
+         call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
+                             outdim, 0, sendList, recvList)
+         deallocate(arrayOut_i1)
+
+         end if
+      end if
+
+   end subroutine compare_i1
+
+
+   subroutine compare_i2(int2DField, checkpoint)
+
+      implicit none
+
+      type (field2DInteger), pointer :: int2DField
+      character(len=*), intent(in) :: checkpoint
+
+      integer, dimension(:,:), pointer :: arrayOut_i2, arrayComp_i2
+      integer :: i, j, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(int2DField % dimnames(2)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(int2DField % dimnames(2)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(int2DField % dimnames(2)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_i2(int2DField % dimsizes(1),outdimglobal))
+         allocate(arrayComp_i2(int2DField % dimsizes(1),outdimglobal))
+         call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
+                             int2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+         if (write_fields) then
+            write(91) arrayOut_i2
+         else
+            read(91) arrayComp_i2
+
+            OUT2DI: do j=1,size(arrayComp_i2,2)
+            do i=1,size(arrayComp_i2,1)
+               if (arrayComp_i2(i,j) /= arrayOut_i2(i,j)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int2DField % fieldName)//' differs'
+                  exit OUT2DI
+               end if
+            end do
+            end do OUT2DI
+         end if
+         deallocate(arrayOut_i2)
+         deallocate(arrayComp_i2)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_i2(0,0))
+         call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
+                             int2DField % dimsizes(1), outdim, 0, sendList, recvList)
+         deallocate(arrayOut_i2)
+
+         end if
+      end if
+
+   end subroutine compare_i2
 
 end module mpas_debugging
