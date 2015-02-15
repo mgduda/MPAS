@@ -3,11 +3,12 @@ module mpas_debugging
    use mpas_grid_types
    use mpas_dmpar_types
 
-   logical :: write_fields
+   logical :: write_fields, is_file_open
+   character(len=256) :: checkpoint_filename
    type (mpas_pool_type), pointer :: all_fields 
    type (dm_info), pointer :: dminfo 
 
-   public :: mpas_debugging_init, mpas_debugging_check, mpas_debugging_finalize
+   public :: mpas_debugging_init, mpas_debugging_set_filename, mpas_debugging_check, mpas_debugging_finalize
 
    private
 
@@ -72,6 +73,9 @@ include 'mpif.h'
       write_fields = arg_write_fields
       all_fields => field_pool
 
+      is_file_open = .false.
+      checkpoint_filename = 'checkpoint.dat'
+
       call mpas_pool_get_dimension(mesh_pool, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh_pool, 'nCellsSolve', nCellsSolve)
       call mpas_pool_get_dimension(mesh_pool, 'nEdges', nEdges)
@@ -134,13 +138,24 @@ include 'mpif.h'
          deallocate(neededList)
       end if
 
-      if (write_fields) then
-         open(91,file='checkpoints.dat',form='unformatted',status='replace',action='write')
-      else
-         open(91,file='checkpoints.dat',form='unformatted',status='old',action='read')
-      end if
-
    end subroutine mpas_debugging_init
+
+
+   subroutine mpas_debugging_set_filename(filename)
+
+       implicit none
+
+       character(len=*), intent(in) :: filename
+
+
+       if (is_file_open) then
+          close(91)
+          is_file_open = .false.
+       end if
+
+       write(checkpoint_filename,'(a)') filename
+
+   end subroutine mpas_debugging_set_filename
 
 
    subroutine mpas_debugging_check(checkpoint, fieldname)
@@ -166,6 +181,15 @@ include 'mpif.h'
         type (exchange_list), pointer :: sendList, recvList
         type (mpas_pool_field_info_type) :: field_info
 
+
+        if (.not. is_file_open) then
+           if (write_fields) then
+              open(91,file=trim(checkpoint_filename),form='unformatted',status='replace',action='write')
+           else
+              open(91,file=trim(checkpoint_filename),form='unformatted',status='old',action='read')
+           end if
+           is_file_open = .true.
+        end if
 
         if (.not. present(fieldname)) then
 
@@ -256,9 +280,11 @@ include 'mpif.h'
 
    subroutine mpas_debugging_finalize()
 
-      implicit none
+       implicit none
 
-      close(91)
+       if (is_file_open) then
+           close(91)
+       end if
 
    end subroutine mpas_debugging_finalize
 
