@@ -459,7 +459,7 @@
              apr_capmi     = aprcapmi_p          , cugd_tten       = cugdtten_p             , &
              cugd_qvten    = cugdqvten_p         , cugd_ttens      = cugdttens_p            , &
              cugd_qvtens   = cugdqvtens_p        , cugd_qcten      = cugdqcten_p            , &
-             cugd_avedx    = cugd_avedx          , mass_flux       = xmb_total_p            , &
+             cugd_avedx    = cugd_avedx          , xmb_total       = xmb_total_p            , &
              edt_out       = edtout_p            , rthcuten        = rthcuten_p             , &
              rqvcuten      = rqvcuten_p          , rqccuten        = rqccuten_p             , &
              rqicuten      = rqicuten_p          , htop            = cutop_p                , &

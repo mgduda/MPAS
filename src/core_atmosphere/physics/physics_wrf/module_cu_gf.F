@@ -47,7 +47,7 @@ CONTAINS
               ,CU_ACT_FLAG,warm_rain                            &
               ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                &
               ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
-              ,MASS_FLUX,HT,hfx,qfx,XLAND,gsw,edt_out           &
+              ,xmb_total,HT,hfx,qfx,XLAND,gsw,edt_out           &
               ,GDC,GDC2 ,kpbl,k22_shallow,kbcon_shallow         &
               ,ktop_shallow,xmb_shallow                         &
               ,cugd_tten,cugd_qvten ,cugd_qcten                 &
@@ -155,17 +155,23 @@ CONTAINS
    integer,intent(in):: ichoice_deep,ichoice_shallow
    real,intent(in):: dt
    real,intent(in),dimension(ims:ime,jms:jme):: areaCell,dxCell
+   real,dimension(ims:ime,jms:jme),intent(inout):: &
+        pratec,raincv,xmb_total,                   &
+        apr_gr,apr_w,apr_mc,apr_st,apr_as,         &
+        edt_out,apr_capma,apr_capme,apr_capmi,     &
+        htop,hbot,xmb_shallow
+   real,dimension(ims:ime,jms:jme):: mass_flux
 #else
    integer, intent (in   )              :: ichoice
    REAL, INTENT(IN   ) :: DT, DX
-#endif
-!
-
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
          INTENT(INOUT) ::           pratec,RAINCV, MASS_FLUX,   &
                           APR_GR,APR_W,APR_MC,APR_ST,APR_AS,    &
                          edt_out,APR_CAPMA,APR_CAPME,APR_CAPMI, &
                          htop,hbot,xmb_shallow
+#endif
+!
+
 !+lxz
 !  REAL, DIMENSION( ims:ime , jms:jme ) :: & !, INTENT(INOUT) ::       &
 !        HTOP,     &! highest model layer penetrated by cumulus since last reset in radiation_driver
@@ -271,6 +277,7 @@ CONTAINS
 #if defined(mpas)
    real:: tcrit,dp,dq,sub_spread,subcenter
    real,dimension(its:ite):: area_loc,dx_loc,tscl_kf
+   real,dimension(its:ite):: xmb
 #else
    REAL    :: tcrit,tscl_KF,dp,dq,sub_spread,subcenter
 #endif
@@ -366,6 +373,8 @@ CONTAINS
         tscl_kf(i)  = dxCell(i,j) / 25.
         dx_loc(i)   = dxCell(i,j)
         area_loc(i) = areaCell(i,j)
+        xmb_total(i,j) = 0.
+        xmb(i)         = 0.
      ENDDO
 #endif
      DO n= 1,ensdim
@@ -551,19 +560,20 @@ CONTAINS
       endif
 #endif
 #if defined(mpas)
-      CALL CUP_gf(zo,outqc,j,AAEQ,T2d,Q2d,TER11,subm,TN,QO,PO,PRET,&
-           P2d,OUTT,OUTQ,DT,itimestep,PSUR,US,VS,tcrit,iens, &
+      CALL CUP_gf(zo,outqc,j,AAEQ,T2d,Q2d,TER11,subm,TN,QO,PO,PRET,     &
+           P2d,OUTT,OUTQ,DT,itimestep,PSUR,US,VS,tcrit,iens,            &
            ztexec,zqexec,ccn,ccnclean,rhoi,dx_loc,area_loc,mconv,omeg,  &
-           maxiens,maxens,maxens2,maxens3,ensdim,                 &
-           APRi_GR,APRi_W,APRi_MC,APRi_ST,APRi_AS,                &
-           APRi_CAPMA,APRi_CAPME,APRi_CAPMI,kbcon,ktop,cupclw,    &
-           xfi_ens,pri_ens,XLANDi,gswi,subt,subq,        &
-           xlv,r_v,cp,g,ichoice_deep,ipr,jpr,ierrc,ens4,    &
-           beta,autoconv,aeroevap,itf,jtf,ktf,training, &
+           maxiens,maxens,maxens2,maxens3,ensdim,                       &
+           APRi_GR,APRi_W,APRi_MC,APRi_ST,APRi_AS,                      &
+           APRi_CAPMA,APRi_CAPME,APRi_CAPMI,kbcon,ktop,cupclw,          &
+           xfi_ens,pri_ens,XLANDi,gswi,subt,subq,                       &
+           xlv,r_v,cp,g,ichoice_deep,ipr,jpr,ierrc,ens4,                &
+           beta,autoconv,aeroevap,itf,jtf,ktf,training,                 &
+           xmb,                                                         &
 #if ( WRF_DFI_RADAR == 1 )
-           do_capsuppress,cap_suppress_j,                         &             
+           do_capsuppress,cap_suppress_j,                               &             
 #endif
-           use_excess,its,ite, jts,jte, kts,kte                               &
+           use_excess,its,ite, jts,jte, kts,kte                         &
                                                              )
 #else
       CALL CUP_gf(zo,outqc,j,AAEQ,T2d,Q2d,TER11,subm,TN,QO,PO,PRET,&
@@ -631,6 +641,7 @@ CONTAINS
                ENDDO
             endif
             DO I=ibegc,iendc
+              xmb_total(i,j) = xmb(i)
               cuten(i)=0.
               if(pret(i).gt.0.)then
                  cuten(i)=1.
@@ -709,21 +720,22 @@ CONTAINS
 
 
 #if defined(mpas)
-   SUBROUTINE CUP_gf(zo,OUTQC,J,AAEQ,T,Q,Z1,sub_mas,                    &
-              TN,QO,PO,PRE,P,OUTT,OUTQ,DTIME,ktau,PSUR,US,VS,    &
-              TCRIT,iens,                                        &
+   SUBROUTINE CUP_gf(zo,OUTQC,J,AAEQ,T,Q,Z1,sub_mas,                &
+              TN,QO,PO,PRE,P,OUTT,OUTQ,DTIME,ktau,PSUR,US,VS,       &
+              TCRIT,iens,                                           &
               ztexec,zqexec,ccn,ccnclean,rho,dxCell,areaCell,mconv, &
-              omeg,maxiens,                          &
-              maxens,maxens2,maxens3,ensdim,                           &
-              APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                       &
-              APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,cupclw,         &   !-lxz
-              xf_ens,pr_ens,xland,gsw,subt,subq,               &
-              xl,rv,cp,g,ichoice,ipr,jpr,ierrc,ens4,         &
-              beta,autoconv,aeroevap,itf,jtf,ktf,training,               &
+              omeg,maxiens,                                         &
+              maxens,maxens2,maxens3,ensdim,                        &
+              APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                    &
+              APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,cupclw,      & 
+              xf_ens,pr_ens,xland,gsw,subt,subq,                    &
+              xl,rv,cp,g,ichoice,ipr,jpr,ierrc,ens4,                &
+              beta,autoconv,aeroevap,itf,jtf,ktf,training,          &
+              xmb,                                                  &
 #if ( WRF_DFI_RADAR == 1 )
-              do_capsuppress,cap_suppress_j,                         &             
+              do_capsuppress,cap_suppress_j,                        &             
 #endif
-              use_excess,its,ite, jts,jte, kts,kte                                &
+              use_excess,its,ite, jts,jte, kts,kte                  &
                                                 )
 #else
    SUBROUTINE CUP_gf(zo,OUTQC,J,AAEQ,T,Q,Z1,sub_mas,                    &
@@ -932,12 +944,6 @@ CONTAINS
   ! xaa0    = cloud work function with cloud effects (ensemble dependent)
   ! edt     = epsilon
 
-     real,    dimension (its:ite) ::                                   &
-       edt,edto,edtx,AA1,AA0,XAA0,HKB,                          &
-       HKBO,XHKB,QKB,QKBO,                                    &
-       XMB,XPWAV,XPWEV,PWAV,PWEV,PWAVO,                                &
-       PWEVO,BU,BUD,BUO,cap_max,xland1,                                    &
-       cap_max_increment,closure_n,psum,psumh,sig,zuhe
      real,    dimension (its:ite,1:ens4) ::                                   &
         axx
      integer,    dimension (its:ite) ::                                &
@@ -947,14 +953,29 @@ CONTAINS
      integer                              ::                           &
        nall,iedt,nens,nens3,ki,I,K,KK,iresult
 #if defined(mpas)
-     real                                 ::                           &
-      day,dz,dzo,mbdt,entrd_rate,  &
-      zcutdown,edtmax,edtmin,depth_min,zkbmax,z_detr,zktop,      &
-      massfld,dh,cap_maxs,trash
-      real detdo1,detdo2,entdo,dp,subin,detdo,entup,                &
-      detup,subdown,entdoj,entupk,detupk,totmas
-      real,dimension(its:ite):: entr_rate,mentrd_rate,radius,frh,xlamdd
+     real,intent(inout),dimension(its:ite):: xmb
+
+     real,dimension(its:ite):: &
+       edt,edto,edtx,aa1,aa0,xaa0,hkb,                 &
+       hkbo,xhkb,qkb,qkbo,                             &
+       xpwav,xpwev,pwav,pwev,pwavo,                    &
+       pwevo,bu,bud,buo,cap_max,xland1,                &
+       cap_max_increment,closure_n,psum,psumh,sig,zuhe
+     real:: &
+       day,dz,dzo,mbdt,entrd_rate,                           &
+       zcutdown,edtmax,edtmin,depth_min,zkbmax,z_detr,zktop, &
+       massfld,dh,cap_maxs,trash
+     real:: &
+       detdo1,detdo2,entdo,dp,subin,detdo,entup, &
+       detup,subdown,entdoj,entupk,detupk,totmas
+     real,dimension(its:ite):: entr_rate,mentrd_rate,radius,frh,xlamdd
 #else
+     real,    dimension (its:ite) ::                                   &
+       edt,edto,edtx,AA1,AA0,XAA0,HKB,                          &
+       HKBO,XHKB,QKB,QKBO,                                    &
+       XMB,XPWAV,XPWEV,PWAV,PWEV,PWAVO,                                &
+       PWEVO,BU,BUD,BUO,cap_max,xland1,                                    &
+       cap_max_increment,closure_n,psum,psumh,sig,zuhe
      real                                 ::                           &
       day,dz,dzo,mbdt,entr_rate,radius,entrd_rate,mentrd_rate,  &
       zcutdown,edtmax,edtmin,depth_min,zkbmax,z_detr,zktop,      &
