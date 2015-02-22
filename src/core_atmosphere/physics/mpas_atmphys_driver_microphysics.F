@@ -417,7 +417,7 @@
  integer,dimension(:),pointer:: i_rainnc,i_rainnc_mp
 
  real(kind=RKIND),pointer:: config_bucket_rainnc
- real(kind=RKIND),dimension(:),pointer:: precipw
+ real(kind=RKIND),dimension(:),pointer:: precipw,precipw_t
  real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,rainnc_mp,snownc
  real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,rainncv_mp,snowncv,sr
  real(kind=RKIND),dimension(:),pointer:: raincv,rqccuten_vi,rqrcuten_vi,rqicuten_vi,rqscuten_vi
@@ -435,6 +435,7 @@
  call mpas_pool_get_array(diag_physics,'i_rainnc'   ,i_rainnc   )
  call mpas_pool_get_array(diag_physics,'i_rainnc_mp',i_rainnc_mp)
  call mpas_pool_get_array(diag_physics,'precipw'    ,precipw    )
+ call mpas_pool_get_array(diag_physics,'precipw_t'  ,precipw_t  )
  call mpas_pool_get_array(diag_physics,'graupelnc'  ,graupelnc  )
  call mpas_pool_get_array(diag_physics,'graupelncv' ,graupelncv )
  call mpas_pool_get_array(diag_physics,'rainnc'     ,rainnc     )
@@ -452,7 +453,8 @@
  call mpas_pool_get_array(diag_physics,'rqscuten_vi',rqscuten_vi)
 
  do i = 1, nCellsSolve
-    precipw(i) = 0._RKIND    
+    precipw(i)   = 0._RKIND
+    precipw_t(i) = 0._RKIND
  enddo
 
 !variables common to all cloud microphysics schemes:
@@ -463,7 +465,8 @@
     !precipitable water:
     do k = kts,kte
        rho_a = rho_p(i,k,j) / (1._RKIND + qv_p(i,k,j))
-       precipw(i) = precipw(i) + qv_p(i,k,j) * rho_a * dz_p(i,k,j)
+       precipw(i)   = precipw(i) + qv_p(i,k,j) * rho_a * dz_p(i,k,j)
+       precipw_t(i) = precipw_t(i) + qv_p(i,k,j) * rho_p(i,k,j) * dz_p(i,k,j)
     enddo
 
     !time-step precipitation:

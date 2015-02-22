@@ -668,6 +668,7 @@
 			<var name="i_rainnc"/>
 			<var name="rainnc"/>
 			<var name="precipw"/>
+			<var name="precipw_t"/>
 			<var name="relhum"/>
 			<var name="cuprec"/>
 			<var name="i_rainc"/>
@@ -1222,6 +1223,7 @@
                 <var name="graupelnc"     type="real"     dimensions="nCells Time"/>
 
                 <var name="precipw"       type="real"     dimensions="nCells Time"/>
+                <var name="precipw_t"     type="real"     dimensions="nCells Time"/>
                 <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- ================================================================================================== -->
