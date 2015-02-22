@@ -651,7 +651,8 @@
  do k = 1, nVertLevels
     kk = nVertLevels+1-k
     do iCell = 1, nCells
-       field_in(iCell,kk) = theta_m(k,iCell)/(1._RKIND+R_v/R_d* max(0._RKIND,qv(k,iCell)))
+       field_in(iCell,kk) = theta_m(k,iCell)/(1._RKIND+R_v/R_d* max(0._RKIND,qv(k,iCell))) &
+                          * exner(k,iCell) 
     enddo
  enddo
  call interp_tofixed_pressure(nCells,nVertLevels,nIntP,press_in,field_in,press_interp,field_interp)
