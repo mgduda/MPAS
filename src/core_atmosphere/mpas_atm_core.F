@@ -1246,8 +1246,8 @@ module atm_core
       call compute_rms(domain, nCellsSolve, computed_u, reference_u, thresh, rms, linf, status)
       write(stderrUnit,*) 'RMS error u     = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
-      call compute_rms(domain, nCellsSolve, computed_w, reference_w, thresh, rms, linf, status)
-      write(stderrUnit,*) 'RMS error w     = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
+!      call compute_rms(domain, nCellsSolve, computed_w, reference_w, thresh, rms, linf, status)
+!      write(stderrUnit,*) 'RMS error w     = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
 
       call compute_rms(domain, nCellsSolve, computed_rho, reference_rho, thresh, rms, linf, status)
       write(stderrUnit,*) 'RMS error rho   = ', rms, ' (threshold=', linf*thresh, ') ', trim(status)
