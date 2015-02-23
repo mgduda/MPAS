@@ -115,6 +115,7 @@
 	<streams>
 		<stream name="input" 
                         type="input" 
+                        precision="native"
                         filename_template="SET_ME" 
                         input_interval="initial_only"
                         immutable="true">
@@ -165,6 +166,7 @@
 
 		<stream name="restart" 
                         type="input;output" 
+                        precision="native"
                         filename_template="restart.$Y-$M-$D_$h.$m.$s.nc" 
                         input_interval="initial_only" 
                         output_interval="1_00:00:00" 
@@ -270,6 +272,7 @@
 
 		<stream name="output" 
                         type="output" 
+                        precision="native"
                         filename_template="history.$Y-$M-$D_$h.$m.$s.nc" 
                         output_interval="none"
                         runtime_format="separate_file">
@@ -332,6 +335,7 @@
 
 		<stream name="diagnostics" 
                         type="output" 
+                        precision="native"
                         filename_template="diag.$Y-$M-$D_$h.$m.$s.nc" 
                         output_interval="none"
                         runtime_format="separate_file">
@@ -359,6 +363,7 @@
 
 		<stream name="benchmark" 
                         type="output" 
+                        precision="native"
                         filename_template="benchmark.nc" 
                         filename_interval="none"
                         output_interval="none"
