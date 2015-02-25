@@ -35,8 +35,8 @@
           character (len=StrKIND) :: timer_name
           logical :: running, printable
           integer :: levels, calls, nlen
-          real (kind=RKIND) :: start_time, end_time, total_time
-          real (kind=RKIND) :: max_time, min_time, avg_time
+          real (kind=R8KIND) :: start_time, end_time
+          real (kind=RKIND) :: max_time, min_time, avg_time, total_time
           real (kind=RKIND) :: efficiency
           type (timer_node), pointer :: next
         end type timer_node
@@ -177,7 +177,7 @@
 #else
             call system_clock (count=clock)
             call system_clock (count_rate=hz)
-            current%start_time = real(clock,kind=RKIND)/real(hz,kind=RKIND)
+            current%start_time = real(clock,kind=R8KIND)/real(hz,kind=R8KIND)
 #endif
           endif
 
@@ -272,10 +272,10 @@
 #else
             call system_clock(count=clock)
             call system_clock(count_rate=hz)
-            current%end_time = real(clock,kind=RKIND)/real(hz,kind=RKIND)
+            current%end_time = real(clock,kind=R8KIND)/real(hz,kind=R8KIND)
 #endif
             
-            time_temp = current%end_time - current%start_time
+            time_temp = real(current%end_time - current%start_time,RKIND)
             current%total_time = current%total_time + time_temp
 
             if(time_temp > current%max_time) then
@@ -332,11 +332,11 @@
               tname = tname//' '
             end do
 
-            if(timer_ptr%total_time == 0.0d0) then
-              timer_ptr%min_time = 0.0d0
-              timer_ptr%max_time = 0.0d0
-              timer_ptr%avg_time = 0.0d0
-              percent = 0.0d0
+            if(timer_ptr%total_time == 0.0_RKIND) then
+              timer_ptr%min_time = 0.0_RKIND
+              timer_ptr%max_time = 0.0_RKIND
+              timer_ptr%avg_time = 0.0_RKIND
+              percent = 0.0_RKIND
             else
               timer_ptr%avg_time = timer_ptr%total_time/timer_ptr%calls
               percent = timer_ptr%total_time/total_ptr%total_time
@@ -441,7 +441,7 @@
             current % total_time = all_total_time
 
 #ifdef _MPI
-            if ( all_total_time > 0.0d0 ) then
+            if ( all_total_time > 0.0_RKIND ) then
                current % efficiency = all_ave_time / all_total_time
             else
                current % efficiency = 1.0
