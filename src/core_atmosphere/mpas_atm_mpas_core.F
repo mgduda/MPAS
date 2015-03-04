@@ -1169,9 +1169,9 @@ module mpas_core
       ! Set threshold for relative difference in rms fields
       !
 #ifdef SINGLE_PRECISION
-      thresh = 1.0e-4
+      thresh = 1.0e-3
 #else
-      thresh = 1.0e-8
+      thresh = 1.0e-6
 #endif
 
 
