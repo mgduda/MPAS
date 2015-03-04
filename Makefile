@@ -1,4 +1,4 @@
-MODEL_FORMULATION = 
+MODEL_FORMULATION = -DSINGLE_PRECISION -DSINGLE_PRECISION_IFORT
 
 
 dummy:
@@ -10,10 +10,10 @@ xlf:
 	"CC_PARALLEL = mpcc" \
 	"FC_SERIAL = xlf90" \
 	"CC_SERIAL = xlc" \
-	"FFLAGS_OPT = -O3 -qrealsize=8" \
+	"FFLAGS_OPT = -O3" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -O0 -g -C -qrealsize=8" \
+	"FFLAGS_DEBUG = -O0 -g -C" \
 	"CFLAGS_DEBUG = -O0 -g" \
 	"LDFLAGS_DEBUG = -O0 -g" \
 	"CORE = $(CORE)" \
@@ -27,7 +27,7 @@ ftn:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
-	"FFLAGS_OPT = -i4 -r8 -gopt -O2 -Mvect=nosse -Kieee -convert big_endian" \
+	"FFLAGS_OPT = -i4 -r4 -gopt -O2 -Mvect=nosse -Kieee -convert big_endian" \
 	"CFLAGS_OPT = -fast" \
 	"LDFLAGS_OPT = " \
 	"CORE = $(CORE)" \
@@ -41,7 +41,7 @@ titan-cray:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = gcc" \
-	"FFLAGS_OPT = -s integer32 -default64 -O3 -f free -N 255 -em -ef" \
+	"FFLAGS_OPT = -s integer32 -default32 -O3 -f free -N 255 -em -ef" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"CORE = $(CORE)" \
@@ -55,10 +55,10 @@ pgi:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = pgf90" \
 	"CC_SERIAL = pgcc" \
-	"FFLAGS_OPT = -r8 -O3 -byteswapio -Mfree" \
+	"FFLAGS_OPT = -O3 -byteswapio -Mfree" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -r8 -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
+	"FFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -byteswapio -Mfree -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CFLAGS_DEBUG = -O0 -g -traceback" \
 	"LDFLAGS_DEBUG = -O0 -g -Mbounds -Mchkptr -Ktrap=divz,fp,inv,ovf -traceback" \
 	"CORE = $(CORE)" \
@@ -72,7 +72,7 @@ pgi-nersc:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
-	"FFLAGS_OPT = -r8 -O3 -byteswapio -Mfree" \
+	"FFLAGS_OPT = -O3 -byteswapio -Mfree" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"CORE = $(CORE)" \
@@ -86,7 +86,7 @@ pgi-llnl:
 	"CC_PARALLEL = pgcc" \
 	"FC_SERIAL = pgf90" \
 	"CC_SERIAL = pgcc" \
-	"FFLAGS_OPT = -i4 -r8 -g -O2 -byteswapio" \
+	"FFLAGS_OPT = -i4 -r4 -g -O2 -byteswapio" \
 	"CFLAGS_OPT = -fast" \
 	"LDFLAGS_OPT = " \
 	"CORE = $(CORE)" \
@@ -100,10 +100,10 @@ ifort:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = icc" \
-	"FFLAGS_OPT = -real-size 64 -O3 -convert big_endian -FR" \
+	"FFLAGS_OPT = -O3 -convert big_endian -FR" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
+	"FFLAGS_DEBUG = -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CORE = $(CORE)" \
@@ -117,10 +117,10 @@ ifort-gcc:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = gcc" \
-	"FFLAGS_OPT = -real-size 64 -O3 -convert big_endian -FR" \
+	"FFLAGS_OPT = -O3 -convert big_endian -FR" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
+	"FFLAGS_DEBUG = -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CORE = $(CORE)" \
@@ -134,10 +134,10 @@ gfortran:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = gfortran" \
 	"CC_SERIAL = gcc" \
-	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form" \
+	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"CFLAGS_OPT = -O3 -m64" \
 	"LDFLAGS_OPT = -O3 -m64" \
-	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
 	"CFLAGS_DEBUG = -g -m64" \
 	"LDFLAGS_DEBUG = -g -m64" \
 	"CORE = $(CORE)" \
@@ -151,10 +151,10 @@ gfortran-openmpi:
 	"CC_PARALLEL = openmpicc" \
 	"FC_SERIAL = gfortran" \
 	"CC_SERIAL = gcc" \
-	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form" \
+	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"CFLAGS_OPT = -O3 -m64" \
 	"LDFLAGS_OPT = -O3 -m64" \
-	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fdefault-real-8 -fdefault-double-8 -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
 	"CFLAGS_DEBUG = -g -m64" \
 	"LDFLAGS_DEBUG = -g -m64" \
 	"CORE = $(CORE)" \
@@ -168,7 +168,7 @@ g95:
 	"CC_PARALLEL = mpicc" \
 	"FC_SERIAL = g95" \
 	"CC_SERIAL = gcc" \
-	"FFLAGS_OPT = -O3 -ffree-line-length-huge -r8 -fendian=big" \
+	"FFLAGS_OPT = -O3 -ffree-line-length-huge -fendian=big" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"CORE = $(CORE)" \
@@ -182,7 +182,7 @@ pathscale-nersc:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
-	"FFLAGS_OPT = -r8 -O3 -freeform -extend-source" \
+	"FFLAGS_OPT = -O3 -freeform -extend-source" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"CORE = $(CORE)" \
@@ -196,7 +196,7 @@ cray-nersc:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
-	"FFLAGS_OPT = -default64 -O3 -f free" \
+	"FFLAGS_OPT = -default32 -O3 -f free" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"CORE = $(CORE)" \
@@ -210,9 +210,12 @@ intel-nersc:
 	"CC_PARALLEL = cc" \
 	"FC_SERIAL = ftn" \
 	"CC_SERIAL = cc" \
-	"FFLAGS_OPT = -real-size 64 -O3 -convert big_endian -FR" \
+	"FFLAGS_OPT = -O3 -convert big_endian -FR" \
 	"CFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -FR -CU -CB -check all -traceback" \
+	"CFLAGS_DEBUG = -g -traceback" \
+	"LDFLAGS_DEBUG = -g -traceback" \
 	"CORE = $(CORE)" \
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
@@ -224,10 +227,10 @@ bluegene:
 	"CC_PARALLEL = mpixlc_r" \
 	"FC_SERIAL = bgxlf95_r" \
 	"CC_SERIAL = bgxlc_r" \
-	"FFLAGS_OPT = -O2 -g -qrealsize=8" \
+	"FFLAGS_OPT = -O2 -g -qrealsize=4" \
 	"CFLAGS_OPT = -O2 -g" \
 	"LDFLAGS_OPT = -O2 -g" \
-	"FFLAGS_DEBUG = -O0 -g -C -qinitalloc -qinitauto -qrealsize=8" \
+	"FFLAGS_DEBUG = -O0 -g -C -qinitalloc -qinitauto -qrealsize=4" \
 	"CFLAGS_DEBUG = -O0 -g" \
 	"LDFLAGS_DEBUG = -O0 -g" \
 	"CORE = $(CORE)" \
