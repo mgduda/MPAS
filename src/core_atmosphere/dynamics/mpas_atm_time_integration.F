@@ -22,6 +22,29 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -391,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1987,35 +2016,47 @@ module atm_time_integration
 
 !  next, the limiter
 
+         !RSS2G simplification of limiter calculations
+         !RSS2G worked through algebra and found equivalent form
+         !RSS2G added benefit that it should address ifort single prec overflow issue
          do iCell = 1, nCellsSolve
             do k = 1, nVertLevels
-               s_min_update = (scalar_new(k,iCell)+scale_arr(SCALE_OUT,k,iCell))/h_new(k,iCell)
-               s_max_update = (scalar_new(k,iCell)+scale_arr(SCALE_IN,k,iCell))/h_new(k,iCell)
-               s_upwind = scalar_new(k,iCell)/h_new(k,iCell)
 
-#ifdef SINGLE_PRECISION_IFORT
-               ! ifort 13.0.1 seems to have problems optimizing this particular
-               ! bit of code without generating NaNs in single precision, so we write it differently
-               if ((s_max_update - s_upwind) /= 0.0) then
-                  scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind)
-                  scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-               else
-                  scale_arr(SCALE_IN,k,iCell) = 1.0
-               end if
+!RSS2G     s_min_update = (scalar_new(k,iCell)+scale_arr(SCALE_OUT,k,iCell))/h_new(k,iCell)
+!RSS2G     s_max_update = (scalar_new(k,iCell)+scale_arr(SCALE_IN,k,iCell))/h_new(k,iCell)
+!RSS2G     s_upwind = scalar_new(k,iCell)/h_new(k,iCell)
+!RSS2G
+!RSS2G #ifdef SINGLE_PRECISION_IFORT
+!RSS2G     ! ifort 13.0.1 seems to have problems optimizing this particular
+!RSS2G     ! bit of code without generating NaNs in single precision, so we write it differently
+!RSS2G     if ((s_max_update - s_upwind) /= 0.0) then
+!RSS2G        scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind)
+!RSS2G        scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
+!RSS2G     else
+!RSS2G        scale_arr(SCALE_IN,k,iCell) = 1.0
+!RSS2G     end if
+!RSS2G
+!RSS2G     if ((s_upwind - s_min_update) /= 0.0) then
+!RSS2G        scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update)
+!RSS2G        scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
+!RSS2G     else
+!RSS2G        scale_arr(SCALE_OUT,k,iCell) = 1.0
+!RSS2G     end if
+!RSS2G #else
+!RSS2G     scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind+eps)
+!RSS2G     scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
+!RSS2G
+!RSS2G     scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update+eps)
+!RSS2G     scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
+!RSS2G #endif
 
-               if ((s_upwind - s_min_update) /= 0.0) then
-                  scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update)
-                  scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-               else
-                  scale_arr(SCALE_OUT,k,iCell) = 1.0
-               end if
-#else
-               scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind+eps)
-               scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
- 
-               scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update+eps)
-               scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-#endif
+               scale_factor = (s_max(k,iCell)*h_new(k,iCell) - scalar_new(k,iCell)) / &       !RSS2G
+                    (scale_arr(SCALE_IN,k,iCell)  + eps)                                      !RSS2G
+               scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )  !RSS2G
+               
+               scale_factor = (s_min(k,iCell)*h_new(k,iCell) - scalar_new(k,iCell)) / &       !RSS2G
+                    (scale_arr(SCALE_OUT,k,iCell) - eps)                                      !RSS2G
+               scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) ) !RSS2G
             end do
          end do
 
