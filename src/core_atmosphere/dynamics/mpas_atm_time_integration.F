@@ -1468,7 +1468,11 @@ module atm_time_integration
       real (kind=RKIND) :: dt
 
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
-      real (kind=RKIND) :: scalar_weight
+      !RSS1A real (kind=RKIND) :: scalar_weight
+      real (kind=RKIND) :: ainv1, ainv2                          !RSS1A
+      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight !RSS1A
+      integer, dimension(nVertLevels*num_scalars) :: indx        !RSS1A
+      integer:: ks                                               !RSS1A
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
@@ -1554,6 +1558,12 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
+
+      !RSS1A --- start new code ---
+      do ks = 1,nVertLevels*num_scalars
+         indx(ks) = (ks-1)/num_scalars + 1
+      enddo
+
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1562,31 +1572,82 @@ module atm_time_integration
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
 
-            flux_arr(:,:) = 0.
             do i=1,nAdvCellsForEdge(iEdge)
                iCell = advCellsForEdge(i,iEdge)
-               do k=1,nVertLevels
-                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
-                  do iScalar=1,num_scalars
-                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+
+               if(coef_3rd_order > 0.0) then
+                  do k=1,nVertLevels
+                     scalar_weight(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + &
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                  enddo
+               else
+                  do k=1,nVertLevels
+                     scalar_weight(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) - &
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                  enddo
+               endif
+
+               if(i == 1) then
+                  do ks = 1,nVertLevels*num_scalars
+                     flux_arr(ks,1) = scalar_weight(indx(ks)) * scalar_new(ks,1,iCell)
                   end do
-               end do
+               else
+                  do ks = 1,nVertLevels*num_scalars
+                     flux_arr(ks,1) = flux_arr(ks,1) + scalar_weight(indx(ks)) * scalar_new(ks,1,iCell)
+                  end do
+               endif
             end do
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
 
-            do k=1,nVertLevels
-            do iScalar=1,num_scalars
-                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
-                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
-                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
-                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
-            end do
+            ainv1 = 1.0_RKIND/areaCell(cell1)
+            ainv2 = 1.0_RKIND/areaCell(cell2)
+            do ks = 1,nVertLevels*num_scalars
+               scalar_tend(ks,1,cell1) = scalar_tend(ks,1,cell1) - flux_arr(ks,1) * ainv1
+               scalar_tend(ks,1,cell2) = scalar_tend(ks,1,cell2) + flux_arr(ks,1) * ainv2
             end do
 
          end if
       end do
+      !RSS1A --- end new code ---
+
+
+!RSS1A --- start commented out old version ---
+!      do iEdge=1,nEdges
+!         cell1 = cellsOnEdge(1,iEdge)
+!         cell2 = cellsOnEdge(2,iEdge)
+!         if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
+!  
+!            !  flux_arr stores the value of the scalar at the edge.
+!            !  a better name perhaps would be scalarEdge
+!
+!            flux_arr(:,:) = 0.
+!            do i=1,nAdvCellsForEdge(iEdge)
+!               iCell = advCellsForEdge(i,iEdge)
+!               do k=1,nVertLevels
+!                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
+!                  do iScalar=1,num_scalars
+!                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+!                  end do
+!               end do
+!            end do
+!
+!            ! here we add the horizontal flux divergence into the scalar tendency.
+!            ! note that the scalar tendency is modified.
+!
+!            do k=1,nVertLevels
+!            do iScalar=1,num_scalars
+!                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
+!                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
+!                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
+!                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
+!            end do
+!            end do
+!
+!         end if
+!      end do
+!RSS1A --- end commented out old version ---
 
       !
       !  vertical flux divergence and update of the scalars
