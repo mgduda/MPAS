@@ -978,6 +978,7 @@ module atm_time_integration
 
       real (kind=RKIND), pointer :: cf1, cf2, cf3
       real (kind=RKIND) :: pr, pl
+      real (kind=RKIND) :: ainv1, ainv2 !RSS1B
       integer :: kr, kl
 
       integer, pointer :: nEdges, nCellsSolve
@@ -1149,6 +1150,8 @@ module atm_time_integration
                end do
             end if
 
+            ainv1 = 1.0_RKIND/AreaCell(cell1) !RSS1B
+            ainv2 = 1.0_RKIND/AreaCell(cell2) !RSS1B
             do k=1,nVertLevels
 
                ! full update of ru_p
@@ -1158,12 +1161,16 @@ module atm_time_integration
                ! add horizontal fluxes using updated ru_p into density update, rtheta update and w update
 
                flux = dts*dvEdge(iEdge)*ru_p(k,iEdge)
-               rs(k,cell1) = rs(k,cell1)-flux/AreaCell(cell1)
-               rs(k,cell2) = rs(k,cell2)+flux/AreaCell(cell2)
+               !RSS1B rs(k,cell1) = rs(k,cell1)-flux/AreaCell(cell1)
+               !RSS1B rs(k,cell2) = rs(k,cell2)+flux/AreaCell(cell2)
+               rs(k,cell1) = rs(k,cell1) - flux*ainv1 !RSS1B
+               rs(k,cell2) = rs(k,cell2) + flux*ainv2 !RSS1B
    
                flux = flux*0.5*(theta_m(k,cell2)+theta_m(k,cell1))
-               ts(k,cell1) = ts(k,cell1)-flux/AreaCell(cell1)
-               ts(k,cell2) = ts(k,cell2)+flux/AreaCell(cell2)
+               !RSS1B ts(k,cell1) = ts(k,cell1)-flux/AreaCell(cell1)
+               !RSS1B ts(k,cell2) = ts(k,cell2)+flux/AreaCell(cell2)
+               ts(k,cell1) = ts(k,cell1) - flux*ainv1 !RSS1B
+               ts(k,cell2) = ts(k,cell2) + flux*ainv2 !RSS1B
 
                ! accumulate ru_p for use later in scalar transport
 
