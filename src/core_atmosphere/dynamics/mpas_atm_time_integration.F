@@ -22,6 +22,29 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -391,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1904,13 +1933,36 @@ module atm_time_integration
 
       ! pull s_min and s_max from the (horizontal) surrounding cells
 
-            do i=1, nEdgesOnCell(iCell)
-               do k=1, nVertLevels
-                  s_max(k,iCell) = max(s_max(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
-                  s_min(k,iCell) = min(s_min(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+            !RSS2A - speclal treatment of calculations involving hexagonal cells
+            !RSS2A - original code retained in select "default" case
+            select case(nEdgesOnCell(iCell))                    !RSS2A - new code
+            case(6)                                             !RSS2A - new code
+               do k=1, nVertLevels                              !RSS2A - new code
+                  s_max(k,iCell) = max(s_max(k,iCell),&         !RSS2A - new code
+                       scalar_old(k, cellsOnCell(1,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(2,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(3,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(4,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(5,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(6,iCell)))     !RSS2A - new code
+                  s_min(k,iCell) = min(s_min(k,iCell),&         !RSS2A - new code
+                       scalar_old(k, cellsOnCell(1,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(2,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(3,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(4,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(5,iCell)), &   !RSS2A - new code
+                       scalar_old(k, cellsOnCell(6,iCell)))     !RSS2A - new code
+               enddo                                            !RSS2A - new code
+                                                                !RSS2A - new code
+            case default                                        !RSS2A - new code
+               do i=1, nEdgesOnCell(iCell)
+                  do k=1, nVertLevels
+                     s_max(k,iCell) = max(s_max(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+                     s_min(k,iCell) = min(s_min(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+                  end do
                end do
-            end do
-
+            end select                                          !RSS2A - new code
+            
          end do
 
       !
