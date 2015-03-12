@@ -22,6 +22,30 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -391,10 +415,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -411,7 +441,10 @@ module atm_time_integration
             call mpas_pool_get_subpool(block % structs, 'diag', diag)
             call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
+            call start_timer(0)
             call atm_compute_solve_diagnostics( dt, state, 2, diag, mesh, block % configs )
+            call stop_timer(0, secs, u_secs)
+            write(0,'(a,i4,a,i6.6)') '***** time compute_solve_diagnostics : ', secs, '.', u_secs
 
             block => block % next
          end do
@@ -1436,6 +1469,8 @@ module atm_time_integration
 
 !---------------------------------------------------------------------------------------
 
+
+
    subroutine atm_advance_scalars( tend, state, diag, mesh, configs, num_scalars, nVertLevels, dt)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    !
@@ -1466,6 +1501,13 @@ module atm_time_integration
       integer, intent(in) :: num_scalars      ! for allocating stack variables
       integer, intent(in) :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND) :: dt
+
+      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
+      real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
+      integer, dimension(nVertLevels*num_scalars) :: indx             !RSS2C
+      integer:: ks, jj                                                !RSS2C
+      integer, dimension(10) :: ica                                   !RSS2C
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell         !RSS2C
 
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: scalar_weight
@@ -1521,6 +1563,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS2C
       call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
 
       call mpas_pool_get_array(mesh, 'fzm', fnm)
@@ -1554,6 +1597,10 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
+!RSS2C_B      do ks = 1,nVertLevels*num_scalars     !RSS2C
+!RSS2C_B         indx(ks) = (ks-1)/num_scalars + 1  !RSS2C
+!RSS2C_B      enddo                                 !RSS2C
+
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1562,28 +1609,89 @@ module atm_time_integration
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
 
-            flux_arr(:,:) = 0.
-            do i=1,nAdvCellsForEdge(iEdge)
-               iCell = advCellsForEdge(i,iEdge)
-               do k=1,nVertLevels
-                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
-                  do iScalar=1,num_scalars
-                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
-                  end do
-               end do
-            end do
+!RSS2C            flux_arr(:,:) = 0.
+!RSS2C            do i=1,nAdvCellsForEdge(iEdge)
+!RSS2C               iCell = advCellsForEdge(i,iEdge)
+!RSS2C               do k=1,nVertLevels
+!RSS2C                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
+!RSS2C                  do iScalar=1,num_scalars
+!RSS2C                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+!RSS2C                  end do
+!RSS2C               end do
+!RSS2C            end do
+
+            select case(nAdvCellsForEdge(iEdge))                                           !RSS2C
+            case(10)                                                                       !RSS2C
+               do jj=1,10                                                                  !RSS2C
+                  do k=1,nVertLevels                                                       !RSS2C
+                     scalar_weight2(k,jj) = uhAvg(k,iEdge)*(adv_coefs(jj,iEdge) + &        !RSS2C
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(jj,iEdge))     !RSS2C
+                  enddo                                                                    !RSS2C
+               enddo                                                                       !RSS2C
+               do jj=1,10                                                                  !RSS2C
+                  ica(jj) = advCellsForEdge(jj,iEdge)                                      !RSS2C
+               enddo                                                                       !RSS2C
+
+               do k=1,nVertLevels                                                   !RSS2C_B
+               do iScalar=1,num_scalars                                             !RSS2C_B
+                  flux_arr(iscalar,k) = &                                           !RSS2C_B
+                       scalar_weight2(k,1)  * scalar_new(iScalar,k,ica(1)) + &      !RSS2C_B
+                       scalar_weight2(k,2)  * scalar_new(iScalar,k,ica(2)) + &      !RSS2C_B
+                       scalar_weight2(k,3)  * scalar_new(iScalar,k,ica(3)) + &      !RSS2C_B
+                       scalar_weight2(k,4)  * scalar_new(iScalar,k,ica(4)) + &      !RSS2C_B
+                       scalar_weight2(k,5)  * scalar_new(iScalar,k,ica(5)) + &      !RSS2C_B
+                       scalar_weight2(k,6)  * scalar_new(iScalar,k,ica(6)) + &      !RSS2C_B
+                       scalar_weight2(k,7)  * scalar_new(iScalar,k,ica(7)) + &      !RSS2C_B
+                       scalar_weight2(k,8)  * scalar_new(iScalar,k,ica(8)) + &      !RSS2C_B
+                       scalar_weight2(k,9)  * scalar_new(iScalar,k,ica(9)) + &      !RSS2C_B
+                       scalar_weight2(k,10) * scalar_new(iScalar,k,ica(10))         !RSS2C_B
+               end do                                                               !RSS2C_B
+               end do                                                               !RSS2C_B
+                                                                                           !RSS2C
+            case default                                                                   !RSS2C
+               do i=1,nAdvCellsForEdge(iEdge)                                              !RSS2C
+                  iCell = advCellsForEdge(i,iEdge)                                         !RSS2C
+                  do k=1,nVertLevels                                                       !RSS2C
+                     scalar_weight1(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + &            !RSS2C
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))      !RSS2C
+                  enddo                                                                    !RSS2C
+                  if(i == 1) then                                                          !RSS2C
+                     do k=1,nVertLevels                                                        !RSS2C_B
+                     do iScalar=1,num_scalars                                                  !RSS2C_B
+                        flux_arr(iScalar,k) = scalar_weight1(k) * scalar_new(iScalar,k,iCell)  !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                  else                                                                     !RSS2C
+                     do k=1,nVertLevels                                                        !RSS2C_B
+                     do iScalar=1,num_scalars                                                  !RSS2C_B
+                        flux_arr(iScalar,k) = flux_arr(iScalar,k) + &                          !RSS2C_B
+                             scalar_weight1(k) * scalar_new(iScalar,k,iCell)                   !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                  endif                                                                    !RSS2C
+               enddo                                                                       !RSS2C
+            end select                                                                     !RSS2C
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
 
-            do k=1,nVertLevels
-            do iScalar=1,num_scalars
-                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
-                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
-                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
-                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
-            end do
-            end do
+!RSS2C            do k=1,nVertLevels
+!RSS2C            do iScalar=1,num_scalars
+!RSS2C                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
+!RSS2C                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
+!RSS2C                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
+!RSS2C                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
+!RSS2C            end do
+!RSS2C            end do
+
+            do k = 1,nVertLevels                                                    !RSS2C_B
+            do iScalar = 1,num_scalars                                              !RSS2C_B
+               scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) - &      !RSS2C_B
+                    flux_arr(iScalar,k) * invAreaCell(cell1)                        !RSS2C_B
+               scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) + &      !RSS2C_B
+                    flux_arr(iScalar,k) * invAreaCell(cell2)                        !RSS2C_B
+            end do                                                                  !RSS2C_B
+            end do                                                                  !RSS2C_B
 
          end if
       end do
@@ -1678,8 +1786,6 @@ module atm_time_integration
       end if
 
    end subroutine atm_advance_scalars
-
-!---------------------------
 
    subroutine atm_advance_scalars_mono(block, tend, state, diag, mesh, configs, nCells, nEdges, nVertLevels, dt)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -3362,6 +3468,9 @@ module atm_time_integration
 
 !-------
 
+
+!----------
+
    subroutine atm_compute_solve_diagnostics(dt, state, time_lev, diag, mesh, configs)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Compute diagnostic fields used in the tendency computations
@@ -3383,6 +3492,7 @@ module atm_time_integration
 
       integer :: iEdge, iCell, iVertex, k, cell1, cell2, eoe, i
       real (kind=RKIND) :: h_vertex, r
+      real (kind=RKIND) :: invAreaCell, invAreaTriangle, r1, r2 !RSS3A Additional variables used for precomputed inverses
 
       integer, pointer :: nCells, nEdges, nVertices, nVertLevels, vertexDegree
       real (kind=RKIND), dimension(:), pointer :: fVertex, fEdge, dvEdge, dcEdge, areaCell, areaTriangle
@@ -3456,6 +3566,7 @@ module atm_time_integration
       ! Compute circulation and relative vorticity at each vertex
       !
       circulation(:,:) = 0.0
+      !RSS3A Precalculate inverse area triangle to avoid repeated divisions
       do iEdge=1,nEdges
          do k=1,nVertLevels
             circulation(k,verticesOnEdge(1,iEdge)) = circulation(k,verticesOnEdge(1,iEdge)) - dcEdge(iEdge) * u(k,iEdge)
@@ -3463,8 +3574,9 @@ module atm_time_integration
          end do
       end do
       do iVertex=1,nVertices
+         invAreaTriangle = 1.0_RKIND / areaTriangle(iVertex)
          do k=1,nVertLevels
-            vorticity(k,iVertex) = circulation(k,iVertex) / areaTriangle(iVertex)
+            vorticity(k,iVertex) = circulation(k,iVertex) * invAreaTriangle
          end do
       end do
 
@@ -3493,15 +3605,19 @@ module atm_time_integration
       ! Compute kinetic energy in each cell (Ringler et al JCP 2009)
       !
       ke(:,:) = 0.0
+      !RSS3A Precalculate inverse area cell to avoid repeated divisions
+      !RSS3A Replace 2.0 with 2 in exponentiation to avoid outside chance that
+      !RSS3A compiler will actually allow "float raised to float" operation
       do iCell=1,nCells
          do i=1,nEdgesOnCell(iCell)
             iEdge = edgesOnCell(i,iCell)
             do k=1,nVertLevels
-               ke(k,iCell) = ke(k,iCell) + 0.25 * dcEdge(iEdge) * dvEdge(iEdge) * u(k,iEdge)**2.0
+               ke(k,iCell) = ke(k,iCell) + 0.25 * dcEdge(iEdge) * dvEdge(iEdge) * u(k,iEdge)**2
             end do
          end do
+         invAreaCell = 1.0_RKIND / areaCell(iCell)
          do k=1,nVertLevels
-            ke(k,iCell) = ke(k,iCell) / areaCell(iCell)
+            ke(k,iCell) = ke(k,iCell) * invAreaCell
          end do
       end do
 
@@ -3512,13 +3628,16 @@ module atm_time_integration
          !
 
          allocate (ke_vertex(nVertLevels,nVertices))
+         !RSS3A Precalculate inverse area triangle to avoid repeated divisions
+         !RSS3A Replace 2.0 with 2 in exponentiation to avoid outside chance that
+         !RSS3A compiler will actually allow "float raised to float" operation
          do iVertex=1,nVertices
+            invAreaTriangle = 1.0_RKIND / AreaTriangle(iVertex)
             do k=1,nVertLevels
-
-               ke_vertex(k,iVertex) = (  dcEdge(EdgesOnVertex(1,iVertex))*dvEdge(EdgesOnVertex(1,iVertex))*u(k,EdgesOnVertex(1,iVertex))**2.0  &
-                                        +dcEdge(EdgesOnVertex(2,iVertex))*dvEdge(EdgesOnVertex(2,iVertex))*u(k,EdgesOnVertex(2,iVertex))**2.0  &
-                                        +dcEdge(EdgesOnVertex(3,iVertex))*dvEdge(EdgesOnVertex(3,iVertex))*u(k,EdgesOnVertex(3,iVertex))**2.0  &
-                                                    ) * 0.25 / AreaTriangle(iVertex)
+               ke_vertex(k,iVertex) = (  dcEdge(EdgesOnVertex(1,iVertex))*dvEdge(EdgesOnVertex(1,iVertex))*u(k,EdgesOnVertex(1,iVertex))**2  &
+                                        +dcEdge(EdgesOnVertex(2,iVertex))*dvEdge(EdgesOnVertex(2,iVertex))*u(k,EdgesOnVertex(2,iVertex))**2  &
+                                        +dcEdge(EdgesOnVertex(3,iVertex))*dvEdge(EdgesOnVertex(3,iVertex))*u(k,EdgesOnVertex(3,iVertex))**2  &
+                                                    ) * 0.25 * invAreaTriangle
 
             end do
          end do
@@ -3538,11 +3657,13 @@ module atm_time_integration
          ! initializing the "garbage cell" of areaCell to a non-zero value
          areaCell(nCells+1) = 1.0
 
+         !RSS3A Precalculate inverse area cell to avoid repeated divisions
          do iVertex = 1, nVertices
             do i=1,vertexDegree
                iCell = cellsOnVertex(i,iVertex)
+               invAreaCell = 1.0_RKIND / areaCell(iCell)
                do k = 1,nVertLevels
-                  ke(k,iCell) = ke(k,iCell) + (1.-ke_fact)*kiteAreasOnVertex(i, iVertex) * ke_vertex(k, iVertex) / areaCell(iCell)
+                  ke(k,iCell) = ke(k,iCell) + (1.-ke_fact)*kiteAreasOnVertex(i, iVertex) * ke_vertex(k, iVertex) * invAreaCell
                end do
             end do
          end do
@@ -3568,15 +3689,15 @@ module atm_time_integration
       ! Compute height at vertices, pv at vertices, and average pv to edge locations
       !  ( this computes pv_vertex at all vertices bounding real cells )
       !
+      !RSS3A Avoid dividing h_vertex by areaTriangle and move areaTriangle into
+      !RSS3A numerator for the pv_vertex calculation
       do iVertex = 1,nVertices
          do k=1,nVertLevels
             h_vertex = 0.0
             do i=1,vertexDegree
                h_vertex = h_vertex + h(k,cellsOnVertex(i,iVertex)) * kiteAreasOnVertex(i,iVertex)
             end do
-            h_vertex = h_vertex / areaTriangle(iVertex)
-
-            pv_vertex(k,iVertex) = (fVertex(iVertex) + vorticity(k,iVertex)) / h_vertex
+            pv_vertex(k,iVertex) = (fVertex(iVertex) + vorticity(k,iVertex)) * areaTriangle(iVertex) / h_vertex
          end do
       end do
 
@@ -3599,55 +3720,41 @@ module atm_time_integration
       ! Compute pv at cell centers
       !    ( this computes pv_cell for all real cells )
       !
+      !RSS3A Precompute inverse cell area to avoid repeated divisions
       pv_cell(:,:) = 0.0
       do iVertex = 1, nVertices
          do i=1,vertexDegree
             iCell = cellsOnVertex(i,iVertex)
+            invAreaCell = 1.0_RKIND / areaCell(iCell)
             do k = 1,nVertLevels
-               pv_cell(k,iCell) = pv_cell(k,iCell) + kiteAreasOnVertex(i, iVertex) * pv_vertex(k, iVertex) / areaCell(iCell)
+               pv_cell(k,iCell) = pv_cell(k,iCell) + kiteAreasOnVertex(i, iVertex) * pv_vertex(k, iVertex) * invAreaCell
             end do
          end do
       end do
 
-
       if (config_apvm_upwinding > 0.0) then
 
-         !
          ! Modify PV edge with upstream bias. 
          !
          ! Compute gradient of PV in the tangent direction
          !   ( this computes gradPVt at all edges bounding real cells )
-         !
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) / &
-                                  dvEdge(iEdge)
-            end do
-         end do
-
-         !
+         !         !
          ! Compute gradient of PV in normal direction
          !   (tdr: 2009-10-02: this is not correct because the pv_cell in the halo is not correct)
          !
-         gradPVn(:,:) = 0.0
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               gradPVn(k,iEdge) = (pv_cell(k,cellsOnEdge(2,iEdge)) - pv_cell(k,cellsOnEdge(1,iEdge))) / &
-                                    dcEdge(iEdge)
-            end do
-         end do
-
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * v(k,iEdge) * dt * gradPVt(k,iEdge)
-            end do
-         end do
-
          ! Modify PV edge with upstream bias.
          !
+         !RSS3A Merged loops for calculating gradPVt, gradPVn and pv_edge
+         !RSS3A Also precomputed inverses of dvEdge and dcEdge to avoid repeated divisions
+         !
          do iEdge = 1,nEdges
+            r1 = 1.0_RKIND / dvEdge(iEdge)
+            r2 = 1.0_RKIND / dcEdge(iEdge)
             do k = 1,nVertLevels
-               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * u(k,iEdge) *dt * gradPVn(k,iEdge)
+               gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) * r1
+               gradPVn(k,iEdge) = (pv_cell(k,cellsOnEdge(2,iEdge)) - pv_cell(k,cellsOnEdge(1,iEdge))) * r2
+               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * dt * &
+                    (v(k,iEdge) * gradPVt(k,iEdge) + u(k,iEdge) * gradPVn(k,iEdge))
             end do
          end do
 
@@ -3656,7 +3763,6 @@ module atm_time_integration
 
    end subroutine atm_compute_solve_diagnostics
 
-!----------
 
    subroutine atm_init_coupled_diagnostics( state, time_lev, diag, mesh, configs )
 
