@@ -22,6 +22,29 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -391,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1466,6 +1495,7 @@ module atm_time_integration
       integer, intent(in) :: num_scalars      ! for allocating stack variables
       integer, intent(in) :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND) :: dt
+      real (kind=RKIND) :: h_new_inv !RSS1D
 
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: scalar_weight
@@ -1635,9 +1665,10 @@ module atm_time_integration
             end do
 
             do k=1,nVertLevels
+               h_new_inv = 1.0_RKIND / h_new(k,iCell) !RSS1D
                do iScalar=1,num_scalars
                   scalar_new(iScalar,k,iCell) = (   scalar_old(iScalar,k,iCell)*h_old(k,iCell) &
-                        + dt*( scalar_tend(iScalar,k,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) )/h_new(k,iCell)
+                       + dt*( scalar_tend(iScalar,k,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) ) * h_new_inv !RSS1D
                end do
             end do
 
