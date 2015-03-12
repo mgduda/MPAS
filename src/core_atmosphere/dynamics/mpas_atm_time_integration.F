@@ -1791,14 +1791,9 @@ module atm_time_integration
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: flux, scalar_weight
 
-      integer :: iCell1, iCell2, iCell3, iCell4, iCell5  !RSS1D
-      integer :: iCell6, iCell7, iCell8, iCell9, iCell10 !RSS1D
-      integer :: iCell11, iCell12, iCell13, iCell14      !RSS1E
-      integer :: ii,jj                                   !RSS1E
-      real (kind=RKIND) :: scalar_weight1, scalar_weight2, scalar_weight3, scalar_weight4, scalar_weight5  !RSS1D
-      real (kind=RKIND) :: scalar_weight6, scalar_weight7, scalar_weight8, scalar_weight9, scalar_weight10 !RSS1D
+      integer :: ii,jj                          !RSS1E
       real (kind=RKIND), dimension(15,2) :: swa !RSS1E
-      integer, dimension(15) :: ica !RSS1E
+      integer, dimension(15) :: ica             !RSS1E
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_tend
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
@@ -2005,7 +2000,6 @@ module atm_time_integration
 
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
 
-               !RSS1D -- start --
                select case(nAdvCellsForEdge(iEdge))
                case(10)
                   do jj=1,10
@@ -2093,8 +2087,6 @@ module atm_time_integration
                   end do
                end select
 
-               !RSS1D -- end --
-  
             end if
 
          end do
@@ -2311,6 +2303,9 @@ module atm_time_integration
       integer, intent(in) :: rk_step
       real (kind=RKIND), intent(in) :: dt
 
+      integer :: ii,jj                          !RSS1F
+      real (kind=RKIND), dimension(15,2) :: swa !RSS1F
+      integer, dimension(15) :: ica             !RSS1F
 
       logical, parameter :: rk_diffusion = .false.
 
@@ -2980,31 +2975,54 @@ module atm_time_integration
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then
-
+               
                do k=2,nVertLevels
                   ru_edge_w(k) = fzm(k)*ru(k,iEdge) + fzp(k)*ru(k-1,iEdge)
                end do
-
-               flux_arr(:) = 0.
-
+               
                ! flux_arr stores the value of w at the cell edge used in the horizontal transport
-
-               do i=1,nAdvCellsForEdge(iEdge)
-                  iCell = advCellsForEdge(i,iEdge)
+               
+               !RSS1F -- start --
+               select case(nAdvCellsForEdge(iEdge))
+               case(10)
+                  do jj=1,10
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
                   do k=2,nVertLevels
-                     scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru_edge_w(k))*adv_coefs_3rd(i,iEdge)
-                     flux_arr(k) = flux_arr(k) + scalar_weight* w(k,iCell)
+                     ii = merge(1, 2, ru_edge_w(k) > 0)
+                     flux_arr(k) = &
+                          swa(1,ii)*w(k,ica(1)) + swa(2,ii)*w(k,ica(2))  +         &
+                          swa(3,ii)*w(k,ica(3)) + swa(4,ii)*w(k,ica(4))  +         &
+                          swa(5,ii)*w(k,ica(5)) + swa(6,ii)*w(k,ica(6))  +         &
+                          swa(7,ii)*w(k,ica(7)) + swa(8,ii)*w(k,ica(8))  +         &
+                          swa(9,ii)*w(k,ica(9)) + swa(10,ii)*w(k,ica(10))
                   end do
-               end do
-
-               do k=2,nVertLevels
-                  tend_w(k,cell1) = tend_w(k,cell1) - ru_edge_w(k)*flux_arr(k)
-                  tend_w(k,cell2) = tend_w(k,cell2) + ru_edge_w(k)*flux_arr(k)
-               end do
-
+                  do k=2,nVertLevels
+                     tend_w(k,cell1) = tend_w(k,cell1) - ru_edge_w(k)*flux_arr(k)
+                     tend_w(k,cell2) = tend_w(k,cell2) + ru_edge_w(k)*flux_arr(k)
+                  end do
+                  
+               case default
+                  flux_arr(:) = 0.
+                  do i=1,nAdvCellsForEdge(iEdge)
+                     iCell = advCellsForEdge(i,iEdge)
+                     do k=2,nVertLevels
+                        scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru_edge_w(k))*adv_coefs_3rd(i,iEdge)
+                        flux_arr(k) = flux_arr(k) + scalar_weight* w(k,iCell)
+                     end do
+                  end do
+                  do k=2,nVertLevels
+                     tend_w(k,cell1) = tend_w(k,cell1) - ru_edge_w(k)*flux_arr(k)
+                     tend_w(k,cell2) = tend_w(k,cell2) + ru_edge_w(k)*flux_arr(k)
+                  end do
+               end select
+               !RSS1F -- end --
+                              
             end if
          end do
-
+         
       else  if (config_w_adv_order == 4) then
 
          do iEdge=1,nEdges
@@ -3278,19 +3296,43 @@ module atm_time_integration
             cell2 = cellsOnEdge(2,iEdge)
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then
 
-               flux_arr(:) = 0.
-               do i=1,nAdvCellsForEdge(iEdge)
-                  iCell = advCellsForEdge(i,iEdge)
+               !RSS1F -- start --
+               select case(nAdvCellsForEdge(iEdge))
+               case(10)
+                  do jj=1,10
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
                   do k=1,nVertLevels
-                     scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru(k,iEdge))*adv_coefs_3rd(i,iEdge)
-                     flux_arr(k) = flux_arr(k) + scalar_weight* theta_m(k,iCell)
+                     ii = merge(1, 2, ru(k,iEdge) > 0)
+                     flux_arr(k) = &
+                          swa(1,ii)*theta_m(k,ica(1)) + swa(2,ii)*theta_m(k,ica(2))  +         &
+                          swa(3,ii)*theta_m(k,ica(3)) + swa(4,ii)*theta_m(k,ica(4))  +         &
+                          swa(5,ii)*theta_m(k,ica(5)) + swa(6,ii)*theta_m(k,ica(6))  +         &
+                          swa(7,ii)*theta_m(k,ica(7)) + swa(8,ii)*theta_m(k,ica(8))  +         &
+                          swa(9,ii)*theta_m(k,ica(9)) + swa(10,ii)*theta_m(k,ica(10))
                   end do
-               end do
-
-               do k=1,nVertLevels
-                  tend_theta(k,cell1) = tend_theta(k,cell1) - ru(k,iEdge)*flux_arr(k)
-                  tend_theta(k,cell2) = tend_theta(k,cell2) + ru(k,iEdge)*flux_arr(k)
-               end do
+                  do k=1,nVertLevels
+                     tend_theta(k,cell1) = tend_theta(k,cell1) - ru(k,iEdge)*flux_arr(k)
+                     tend_theta(k,cell2) = tend_theta(k,cell2) + ru(k,iEdge)*flux_arr(k)
+                  end do
+                  
+               case default
+                  flux_arr(:) = 0.
+                  do i=1,nAdvCellsForEdge(iEdge)
+                     iCell = advCellsForEdge(i,iEdge)
+                     do k=1,nVertLevels
+                        scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru(k,iEdge))*adv_coefs_3rd(i,iEdge)
+                        flux_arr(k) = flux_arr(k) + scalar_weight* theta_m(k,iCell)
+                     end do
+                  end do
+                  do k=1,nVertLevels
+                     tend_theta(k,cell1) = tend_theta(k,cell1) - ru(k,iEdge)*flux_arr(k)
+                     tend_theta(k,cell2) = tend_theta(k,cell2) + ru(k,iEdge)*flux_arr(k)
+                  end do
+               end select
+               !RSS1F -- end --
 
             end if
          end do
@@ -3519,6 +3561,7 @@ module atm_time_integration
 
       end if ! compute theta mixing on first rk_step
 
+      !RSS NOTE - check out dimensions on these arrays and consider collapsing loops
       do iCell = 1, nCellsSolve
          do k=1,nVertLevels
             tend_theta(k,iCell) = tend_theta(k,iCell) + tend_theta_euler(k,iCell)
