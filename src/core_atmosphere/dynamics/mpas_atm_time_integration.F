@@ -91,6 +91,30 @@ module atm_time_integration
 
    end interface
 
+
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -486,7 +510,10 @@ module atm_time_integration
             call mpas_pool_get_subpool(block % structs, 'diag', diag)
             call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
+            call start_timer(0)
             call atm_compute_solve_diagnostics( dt, state, 2, diag, mesh, block % configs )
+            call stop_timer(0, secs, u_secs)
+            write(0,'(a,i4,a,i6.6)') '***** time compute_solve_diagnostics : ', secs, '.', u_secs
 
             block => block % next
          end do
@@ -1511,6 +1538,8 @@ module atm_time_integration
 
 !---------------------------------------------------------------------------------------
 
+
+
    subroutine atm_advance_scalars( tend, state, diag, mesh, configs, num_scalars, nVertLevels, dt)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    !
@@ -1542,6 +1571,13 @@ module atm_time_integration
       integer, intent(in) :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND) :: dt
       real (kind=RKIND) :: h_new_inv !RSS1D
+
+      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
+      real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
+      integer, dimension(nVertLevels*num_scalars) :: indx             !RSS2C
+      integer:: ks, jj                                                !RSS2C
+      integer, dimension(10) :: ica                                   !RSS2C
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell         !RSS2C
 
       real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
       real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
@@ -1828,8 +1864,6 @@ module atm_time_integration
       end if
 
    end subroutine atm_advance_scalars
-
-!---------------------------
 
    subroutine atm_advance_scalars_mono(block, tend, state, diag, mesh, configs, nCells, nEdges, nVertLevels, dt)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -3593,6 +3627,9 @@ module atm_time_integration
 
 !-------
 
+
+!----------
+
    subroutine atm_compute_solve_diagnostics(dt, state, time_lev, diag, mesh, configs)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Compute diagnostic fields used in the tendency computations
@@ -3614,6 +3651,7 @@ module atm_time_integration
 
       integer :: iEdge, iCell, iVertex, k, cell1, cell2, eoe, i
       real (kind=RKIND) :: h_vertex, r
+      real (kind=RKIND) :: invAreaCell, invAreaTriangle, r1, r2 !RSS3A Additional variables used for precomputed inverses
 
       integer, pointer :: nCells, nEdges, nVertices, nVertLevels, vertexDegree
       real (kind=RKIND), dimension(:), pointer :: fVertex, fEdge, dvEdge, dcEdge, areaCell, areaTriangle
@@ -3687,6 +3725,7 @@ module atm_time_integration
       ! Compute circulation and relative vorticity at each vertex
       !
       circulation(:,:) = 0.0
+      !RSS3A Precalculate inverse area triangle to avoid repeated divisions
       do iEdge=1,nEdges
          do k=1,nVertLevels
             circulation(k,verticesOnEdge(1,iEdge)) = circulation(k,verticesOnEdge(1,iEdge)) - dcEdge(iEdge) * u(k,iEdge)
@@ -3694,8 +3733,9 @@ module atm_time_integration
          end do
       end do
       do iVertex=1,nVertices
+         invAreaTriangle = 1.0_RKIND / areaTriangle(iVertex)
          do k=1,nVertLevels
-            vorticity(k,iVertex) = circulation(k,iVertex) / areaTriangle(iVertex)
+            vorticity(k,iVertex) = circulation(k,iVertex) * invAreaTriangle
          end do
       end do
 
@@ -3724,15 +3764,19 @@ module atm_time_integration
       ! Compute kinetic energy in each cell (Ringler et al JCP 2009)
       !
       ke(:,:) = 0.0
+      !RSS3A Precalculate inverse area cell to avoid repeated divisions
+      !RSS3A Replace 2.0 with 2 in exponentiation to avoid outside chance that
+      !RSS3A compiler will actually allow "float raised to float" operation
       do iCell=1,nCells
          do i=1,nEdgesOnCell(iCell)
             iEdge = edgesOnCell(i,iCell)
             do k=1,nVertLevels
-               ke(k,iCell) = ke(k,iCell) + 0.25 * dcEdge(iEdge) * dvEdge(iEdge) * u(k,iEdge)**2.0
+               ke(k,iCell) = ke(k,iCell) + 0.25 * dcEdge(iEdge) * dvEdge(iEdge) * u(k,iEdge)**2
             end do
          end do
+         invAreaCell = 1.0_RKIND / areaCell(iCell)
          do k=1,nVertLevels
-            ke(k,iCell) = ke(k,iCell) / areaCell(iCell)
+            ke(k,iCell) = ke(k,iCell) * invAreaCell
          end do
       end do
 
@@ -3743,13 +3787,16 @@ module atm_time_integration
          !
 
          allocate (ke_vertex(nVertLevels,nVertices))
+         !RSS3A Precalculate inverse area triangle to avoid repeated divisions
+         !RSS3A Replace 2.0 with 2 in exponentiation to avoid outside chance that
+         !RSS3A compiler will actually allow "float raised to float" operation
          do iVertex=1,nVertices
+            invAreaTriangle = 1.0_RKIND / AreaTriangle(iVertex)
             do k=1,nVertLevels
-
-               ke_vertex(k,iVertex) = (  dcEdge(EdgesOnVertex(1,iVertex))*dvEdge(EdgesOnVertex(1,iVertex))*u(k,EdgesOnVertex(1,iVertex))**2.0  &
-                                        +dcEdge(EdgesOnVertex(2,iVertex))*dvEdge(EdgesOnVertex(2,iVertex))*u(k,EdgesOnVertex(2,iVertex))**2.0  &
-                                        +dcEdge(EdgesOnVertex(3,iVertex))*dvEdge(EdgesOnVertex(3,iVertex))*u(k,EdgesOnVertex(3,iVertex))**2.0  &
-                                                    ) * 0.25 / AreaTriangle(iVertex)
+               ke_vertex(k,iVertex) = (  dcEdge(EdgesOnVertex(1,iVertex))*dvEdge(EdgesOnVertex(1,iVertex))*u(k,EdgesOnVertex(1,iVertex))**2  &
+                                        +dcEdge(EdgesOnVertex(2,iVertex))*dvEdge(EdgesOnVertex(2,iVertex))*u(k,EdgesOnVertex(2,iVertex))**2  &
+                                        +dcEdge(EdgesOnVertex(3,iVertex))*dvEdge(EdgesOnVertex(3,iVertex))*u(k,EdgesOnVertex(3,iVertex))**2  &
+                                                    ) * 0.25 * invAreaTriangle
 
             end do
          end do
@@ -3769,11 +3816,13 @@ module atm_time_integration
          ! initializing the "garbage cell" of areaCell to a non-zero value
          areaCell(nCells+1) = 1.0
 
+         !RSS3A Precalculate inverse area cell to avoid repeated divisions
          do iVertex = 1, nVertices
             do i=1,vertexDegree
                iCell = cellsOnVertex(i,iVertex)
+               invAreaCell = 1.0_RKIND / areaCell(iCell)
                do k = 1,nVertLevels
-                  ke(k,iCell) = ke(k,iCell) + (1.-ke_fact)*kiteAreasOnVertex(i, iVertex) * ke_vertex(k, iVertex) / areaCell(iCell)
+                  ke(k,iCell) = ke(k,iCell) + (1.-ke_fact)*kiteAreasOnVertex(i, iVertex) * ke_vertex(k, iVertex) * invAreaCell
                end do
             end do
          end do
@@ -3799,15 +3848,15 @@ module atm_time_integration
       ! Compute height at vertices, pv at vertices, and average pv to edge locations
       !  ( this computes pv_vertex at all vertices bounding real cells )
       !
+      !RSS3A Avoid dividing h_vertex by areaTriangle and move areaTriangle into
+      !RSS3A numerator for the pv_vertex calculation
       do iVertex = 1,nVertices
          do k=1,nVertLevels
             h_vertex = 0.0
             do i=1,vertexDegree
                h_vertex = h_vertex + h(k,cellsOnVertex(i,iVertex)) * kiteAreasOnVertex(i,iVertex)
             end do
-            h_vertex = h_vertex / areaTriangle(iVertex)
-
-            pv_vertex(k,iVertex) = (fVertex(iVertex) + vorticity(k,iVertex)) / h_vertex
+            pv_vertex(k,iVertex) = (fVertex(iVertex) + vorticity(k,iVertex)) * areaTriangle(iVertex) / h_vertex
          end do
       end do
 
@@ -3830,55 +3879,41 @@ module atm_time_integration
       ! Compute pv at cell centers
       !    ( this computes pv_cell for all real cells )
       !
+      !RSS3A Precompute inverse cell area to avoid repeated divisions
       pv_cell(:,:) = 0.0
       do iVertex = 1, nVertices
          do i=1,vertexDegree
             iCell = cellsOnVertex(i,iVertex)
+            invAreaCell = 1.0_RKIND / areaCell(iCell)
             do k = 1,nVertLevels
-               pv_cell(k,iCell) = pv_cell(k,iCell) + kiteAreasOnVertex(i, iVertex) * pv_vertex(k, iVertex) / areaCell(iCell)
+               pv_cell(k,iCell) = pv_cell(k,iCell) + kiteAreasOnVertex(i, iVertex) * pv_vertex(k, iVertex) * invAreaCell
             end do
          end do
       end do
 
-
       if (config_apvm_upwinding > 0.0) then
 
-         !
          ! Modify PV edge with upstream bias. 
          !
          ! Compute gradient of PV in the tangent direction
          !   ( this computes gradPVt at all edges bounding real cells )
-         !
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) / &
-                                  dvEdge(iEdge)
-            end do
-         end do
-
-         !
+         !         !
          ! Compute gradient of PV in normal direction
          !   (tdr: 2009-10-02: this is not correct because the pv_cell in the halo is not correct)
          !
-         gradPVn(:,:) = 0.0
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               gradPVn(k,iEdge) = (pv_cell(k,cellsOnEdge(2,iEdge)) - pv_cell(k,cellsOnEdge(1,iEdge))) / &
-                                    dcEdge(iEdge)
-            end do
-         end do
-
-         do iEdge = 1,nEdges
-            do k = 1,nVertLevels
-               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * v(k,iEdge) * dt * gradPVt(k,iEdge)
-            end do
-         end do
-
          ! Modify PV edge with upstream bias.
          !
+         !RSS3A Merged loops for calculating gradPVt, gradPVn and pv_edge
+         !RSS3A Also precomputed inverses of dvEdge and dcEdge to avoid repeated divisions
+         !
          do iEdge = 1,nEdges
+            r1 = 1.0_RKIND / dvEdge(iEdge)
+            r2 = 1.0_RKIND / dcEdge(iEdge)
             do k = 1,nVertLevels
-               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * u(k,iEdge) *dt * gradPVn(k,iEdge)
+               gradPVt(k,iEdge) = (pv_vertex(k,verticesOnEdge(2,iEdge)) - pv_vertex(k,verticesOnEdge(1,iEdge))) * r1
+               gradPVn(k,iEdge) = (pv_cell(k,cellsOnEdge(2,iEdge)) - pv_cell(k,cellsOnEdge(1,iEdge))) * r2
+               pv_edge(k,iEdge) = pv_edge(k,iEdge) - config_apvm_upwinding * dt * &
+                    (v(k,iEdge) * gradPVt(k,iEdge) + u(k,iEdge) * gradPVn(k,iEdge))
             end do
          end do
 
@@ -3887,7 +3922,6 @@ module atm_time_integration
 
    end subroutine atm_compute_solve_diagnostics
 
-!----------
 
    subroutine atm_init_coupled_diagnostics( state, time_lev, diag, mesh, configs )
 
