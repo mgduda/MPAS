@@ -1784,6 +1784,11 @@ module atm_time_integration
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: flux, scalar_weight
 
+      integer :: iCell1, iCell2, iCell3, iCell4, iCell5  !RSS1D
+      integer :: iCell6, iCell7, iCell8, iCell9, iCell10 !RSS1D
+      real (kind=RKIND) :: scalar_weight1, scalar_weight2, scalar_weight3, scalar_weight4, scalar_weight5  !RSS1D
+      real (kind=RKIND) :: scalar_weight6, scalar_weight7, scalar_weight8, scalar_weight9, scalar_weight10 !RSS1D
+
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_tend
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       real (kind=RKIND), dimension(:,:), pointer :: uhAvg, h_old, h_new, wwAvg, rho_edge, rho_zz, zgrid, kdiff
@@ -1988,15 +1993,151 @@ module atm_time_integration
             cell2 = cellsOnEdge(2,iEdge)
 
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
-  
-               do i=1,nAdvCellsForEdge(iEdge)
-                  iCell = advCellsForEdge(i,iEdge)
-                  do k=1,nVertLevels
-                     scalar_weight = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
-                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + scalar_weight* scalar_new(k,iCell)
-                  end do
-               end do
 
+               !RSS1D -- start --
+               select case(nAdvCellsForEdge(iEdge))
+               case(10)
+                  iCell1  = advCellsForEdge(1,iEdge)
+                  iCell2  = advCellsForEdge(2,iEdge)
+                  iCell3  = advCellsForEdge(3,iEdge)
+                  iCell4  = advCellsForEdge(4,iEdge)
+                  iCell5  = advCellsForEdge(5,iEdge)
+                  iCell6  = advCellsForEdge(6,iEdge)
+                  iCell7  = advCellsForEdge(7,iEdge)
+                  iCell8  = advCellsForEdge(8,iEdge)
+                  iCell9  = advCellsForEdge(9,iEdge)
+                  iCell10 = advCellsForEdge(10,iEdge)
+                  do k=1,nVertLevels
+                     scalar_weight1  = adv_coefs(1,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(1,iEdge)
+                     scalar_weight2  = adv_coefs(2,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(2,iEdge)
+                     scalar_weight3  = adv_coefs(3,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(3,iEdge)
+                     scalar_weight4  = adv_coefs(4,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(4,iEdge)
+                     scalar_weight5  = adv_coefs(5,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(5,iEdge)
+                     scalar_weight6  = adv_coefs(6,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(6,iEdge)
+                     scalar_weight7  = adv_coefs(7,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(7,iEdge)
+                     scalar_weight8  = adv_coefs(8,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(8,iEdge)
+                     scalar_weight9  = adv_coefs(9,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(9,iEdge)
+                     scalar_weight10 = adv_coefs(10,iEdge)  + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(10,iEdge)
+                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + &
+                          uhAvg(k,iEdge)*(                   &
+                          scalar_weight1*scalar_new(k,iCell1) + scalar_weight2*scalar_new(k,iCell2) + &
+                          scalar_weight3*scalar_new(k,iCell3) + scalar_weight4*scalar_new(k,iCell4) + &
+                          scalar_weight5*scalar_new(k,iCell5) + scalar_weight6*scalar_new(k,iCell6) + &
+                          scalar_weight7*scalar_new(k,iCell7) + scalar_weight8*scalar_new(k,iCell8) + &
+                          scalar_weight9*scalar_new(k,iCell9) + scalar_weight10*scalar_new(k,iCell10))
+                  enddo
+
+               case(9)
+                  iCell1  = advCellsForEdge(1,iEdge)
+                  iCell2  = advCellsForEdge(2,iEdge)
+                  iCell3  = advCellsForEdge(3,iEdge)
+                  iCell4  = advCellsForEdge(4,iEdge)
+                  iCell5  = advCellsForEdge(5,iEdge)
+                  iCell6  = advCellsForEdge(6,iEdge)
+                  iCell7  = advCellsForEdge(7,iEdge)
+                  iCell8  = advCellsForEdge(8,iEdge)
+                  iCell9  = advCellsForEdge(9,iEdge)
+                  do k=1,nVertLevels
+                     scalar_weight1  = adv_coefs(1,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(1,iEdge)
+                     scalar_weight2  = adv_coefs(2,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(2,iEdge)
+                     scalar_weight3  = adv_coefs(3,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(3,iEdge)
+                     scalar_weight4  = adv_coefs(4,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(4,iEdge)
+                     scalar_weight5  = adv_coefs(5,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(5,iEdge)
+                     scalar_weight6  = adv_coefs(6,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(6,iEdge)
+                     scalar_weight7  = adv_coefs(7,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(7,iEdge)
+                     scalar_weight8  = adv_coefs(8,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(8,iEdge)
+                     scalar_weight9  = adv_coefs(9,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(9,iEdge)
+                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + &
+                          uhAvg(k,iEdge)*(                   &
+                          scalar_weight1*scalar_new(k,iCell1) + scalar_weight2*scalar_new(k,iCell2) + &
+                          scalar_weight3*scalar_new(k,iCell3) + scalar_weight4*scalar_new(k,iCell4) + &
+                          scalar_weight5*scalar_new(k,iCell5) + scalar_weight6*scalar_new(k,iCell6) + &
+                          scalar_weight7*scalar_new(k,iCell7) + scalar_weight8*scalar_new(k,iCell8) + &
+                          scalar_weight9*scalar_new(k,iCell9))
+                  enddo
+
+               case(8)
+                  iCell1  = advCellsForEdge(1,iEdge)
+                  iCell2  = advCellsForEdge(2,iEdge)
+                  iCell3  = advCellsForEdge(3,iEdge)
+                  iCell4  = advCellsForEdge(4,iEdge)
+                  iCell5  = advCellsForEdge(5,iEdge)
+                  iCell6  = advCellsForEdge(6,iEdge)
+                  iCell7  = advCellsForEdge(7,iEdge)
+                  iCell8  = advCellsForEdge(8,iEdge)
+                  do k=1,nVertLevels
+                     scalar_weight1  = adv_coefs(1,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(1,iEdge)
+                     scalar_weight2  = adv_coefs(2,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(2,iEdge)
+                     scalar_weight3  = adv_coefs(3,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(3,iEdge)
+                     scalar_weight4  = adv_coefs(4,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(4,iEdge)
+                     scalar_weight5  = adv_coefs(5,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(5,iEdge)
+                     scalar_weight6  = adv_coefs(6,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(6,iEdge)
+                     scalar_weight7  = adv_coefs(7,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(7,iEdge)
+                     scalar_weight8  = adv_coefs(8,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(8,iEdge)
+                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + &
+                          uhAvg(k,iEdge)*(                   &
+                          scalar_weight1*scalar_new(k,iCell1) + scalar_weight2*scalar_new(k,iCell2) + &
+                          scalar_weight3*scalar_new(k,iCell3) + scalar_weight4*scalar_new(k,iCell4) + &
+                          scalar_weight5*scalar_new(k,iCell5) + scalar_weight6*scalar_new(k,iCell6) + &
+                          scalar_weight7*scalar_new(k,iCell7) + scalar_weight8*scalar_new(k,iCell8))
+                  enddo
+
+               case(7)
+                  iCell1  = advCellsForEdge(1,iEdge)
+                  iCell2  = advCellsForEdge(2,iEdge)
+                  iCell3  = advCellsForEdge(3,iEdge)
+                  iCell4  = advCellsForEdge(4,iEdge)
+                  iCell5  = advCellsForEdge(5,iEdge)
+                  iCell6  = advCellsForEdge(6,iEdge)
+                  iCell7  = advCellsForEdge(7,iEdge)
+                  do k=1,nVertLevels
+                     scalar_weight1  = adv_coefs(1,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(1,iEdge)
+                     scalar_weight2  = adv_coefs(2,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(2,iEdge)
+                     scalar_weight3  = adv_coefs(3,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(3,iEdge)
+                     scalar_weight4  = adv_coefs(4,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(4,iEdge)
+                     scalar_weight5  = adv_coefs(5,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(5,iEdge)
+                     scalar_weight6  = adv_coefs(6,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(6,iEdge)
+                     scalar_weight7  = adv_coefs(7,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(7,iEdge)
+                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + &
+                          uhAvg(k,iEdge)*(                   &
+                          scalar_weight1*scalar_new(k,iCell1) + scalar_weight2*scalar_new(k,iCell2) + &
+                          scalar_weight3*scalar_new(k,iCell3) + scalar_weight4*scalar_new(k,iCell4) + &
+                          scalar_weight5*scalar_new(k,iCell5) + scalar_weight6*scalar_new(k,iCell6) + &
+                          scalar_weight7*scalar_new(k,iCell7))
+                  enddo
+
+               case(6)
+                  iCell1  = advCellsForEdge(1,iEdge)
+                  iCell2  = advCellsForEdge(2,iEdge)
+                  iCell3  = advCellsForEdge(3,iEdge)
+                  iCell4  = advCellsForEdge(4,iEdge)
+                  iCell5  = advCellsForEdge(5,iEdge)
+                  iCell6  = advCellsForEdge(6,iEdge)
+                  do k=1,nVertLevels
+                     scalar_weight1  = adv_coefs(1,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(1,iEdge)
+                     scalar_weight2  = adv_coefs(2,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(2,iEdge)
+                     scalar_weight3  = adv_coefs(3,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(3,iEdge)
+                     scalar_weight4  = adv_coefs(4,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(4,iEdge)
+                     scalar_weight5  = adv_coefs(5,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(5,iEdge)
+                     scalar_weight6  = adv_coefs(6,iEdge)   + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(6,iEdge)
+                     flux_arr(k,iEdge) = flux_arr(k,iEdge) + &
+                          uhAvg(k,iEdge)*(                   &
+                          scalar_weight1*scalar_new(k,iCell1) + scalar_weight2*scalar_new(k,iCell2) + &
+                          scalar_weight3*scalar_new(k,iCell3) + scalar_weight4*scalar_new(k,iCell4) + &
+                          scalar_weight5*scalar_new(k,iCell5) + scalar_weight6*scalar_new(k,iCell6))
+                  enddo
+                  
+               case default
+                  do i=1,nAdvCellsForEdge(iEdge)
+                     iCell = advCellsForEdge(i,iEdge)
+                     do k=1,nVertLevels
+                        scalar_weight = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                        flux_arr(k,iEdge) = flux_arr(k,iEdge) + scalar_weight* scalar_new(k,iCell)
+                     end do
+                  end do
+               end select
+               !RSS1D -- end --
+  
             end if
 
          end do
