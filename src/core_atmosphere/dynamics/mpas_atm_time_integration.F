@@ -1591,9 +1591,9 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
-      do ks = 1,nVertLevels*num_scalars     !RSS2C
-         indx(ks) = (ks-1)/num_scalars + 1  !RSS2C
-      enddo                                 !RSS2C
+!RSS2C_B      do ks = 1,nVertLevels*num_scalars     !RSS2C
+!RSS2C_B         indx(ks) = (ks-1)/num_scalars + 1  !RSS2C
+!RSS2C_B      enddo                                 !RSS2C
 
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
@@ -1625,19 +1625,22 @@ module atm_time_integration
                do jj=1,10                                                                  !RSS2C
                   ica(jj) = advCellsForEdge(jj,iEdge)                                      !RSS2C
                enddo                                                                       !RSS2C
-               do ks = 1,nVertLevels*num_scalars                                           !RSS2C
-                  flux_arr(ks,1) = &                                                       !RSS2C
-                       scalar_weight2(indx(ks),1)  * scalar_new(ks,1,ica(1)) + &           !RSS2C
-                       scalar_weight2(indx(ks),2)  * scalar_new(ks,1,ica(2)) + &           !RSS2C
-                       scalar_weight2(indx(ks),3)  * scalar_new(ks,1,ica(3)) + &           !RSS2C
-                       scalar_weight2(indx(ks),4)  * scalar_new(ks,1,ica(4)) + &           !RSS2C
-                       scalar_weight2(indx(ks),5)  * scalar_new(ks,1,ica(5)) + &           !RSS2C
-                       scalar_weight2(indx(ks),6)  * scalar_new(ks,1,ica(6)) + &           !RSS2C
-                       scalar_weight2(indx(ks),7)  * scalar_new(ks,1,ica(7)) + &           !RSS2C
-                       scalar_weight2(indx(ks),8)  * scalar_new(ks,1,ica(8)) + &           !RSS2C
-                       scalar_weight2(indx(ks),9)  * scalar_new(ks,1,ica(9)) + &           !RSS2C
-                       scalar_weight2(indx(ks),10) * scalar_new(ks,1,ica(10))              !RSS2C
-               end do                                                                      !RSS2C
+
+               do k=1,nVertLevels                                                   !RSS2C_B
+               do iScalar=1,num_scalars                                             !RSS2C_B
+                  flux_arr(iscalar,k) = &                                           !RSS2C_B
+                       scalar_weight2(k,1)  * scalar_new(iScalar,k,ica(1)) + &      !RSS2C_B
+                       scalar_weight2(k,2)  * scalar_new(iScalar,k,ica(2)) + &      !RSS2C_B
+                       scalar_weight2(k,3)  * scalar_new(iScalar,k,ica(3)) + &      !RSS2C_B
+                       scalar_weight2(k,4)  * scalar_new(iScalar,k,ica(4)) + &      !RSS2C_B
+                       scalar_weight2(k,5)  * scalar_new(iScalar,k,ica(5)) + &      !RSS2C_B
+                       scalar_weight2(k,6)  * scalar_new(iScalar,k,ica(6)) + &      !RSS2C_B
+                       scalar_weight2(k,7)  * scalar_new(iScalar,k,ica(7)) + &      !RSS2C_B
+                       scalar_weight2(k,8)  * scalar_new(iScalar,k,ica(8)) + &      !RSS2C_B
+                       scalar_weight2(k,9)  * scalar_new(iScalar,k,ica(9)) + &      !RSS2C_B
+                       scalar_weight2(k,10) * scalar_new(iScalar,k,ica(10))         !RSS2C_B
+               end do                                                               !RSS2C_B
+               end do                                                               !RSS2C_B
                                                                                            !RSS2C
             case default                                                                   !RSS2C
                do i=1,nAdvCellsForEdge(iEdge)                                              !RSS2C
@@ -1647,14 +1650,18 @@ module atm_time_integration
                           sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))      !RSS2C
                   enddo                                                                    !RSS2C
                   if(i == 1) then                                                          !RSS2C
-                     do ks = 1,nVertLevels*num_scalars                                     !RSS2C
-                        flux_arr(ks,1) = scalar_weight1(indx(ks)) * scalar_new(ks,1,iCell) !RSS2C
-                     end do                                                                !RSS2C
+                     do k=1,nVertLevels                                                        !RSS2C_B
+                     do iScalar=1,num_scalars                                                  !RSS2C_B
+                        flux_arr(iScalar,k) = scalar_weight1(k) * scalar_new(iScalar,k,iCell)  !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                     end do                                                                    !RSS2C_B
                   else                                                                     !RSS2C
-                     do ks = 1,nVertLevels*num_scalars                                     !RSS2C
-                        flux_arr(ks,1) = flux_arr(ks,1) + &                                !RSS2C
-                             scalar_weight1(indx(ks)) * scalar_new(ks,1,iCell)             !RSS2C
-                     end do                                                                !RSS2C
+                     do k=1,nVertLevels                                                        !RSS2C_B
+                     do iScalar=1,num_scalars                                                  !RSS2C_B
+                        flux_arr(iScalar,k) = flux_arr(iScalar,k) + &                          !RSS2C_B
+                             scalar_weight1(k) * scalar_new(iScalar,k,iCell)                   !RSS2C_B
+                     end do                                                                    !RSS2C_B
+                     end do                                                                    !RSS2C_B
                   endif                                                                    !RSS2C
                enddo                                                                       !RSS2C
             end select                                                                     !RSS2C
@@ -1671,12 +1678,14 @@ module atm_time_integration
 !RSS2C            end do
 !RSS2C            end do
 
-            do ks = 1,nVertLevels*num_scalars                                              !RSS2C
-               scalar_tend(ks,1,cell1) = scalar_tend(ks,1,cell1) - &                       !RSS2C
-                    flux_arr(ks,1) * invAreaCell(cell1)                                    !RSS2C
-               scalar_tend(ks,1,cell2) = scalar_tend(ks,1,cell2) + &                       !RSS2C
-                    flux_arr(ks,1) * invAreaCell(cell2)                                    !RSS2C
-            end do                                                                         !RSS2C
+            do k = 1,nVertLevels                                                    !RSS2C_B
+            do iScalar = 1,num_scalars                                              !RSS2C_B
+               scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) - &      !RSS2C_B
+                    flux_arr(iScalar,k) * invAreaCell(cell1)                        !RSS2C_B
+               scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) + &      !RSS2C_B
+                    flux_arr(iScalar,k) * invAreaCell(cell2)                        !RSS2C_B
+            end do                                                                  !RSS2C_B
+            end do                                                                  !RSS2C_B
 
          end if
       end do
