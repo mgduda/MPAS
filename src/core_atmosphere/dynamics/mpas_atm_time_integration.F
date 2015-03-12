@@ -963,6 +963,7 @@ module atm_time_integration
                                                     tend_ru, tend_rho, tend_rt, tend_rw,     &
                                                     zgrid, cofwr, cofwz, w, h_divergence
       real (kind=RKIND), dimension(:), pointer :: fzm, fzp, rdzw, dcEdge, AreaCell, cofrz, dvEdge
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell !RSS1C
 
       real (kind=RKIND), dimension(:,:), pointer :: cpr, cpl, pzp, pzm
       integer, dimension(:,:), pointer :: cellsOnEdge
@@ -1030,6 +1031,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS1C
 
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
@@ -1158,12 +1160,12 @@ module atm_time_integration
                ! add horizontal fluxes using updated ru_p into density update, rtheta update and w update
 
                flux = dts*dvEdge(iEdge)*ru_p(k,iEdge)
-               rs(k,cell1) = rs(k,cell1)-flux/AreaCell(cell1)
-               rs(k,cell2) = rs(k,cell2)+flux/AreaCell(cell2)
+               rs(k,cell1) = rs(k,cell1)-flux * invAreaCell(cell1) !RSS1C
+               rs(k,cell2) = rs(k,cell2)+flux * invAreaCell(cell2) !RSS1C
    
                flux = flux*0.5*(theta_m(k,cell2)+theta_m(k,cell1))
-               ts(k,cell1) = ts(k,cell1)-flux/AreaCell(cell1)
-               ts(k,cell2) = ts(k,cell2)+flux/AreaCell(cell2)
+               ts(k,cell1) = ts(k,cell1)-flux * invAreaCell(cell1) !RSS1C
+               ts(k,cell2) = ts(k,cell2)+flux * invAreaCell(cell2) !RSS1C
 
                ! accumulate ru_p for use later in scalar transport
 
@@ -1468,12 +1470,17 @@ module atm_time_integration
       real (kind=RKIND) :: dt
 
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
-      real (kind=RKIND) :: scalar_weight
+      !RSS1A real (kind=RKIND) :: scalar_weight
+      real (kind=RKIND) :: ainv1, ainv2                          !RSS1A
+      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight !RSS1A
+      integer, dimension(nVertLevels*num_scalars) :: indx        !RSS1A
+      integer:: ks                                               !RSS1A
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       real (kind=RKIND), dimension(:,:), pointer :: uhAvg, h_old, h_new, wwAvg, rho_edge, rho_zz, zgrid, kdiff
       real (kind=RKIND), dimension(:), pointer :: dvEdge, dcEdge, areaCell, qv_init
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell !RSS1C
       integer, dimension(:,:), pointer :: cellsOnEdge
 
       integer, dimension(:,:), pointer :: advCellsForEdge
@@ -1521,6 +1528,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS1C
       call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
 
       call mpas_pool_get_array(mesh, 'fzm', fnm)
@@ -1554,6 +1562,11 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
+      !RSS1A --- start new code ---
+      do ks = 1,nVertLevels*num_scalars
+         indx(ks) = (ks-1)/num_scalars + 1
+      enddo
+
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1562,31 +1575,80 @@ module atm_time_integration
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
 
-            flux_arr(:,:) = 0.
             do i=1,nAdvCellsForEdge(iEdge)
                iCell = advCellsForEdge(i,iEdge)
-               do k=1,nVertLevels
-                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
-                  do iScalar=1,num_scalars
-                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+
+               if(coef_3rd_order > 0.0) then
+                  do k=1,nVertLevels
+                     scalar_weight(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + &
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                  enddo
+               else
+                  do k=1,nVertLevels
+                     scalar_weight(k) = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) - &
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
+                  enddo
+               endif
+
+               if(i == 1) then
+                  do ks = 1,nVertLevels*num_scalars
+                     flux_arr(ks,1) = scalar_weight(indx(ks)) * scalar_new(ks,1,iCell)
                   end do
-               end do
+               else
+                  do ks = 1,nVertLevels*num_scalars
+                     flux_arr(ks,1) = flux_arr(ks,1) + scalar_weight(indx(ks)) * scalar_new(ks,1,iCell)
+                  end do
+               endif
             end do
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
 
-            do k=1,nVertLevels
-            do iScalar=1,num_scalars
-                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
-                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
-                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
-                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
-            end do
+            do ks = 1,nVertLevels*num_scalars
+               scalar_tend(ks,1,cell1) = scalar_tend(ks,1,cell1) - flux_arr(ks,1) * invAreaCell(cell1) !RSS1C
+               scalar_tend(ks,1,cell2) = scalar_tend(ks,1,cell2) + flux_arr(ks,1) * invAreaCell(cell2) !RSS1C
             end do
 
          end if
       end do
+      !RSS1A --- end new code ---
+
+
+!RSS1A --- start commented out old version ---
+!      do iEdge=1,nEdges
+!         cell1 = cellsOnEdge(1,iEdge)
+!         cell2 = cellsOnEdge(2,iEdge)
+!         if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
+!  
+!            !  flux_arr stores the value of the scalar at the edge.
+!            !  a better name perhaps would be scalarEdge
+!
+!            flux_arr(:,:) = 0.
+!            do i=1,nAdvCellsForEdge(iEdge)
+!               iCell = advCellsForEdge(i,iEdge)
+!               do k=1,nVertLevels
+!                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
+!                  do iScalar=1,num_scalars
+!                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
+!                  end do
+!               end do
+!            end do
+!
+!            ! here we add the horizontal flux divergence into the scalar tendency.
+!            ! note that the scalar tendency is modified.
+!
+!            do k=1,nVertLevels
+!            do iScalar=1,num_scalars
+!                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
+!                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
+!                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
+!                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
+!            end do
+!            end do
+!
+!         end if
+!      end do
+!RSS1A --- end commented out old version ---
 
       !
       !  vertical flux divergence and update of the scalars
@@ -1965,6 +2027,7 @@ module atm_time_integration
 
          !  upwind flux computation
 
+         !RSS Note - using precomputed invAreaCell here is *slower* (revisit)
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -1973,13 +2036,13 @@ module atm_time_integration
                   flux_upwind = dvEdge(iEdge) * dt *   &
                          (max(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell1) + min(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell2))
                   flux_arr(k,iEdge) = dt*flux_arr(k,iEdge) - flux_upwind
-                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_upwind / areaCell(cell1)
-                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_upwind / areaCell(cell2)
+                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_upwind / AreaCell(cell1)
+                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_upwind / AreaCell(cell2)
  
-                  scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
-                  scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
-                  scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
-                  scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
+                  scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell1)
+                  scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell1)
+                  scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell2)
+                  scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell2)
  
                end do
             end if
@@ -2067,13 +2130,14 @@ module atm_time_integration
 !
 !  do the scalar update now that we have the fluxes
 !
+         !RSS Note - using precomputed invAreaCell here is *slower* (revisit)
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
                do k=1,nVertLevels
-                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
-                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
+                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge) / AreaCell(cell1)
+                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge) / AreaCell(cell2)
                end do
             end if
          end do
@@ -2160,6 +2224,7 @@ module atm_time_integration
       real (kind=RKIND) :: h_theta_eddy_visc4
       real (kind=RKIND) :: u_diffusion
       real (kind=RKIND), dimension(:), pointer ::  fEdge, dvEdge, dcEdge, areaCell, areaTriangle, meshScalingDel2, meshScalingDel4
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell !RSS1C
       real (kind=RKIND), dimension(:,:), pointer :: weightsOnEdge, zgrid, rho_edge, rho_zz, ru, u, v, tend_u, &
                                                     circulation, divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
                                                     rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zx, cqu, & 
@@ -2288,6 +2353,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS1C
       call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
       call mpas_pool_get_array(mesh, 'fEdge', fEdge)
       call mpas_pool_get_array(mesh, 'deriv_two', deriv_two)
@@ -2911,8 +2977,8 @@ module atm_time_integration
                         theta_turb_flux = h_mom_eddy_visc2*(w(k,cell2) - w(k,cell1))/dcEdge(iEdge)
                         theta_turb_flux = theta_turb_flux * meshScalingDel2(iEdge)
                         flux = 0.5*dvEdge (iEdge) * (rho_edge(k,iEdge)+rho_edge(k-1,iEdge)) * theta_turb_flux
-                        tend_w_euler(k,cell1) = tend_w_euler(k,cell1) + flux/areaCell(cell1)
-                        tend_w_euler(k,cell2) = tend_w_euler(k,cell2) - flux/areaCell(cell2)
+                        tend_w_euler(k,cell1) = tend_w_euler(k,cell1) + flux * invareaCell(cell1) !RSS1C
+                        tend_w_euler(k,cell2) = tend_w_euler(k,cell2) - flux * invareaCell(cell2) !RSS1C
                      end do
 
                   end if
@@ -2930,8 +2996,8 @@ module atm_time_integration
                                               *(w(k,cell2) - w(k,cell1))/dcEdge(iEdge)
                         theta_turb_flux = theta_turb_flux * meshScalingDel2(iEdge)
                         flux = 0.5*dvEdge (iEdge) * (rho_edge(k,iEdge)+rho_edge(k-1,iEdge)) * theta_turb_flux
-                        tend_w_euler(k,cell1) = tend_w_euler(k,cell1) + flux/areaCell(cell1)
-                        tend_w_euler(k,cell2) = tend_w_euler(k,cell2) - flux/areaCell(cell2)
+                        tend_w_euler(k,cell1) = tend_w_euler(k,cell1) + flux * invareaCell(cell1) !RSS1C
+                        tend_w_euler(k,cell2) = tend_w_euler(k,cell2) - flux * invareaCell(cell2) !RSS1C
                      end do
 
                   end if
@@ -2977,8 +3043,8 @@ module atm_time_integration
                      theta_turb_flux = h_mom_eddy_visc4*(delsq_theta(k,cell2) - delsq_theta(k,cell1))/dcEdge(iEdge)
                      theta_turb_flux = theta_turb_flux * meshScalingDel4(iEdge)
                      flux = dvEdge (iEdge) * theta_turb_flux
-                     tend_w_euler(k,cell1) = tend_w_euler(k,cell1) - flux/areaCell(cell1)
-                     tend_w_euler(k,cell2) = tend_w_euler(k,cell2) + flux/areaCell(cell2)
+                     tend_w_euler(k,cell1) = tend_w_euler(k,cell1) - flux * invareaCell(cell1) !RSS1C
+                     tend_w_euler(k,cell2) = tend_w_euler(k,cell2) + flux * invareaCell(cell2) !RSS1C
                   end do
 
                end if
@@ -3031,7 +3097,7 @@ module atm_time_integration
 
          do k=2,nVertLevels
 
-            tend_w(k,iCell) = tend_w(k,iCell)/areaCell(iCell) -rdzu(k)*(wdwz(k+1)-wdwz(k))    &
+            tend_w(k,iCell) = tend_w(k,iCell) * invareaCell(iCell) -rdzu(k)*(wdwz(k+1)-wdwz(k))    & !RSS1C
                                   - cqw(k,iCell)*( rdzu(k)*(pp(k,iCell)-pp(k-1,iCell))        &
                                   + gravity*  &
                                    ( fzm(k)*(rb(k,iCell)*(qtot(k,iCell)) +         &
@@ -3182,8 +3248,8 @@ module atm_time_integration
                      theta_turb_flux = h_theta_eddy_visc2*prandtl_inv*(theta_m(k,cell2) - theta_m(k,cell1))/dcEdge(iEdge)
                      theta_turb_flux = theta_turb_flux * meshScalingDel2(iEdge)
                      flux = dvEdge (iEdge) * rho_edge(k,iEdge) * theta_turb_flux
-                     tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) + flux/areaCell(cell1)
-                     tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) - flux/areaCell(cell2)
+                     tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) + flux * invareaCell(cell1) !RSS1C
+                     tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) - flux * invareaCell(cell2) !RSS1C
                   end do
   
                end if
@@ -3201,8 +3267,8 @@ module atm_time_integration
                                            *(theta_m(k,cell2) - theta_m(k,cell1))/dcEdge(iEdge)
                      theta_turb_flux = theta_turb_flux * meshScalingDel2(iEdge)
                      flux = dvEdge (iEdge) * rho_edge(k,iEdge) * theta_turb_flux
-                     tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) + flux/areaCell(cell1)
-                     tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) - flux/areaCell(cell2)
+                     tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) + flux * invareaCell(cell1) !RSS1C
+                     tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) - flux * invareaCell(cell2) !RSS1C
                   end do
   
                end if
@@ -3243,8 +3309,8 @@ module atm_time_integration
                   theta_turb_flux = h_theta_eddy_visc4*prandtl_inv*(delsq_theta(k,cell2) - delsq_theta(k,cell1))/dcEdge(iEdge)
                   theta_turb_flux = theta_turb_flux * meshScalingDel4(iEdge)
                   flux = dvEdge (iEdge) * theta_turb_flux
-                  tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) - flux/areaCell(cell1)
-                  tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) + flux/areaCell(cell2)
+                  tend_theta_euler(k,cell1) = tend_theta_euler(k,cell1) - flux * invareaCell(cell1) !RSS1C
+                  tend_theta_euler(k,cell2) = tend_theta_euler(k,cell2) + flux * invareaCell(cell2) !RSS1C
                end do
 
             end if
@@ -3295,7 +3361,7 @@ module atm_time_integration
          wdtz(nVertLevels+1) = 0.
 
          do k=1,nVertLevels
-            tend_theta(k,iCell) = tend_theta(k,iCell)/areaCell(iCell) -rdzw(k)*(wdtz(k+1)-wdtz(k))
+            tend_theta(k,iCell) = tend_theta(k,iCell) * invAreaCell(iCell) -rdzw(k)*(wdtz(k+1)-wdtz(k)) !RSS1C
             tend_theta(k,iCell) = tend_theta(k,iCell) + rho_zz(k,iCell)*rt_diabatic_tend(k,iCell)
          end do
       end do
