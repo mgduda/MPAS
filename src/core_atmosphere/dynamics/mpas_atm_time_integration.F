@@ -22,6 +22,29 @@ module atm_time_integration
    use mpas_atmphys_utilities
 #endif
 
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
+
    contains
 
 
@@ -391,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -2041,6 +2070,8 @@ module atm_time_integration
 !
 !  rescale the fluxes
 !
+         !RSS2E - moved assignment to scalar_new from separate loop (see commented code below)
+         !RSS2E - into the following loops. Avoids having to save elements of flux array
          do iEdge = 1, nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
@@ -2049,7 +2080,9 @@ module atm_time_integration
                   flux = flux_arr(k,iEdge)
                   flux = max(0.0_RKIND,flux) * min(scale_arr(SCALE_OUT,k,cell1), scale_arr(SCALE_IN, k,cell2)) &
                        + min(0.0_RKIND,flux) * min(scale_arr(SCALE_IN, k,cell1), scale_arr(SCALE_OUT,k,cell2))
-                  flux_arr(k,iEdge) = flux
+                  !RSS2E flux_arr(k,iEdge) = flux
+                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux/areaCell(cell1) !RSS2E
+                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux/areaCell(cell2) !RSS2E
                end do
             end if
          end do
@@ -2067,16 +2100,16 @@ module atm_time_integration
 !
 !  do the scalar update now that we have the fluxes
 !
-         do iEdge=1,nEdges
-            cell1 = cellsOnEdge(1,iEdge)
-            cell2 = cellsOnEdge(2,iEdge)
-            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
-               do k=1,nVertLevels
-                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
-                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
-               end do
-            end if
-         end do
+!RSS2E         do iEdge=1,nEdges
+!RSS2E            cell1 = cellsOnEdge(1,iEdge)
+!RSS2E            cell2 = cellsOnEdge(2,iEdge)
+!RSS2E            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
+!RSS2E               do k=1,nVertLevels
+!RSS2E                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
+!RSS2E                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
+!RSS2E               end do
+!RSS2E            end if
+!RSS2E         end do
 
          do iCell=1,nCellsSolve
             do k=1,nVertLevels
