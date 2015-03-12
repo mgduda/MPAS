@@ -1799,6 +1799,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       real (kind=RKIND), dimension(:,:), pointer :: uhAvg, h_old, h_new, wwAvg, rho_edge, rho_zz, zgrid, kdiff
       real (kind=RKIND), dimension(:), pointer :: dvEdge, dcEdge, areaCell, qv_init
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell !RSS1G
       integer, dimension(:,:), pointer :: cellsOnEdge, cellsOnCell
 
       integer, dimension(:,:), pointer :: advCellsForEdge
@@ -1866,6 +1867,7 @@ module atm_time_integration
       call mpas_pool_get_field(state, 'scalars', scalars_old_field, 1)
 
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell) !RSS1G
       call mpas_pool_get_array(mesh, 'deriv_two', deriv_two)
       call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
@@ -1980,28 +1982,52 @@ module atm_time_integration
 
       ! pull s_min and s_max from the (horizontal) surrounding cells
 
-            do i=1, nEdgesOnCell(iCell)
+            select case(nEdgesOnCell(iCell)) !RSS1G
+            case(6) !RSS1G Most common case - hexagonal cell
                do k=1, nVertLevels
-                  s_max(k,iCell) = max(s_max(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
-                  s_min(k,iCell) = min(s_min(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+                  s_max(k,iCell) = max(s_max(k,iCell),&
+                       scalar_old(k, cellsOnCell(1,iCell)), &
+                       scalar_old(k, cellsOnCell(2,iCell)), &
+                       scalar_old(k, cellsOnCell(3,iCell)), &
+                       scalar_old(k, cellsOnCell(4,iCell)), &
+                       scalar_old(k, cellsOnCell(5,iCell)), &
+                       scalar_old(k, cellsOnCell(6,iCell)))
+                  s_min(k,iCell) = min(s_min(k,iCell),&
+                       scalar_old(k, cellsOnCell(1,iCell)), &
+                       scalar_old(k, cellsOnCell(2,iCell)), &
+                       scalar_old(k, cellsOnCell(3,iCell)), &
+                       scalar_old(k, cellsOnCell(4,iCell)), &
+                       scalar_old(k, cellsOnCell(5,iCell)), &
+                       scalar_old(k, cellsOnCell(6,iCell)))
+               enddo
+               
+            case default !RSS1G (original code)
+               do i=1, nEdgesOnCell(iCell)
+                  do k=1, nVertLevels
+                     s_max(k,iCell) = max(s_max(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+                     s_min(k,iCell) = min(s_min(k,iCell),scalar_old(k, cellsOnCell(i,iCell)))
+                  end do
                end do
-            end do
-
+            end select
+            
          end do
-
+         
       !
       !  horizontal flux divergence
 
          !RSS1E flux_arr(:,:) = 0.
          do iEdge=1,nEdges
-
+            
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
 
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
 
+               !RSS1D and !RSS1E -- start --
+               !RSS1G - expanded to include all 15 possible cases
                select case(nAdvCellsForEdge(iEdge))
-               case(10)
+
+               case(10) !RSS Most common case
                   do jj=1,10
                      ica(jj)    = advCellsForEdge(jj,iEdge)
                      swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
@@ -2015,6 +2041,95 @@ module atm_time_integration
                           swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
                           swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
                           swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)))
+                  enddo
+
+               case(15)
+                  do jj=1,15
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)) + &
+                          swa(11,ii)*scalar_new(k,ica(11)) + swa(12,ii)*scalar_new(k,ica(12)) + &
+                          swa(13,ii)*scalar_new(k,ica(13)) + swa(14,ii)*scalar_new(k,ica(14)) + &
+                          swa(15,ii)*scalar_new(k,ica(15)))
+                  enddo
+
+               case(14)
+                  do jj=1,14
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)) + &
+                          swa(11,ii)*scalar_new(k,ica(11)) + swa(12,ii)*scalar_new(k,ica(12)) + &
+                          swa(13,ii)*scalar_new(k,ica(13)) + swa(14,ii)*scalar_new(k,ica(14)))
+                  enddo
+
+               case(13)
+                  do jj=1,13
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)) + &
+                          swa(11,ii)*scalar_new(k,ica(11)) + swa(12,ii)*scalar_new(k,ica(12)) + &
+                          swa(13,ii)*scalar_new(k,ica(13)))
+                  enddo
+
+               case(12)
+                  do jj=1,12
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)) + &
+                          swa(11,ii)*scalar_new(k,ica(11)) + swa(12,ii)*scalar_new(k,ica(12)))
+                  enddo
+
+               case(11)
+                  do jj=1,11
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)) + &
+                          swa(7,ii)*scalar_new(k,ica(7)) + swa(8,ii)*scalar_new(k,ica(8)) + &
+                          swa(9,ii)*scalar_new(k,ica(9)) + swa(10,ii)*scalar_new(k,ica(10)) + &
+                          swa(11,ii)*scalar_new(k,ica(11)))
                   enddo
 
                case(9)
@@ -2076,17 +2191,75 @@ module atm_time_integration
                           swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
                           swa(5,ii)*scalar_new(k,ica(5)) + swa(6,ii)*scalar_new(k,ica(6)))
                   enddo
-                  
-               case default
-                  do i=1,nAdvCellsForEdge(iEdge)
-                     iCell = advCellsForEdge(i,iEdge)
-                     do k=1,nVertLevels
-                        scalar_weight = uhAvg(k,iEdge)*(adv_coefs(i,iEdge) + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge))
-                        flux_arr(k,iEdge) = flux_arr(k,iEdge) + scalar_weight* scalar_new(k,iCell)
-                     end do
-                  end do
+
+               case(5)
+                  do jj=1,5
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)) + &
+                          swa(5,ii)*scalar_new(k,ica(5)))
+                  enddo
+
+               case(4)
+                  do jj=1,4
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)) + swa(4,ii)*scalar_new(k,ica(4)))
+                  enddo
+
+               case(3)
+                  do jj=1,3
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)) + &
+                          swa(3,ii)*scalar_new(k,ica(3)))
+                  enddo
+
+               case(2)
+                  do jj=1,2
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)) + swa(2,ii)*scalar_new(k,ica(2)))
+                  enddo
+
+               case(1)
+                  do jj=1,1
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, uhAvg(k,iEdge) > 0)
+                     flux_arr(k,iEdge) = uhAvg(k,iEdge)*(                   &
+                          swa(1,ii)*scalar_new(k,ica(1)))
+                  enddo
+
                end select
 
+               !RSS1D and !RSS1E -- end --
+  
             end if
 
          end do
@@ -2120,22 +2293,23 @@ module atm_time_integration
 
          !  upwind flux computation
 
-         !RSS Note - using precomputed invAreaCell here is *slower* (revisit)
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
                do k=1, nVertLevels
-                  flux_upwind = dvEdge(iEdge) * dt *   &
-                         (max(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell1) + min(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell2))
-                  flux_arr(k,iEdge) = dt*flux_arr(k,iEdge) - flux_upwind
-                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_upwind / AreaCell(cell1)
-                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_upwind / AreaCell(cell2)
+                  flux_upwind = dvEdge(iEdge) * dt * uhAvg(k,iEdge) * merge(scalar_old(k,cell1), scalar_old(k,cell2), uhAvg(k,iEdge)>0)
+                  flux_arr(k,iEdge)   = dt*flux_arr(k,iEdge) - flux_upwind
+                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_upwind * invAreaCell(cell1)
+                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_upwind * invAreaCell(cell2)
  
-                  scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell1)
-                  scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell1)
-                  scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell2)
-                  scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,flux_arr(k,iEdge)) / AreaCell(cell2)
+                  if (flux_arr(k,iEdge) > 0) then
+                     scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - flux_arr(k,iEdge) * invAreaCell(cell1)
+                     scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + flux_arr(k,iEdge) * invAreaCell(cell2)
+                  else
+                     scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - flux_arr(k,iEdge) * invAreaCell(cell1)
+                     scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + flux_arr(k,iEdge) * invAreaCell(cell2)
+                  endif
  
                end do
             end if
