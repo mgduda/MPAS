@@ -21,6 +21,29 @@ module atm_time_integration
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
 #endif
+   use iso_c_binding, only : c_int
+
+   !
+   ! Used for external timing routines
+   !
+
+   integer(c_int) :: secs, u_secs
+
+   interface
+
+      subroutine start_timer(id) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+      end subroutine start_timer
+
+      subroutine stop_timer(id, secs, u_secs) bind(c)
+         use iso_c_binding, only : c_int
+         integer(c_int), value :: id
+         integer(c_int) :: secs
+         integer(c_int) :: u_secs
+      end subroutine stop_timer
+
+   end interface
 
    contains
 
@@ -391,10 +414,16 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
+               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
+               call stop_timer(0, secs, u_secs)
+               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -1718,6 +1747,7 @@ module atm_time_integration
 
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: flux, scalar_weight
+      real (kind=RKIND) :: f1, f2 !RSS2F
 
       real (kind=RKIND), dimension(:,:,:), pointer :: scalar_tend
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
@@ -1965,24 +1995,35 @@ module atm_time_integration
 
          !  upwind flux computation
 
+         !RSS2F Precompute the flux_arr/areaCell before updating scale_arr
          do iEdge=1,nEdges
             cell1 = cellsOnEdge(1,iEdge)
             cell2 = cellsOnEdge(2,iEdge)
+
             if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
                do k=1, nVertLevels
                   flux_upwind = dvEdge(iEdge) * dt *   &
-                         (max(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell1) + min(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell2))
+                       (max(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell1) + min(0.0_RKIND,uhAvg(k,iEdge))*scalar_old(k,cell2))
                   flux_arr(k,iEdge) = dt*flux_arr(k,iEdge) - flux_upwind
                   scalar_new(k,cell1) = scalar_new(k,cell1) - flux_upwind / areaCell(cell1)
                   scalar_new(k,cell2) = scalar_new(k,cell2) + flux_upwind / areaCell(cell2)
- 
-                  scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
-                  scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
-                  scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
-                  scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
- 
+                  
+                  f1 = flux_arr(k,iEdge) / areaCell(cell1)                                        !RSS2F
+                  scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,f1) !RSS2F
+                  scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,f1) !RSS2F
+                  
+                  f2 = flux_arr(k,iEdge) / areaCell(cell2)                                        !RSS2F
+                  scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,f2) !RSS2F
+                  scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,f2) !RSS2F
+
+                  !RSS2F scale_arr(SCALE_OUT,k,cell1) = scale_arr(SCALE_OUT,k,cell1) - max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
+                  !RSS2F scale_arr(SCALE_IN, k,cell1) = scale_arr(SCALE_IN, k,cell1) - min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell1)
+                  !RSS2F scale_arr(SCALE_OUT,k,cell2) = scale_arr(SCALE_OUT,k,cell2) + min(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
+                  !RSS2F scale_arr(SCALE_IN, k,cell2) = scale_arr(SCALE_IN, k,cell2) + max(0.0_RKIND,flux_arr(k,iEdge)) / areaCell(cell2)
+
                end do
             end if
+
          end do
 
 !  next, the limiter
