@@ -1495,6 +1495,7 @@ module atm_time_integration
       integer, intent(in) :: num_scalars      ! for allocating stack variables
       integer, intent(in) :: nVertLevels      ! for allocating stack variables
       real (kind=RKIND) :: dt
+      real (kind=RKIND) :: h_new_inv !RSS1D
 
       real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
       real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
@@ -1737,9 +1738,10 @@ module atm_time_integration
             end do
 
             do k=1,nVertLevels
+               h_new_inv = 1.0_RKIND / h_new(k,iCell) !RSS1D
                do iScalar=1,num_scalars
                   scalar_new(iScalar,k,iCell) = (   scalar_old(iScalar,k,iCell)*h_old(k,iCell) &
-                        + dt*( scalar_tend(iScalar,k,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) )/h_new(k,iCell)
+                       + dt*( scalar_tend(iScalar,k,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) ) * h_new_inv !RSS1D
                end do
             end do
 
