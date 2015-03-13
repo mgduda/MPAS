@@ -21,99 +21,7 @@ module atm_time_integration
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
 #endif
-   use iso_c_binding, only : c_int
 
-   !
-   ! Used for external timing routines
-   !
-
-   integer(c_int) :: secs, u_secs
-
-   interface
-
-      subroutine start_timer(id) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-      end subroutine start_timer
-
-      subroutine stop_timer(id, secs, u_secs) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-         integer(c_int) :: secs
-         integer(c_int) :: u_secs
-      end subroutine stop_timer
-
-   end interface
-
-   use iso_c_binding, only : c_int
-
-   !
-   ! Used for external timing routines
-   !
-   integer(c_int) :: secs, u_secs
-
-   interface
-
-      subroutine start_timer(id) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-      end subroutine start_timer
-
-      subroutine stop_timer(id, secs, u_secs) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-         integer(c_int) :: secs
-         integer(c_int) :: u_secs
-      end subroutine stop_timer
-
-   end interface
-
-   use iso_c_binding, only : c_int
-
-   !
-   ! Used for external timing routines
-   !
-   integer(c_int) :: secs, u_secs
-
-   interface
-
-      subroutine start_timer(id) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-      end subroutine start_timer
-
-      subroutine stop_timer(id, secs, u_secs) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-         integer(c_int) :: secs
-         integer(c_int) :: u_secs
-      end subroutine stop_timer
-
-   end interface
-
-
-   use iso_c_binding, only : c_int
-
-   !
-   ! Used for external timing routines
-   !
-   integer(c_int) :: secs, u_secs
-
-   interface
-
-      subroutine start_timer(id) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-      end subroutine start_timer
-
-      subroutine stop_timer(id, secs, u_secs) bind(c)
-         use iso_c_binding, only : c_int
-         integer(c_int), value :: id
-         integer(c_int) :: secs
-         integer(c_int) :: u_secs
-      end subroutine stop_timer
-
-   end interface
 
    contains
 
@@ -484,16 +392,10 @@ module atm_time_integration
             !       so we use the advance_scalars routine for the first two RK substeps.
             !
             if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
-               call start_timer(0)
                call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nVertLevels, rk_timestep(rk_step) )
-               call stop_timer(0, secs, u_secs)
-               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars : ', secs, '.', u_secs
             else
                block % domain = domain 
-               call start_timer(0)
                call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step) )
-               call stop_timer(0, secs, u_secs)
-               write(0,'(a,i4,a,i6.6)') '***** time advance_scalars_mono : ', secs, '.', u_secs
             end if
             block => block % next
          end do
@@ -510,10 +412,7 @@ module atm_time_integration
             call mpas_pool_get_subpool(block % structs, 'diag', diag)
             call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
-            call start_timer(0)
             call atm_compute_solve_diagnostics( dt, state, 2, diag, mesh, block % configs )
-            call stop_timer(0, secs, u_secs)
-            write(0,'(a,i4,a,i6.6)') '***** time compute_solve_diagnostics : ', secs, '.', u_secs
 
             block => block % next
          end do
@@ -1579,13 +1478,6 @@ module atm_time_integration
       integer, dimension(10) :: ica                                   !RSS2C
       real (kind=RKIND), dimension(:), pointer :: invAreaCell         !RSS2C
 
-      real (kind=RKIND), dimension(nVertLevels) :: scalar_weight1     !RSS2C
-      real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2 !RSS2C
-      integer, dimension(nVertLevels*num_scalars) :: indx             !RSS2C
-      integer:: ks, jj                                                !RSS2C
-      integer, dimension(10) :: ica                                   !RSS2C
-      real (kind=RKIND), dimension(:), pointer :: invAreaCell         !RSS2C
-
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: scalar_weight
 
@@ -1674,10 +1566,6 @@ module atm_time_integration
       !
       !  horizontal flux divergence, accumulate in scalar_tend
 
-!RSS2C_B      do ks = 1,nVertLevels*num_scalars     !RSS2C
-!RSS2C_B         indx(ks) = (ks-1)/num_scalars + 1  !RSS2C
-!RSS2C_B      enddo                                 !RSS2C
-
       do iEdge=1,nEdges
          cell1 = cellsOnEdge(1,iEdge)
          cell2 = cellsOnEdge(2,iEdge)
@@ -1685,17 +1573,6 @@ module atm_time_integration
   
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
-
-!RSS2C            flux_arr(:,:) = 0.
-!RSS2C            do i=1,nAdvCellsForEdge(iEdge)
-!RSS2C               iCell = advCellsForEdge(i,iEdge)
-!RSS2C               do k=1,nVertLevels
-!RSS2C                  scalar_weight = adv_coefs(i,iEdge) + coef_3rd_order*sign(1.0_RKIND,uhAvg(k,iEdge))*adv_coefs_3rd(i,iEdge)
-!RSS2C                  do iScalar=1,num_scalars
-!RSS2C                     flux_arr(iScalar,k) = flux_arr(iScalar,k) + scalar_weight* scalar_new(iScalar,k,iCell)
-!RSS2C                  end do
-!RSS2C               end do
-!RSS2C            end do
 
             select case(nAdvCellsForEdge(iEdge))                                           !RSS2C
             case(10)                                                                       !RSS2C
@@ -1751,15 +1628,6 @@ module atm_time_integration
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
-
-!RSS2C            do k=1,nVertLevels
-!RSS2C            do iScalar=1,num_scalars
-!RSS2C                  scalar_tend(iScalar,k,cell1) = scalar_tend(iScalar,k,cell1) &
-!RSS2C                         - uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell1)
-!RSS2C                  scalar_tend(iScalar,k,cell2) = scalar_tend(iScalar,k,cell2) &
-!RSS2C                         + uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(cell2)
-!RSS2C            end do
-!RSS2C            end do
 
             do k = 1,nVertLevels                                                    !RSS2C_B
             do iScalar = 1,num_scalars                                              !RSS2C_B
@@ -2242,34 +2110,6 @@ module atm_time_integration
          do iCell = 1, nCellsSolve
             do k = 1, nVertLevels
 
-!RSS2G     s_min_update = (scalar_new(k,iCell)+scale_arr(SCALE_OUT,k,iCell))/h_new(k,iCell)
-!RSS2G     s_max_update = (scalar_new(k,iCell)+scale_arr(SCALE_IN,k,iCell))/h_new(k,iCell)
-!RSS2G     s_upwind = scalar_new(k,iCell)/h_new(k,iCell)
-!RSS2G
-!RSS2G #ifdef SINGLE_PRECISION_IFORT
-!RSS2G     ! ifort 13.0.1 seems to have problems optimizing this particular
-!RSS2G     ! bit of code without generating NaNs in single precision, so we write it differently
-!RSS2G     if ((s_max_update - s_upwind) /= 0.0) then
-!RSS2G        scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind)
-!RSS2G        scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-!RSS2G     else
-!RSS2G        scale_arr(SCALE_IN,k,iCell) = 1.0
-!RSS2G     end if
-!RSS2G
-!RSS2G     if ((s_upwind - s_min_update) /= 0.0) then
-!RSS2G        scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update)
-!RSS2G        scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-!RSS2G     else
-!RSS2G        scale_arr(SCALE_OUT,k,iCell) = 1.0
-!RSS2G     end if
-!RSS2G #else
-!RSS2G     scale_factor = (s_max(k,iCell)-s_upwind)/(s_max_update-s_upwind+eps)
-!RSS2G     scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-!RSS2G
-!RSS2G     scale_factor = (s_upwind-s_min(k,iCell))/(s_upwind-s_min_update+eps)
-!RSS2G     scale_arr(SCALE_OUT,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )
-!RSS2G #endif
-
                scale_factor = (s_max(k,iCell)*h_new(k,iCell) - scalar_new(k,iCell)) / &       !RSS2G
                     (scale_arr(SCALE_IN,k,iCell)  + eps)                                      !RSS2G
                scale_arr(SCALE_IN,k,iCell) = min( 1.0_RKIND, max( 0.0_RKIND, scale_factor) )  !RSS2G
@@ -2332,16 +2172,6 @@ module atm_time_integration
 !
 !  do the scalar update now that we have the fluxes
 !
-!RSS2E         do iEdge=1,nEdges
-!RSS2E            cell1 = cellsOnEdge(1,iEdge)
-!RSS2E            cell2 = cellsOnEdge(2,iEdge)
-!RSS2E            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve) then  ! only for owned cells
-!RSS2E               do k=1,nVertLevels
-!RSS2E                  scalar_new(k,cell1) = scalar_new(k,cell1) - flux_arr(k,iEdge)/areaCell(cell1)
-!RSS2E                  scalar_new(k,cell2) = scalar_new(k,cell2) + flux_arr(k,iEdge)/areaCell(cell2)
-!RSS2E               end do
-!RSS2E            end if
-!RSS2E         end do
 
          do iCell=1,nCellsSolve
             do k=1,nVertLevels
