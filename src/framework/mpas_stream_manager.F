@@ -374,7 +374,7 @@ module mpas_stream_manager
                 new_stream % ioformat = ioformat
             end if
         else
-            new_stream % ioformat = MPAS_IO_PNETCDF
+            new_stream % ioformat = MPAS_IO_NETCDF4P
         end if
 
         ! Filename interval is 'none' by default, but is set through the set_property routine.

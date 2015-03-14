@@ -32,7 +32,7 @@ module mpas_stream_list
         character(len=StrKIND) :: filename
         character(len=StrKIND) :: filename_template
         character(len=StrKIND) :: filename_interval
-        integer :: ioformat = MPAS_IO_PNETCDF
+        integer :: ioformat = MPAS_IO_NETCDF4P
         type (MPAS_Stream_type), pointer :: stream => null()
         integer :: timeLevel = 0
         integer :: nRecords

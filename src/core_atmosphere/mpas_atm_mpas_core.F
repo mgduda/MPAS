@@ -52,12 +52,6 @@ module mpas_core
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
 
-      call MPAS_stream_mgr_set_property(stream_manager, 'input', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
-      call MPAS_stream_mgr_set_property(stream_manager, 'output', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
-      call MPAS_stream_mgr_set_property(stream_manager, 'restart', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
-      call MPAS_stream_mgr_set_property(stream_manager, 'diagnostics', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
-      call MPAS_stream_mgr_set_property(stream_manager, 'surface', MPAS_STREAM_PROPERTY_FORMAT, MPAS_IO_NETCDF4P, ierr=ierr)
-
       
       !
       ! If this is a restart run, read the restart stream, else read the input
