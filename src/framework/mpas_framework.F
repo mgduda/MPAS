@@ -40,7 +40,7 @@ module mpas_framework
 !>  to initializing different parts of MPAS, that are housed within the framework.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_framework_init(dminfo, domain, mpi_comm, nml_filename, io_system, calendar, stdoutUnit, stderrUnit)!{{{
+   subroutine mpas_framework_init(dminfo, domain, mpi_comm, nml_filename, calendar, stdoutUnit, stderrUnit)!{{{
 
       implicit none
 
@@ -49,7 +49,6 @@ module mpas_framework
       integer, intent(in), optional :: mpi_comm
 
       character(len=*), optional :: nml_filename
-      type (iosystem_desc_t), optional, pointer :: io_system
       character(len=*), intent(in), optional :: calendar
 
       integer, intent(in), optional :: stdoutUnit, stderrUnit
@@ -93,7 +92,7 @@ module mpas_framework
       if (pio_num_iotasks == 0) then
          pio_num_iotasks = domain % dminfo % nprocs
       end if
-      call MPAS_io_init(dminfo, pio_num_iotasks, pio_stride, io_system)
+      call MPAS_io_init(dminfo, pio_num_iotasks, pio_stride)
 
    end subroutine mpas_framework_init!}}}
 
@@ -107,15 +106,14 @@ module mpas_framework
 !>  This routine finalizes the MPAS framework. It calls routines related to finalizing different parts of MPAS, that are housed within the framework.
 !
 !-----------------------------------------------------------------------  
-   subroutine mpas_framework_finalize(dminfo, domain, io_system)!{{{
+   subroutine mpas_framework_finalize(dminfo, domain)!{{{
   
       implicit none
 
       type (dm_info), pointer :: dminfo
       type (domain_type), pointer :: domain
-      type (iosystem_desc_t), optional, pointer :: io_system
 
-      call MPAS_io_finalize(io_system)
+      call MPAS_io_finalize()
 
       call mpas_deallocate_domain(domain)
 
