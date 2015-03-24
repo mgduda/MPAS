@@ -631,6 +631,7 @@
 			<var name="rainnc"/>
 			<var name="refl10cm_max"/>
 			<var name="precipw"/>
+			<var name="precipc"/>
 			<var name="temperature_200hPa"/>
 			<var name="temperature_500hPa"/>
 			<var name="temperature_850hPa"/>
@@ -649,6 +650,12 @@
 			<var name="vorticity_200hPa"/>
 			<var name="vorticity_500hPa"/>
 			<var name="vorticity_850hPa"/>
+			<var name="qv_200hPa"/>
+			<var name="qv_500hPa"/>
+			<var name="qv_850hPa"/>
+			<var name="qcond_200hPa"/>
+			<var name="qcond_500hPa"/>
+			<var name="qcond_850hPa"/>
 		</stream>
 
 		<stream name="surface" 
@@ -913,6 +920,14 @@
                 <var name="vorticity_500hPa"       type="real"     dimensions="nVertices Time"/>
                 <var name="vorticity_700hPa"       type="real"     dimensions="nVertices Time"/>
                 <var name="vorticity_850hPa"       type="real"     dimensions="nVertices Time"/>
+                <var name="qv_200hPa"              type="real"     dimensions="nCells Time"/>
+                <var name="qv_500hPa"              type="real"     dimensions="nCells Time"/>
+                <var name="qv_700hPa"              type="real"     dimensions="nCells Time"/>
+                <var name="qv_850hPa"              type="real"     dimensions="nCells Time"/>
+                <var name="qcond_200hPa"           type="real"     dimensions="nCells Time"/>
+                <var name="qcond_500hPa"           type="real"     dimensions="nCells Time"/>
+                <var name="qcond_700hPa"           type="real"     dimensions="nCells Time"/>
+                <var name="qcond_850hPa"           type="real"     dimensions="nCells Time"/>
         </var_struct>
 
         <var_struct name="tend" time_levs="1">
@@ -1032,6 +1047,7 @@
                 <!-- graupelncv: time-step grid-scale precipitation of graupel                                    (mm)  -->
                 <!-- sr        : time-step ratio of frozen versus total grid-scale precipitation                   (-)  -->
                 <!-- precipw   : precipitable water                                                            (kg/m2)  -->
+                <!-- precipc   : column-integrated condensates                                                 (kg/m2)  -->
                 <!-- refl10cm_max: maximum column reflectivity                                                   (dBz)  -->
 
                 <var name="refl10cm_max"  type="real"     dimensions="nCells Time"/>
@@ -1047,6 +1063,7 @@
                 <var name="graupelnc"     type="real"     dimensions="nCells Time"/>
 
                 <var name="precipw"       type="real"     dimensions="nCells Time"/>
+                <var name="precipc"       type="real"     dimensions="nCells Time"/>
                 <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- ================================================================================================== -->

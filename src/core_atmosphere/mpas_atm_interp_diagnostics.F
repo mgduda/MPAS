@@ -35,7 +35,7 @@
  integer :: iCell,iVert,iVertD,k,kk
  integer, pointer :: nCells, nVertLevels, nVertices, vertexDegree
  integer :: nVertLevelsP1
- integer, pointer :: index_qv
+ integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg
  integer, dimension(:,:), pointer :: cellsOnVertex
 
  type (field2DReal), pointer:: pressure_p_field
@@ -84,6 +84,16 @@
  real (kind=RKIND), dimension(:), pointer :: vorticity_700hPa
  real (kind=RKIND), dimension(:), pointer :: vorticity_850hPa
 
+ real (kind=RKIND), dimension(:), pointer :: qv_200hPa
+ real (kind=RKIND), dimension(:), pointer :: qv_500hPa
+ real (kind=RKIND), dimension(:), pointer :: qv_700hPa
+ real (kind=RKIND), dimension(:), pointer :: qv_850hPa
+
+ real (kind=RKIND), dimension(:), pointer :: qcond_200hPa
+ real (kind=RKIND), dimension(:), pointer :: qcond_500hPa
+ real (kind=RKIND), dimension(:), pointer :: qcond_700hPa
+ real (kind=RKIND), dimension(:), pointer :: qcond_850hPa
+
  real (kind=RKIND), dimension(:), pointer :: mslp
 
  real (kind=RKIND), dimension(:,:), allocatable :: pressure, pressureCp1, pressure2, pressure_v, temperature
@@ -105,6 +115,11 @@
  call mpas_pool_get_dimension(mesh, 'nVertices', nVertices)
  call mpas_pool_get_dimension(mesh, 'vertexDegree', vertexDegree)
  call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+ call mpas_pool_get_dimension(state, 'index_qc', index_qc)
+ call mpas_pool_get_dimension(state, 'index_qr', index_qr)
+ call mpas_pool_get_dimension(state, 'index_qi', index_qi)
+ call mpas_pool_get_dimension(state, 'index_qs', index_qs)
+ call mpas_pool_get_dimension(state, 'index_qg', index_qg)
 
  nVertLevelsP1 = nVertLevels + 1
 
@@ -164,6 +179,16 @@
  call mpas_pool_get_array(diag, 'vorticity_500hPa', vorticity_500hPa)
  call mpas_pool_get_array(diag, 'vorticity_700hPa', vorticity_700hPa)
  call mpas_pool_get_array(diag, 'vorticity_850hPa', vorticity_850hPa)
+
+ call mpas_pool_get_array(diag, 'qv_200hPa', qv_200hPa)
+ call mpas_pool_get_array(diag, 'qv_500hPa', qv_500hPa)
+ call mpas_pool_get_array(diag, 'qv_700hPa', qv_700hPa)
+ call mpas_pool_get_array(diag, 'qv_850hPa', qv_850hPa)
+
+ call mpas_pool_get_array(diag, 'qcond_200hPa', qcond_200hPa)
+ call mpas_pool_get_array(diag, 'qcond_500hPa', qcond_500hPa)
+ call mpas_pool_get_array(diag, 'qcond_700hPa', qcond_700hPa)
+ call mpas_pool_get_array(diag, 'qcond_850hPa', qcond_850hPa)
 
  call mpas_pool_get_array(diag, 'mslp', mslp)
 
@@ -268,6 +293,34 @@
  temperature_700hPa(1:nCells) = field_interp(1:nCells,3)
  temperature_850hPa(1:nCells) = field_interp(1:nCells,4)
 ! write(0,*) '--- end interpolate temperature:'
+
+ do iCell = 1, nCells
+ do k = 1, nVertLevels
+    kk = nVertLevels+1-k
+    field_in(iCell,kk) = scalars(index_qv,k,iCell)
+ enddo
+ enddo
+ call interp_tofixed_pressure(nCells,nVertLevels,nIntP,press_in,field_in,press_interp,field_interp)
+ qv_200hPa(1:nCells) = field_interp(1:nCells,1)
+ qv_500hPa(1:nCells) = field_interp(1:nCells,2)
+ qv_700hPa(1:nCells) = field_interp(1:nCells,3)
+ qv_850hPa(1:nCells) = field_interp(1:nCells,4)
+
+ do iCell = 1, nCells
+ do k = 1, nVertLevels
+    kk = nVertLevels+1-k
+    field_in(iCell,kk) = scalars(index_qc,k,iCell) + &
+                         scalars(index_qr,k,iCell) + &
+                         scalars(index_qi,k,iCell) + &
+                         scalars(index_qs,k,iCell) + &
+                         scalars(index_qg,k,iCell)
+ enddo
+ enddo
+ call interp_tofixed_pressure(nCells,nVertLevels,nIntP,press_in,field_in,press_interp,field_interp)
+ qcond_200hPa(1:nCells) = field_interp(1:nCells,1)
+ qcond_500hPa(1:nCells) = field_interp(1:nCells,2)
+ qcond_700hPa(1:nCells) = field_interp(1:nCells,3)
+ qcond_850hPa(1:nCells) = field_interp(1:nCells,4)
 
 !... relative humidity:
  do iCell = 1, nCells
