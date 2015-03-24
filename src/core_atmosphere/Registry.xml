@@ -619,6 +619,13 @@
 
 			<var name="xtime"/>
 			<var name="olrtoa"/>
+			<var name="swupt"/>
+			<var name="swuptc"/>
+			<var name="surface_pressure"/>
+			<var name="u10"/>
+			<var name="v10"/>
+			<var name="t2m"/>
+			<var name="q2"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
 			<var name="refl10cm_max"/>
