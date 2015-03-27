@@ -348,9 +348,10 @@ module mpas_core
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
 
-      ! Also, for restart runs, avoid writing the initial history fields to avoid overwriting those from the preceding run
+      ! Also, for restart runs, avoid writing the initial history and diagnostic fields to avoid overwriting those from the preceding run
       if (config_do_restart) then
          call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='output', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+         call MPAS_stream_mgr_reset_alarms(stream_manager, streamID='diagnostics', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
       end if
 
       if (MPAS_stream_mgr_ringing_alarms(stream_manager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
