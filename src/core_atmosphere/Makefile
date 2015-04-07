@@ -4,6 +4,7 @@ PHYSICS=-DDO_PHYSICS
 #PHYSICS=
 
 OBJS = mpas_atm_mpas_core.o \
+       mpas_atm_soundings.o \
        mpas_atm_interp_diagnostics.o
 
 all: physcore dycore atmcore
@@ -23,7 +24,7 @@ dycore:
 atmcore: physcore dycore $(OBJS)
 	ar -ru libdycore.a $(OBJS) dynamics/*.o libphys/*.o
 
-mpas_atm_mpas_core.o: dycore mpas_atm_interp_diagnostics.o
+mpas_atm_mpas_core.o: dycore mpas_atm_interp_diagnostics.o mpas_atm_soundings.o
 
 clean:
 	( cd physics; $(MAKE) clean )

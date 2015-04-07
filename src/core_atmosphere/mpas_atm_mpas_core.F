@@ -20,6 +20,7 @@ module mpas_core
       use mpas_kind_types
       use mpas_stream_manager
       use mpas_grid_types
+      use mpas_atm_soundings, only : mpas_atm_soundings_init
 
       implicit none
 
@@ -125,6 +126,11 @@ module mpas_core
 
       call mpas_pool_get_field(diag, 'rw', rw_field)
       call mpas_dmpar_exch_halo_field(rw_field)
+
+      !
+      ! Set up sounding locations
+      !
+      call mpas_atm_soundings_init(clock, mesh, '1:00:00')
 
    end subroutine mpas_core_init
 
@@ -317,6 +323,7 @@ module mpas_core
       use mpas_stream_manager
       use mpas_io_streams, only : MPAS_STREAM_LATEST_BEFORE
       use mpas_timer
+      use mpas_atm_soundings, only : mpas_atm_soundings_write
    
       implicit none
    
@@ -478,6 +485,13 @@ module mpas_core
          end if
 
          call mpas_stream_mgr_reset_alarms(stream_manager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+
+         block_ptr => domain % blocklist
+         call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
+         call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
+         call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
+         call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
+         call mpas_atm_soundings_write(mesh, state, diag, diag_physics)
 
       end do
    
@@ -677,12 +691,15 @@ module mpas_core
    
       use mpas_grid_types
       use mpas_stream_manager
+      use mpas_atm_soundings, only : mpas_atm_soundings_finalize
    
       implicit none
    
       type (domain_type), intent(inout) :: domain 
       type (MPAS_streamManager_type), intent(inout) :: stream_manager
       integer :: ierr
+
+      call mpas_atm_soundings_finalize()
 
       call mpas_destroy_clock(clock, ierr)
    
