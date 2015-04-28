@@ -322,7 +322,7 @@
 			<var name="t_fg"/>
 			<var name="p_fg"/>
 			<var name="z_fg"/>
-			<var name="rh_fg"/>
+			<var name="sp_fg"/>
 			<var name="soilz_fg"/>
 			<var name="dz_fg"/>
 			<var name="dzs_fg"/>
@@ -512,6 +512,7 @@
                 <var name="p_fg"       name_in_code="p"       type="real"     dimensions="nFGLevels nCells Time"/>
                 <var name="z_fg"       name_in_code="z"       type="real"     dimensions="nFGLevels nCells Time"/>
                 <var name="rh_fg"      name_in_code="rh"      type="real"     dimensions="nFGLevels nCells Time"/>
+                <var name="sp_fg"      name_in_code="sp"      type="real"     dimensions="nFGLevels nCells Time"/>
                 <var name="soilz_fg"   name_in_code="soilz"   type="real"     dimensions="nCells Time"/>
                 <var name="psfc_fg"    name_in_code="psfc"    type="real"     dimensions="nCells Time"/>
                 <var name="pmsl_fg"    name_in_code="pmsl"    type="real"     dimensions="nCells Time"/>
@@ -556,6 +557,7 @@
                 <var name="theta"                             type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="v"                                 type="real"     dimensions="nVertLevels nEdges Time"/>
                 <var name="rh"                                type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="sp"                                type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="uReconstructX"                     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="uReconstructY"                     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="uReconstructZ"                     type="real"     dimensions="nVertLevels nCells Time"/>

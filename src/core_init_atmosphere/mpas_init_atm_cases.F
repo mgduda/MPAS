@@ -2578,6 +2578,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: theta
       real (kind=RKIND), dimension(:,:), pointer :: rho
       real (kind=RKIND), dimension(:,:), pointer :: rh
+      real (kind=RKIND), dimension(:,:), pointer :: sp
       real (kind=RKIND), dimension(:,:), pointer :: ru
       real (kind=RKIND), dimension(:,:), pointer :: rw
       real (kind=RKIND), dimension(:), pointer :: precipw
@@ -2599,6 +2600,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: z_fg
       real (kind=RKIND), dimension(:,:), pointer :: t_fg
       real (kind=RKIND), dimension(:,:), pointer :: rh_fg
+      real (kind=RKIND), dimension(:,:), pointer :: sp_fg
       real (kind=RKIND), dimension(:,:), pointer :: gfs_z
       real (kind=RKIND), dimension(:,:), pointer :: p_fg
       real (kind=RKIND), dimension(:,:), pointer :: st_fg
@@ -2661,6 +2663,7 @@ module init_atm_cases
       call mpas_pool_get_array(diag, 'pressure', pressure)
       call mpas_pool_get_array(diag, 'surface_pressure', surface_pressure)
       call mpas_pool_get_array(diag, 'rh', rh)
+      call mpas_pool_get_array(diag, 'sp', sp)
       call mpas_pool_get_array(diag, 'ru', ru)
       call mpas_pool_get_array(diag, 'rw', rw)
 
@@ -2708,6 +2711,7 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'z', z_fg)
       call mpas_pool_get_array(fg, 't', t_fg)
       call mpas_pool_get_array(fg, 'rh', rh_fg)
+      call mpas_pool_get_array(fg, 'sp', sp_fg)
       call mpas_pool_get_array(fg, 'gfs_z', gfs_z)
       call mpas_pool_get_array(fg, 'p', p_fg)
 
@@ -2887,9 +2891,14 @@ write(0,*) 'USING ECMWF TERRAIN...'
          zt = config_ztop
          dz = zt/float(nz1)
 
+! ww: for 41 level fit
          als   =  .075
          alt   = 1.23
          zetal =  .31
+! ww: for 55 level fit
+         als   =  .075
+         alt   = 1.7
+         zetal =  .75
          do k=1,nz
             zl = 1.-alt*(1.-zetal)
             if ((real(k-1)/real(nz1)).LT.zetal) then
@@ -3242,6 +3251,7 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
              index(field % field, 'VV') /= 0 .or. &
              index(field % field, 'TT') /= 0 .or. &
              index(field % field, 'RH') /= 0 .or. &
+             index(field % field, 'SPECHUMD') /= 0 .or. &
              index(field % field, 'GHT') /= 0 .or. &
              index(field % field, 'PMSL') /= 0 .or. &
              index(field % field, 'PSFC') /= 0 .or. &
@@ -3368,6 +3378,13 @@ write(0,*) 'Interpolating RH at ', k, vert_level(k)
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'rh', destField2d)
+               ndims = 2
+            else if (index(field % field, 'SPECHUMD') /= 0) then
+write(0,*) 'Interpolating SPECHUMD at ', k, vert_level(k)
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'sp', destField2d)
                ndims = 2
             else if (index(field % field, 'GHT') /= 0) then
 write(0,*) 'Interpolating GHT at ', k, vert_level(k)
@@ -4222,7 +4239,8 @@ write(0,*) 'PROCESSING OMLD'
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
 !           t(k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1)
             t(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=2)
+                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+!                                     sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=2)
          end do
 
 
@@ -4235,13 +4253,49 @@ write(0,*) 'PROCESSING OMLD'
             sorted_arr(2,k) = rh_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
-         do k=1,nVertLevels
+!        do k=1,nVertLevels
+!           target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
+!!          scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=0)
+!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+!           rh(k,iCell) = scalars(index_qv,k,iCell)
+!        end do
+! enforce constant rh if mpas level is below bottom gfs level
+         do k=nVertLevels,1,-1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
 !           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=0)
             scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                                       sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+                                                        sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            if(target_z .lt. z_fg(1,iCell)) scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
             rh(k,iCell) = scalars(index_qv,k,iCell)
          end do
+
+         ! SPECHUMD: from native GFS data
+         sorted_arr(:,:) = -999.0
+         do k=1,nfglevels_actual
+            sorted_arr(1,k) = z_fg(k,iCell)
+!NOSFC            if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
+            if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
+            sorted_arr(2,k) = sp_fg(k,iCell)
+         end do
+         call mpas_quicksort(nfglevels_actual, sorted_arr)
+!        do k=1,nVertLevels
+!           target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
+!!          scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=0)
+!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+!           rh(k,iCell) = scalars(index_qv,k,iCell)
+!        end do
+! enforce constant sp if mpas level is below bottom gfs level
+         do k=nVertLevels,1,-1
+            target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
+!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=0)
+            scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                                        sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            if(target_z .lt. z_fg(1,iCell)) scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
+            sp(k,iCell) = scalars(index_qv,k,iCell)
+         end do
+!write(0,*) 'Vertically Interpolating SP'
 
 
          ! GHT
@@ -4377,9 +4431,28 @@ write(0,*) 'PROCESSING OMLD'
          do k=1,nVertLevels
 
             ! QV
-            es = 6.112 * exp((17.27*(t(k,iCell) - 273.16))/(t(k,iCell) - 35.86))
-            rs = 0.622 * es * 100. / (pressure(k,iCell) - es * 100.)
-            scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
+!           es = 6.112 * exp((17.27*(t(k,iCell) - 273.16))/(t(k,iCell) - 35.86))
+!           es = min(es,0.99*0.01*pressure(k,iCell)) ! WCS 20141003, from LF; temporary fix
+!           rs = 0.622 * es * 100. / (pressure(k,iCell) - es * 100.)
+!           scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
+
+! the following applies for native GFS data obtained via rd_sig program
+! retrieve es from GFS fuction fpvsnew (which considers ice), output in Pa
+!   compute saturation specific humidity, and specific humidity, and then mixing ratio
+!           es = fpvsnew(t(k,iCell))
+!           if ( es .le. pressure(k,iCell) ) then
+! when saturated specific humidity can be defined
+!              es = min( es , pressure(k,iCell) )
+!              rs = 0.622 * es / (pressure(k,iCell) - (1.-0.622) * es )
+!              rs = 0.01 * rs * scalars(index_qv,k,iCell)
+!              scalars(index_qv,k,iCell) = MAX( rs / (1.-rs) , 1.e-6)
+!           else
+! when saturated specific humidity cannot be defined
+!              scalars(index_qv,k,iCell) = 1.e-6
+!           end if
+
+            ! QV computed from specific humidity
+            scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell) / ( 1. - scalars(index_qv,k,iCell) )
 
             ! PI
             p(k,iCell) = (pressure(k,iCell) / p0) ** (rgas / cp)
@@ -4885,5 +4958,104 @@ write(0,*) 'PROCESSING OMLD'
 
    end subroutine decouple_variables
 
+   function fpvsnew(t)
+!$$$     Subprogram Documentation Block
+!
+! Subprogram: fpvsnew         Compute saturation vapor pressure
+!   Author: N Phillips            w/NMC2X2   Date: 30 dec 82
+!
+! Abstract: Compute saturation vapor pressure from the temperature.
+!   A linear interpolation is done between values in a lookup table
+!   computed in gpvs. See documentation for fpvsx for details.
+!   Input values outside table range are reset to table extrema.
+!   The interpolation accuracy is almost 6 decimal places.
+!   On the Cray, fpvs is about 4 times faster than exact calculation.
+!   This function should be expanded inline in the calling routine.
+!
+! Program History Log:
+!   91-05-07  Iredell             made into inlinable function
+!   94-12-30  Iredell             expand table
+! 1999-03-01  Iredell             f90 module
+! 2001-02-26  Iredell             ice phase
+!
+! Usage:   pvs=fpvsnew(t)
+!
+!   Input argument list:
+!     t          Real(krealfp) temperature in Kelvin
+!
+!   Output argument list:
+!     fpvsnew       Real(krealfp) saturation vapor pressure in Pascals
+!
+! Attributes:
+!   Language: Fortran 90.
+!
+!$$$
+      implicit none
+      integer,parameter:: nxpvs=7501
+      real,parameter:: con_ttp     =2.7316e+2 ! temp at H2O 3pt
+      real,parameter:: con_psat    =6.1078e+2 ! pres at H2O 3pt
+      real,parameter:: con_cvap    =1.8460e+3 ! spec heat H2O gas   (J/kg/K)
+      real,parameter:: con_cliq    =4.1855e+3 ! spec heat H2O liq
+      real,parameter:: con_hvap    =2.5000e+6 ! lat heat H2O cond
+      real,parameter:: con_rv      =4.6150e+2 ! gas constant H2O
+      real,parameter:: con_csol    =2.1060e+3 ! spec heat H2O ice
+      real,parameter:: con_hfus    =3.3358e+5 ! lat heat H2O fusion
+      real,parameter:: tliq=con_ttp
+      real,parameter:: tice=con_ttp-20.0
+      real,parameter:: dldtl=con_cvap-con_cliq
+      real,parameter:: heatl=con_hvap
+      real,parameter:: xponal=-dldtl/con_rv
+      real,parameter:: xponbl=-dldtl/con_rv+heatl/(con_rv*con_ttp)
+      real,parameter:: dldti=con_cvap-con_csol
+      real,parameter:: heati=con_hvap+con_hfus
+      real,parameter:: xponai=-dldti/con_rv
+      real,parameter:: xponbi=-dldti/con_rv+heati/(con_rv*con_ttp)
+      real tr,w,pvl,pvi
+      real fpvsnew
+      real,intent(in):: t
+      integer jx
+      real  xj,x,tbpvs(nxpvs),xp1
+      real xmin,xmax,xinc,c2xpvs,c1xpvs
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      xmin=180.0
+      xmax=330.0
+      xinc=(xmax-xmin)/(nxpvs-1)
+!   c1xpvs=1.-xmin/xinc
+      c2xpvs=1./xinc
+      c1xpvs=1.-xmin*c2xpvs
+!    xj=min(max(c1xpvs+c2xpvs*t,1.0),real(nxpvs,krealfp))
+      xj=min(max(c1xpvs+c2xpvs*t,1.0),float(nxpvs))
+      jx=min(xj,float(nxpvs)-1.0)
+      x=xmin+(jx-1)*xinc
+
+      tr=con_ttp/x
+      if(x.ge.tliq) then
+        tbpvs(jx)=con_psat*(tr**xponal)*exp(xponbl*(1.-tr))
+      elseif(x.lt.tice) then
+        tbpvs(jx)=con_psat*(tr**xponai)*exp(xponbi*(1.-tr))
+      else
+        w=(t-tice)/(tliq-tice)
+        pvl=con_psat*(tr**xponal)*exp(xponbl*(1.-tr))
+        pvi=con_psat*(tr**xponai)*exp(xponbi*(1.-tr))
+        tbpvs(jx)=w*pvl+(1.-w)*pvi
+      endif
+
+      xp1=xmin+(jx-1+1)*xinc
+
+      tr=con_ttp/xp1
+      if(xp1.ge.tliq) then
+        tbpvs(jx+1)=con_psat*(tr**xponal)*exp(xponbl*(1.-tr))
+      elseif(xp1.lt.tice) then
+        tbpvs(jx+1)=con_psat*(tr**xponai)*exp(xponbi*(1.-tr))
+      else
+        w=(t-tice)/(tliq-tice)
+        pvl=con_psat*(tr**xponal)*exp(xponbl*(1.-tr))
+        pvi=con_psat*(tr**xponai)*exp(xponbi*(1.-tr))
+        tbpvs(jx+1)=w*pvl+(1.-w)*pvi
+      endif
+
+      fpvsnew=tbpvs(jx)+(xj-jx)*(tbpvs(jx+1)-tbpvs(jx))
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      end function fpvsnew
 
 end module init_atm_cases
