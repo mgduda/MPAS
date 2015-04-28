@@ -3272,7 +3272,7 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
             else if (field % iproj == PROJ_GAUSS) then
                call map_set(PROJ_GAUSS, proj, &
                             nlat = nint(field % deltalat), &
-                            loninc = real(field % deltalon,RKIND), &
+                            loninc = 360.0_RKIND / real(field % nx,RKIND), &
                             lat1 = real(field % startlat,RKIND), &
                             lon1 = real(field % startlon,RKIND))
 !                            nxmax = nint(360.0 / field % deltalon), &
@@ -3803,10 +3803,25 @@ write(0,*) 'Interpolating SKINTEMP'
 
       call read_met_close()
 
+
+      !
+      ! Check how many distinct levels we actually found in the meteorological data
+      !
+      do k=1,config_nfglevels
+         if (vert_level(k) == -1.0) exit 
+      end do
+      nfglevels_actual = k-1
+      write(0,*) '*************************************************'
+      write(0,*) 'Found ', nfglevels_actual, ' levels in the first-guess data'
+      write(0,*) '*************************************************'
+
+      !
       ! Fix for isobaric data
-      if (minval(p_fg(:,:)) == 0.0) then
+      !
+      if (minval(p_fg(1:nfglevels_actual,1:nCellsSolve)) == 0.0) then
          write(0,*) 'Setting pressure field for isobaric data'
-         do k=1,config_nfglevels
+         write(0,*) p_fg(:,1)
+         do k=1,nfglevels_actual
             if (vert_level(k) /= 200100.0) then
                p_fg(k,:) = vert_level(k)
             else
@@ -3837,7 +3852,10 @@ do iCell=1,nCells
       end do
 
       do k = 1, config_nfgsoillevels
-         if (sm_fg(k,iCell) <= 0.0) write(0,*) 'Bad sm_fg ', k, iCell
+         if (sm_fg(k,iCell) <= 0.0) then
+            write(0,*) 'Bad sm_fg ', sm_fg(k,iCell), k, iCell
+            sm_fg(k,iCell) = 0.001
+         end if
       end do
       !LDF end.
 
@@ -3953,23 +3971,11 @@ write(0,*) 'PROCESSING SEAICE'
       ! Compute normal wind component and store in fg % u
       !  
       do iEdge=1,nEdges
-         do k=1,config_nfglevels
+         do k=1,nfglevels_actual
             u_fg(k,iEdge) = cos(angleEdge(iEdge)) * u_fg(k,iEdge) &
                           + sin(angleEdge(iEdge)) * v_fg(k,iEdge)
          end do
       end do
-
-
-      !
-      ! Check how many distinct levels we actually found in the meteorological data
-      !
-      do k=1,config_nfglevels
-         if (vert_level(k) == -1.0) exit 
-      end do
-      nfglevels_actual = k-1
-      write(0,*) '*************************************************'
-      write(0,*) 'Found ', nfglevels_actual, ' levels in the first-guess data'
-      write(0,*) '*************************************************'
 
       !  
       ! Vertically interpolate meteorological data
