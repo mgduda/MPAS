@@ -1,0 +1,113 @@
+<!-- ================================================================================================================== -->
+<!-- REGISTRY FOR PHYSICS ATMOSPHERIC AND SURFACE INPUTS:                                                               -->
+<!-- ================================================================================================================== -->
+
+
+        <var_struct name="atm_input" time_levs="1">
+
+                <!-- Monthly mean ozone climatology used in the CAM and RRTMG radiation codes -->
+                <var name="pin"         type="real"     dimensions="nOznLevels"/>
+                <var name="ozmixm"      type="real"     dimensions="nMonths nOznLevels nCells"/>
+
+        </var_struct>
+
+        <var_struct name="sfc_input" time_levs="1">
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
+                <!-- ================================================================================================== -->
+
+                <!--  albedo12m      :monthly climatological albedo                                                 [-] -->
+                <!--  greenfrac      :monthly climatological greeness fraction                                      [-] -->
+                <!--  isltyp         :dominant soil category                                                        [-] -->
+                <!--  ivgtyp         :dominant vegetation category                                                  [-] -->
+                <!--  mminlu         :land use classification scheme                                                [-] -->
+                <!--  landmask       :=0 for ocean;=1 for land                                                      [-] -->
+                <!--  sfc_albbck     :background albedo                                                             [-] -->
+                <!--  shdmin         :minimum areal fractional coverage of annual green vegetation                  [-] -->
+                <!--  shdmax         :maximum areal fractional coverage of annual green vegetation                  [-] -->
+                <!--  skintemp       :skin temperature                                                              [K] -->
+                <!--  snoalb         :annual max snow albedo                                                        [-] -->
+                <!--  snow           :snow water equivalent                                                    [kg m-2] -->
+                <!--  sst            :sea-surface temperature                                                       [K] -->
+                <!--  snowc          :flag indicating snow coverage (1 for snow cover)                              [-] -->
+                <!--  snowh          :physical snow depth                                                           [m] -->
+                <!--  ter            :terrain height                                                                [-] -->
+                <!--  tmn            :soil temperature at lower boundary                                            [K] -->
+                <!--  vegfra         :vegetation fraction                                                           [-] -->
+                <!--  seaice         :sea-ice mask (=1 when xice is greater than 0; =0 otherwise)                   [-] -->
+                <!--  xice           :fractional sea-ice coverage                                                   [-] -->
+                <!--  xland          :land mask    (1 for land; 2 for water)                                        [-] -->
+
+                <!--  dzs            :thickness of soil layers                                                      [m] -->
+                <!--  smcrel         :soil moisture threshold below which transpiration begins to stress            [-] -->
+                <!--  sh2o           :soil liquid water                                                        [m3 m-3] -->
+                <!--  smois          :soil moisture                                                            [m3 m-3] -->
+                <!--  tslb           :soil temperature                                                              [K] -->
+
+                <var name="isltyp"      type="integer"  dimensions="nCells"/>
+                <var name="ivgtyp"      type="integer"  dimensions="nCells"/>
+                <var name="mminlu"      type="text"     dimensions=""/>
+                <var name="landmask"    type="integer"  dimensions="nCells"/>
+                <var name="shdmin"      type="real"     dimensions="nCells"/>
+                <var name="shdmax"      type="real"     dimensions="nCells"/>
+                <var name="snoalb"      type="real"     dimensions="nCells"/>
+                <var name="ter"         type="real"     dimensions="nCells"/>
+                <var name="albedo12m"   type="real"     dimensions="nMonths nCells"/>
+                <var name="greenfrac"   type="real"     dimensions="nMonths nCells"/>
+
+                <var name="dzs"         type="real"     dimensions="nSoilLevels nCells"/>
+
+                <var name="sfc_albbck"  type="real"     dimensions="nCells Time"/>
+                <var name="skintemp"    type="real"     dimensions="nCells Time"/>
+                <var name="snow"        type="real"     dimensions="nCells Time"/>
+                <var name="snowc"       type="real"     dimensions="nCells Time"/>
+                <var name="snowh"       type="real"     dimensions="nCells Time"/>
+                <var name="sst"         type="real"     dimensions="nCells Time"/>
+                <var name="tmn"         type="real"     dimensions="nCells Time"/>
+                <var name="vegfra"      type="real"     dimensions="nCells Time"/>
+                <var name="seaice"      type="real"     dimensions="nCells Time"/>
+                <var name="xice"        type="real"     dimensions="nCells Time"/>
+                <var name="xland"       type="real"     dimensions="nCells Time"/>
+
+                <var name="smcrel"      type="real"     dimensions="nSoilLevels nCells Time"/>
+                <var name="sh2o"        type="real"     dimensions="nSoilLevels nCells Time"/>
+                <var name="smois"       type="real"     dimensions="nSoilLevels nCells Time"/>
+                <var name="tslb"        type="real"     dimensions="nSoilLevels nCells Time"/>
+
+                <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ================================================================================================== -->
+
+                <!--  var2d      : orographic variance                                                             (m2) -->
+                <!--  con        : orographic convexity                                                            (m2) -->
+                <!--  oa1        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa2        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa3        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa4        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol1        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol2        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol3        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol4        : orographic direction asymmetry function                                          (-) -->
+
+                <var name="var2d"       type="real"     dimensions="nCells"/>
+                <var name="con"         type="real"     dimensions="nCells"/>
+                <var name="oa1"         type="real"     dimensions="nCells"/>
+                <var name="oa2"         type="real"     dimensions="nCells"/>
+                <var name="oa3"         type="real"     dimensions="nCells"/>
+                <var name="oa4"         type="real"     dimensions="nCells"/>
+                <var name="ol1"         type="real"     dimensions="nCells"/>
+                <var name="ol2"         type="real"     dimensions="nCells"/>
+                <var name="ol3"         type="real"     dimensions="nCells"/>
+                <var name="ol4"         type="real"     dimensions="nCells"/>
+
+
+        </var_struct>
+
+
+<!-- ================================================================================================================= -->
+
+
+
+

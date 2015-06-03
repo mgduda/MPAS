@@ -1,0 +1,75 @@
+<!-- =============================================================================================================================== -->
+<!-- REGISTRY FOR PHYSICS DIMENSIONS AND CONFIGURATION PARMAETERS:                                                                   -->
+<!-- =============================================================================================================================== -->
+
+
+        <dims>
+
+            <dim name="nMonths"        definition="namelist:months"/>
+            <dim name="nSoilLevels"    definition="namelist:num_soil_layers"/>
+            <dim name="nLags"          definition="namelist:input_soil_temperature_lag"/>
+            <dim name="nOznLevels"     definition="namelist:noznlev"/>
+            <dim name="nAerLevels"     definition="namelist:naerlev"/>
+            <dim name="cam_dim1"       definition="namelist:camdim1"/>
+            <dim name="nVertLevelsP2"  definition="nVertLevels+2"/>
+
+        </dims>
+
+
+        <nml_record name="physics" in_defaults="true">
+
+            <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
+            <nml_option name="input_soil_data"             type="character"   default_value="STAS"                 in_defaults="false"/>
+            <nml_option name="input_soil_temperature_lag"  type="integer"     default_value="140"                  in_defaults="false"/>
+            <nml_option name="num_soil_layers"             type="integer"     default_value="4"                    in_defaults="false"/>
+            <nml_option name="months"                      type="integer"     default_value="12"                   in_defaults="false"/>
+
+            <!-- ... DIMENSION NEEDED FOR OZONE AND AEROSOLS CONCENTRATIONS IN THE CAM LONGWAVE AND SHORTWAVE -->
+            <!-- ... RADIATION PARAMETERIZATIONS.                                                             -->
+            <nml_option name="noznlev"                     type="integer"     default_value="59"                   in_defaults="false"/>
+            <nml_option name="naerlev"                     type="integer"     default_value="29"                   in_defaults="false"/>
+            <nml_option name="camdim1"                     type="integer"     default_value="4"                    in_defaults="false"/>
+
+            <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
+            <nml_option name="config_frac_seaice"          type="logical"     default_value="false"                in_defaults="false"/>
+            <nml_option name="config_sfc_albedo"           type="logical"     default_value="true"                 in_defaults="false"/>
+            <nml_option name="config_sfc_snowalbedo"       type="logical"     default_value="true"                 in_defaults="false"/>
+            <nml_option name="config_sst_update"           type="logical"     default_value="false"/>
+            <nml_option name="config_sstdiurn_update"      type="logical"     default_value="false"/>
+            <nml_option name="config_deepsoiltemp_update"  type="logical"     default_value="false"/>
+            <nml_option name="config_o3climatology"        type="logical"     default_value="false"                in_defaults="false"/>
+
+            <nml_option name="config_n_microp"             type="integer"     default_value="1"                    in_defaults="false"/>
+
+            <nml_option name="config_radtlw_interval"      type="character"   default_value="00:30:00"/>
+            <nml_option name="config_radtsw_interval"      type="character"   default_value="00:30:00"/>
+            <nml_option name="config_conv_interval"        type="character"   default_value="none"                 in_defaults="false"/>
+            <nml_option name="config_pbl_interval"         type="character"   default_value="none"                 in_defaults="false"/>
+            <nml_option name="config_camrad_abs_update"    type="character"   default_value="06:00:00"             in_defaults="false"/>
+            <nml_option name="config_greeness_update"      type="character"   default_value="24:00:00"             in_defaults="false"/>
+            <nml_option name="config_bucket_update"        type="character"   default_value="none"/>
+
+            <nml_option name="config_physics_suite"        type="character"   default_value="mesoscale_reference"  in_defaults="true"/>
+
+            <nml_option name="config_microp_scheme"        type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_convection_scheme"    type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_lsm_scheme"           type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_pbl_scheme"           type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_gwdo_scheme"          type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_radt_cld_scheme"      type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_radt_lw_scheme"       type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_radt_sw_scheme"       type="character"   default_value="suite"                in_defaults="false"/>
+            <nml_option name="config_sfclayer_scheme"      type="character"   default_value="suite"                in_defaults="false"/>
+
+            <nml_option name="config_bucket_radt"          type="real"        default_value="1.0e9"                in_defaults="false"/>
+            <nml_option name="config_bucket_rainc"         type="real"        default_value="100.0"                in_defaults="false"/>
+            <nml_option name="config_bucket_rainnc"        type="real"        default_value="100.0"                in_defaults="false"/>
+
+        </nml_record>
+
+
+<!-- =============================================================================================================================== -->
+
+
+
+

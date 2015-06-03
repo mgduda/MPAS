@@ -1,0 +1,70 @@
+<!-- ================================================================================================================== -->
+<!-- REGISTRY FOR PHYSICS TENDENCIES:                                                                                   -->
+<!-- ================================================================================================================== -->
+
+
+        <var_struct name="tend_physics" time_levs="1">
+
+
+                <!-- ================================================================================================== -->
+                <!-- TENDENCIES FROM PARAMETERIZATION OF CONVECTION:                                                    -->
+                <!-- ================================================================================================== -->
+                <!-- rthcuten  : tendency of potential temperature due to cumulus convection                    [K s-1] -->
+                <!-- rqvcuten  : tendency of water vapor mixing ratio due to cumulus convection             [kg/kg s-1] -->
+                <!-- rqccuten  : tendency of cloud water mixing ratio due to cumulus convection             [kg/kg s-1] -->
+                <!-- rqicuten  : tendency of cloud ice mixing ratio due to cumulus convection               [kg/kg s-1] -->
+
+                <var name="rthcuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqvcuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqccuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqicuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+
+                <!-- KAIN_FRITSCH -->
+                <!-- rqrcuten  : tendency of rain mixing ratio due to cumulus convection                    [kg/kg s-1] -->
+                <!-- rqscuten  : tendency of snow mixing ratio due to cumulus convection                    [kg/kg s-1] -->
+
+                <var name="rqrcuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqscuten"    type="real"     dimensions="nVertLevels nCells Time"/>
+
+                <!-- TIEDTKE -->
+                <!-- rucuten   : tendency of zonal wind due to cumulus convection                              [m/s-1] -->
+                <!-- rvcuten   : tendency of meridional wind due to cumulus convection                         [m/s-1] -->
+                <!-- rqvdynten : tendency of water vapor due to horizontal and vertical advections         [kg/kg/s-1] -->
+                <var name="rqvdynten"   type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rucuten"     type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rvcuten"     type="real"     dimensions="nVertLevels nCells Time"/>
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... TENDENCIES FROM PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                        -->
+                <!-- ================================================================================================== -->
+                <!-- rublten   : tendency of zonal wind due to pbl processes                                    [m s-1] -->
+                <!-- rvblten   : tendency of meridional wind due to pbl processes                               [m s-1] -->
+                <!-- rthblten  : tendency of potential temperature due to pbl processes                         [K s-1] -->
+                <!-- rqvblten  : tendency of water vapor mixing ratio due to pbl processes                  [kg/kg s-1] -->
+                <!-- rqcblten  : tendency of cloud water mixing ratio due to pbl processes                  [kg/kg s-1] -->
+                <!-- rqiblten  : tendency of cloud ice mixing ratio due to pbl processes                    [kg/kg s-1] -->
+
+                <var name="rublten"     type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rvblten"     type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rthblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqvblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqcblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqiblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+
+
+                <!-- ================================================================================================== -->
+                <!-- ... TENDENCIES FROM PARAMETERIZATION OF LONGWAVE RADIATION:                                        -->
+                <!-- ================================================================================================== -->
+                <!--  rthratensw:uncoupled theta tendency due to shortwave radiation                            [K s-1] -->
+                <!--  rthratenlw:uncoupled theta tendency due to longwave radiation                             [K s-1] -->
+
+                <var name="rthratensw"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rthratenlw"  type="real"     dimensions="nVertLevels nCells Time"/>
+
+
+        </var_struct>
+
+
+<!-- ================================================================================================================== -->
+
