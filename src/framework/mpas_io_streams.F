@@ -200,7 +200,7 @@ module mpas_io_streams
       else
          write(strTemp, '(a)') trim(seekTime)
       end if
-      call mpas_set_timeInterval(interval=minTimeDiff, DD=10000)
+      call mpas_set_timeInterval(interval=minTimeDiff, DD=2000000)
       call mpas_set_time(curr_time=startTime, dateTimeString=strTemp)
 
       do i=1,timeDim
