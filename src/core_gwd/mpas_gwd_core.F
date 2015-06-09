@@ -5,7 +5,7 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-module postproc_core
+module gwd_core
 
    use mpas_framework
    use mpas_timekeeping
@@ -31,7 +31,7 @@ module postproc_core
 
    !***********************************************************************
    !
-   !  function postproc_core_init
+   !  function gwd_core_init
    !
    !> \brief   MPAS Core Initialization Function
    !> \author  Doug Jacobsen
@@ -42,7 +42,7 @@ module postproc_core
    !>   but more generally can include anything the core needs to initialize.
    !
    !-----------------------------------------------------------------------
-   function postproc_core_init(domain, startTimeStamp) result(iErr)!{{{
+   function gwd_core_init(domain, startTimeStamp) result(iErr)!{{{
    
       use mpas_configure
       use mpas_derived_types
@@ -69,12 +69,12 @@ module postproc_core
       startTime = mpas_get_clock_time(clock, MPAS_START_TIME, iErr)
       call mpas_get_time(startTime, dateTimeString=startTimeStamp) 
 
-   end function postproc_core_init!}}}
+   end function gwd_core_init!}}}
 
 
    !***********************************************************************
    !
-   !  function postproc_core_run
+   !  function gwd_core_run
    !
    !> \brief   MPAS Core Run Function
    !> \author  Doug Jacobsen
@@ -85,7 +85,7 @@ module postproc_core
    !>  anything a core would typically do after it was initialized.
    !
    !-----------------------------------------------------------------------
-   function postproc_core_run(domain) result(iErr)!{{{
+   function gwd_core_run(domain) result(iErr)!{{{
    
       use mpas_derived_types
       use mpas_kind_types
@@ -157,7 +157,6 @@ module postproc_core
                dc = dc + dcEdge(edgesOnCell(i,iCell))
             end do
             dc = dc / real(nEdgesOnCell(iCell),RKIND)
-dc = 2.0 * dc
 
             call get_box(latCell(iCell)*rad2deg, lonCell(iCell)*rad2deg, dc)
 
@@ -180,11 +179,11 @@ dc = 2.0 * dc
 
       iErr = 0
 
-   end function postproc_core_run!}}}
+   end function gwd_core_run!}}}
 
    !***********************************************************************
    !
-   !  function postproc_core_finalize
+   !  function gwd_core_finalize
    !
    !> \brief   MPAS Core Finalization Function
    !> \author  Doug Jacobsen
@@ -195,7 +194,7 @@ dc = 2.0 * dc
    !>  MPAS core.
    !
    !-----------------------------------------------------------------------
-   function postproc_core_finalize(domain) result(iErr)!{{{
+   function gwd_core_finalize(domain) result(iErr)!{{{
    
       use mpas_derived_types
    
@@ -209,7 +208,7 @@ dc = 2.0 * dc
 
       call mpas_destroy_clock(clock, iErr)
 
-   end function postproc_core_finalize!}}}
+   end function gwd_core_finalize!}}}
 
 
    subroutine get_box(lat, lon, dx)
@@ -536,4 +535,4 @@ dc = 2.0 * dc
 
    end function get_ol4
 
-end module postproc_core
+end module gwd_core

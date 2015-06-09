@@ -5,76 +5,76 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-module postproc_core_interface
+module gwd_core_interface
 
    use mpas_derived_types
    use mpas_pool_routines
    use mpas_dmpar
    use mpas_constants
    use mpas_io_units
-   use postproc_core
+   use gwd_core
 
    public
 
    contains
    !***********************************************************************
    !
-   !  routine postproc_setup_core
+   !  routine gwd_setup_core
    !
    !> \brief   Test core setup routine
    !> \author  Doug Jacobsen
    !> \date    03/18/2015
    !> \details 
    !>  This routine is intended to setup the necessary variables within a core_type
-   !>  for the postproc core.
+   !>  for the gwd core.
    !
    !-----------------------------------------------------------------------
-   subroutine postproc_setup_core(core)!{{{
+   subroutine gwd_setup_core(core)!{{{
       type (core_type), pointer :: core
 
-      core % core_init => postproc_core_init
-      core % core_run => postproc_core_run
-      core % core_finalize => postproc_core_finalize
-      core % define_packages => postproc_define_packages
-      core % setup_packages => postproc_setup_packages
-      core % setup_decompositions => postproc_setup_decompositions
-      core % setup_clock => postproc_setup_clock
-      core % get_mesh_stream => postproc_get_mesh_stream
-      core % setup_immutable_streams => postproc_setup_immutable_streams
-      core % setup_derived_dimensions => postproc_setup_derived_dimensions
-      core % setup_block => postproc_setup_block
-      core % setup_namelist => postproc_setup_namelists
+      core % core_init => gwd_core_init
+      core % core_run => gwd_core_run
+      core % core_finalize => gwd_core_finalize
+      core % define_packages => gwd_define_packages
+      core % setup_packages => gwd_setup_packages
+      core % setup_decompositions => gwd_setup_decompositions
+      core % setup_clock => gwd_setup_clock
+      core % get_mesh_stream => gwd_get_mesh_stream
+      core % setup_immutable_streams => gwd_setup_immutable_streams
+      core % setup_derived_dimensions => gwd_setup_derived_dimensions
+      core % setup_block => gwd_setup_block
+      core % setup_namelist => gwd_setup_namelists
 
       core % Conventions = 'MPAS'
       core % source = 'MPAS'
 #include "inc/core_variables.inc"
 
-   end subroutine postproc_setup_core!}}}
+   end subroutine gwd_setup_core!}}}
 
 
    !***********************************************************************
    !
-   !  routine postproc_setup_domain
+   !  routine gwd_setup_domain
    !
    !> \brief   Test domain setup routine
    !> \author  Doug Jacobsen
    !> \date    03/18/2015
    !> \details 
    !>  This routine is intended to setup the necessary variables within a domain_type
-   !>  for the postproc core.
+   !>  for the gwd core.
    !
    !-----------------------------------------------------------------------
-   subroutine postproc_setup_domain(domain)!{{{
+   subroutine gwd_setup_domain(domain)!{{{
       type (domain_type), pointer :: domain
 
 #include "inc/domain_variables.inc"
 
-   end subroutine postproc_setup_domain!}}}
+   end subroutine gwd_setup_domain!}}}
 
 
    !***********************************************************************
    !
-   !  function postproc_setup_packages
+   !  function gwd_setup_packages
    !
    !> \brief   Pacakge setup routine
    !> \author  Doug Jacobsen
@@ -86,7 +86,7 @@ module postproc_core_interface
    !>   *not* allocated until after this routine is called.
    !
    !-----------------------------------------------------------------------
-   function postproc_setup_packages(configPool, packagePool) result(ierr)!{{{
+   function gwd_setup_packages(configPool, packagePool) result(ierr)!{{{
 
       use mpas_derived_types
 
@@ -98,12 +98,12 @@ module postproc_core_interface
 
       ierr = 0
 
-   end function postproc_setup_packages!}}}
+   end function gwd_setup_packages!}}}
 
 
    !***********************************************************************
    !
-   !  routine postproc_setup_decompositions
+   !  routine gwd_setup_decompositions
    !
    !> \brief   Decomposition setup routine
    !> \author  Doug Jacobsen
@@ -113,7 +113,7 @@ module postproc_core_interface
    !>  domain type, and register any decompositons the core wants within it.
    !
    !-----------------------------------------------------------------------
-   function postproc_setup_decompositions(decompList) result(ierr)!{{{
+   function gwd_setup_decompositions(decompList) result(ierr)!{{{
 
       use mpas_derived_types
       use mpas_decomp
@@ -137,12 +137,12 @@ module postproc_core_interface
          ierr = 0
       end if
 
-   end function postproc_setup_decompositions!}}}
+   end function gwd_setup_decompositions!}}}
 
 
    !***********************************************************************
    !
-   !  function postproc_setup_clock
+   !  function gwd_setup_clock
    !
    !> \brief   Pacakge setup routine
    !> \author  Michael Duda
@@ -157,7 +157,7 @@ module postproc_core_interface
    !>  options are available.
    !
    !-----------------------------------------------------------------------
-   function postproc_setup_clock(core_clock, configs) result(ierr)!{{{
+   function gwd_setup_clock(core_clock, configs) result(ierr)!{{{
 
       use mpas_derived_types
       use mpas_io_units
@@ -188,12 +188,12 @@ module postproc_core_interface
 
       call mpas_create_clock(core_clock, startTime=startTime, timeStep=timeStep, runDuration=runDuration, ierr=ierr)
 
-   end function postproc_setup_clock!}}}
+   end function gwd_setup_clock!}}}
 
 
    !***********************************************************************
    !
-   !  function postproc_get_mesh_stream
+   !  function gwd_get_mesh_stream
    !
    !> \brief   Returns the name of the stream containing mesh information
    !> \author  Michael Duda
@@ -205,7 +205,7 @@ module postproc_core_interface
    !>  are available.
    !
    !-----------------------------------------------------------------------
-   function postproc_get_mesh_stream(configs, stream) result(ierr)!{{{
+   function gwd_get_mesh_stream(configs, stream) result(ierr)!{{{
 
       use mpas_derived_types
       use mpas_pool_routines
@@ -220,29 +220,29 @@ module postproc_core_interface
 
       write(stream,'(a)') 'mesh'
 
-   end function postproc_get_mesh_stream!}}}
+   end function gwd_get_mesh_stream!}}}
 
 
    !***********************************************************************
    !
-   !  function postproc_setup_block
+   !  function gwd_setup_block
    !
    !> \brief   Test block setup function
    !> \author  Doug Jacobsen
    !> \date    03/18/2015
    !> \details 
    !>  This function is a wrapper function to properly setup a block to be a
-   !>  postproc core block.
+   !>  gwd core block.
    !
    !-----------------------------------------------------------------------
-   function postproc_setup_block(block) result(iErr)!{{{
+   function gwd_setup_block(block) result(iErr)!{{{
       use mpas_derived_types
       type (block_type), pointer :: block
       integer :: iErr
 
       iErr = 0
-      call postproc_generate_structs(block, block % structs, block % dimensions, block % packages)
-   end function postproc_setup_block!}}}
+      call gwd_generate_structs(block, block % structs, block % dimensions, block % packages)
+   end function gwd_setup_block!}}}
 
 #include "inc/setup_immutable_streams.inc"
 
@@ -256,5 +256,5 @@ module postproc_core_interface
 
 #include "inc/namelist_defines.inc"
 
-end module postproc_core_interface
+end module gwd_core_interface
 

@@ -1,10 +1,10 @@
 .SUFFIXES: .F .o
 
-OBJS = mpas_postproc_core.o mpas_postproc_core_interface.o
+OBJS = mpas_gwd_core.o mpas_gwd_core_interface.o
 
-all: core_postproc
+all: core_gwd
 
-core_postproc: $(OBJS)
+core_gwd: $(OBJS)
 	ar -ru libdycore.a $(OBJS)
 
 core_reg:
@@ -12,8 +12,8 @@ core_reg:
 
 core_input_gen:
 	if [ ! -e default_inputs ]; then  mkdir default_inputs; fi
-	(cd default_inputs; $(NL_GEN) ../Registry_processed.xml namelist.postproc )
-	(cd default_inputs; $(ST_GEN) ../Registry_processed.xml streams.postproc stream_list.postproc. listed )
+	(cd default_inputs; $(NL_GEN) ../Registry_processed.xml namelist.gwd )
+	(cd default_inputs; $(ST_GEN) ../Registry_processed.xml streams.gwd stream_list.gwd. listed )
 
 gen_includes:
 	$(CPP) $(CPPFLAGS) $(CPPINCLUDES) Registry.xml > Registry_processed.xml
@@ -25,9 +25,9 @@ post_build:
 	cp default_inputs/* $(ROOT_DIR)/default_inputs/.
 	( cd $(ROOT_DIR)/default_inputs; for FILE in `ls -1`; do if [ ! -e ../$$FILE ]; then cp $$FILE ../.; fi; done )
 
-mpas_postproc_core_interface: mpas_postproc_core.o
+mpas_gwd_core_interface: mpas_gwd_core.o
 
-mpas_postproc_core.o: 
+mpas_gwd_core.o: 
 
 clean:
 	$(RM) *.o *.mod *.f90 libdycore.a

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<registry model="mpas" core="postproc" core_abbrev="postproc" version="4.0">
+<registry model="mpas" core="gwd" core_abbrev="gwd" version="4.0">
 	<dims>
 		<dim name="nCells"/>
 		<dim name="nEdges"/>
@@ -19,7 +19,7 @@
 	<nml_record name="time_management" in_defaults="true">
 		<nml_option name="config_calendar_type"              type="character"     default_value="gregorian_noleap"/>
 		<nml_option name="config_start_time"                 type="character"     default_value="0000-01-01_00:00:00"/>
-		<nml_option name="config_stop_time"                  type="character"     default_value="0000-01-01_00:00:00"/>
+		<nml_option name="config_stop_time"                  type="character"     default_value="0000-01-01_01:00:00"/>
 		<nml_option name="config_timestep"                   type="character"     default_value="1:00:00"/>
 	</nml_record>
 	<nml_record name="io" in_defaults="true">
@@ -78,9 +78,18 @@
 			<var name="cellsOnVertex"/>
 			<var name="kiteAreasOnVertex"/>
 		</stream>
+		<stream name="orography"
+		        type="input"
+		        filename_template="topo.nc"
+		        filename_interval="none"
+		        precision="single"
+		        runtime_format="single_file"
+		        input_interval="initial_only" >
+                        <var name="topo"/>
+                </stream>
 		<stream name="input" 
 				type="input"
-				filename_template="input.nc"
+				filename_template="static_in.nc"
 				filename_interval="none"
 				runtime_format="single_file"
 				input_interval="initial_only" >
@@ -158,10 +167,11 @@
 		</stream>
 		<stream name="output" 
 				type="output"
-				filename_template="output.nc"
+				filename_template="static_out.nc"
 				filename_interval="none"
+				clobber_mode="truncate"
 				runtime_format="single_file"
-				output_interval="none" >
+				output_interval="initial_only" >
 
                         <var name="xtime"/>
                         <var name="latCell"/>
