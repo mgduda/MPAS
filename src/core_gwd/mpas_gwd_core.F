@@ -150,16 +150,38 @@ module gwd_core
          write(0,*) 'max(topo)=', maxval(topo)
          write(0,*) 'pointval=', topo(5,5)
 
+         !
+         ! Main loop to compute each of the GWDO fields for every horizontal
+         ! grid cell in the mesh.
+         !
          do iCell=1,nCells
 
+            !
+            ! First, get an estimate of the mean diameter (in meters)of the grid 
+            ! cell by averaging the distances to each of the neighboring cells
+            !
             dc = 0.0
             do i=1,nEdgesOnCell(iCell)
                dc = dc + dcEdge(edgesOnCell(i,iCell))
             end do
             dc = dc / real(nEdgesOnCell(iCell),RKIND)
 
+            !
+            ! Cut out a rectangular piece of the global 30-arc-second topography
+            ! data that is centered at the lat/lon of the current cell being
+            ! processed and that is just large enough to cover the cell. The
+            ! rectangular array of topography data is stored in the module
+            ! variable 'box', and the dimensions of this array are given by the
+            ! module variables 'nx' and 'ny'. The get_box() routine also
+            ! computes the mean elevation in the array and stores that value in
+            ! the module variable 'box_mean'.
+            !
             call get_box(latCell(iCell)*rad2deg, lonCell(iCell)*rad2deg, dc)
 
+            !
+            ! With a box of 30-arc-second data for the current grid cell, call
+            ! subroutines to compute each sub-grid orography statistic
+            !
             var2d(iCell) = get_var()
             con(iCell) = get_con()
             oa1(iCell) = get_oa1()
@@ -211,6 +233,27 @@ module gwd_core
    end function gwd_core_finalize!}}}
 
 
+
+   !***********************************************************************
+   !
+   !  subroutine get_box
+   !
+   !> \brief   Cuts out a rectangular box of data centered at a given (lat,lon)
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !>  This subroutine extracts a rectangular sub-array of the 30-arc-second
+   !>  global topography dataset, stored in the module variable 'topo'; the
+   !>  sub-array will be centered at the (lat,lon) specified in the argument
+   !>  list, and will have a width and height large enough to span 'dx' meters.
+   !>  The extracted sub-array is stored in the module variable 'box', and the
+   !>  dimensions of this sub-array are stored in the module variables 'nx' and
+   !>  'ny'.
+   !>  Since the mean value of the terrain in a grid cell is needed by many of
+   !>  the GWDO statistics computations, this mean value is also computed by
+   !>  this subroutine and stored in the module variable 'box_mean'.
+   !
+   !-----------------------------------------------------------------------
    subroutine get_box(lat, lon, dx)
 
       implicit none
@@ -219,22 +262,37 @@ module gwd_core
 
       integer :: i, j, ii, jj, ic, jc
 
+      !
+      ! Get number of points to extract in the zonal direction
+      !
       if (cos(lat/rad2deg) > (2.0 * pts_per_degree * dx * 180.0) / (real(topo_x,RKIND) * Pi * Re)) then
          nx = ceiling((180.0 * dx * pts_per_degree) / (Pi * Re * cos(lat/rad2deg)))
       else
          nx = topo_x / 2
       end if
+
+      !
+      ! Get number of points to extract in the meridional direction
+      !
       ny = ceiling((180.0 * dx * pts_per_degree) / (Pi * Re))
 
+      !
+      ! Find coordinates in global topography array of the box center
+      !
       ic = nint((lon - start_lon) * pts_per_degree) + 1
       jc = nint((lat - start_lat) * pts_per_degree) + 1
 
       if (ic <= 0) ic = ic + topo_x
       if (ic > topo_x) ic = ic - topo_x
 
+
       if (associated(box)) deallocate(box)
       allocate(box(nx,ny))
 
+      !
+      ! Extract sub-array (box) from global array; must properly account for 
+      ! the periodicity in the longitude coordinate, as well as the poles
+      !
       box_mean = 0.0
       do j=1,ny
       do i=1,nx
@@ -262,11 +320,25 @@ module gwd_core
 
       end do
       end do
+
+      !
+      ! Compute mean topography in the extracted box
+      !
       box_mean = box_mean / real(nx*ny, RKIND)
 
    end subroutine get_box
 
 
+   !***********************************************************************
+   !
+   !  function get_var
+   !
+   !> \brief   Computes standard deviation of sub-grid-scale terrain
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_var()
 
       implicit none
@@ -287,6 +359,16 @@ module gwd_core
    end function get_var
 
 
+   !***********************************************************************
+   !
+   !  function get_con
+   !
+   !> \brief   Computes orographic convexityof sub-grid-scale terrain
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_con()
 
       implicit none
@@ -315,6 +397,18 @@ module gwd_core
    end function get_con
 
 
+   !***********************************************************************
+   !
+   !  function get_oa1
+   !
+   !> \brief   Computes orographic asymmetry in the West direction
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !>  This function computes the sub-grid orographic asymmetry following 
+   !>  the comment from N. Wood in the footnote of Kim and Doyle (QRJMS, 2005).
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_oa1()
 
       implicit none
@@ -342,6 +436,18 @@ module gwd_core
    end function get_oa1
 
 
+   !***********************************************************************
+   !
+   !  function get_oa2
+   !
+   !> \brief   Computes orographic asymmetry in the South direction
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !>  This function computes the sub-grid orographic asymmetry following 
+   !>  the comment from N. Wood in the footnote of Kim and Doyle (QRJMS, 2005).
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_oa2()
 
       implicit none
@@ -371,6 +477,18 @@ module gwd_core
    end function get_oa2
 
 
+   !***********************************************************************
+   !
+   !  function get_oa3
+   !
+   !> \brief   Computes orographic asymmetry in the South-West direction
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !>  This function computes the sub-grid orographic asymmetry following 
+   !>  the comment from N. Wood in the footnote of Kim and Doyle (QRJMS, 2005).
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_oa3()
 
       implicit none
@@ -401,6 +519,18 @@ module gwd_core
    end function get_oa3
 
 
+   !***********************************************************************
+   !
+   !  function get_oa4
+   !
+   !> \brief   Computes orographic asymmetry in the North-West direction
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !>  This function computes the sub-grid orographic asymmetry following 
+   !>  the comment from N. Wood in the footnote of Kim and Doyle (QRJMS, 2005).
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_oa4()
 
       implicit none
@@ -431,6 +561,16 @@ module gwd_core
    end function get_oa4
 
 
+   !***********************************************************************
+   !
+   !  function get_ol1
+   !
+   !> \brief   Computes orographic effective length for Westerly flow
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_ol1()
 
       implicit none
@@ -454,6 +594,16 @@ module gwd_core
    end function get_ol1
 
 
+   !***********************************************************************
+   !
+   !  function get_ol2
+   !
+   !> \brief   Computes orographic effective length for Southerly flow
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_ol2()
 
       implicit none
@@ -477,6 +627,16 @@ module gwd_core
    end function get_ol2
 
 
+   !***********************************************************************
+   !
+   !  function get_ol3
+   !
+   !> \brief   Computes orographic effective length for South-Westerly flow
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_ol3()
 
       implicit none
@@ -506,6 +666,16 @@ module gwd_core
    end function get_ol3
 
 
+   !***********************************************************************
+   !
+   !  function get_ol4
+   !
+   !> \brief   Computes orographic effective length for North-Westerly flow
+   !> \author  Michael Duda
+   !> \date    29 May 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
    real (kind=RKIND) function get_ol4()
 
       implicit none
@@ -517,7 +687,6 @@ module gwd_core
       nw = 0
       nt = 0
 
-      get_ol4 = real(nw,RKIND) / real(nx*ny,RKIND)
       do j=ny/2+1,ny
          do i=1,nx/2
             if (box(i,j) > box_mean) nw = nw + 1
