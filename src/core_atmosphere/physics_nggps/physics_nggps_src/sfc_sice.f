@@ -337,14 +337,14 @@
       do i = 1, im
         if (flag(i)) then
           if (tice(i) < timin) then
-            print *,'warning: snow/ice temperature is too low:',tice(i)
+            print *,'warning: snow/ice temperature is too low:',tice(i) &
      &,' i=',i
             tice(i) = timin
             print *,'fix snow/ice temperature: reset it to:',tice(i)
           endif
 
           if (stsice(i,1) < timin) then
-            print *,'warning: layer 1 ice temp is too low:',stsice(i,1)
+            print *,'warning: layer 1 ice temp is too low:',stsice(i,1) &
      &,' i=',i
             stsice(i,1) = timin
             print *,'fix layer 1 ice temp: reset it to:',stsice(i,1)

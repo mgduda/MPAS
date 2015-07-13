@@ -1,3 +1,16 @@
+!=================================================================================================================
+!corrections made for run in MPAS:
+
+!in the call to subroutine calwxt_explicit, removed the double quote before the array sr.
+!Laura D. Fowler (laura@ucar.edu) / 2015-07-10.
+
+
+!=================================================================================================================
+
+
+
+
+
       subroutine calpreciptype(kdt,nrcm,im,ix,lm,lp1,randomno,      &
                                xlat,xlon,                           &
                                gt0,gq0,prsl,prsi,prec,              & !input
@@ -187,7 +200,7 @@
 ! explicit algorithm (under 18 not admitted without parent or guardian)
  
         if(n3dfercld == 3) then ! ferrier's scheme
-          call calwxt_explicit(lm, tskin(i),,sr(i),f_rimef,iwx)
+          call calwxt_explicit(lm,tskin(i),sr(i),f_rimef,iwx)
           snow(5)   = mod(iwx,2)
           sleet(5)  = mod(iwx,4)/2
           freezr(5) = mod(iwx,8)/4

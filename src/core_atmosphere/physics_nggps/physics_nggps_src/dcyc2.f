@@ -153,8 +153,8 @@
      &      sfcnirbmu, sfcnirdfu, sfcvisbmu, sfcvisdfu,                 &
      &      sfcnirbmd, sfcnirdfd, sfcvisbmd, sfcvisdfd
 
-      real(kind=kind_phys), dimension(ix,levs), intent(in) :: swh,  hlw
-     &,                                                       swhc, hlwc&
+      real(kind=kind_phys), dimension(ix,levs), intent(in) :: swh,  hlw, &
+     &                                                        swhc, hlwc
 
 !  ---  input/output:
       real(kind=kind_phys), dimension(im,levs), intent(inout) :: dtdt   &
@@ -189,7 +189,7 @@
 !      note: sfc emiss effect is not appied here, and will be dealt in other place
 
         tem2 = tsea(i) * tsea(i)
-        adjsfculw(i) =  sfcemis(i) * con_sbc * tem2 * tem2
+        adjsfculw(i) =  sfcemis(i) * con_sbc * tem2 * tem2 &
      &               + (1.0 - sfcemis(i)) * adjsfcdlw(i)
 !
 !  --- ...  sw time-step adjustment

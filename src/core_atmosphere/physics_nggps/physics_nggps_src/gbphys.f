@@ -509,19 +509,19 @@
 !
       use machine ,   only : kind_phys
       use physcons,   only : con_cp, con_fvirt, con_g, con_rd, con_rv,  &
-     &                       con_hvap, con_hfus, con_rerth, con_pi
-     &,                      rhc_max, dxmin, dxinv, pa2mb, rlapse
+     &                       con_hvap, con_hfus, con_rerth, con_pi,     &
+     &                       rhc_max, dxmin, dxinv, pa2mb, rlapse
 
       implicit none
 !
 !  ---  some constant parameters:
 
-      real(kind=kind_phys), parameter :: hocp    = con_hvap/con_cp
-!    &,                                  fhourpr = 0.0
-     &,                                  qmin    = 1.0e-10
-     &,                                  p850    = 85000.0
-     &,                                  epsq    = 1.e-20
-     &,                                  hsub    = con_hvap+con_hfus
+      real(kind=kind_phys), parameter :: hocp    = con_hvap/con_cp      &
+!    &,                                  fhourpr = 0.0                  &
+     &,                                  qmin    = 1.0e-10              &
+     &,                                  p850    = 85000.0              &
+     &,                                  epsq    = 1.e-20               &
+     &,                                  hsub    = con_hvap+con_hfus    &
      &,                                  czmin   = 0.0001      ! cos(89.994)
 
 !  ---  inputs:
@@ -592,7 +592,7 @@
      &      nlwsfc_cpl,nswsfc_cpl,                                      &
      &      nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,                &
 ! for nst
-     &      xt, xs, xu, xv, xz, zm, xtts, xzts, d_conv, ifd, dt_cool,
+     &      xt, xs, xu, xv, xz, zm, xtts, xzts, d_conv, ifd, dt_cool,   &
      &      Qrain
 
 !
@@ -1083,7 +1083,7 @@
      &          .and. (.not. invrsn(i))) then
               tem = (tgrs(i,k+1)-tgrs(i,k)) / (prsl(i,k)-prsl(i,k+1))
 
-              if ((tem > 0.00010 .and. tx1(i) < 0.0) .or. 
+              if ((tem > 0.00010 .and. tx1(i) < 0.0) .or.               &
      &            (tem-abs(tx1(i)) > 0.0 .and. tx2(i) < 0.0)) then
                 invrsn(i) = .true.
 
@@ -1234,7 +1234,7 @@
           if ( nst_fcst > 1 ) then
             do i = 1, im
               if ( islmsk(i) == 0 ) then
-                tsea(i) = max(271.0, tref(i) + (xt(i)+xt(i))/xz(i)
+                tsea(i) = max(271.0, tref(i) + (xt(i)+xt(i))/xz(i)      &
      &                                       - dt_cool(i))              &
      &                                       - (oro(i)-oro_uf(i))*rlapse
               endif
@@ -1682,7 +1682,7 @@
 !        call rayleigh_damp_mesopause(im, ix, im, levs, dvdt, dudt, dtdt,
 !     &                   ugrs, vgrs, dtp, con_cp, levr, prsl, prslrd0)
 !      else
-        call rayleigh_damp(im, ix, im, levs, dvdt, dudt, dtdt, ugrs,
+        call rayleigh_damp(im, ix, im, levs, dvdt, dudt, dtdt, ugrs, &
      &                     vgrs, dtp, con_cp, levr, prsl, prslrd0)
       endif
 
@@ -2451,7 +2451,7 @@
 !         print *,' gq0b=',gq0(ipr,:,1)
 !       endif
 
-        call mstcnv(im,ix,levs,dtp,gt0,gq0,prsl,del,prslk,rain1
+        call mstcnv(im,ix,levs,dtp,gt0,gq0,prsl,del,prslk,rain1 &
      &,                          gq0(1,1,ntcw), rhc, lprnt,ipr)
 
 !       if (lprnt) then
@@ -2481,9 +2481,9 @@
           if (ldiag3d) then
             do k=1,levs
               do i=1,im
-                dt3dt(i,k,4) = dt3dt(i,k,4) + (gt0(i,k)-dtdt(i,k))
+                dt3dt(i,k,4) = dt3dt(i,k,4) + (gt0(i,k)-dtdt(i,k))     &
      &                                      * frain
-                dq3dt(i,k,2) = dq3dt(i,k,2) + (gq0(i,k,1)-dqdt(i,k,1))
+                dq3dt(i,k,2) = dq3dt(i,k,2) + (gq0(i,k,1)-dqdt(i,k,1)) &
      &                                      * frain
               enddo
             enddo
@@ -2608,9 +2608,9 @@
 
       if (cal_pre) then       ! hchuang: add dominant precipitation type algorithm
 
-        call calpreciptype(kdt,nrcm,im,ix,levs,levs+1,rann,
-     &                     xlat,xlon,gt0,gq0,prsl,prsi,rain,
-     &                     phii,num_p3d,tsea,sr,phy_f3d(1,1,3),    ! input
+        call calpreciptype(kdt,nrcm,im,ix,levs,levs+1,rann,     &
+     &                     xlat,xlon,gt0,gq0,prsl,prsi,rain,    &
+     &                     phii,num_p3d,tsea,sr,phy_f3d(1,1,3), &  ! input
      &                     domr,domzr,domip,doms)                  ! output
 
 !

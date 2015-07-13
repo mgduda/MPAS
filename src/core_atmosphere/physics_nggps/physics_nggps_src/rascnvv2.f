@@ -275,7 +275,7 @@
      &,                    RAINC(im),     CDRAG(im),  DDVEL(im)         &
      &,                    rannum(ix,nrcm),dlqfac                       &
      &,                    ud_mf(im,k), dd_mf(im,k), det_mf(im,k)
-      real(kind=kind_phys) DT, facmb, garea(im), dtf, rhc(im,k)         &
+      real(kind=kind_phys) DT, facmb, garea(im), dtf, rhc(im,k)
 !
 !     Added for aerosol scavenging for GOCART
 !
@@ -297,7 +297,7 @@
       PARAMETER (ICM=100, DAYLEN=86400.0, PFAC=1.0/450.0,clwmin=1.0e-10)
       Integer  IC(ICM)
 !
-      real(kind=kind_phys), allocatable ::  ALFINT(:,:), uvi(:,:)
+      real(kind=kind_phys), allocatable ::  ALFINT(:,:), uvi(:,:)       &
      &,                                     trcfac(:,:), rcu(:,:)
       real(kind=kind_phys)            ALFINQ(K),   PRSM(K),  PSJM(K)    &
      &,                    alfind(K), rhc_l(k), dtvd(2,4)
@@ -1053,7 +1053,7 @@
      &                     dhdpmn, dhdp(kd:k)
       parameter (ERRMIN=0.0001, ERRMI2=0.1*ERRMIN)
       INTEGER I, L,  N,  KD1, II                                        &
-     &,       KP1, IT, KM1, KTEM, KK, KK1, LM1, LL, LP1, kbls, kmxh
+     &,       KP1, IT, KM1, KTEM, KK, KK1, LM1, LL, LP1, kbls, kmxh     &
      &,       kblh, kblm, kblpmn, kmax, kmaxm1, kmaxp1, klcl, kmin, kmxb
 
       real avt, avq, avr, avh

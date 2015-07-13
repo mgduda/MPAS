@@ -319,7 +319,7 @@
       integer, save      :: KCM2 = 0   ! num of rh dep aerosols   (set in subr set_aerspc)
       integer, save      :: KCM        ! =KCM1+KCM2               (set in subr set_aerspc)
 
-      real (kind=kind_phys), dimension(KRHLEV) :: rhlev_grt             &
+      real (kind=kind_phys), dimension(KRHLEV) :: rhlev_grt
       data  rhlev_grt (:)/ .00, .05, .10, .15, .20, .25, .30, .35,      &
      &      .40, .45, .50, .55, .60, .65, .70, .75, .80, .81, .82,      &
      &      .83, .84, .85, .86, .87, .88, .89, .90, .91, .92, .93,      &

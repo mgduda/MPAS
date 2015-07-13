@@ -58,12 +58,12 @@
 ! -------------------------------------------------------------------   
 ! -------------------------------------------------------------------   
 !      subroutine tracer_config_init (gfs_phy_tracer,ntrac,
-      subroutine tracer_config_init (ntrac,
+      subroutine tracer_config_init (ntrac, &
      &                               ntoz,ntcw,ncld,me)
 
-c  
-c  This subprogram sets up gfs_phy_tracer
-c 
+!
+!  This subprogram sets up gfs_phy_tracer
+!
       implicit none
 ! input
       integer, intent(in)    ::  me, ntoz,ntcw,ncld
@@ -98,7 +98,7 @@ c
       gfs_phy_tracer%ntrac_met = ntrac
 
 ! update ntrac = total number of tracers
-      gfs_phy_tracer%ntrac = gfs_phy_tracer%ntrac_met +     
+      gfs_phy_tracer%ntrac = gfs_phy_tracer%ntrac_met + &
      &                       gfs_phy_tracer%ntrac_chem
       ntrac = gfs_phy_tracer%ntrac
 

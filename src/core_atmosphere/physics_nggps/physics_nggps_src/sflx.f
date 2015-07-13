@@ -4609,7 +4609,7 @@
 
         parameter (cvfrz = 3)
 
-c ----------------------------------------------------------------------
+! ----------------------------------------------------------------------
 !  --- ...  determine rainfall infiltration rate and runoff.  include
 !           the infiltration formule from schaake and koren model.
 !           modified by q duan
