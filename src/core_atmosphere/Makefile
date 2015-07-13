@@ -1,6 +1,7 @@
 .SUFFIXES: .F .o
 
-PHYSICS=-DDO_PHYSICS
+#PHYSICS=-DDO_PHYSICS
+PHYSICS=-DDO_PHYSICS_NGGPS
 #PHYSICS=
 
 OBJS = mpas_atm_core.o \
@@ -27,11 +28,19 @@ post_build:
 	cp default_inputs/* $(ROOT_DIR)/default_inputs/.
 	( cd $(ROOT_DIR)/default_inputs; for FILE in `ls -1`; do if [ ! -e ../$$FILE ]; then cp $$FILE ../.; fi; done )
 
+ifeq ($(PHYSICS),-DDO_PHYSICS)
 physcore:
 	( cd physics; $(MAKE) all )
 	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a )
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*TBL .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*DATA* .)
+else
+ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
+physcore:
+	( cd physics_nggps; $(MAKE) all )
+	( mkdir libphys; cd libphys; ar -x ../physics_nggps/libphys.a )
+endif
+endif
 
 dycore:
 	( cd dynamics; $(MAKE) all PHYSICS="$(PHYSICS)" )
@@ -43,6 +52,7 @@ mpas_atm_core_interface.o: mpas_atm_core.o
 
 mpas_atm_core.o: dycore mpas_atm_interp_diagnostics.o
 
+ifeq ($(PHYSICS),-DDO_PHYSICS)
 clean:
 	( cd physics; $(MAKE) clean )
 	( cd dynamics; $(MAKE) clean )
@@ -64,3 +74,27 @@ ifeq "$(GEN_F90)" "true"
 else
 	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I./physics -I./dynamics -I./physics/physics_wrf -I../external/esmf_time_f90
 endif
+
+else
+
+ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
+clean:
+	( cd physics_nggps; $(MAKE) clean )
+	( cd dynamics; $(MAKE) clean )
+	( cd ../..; rm -f *.f77 )
+	( cd ../..; rm -f *.dat )
+	$(RM) -r libphys
+	$(RM) *.o *.mod *.f90 libdycore.a
+
+.F.o:
+	$(RM) $@ $*.mod
+ifeq "$(GEN_F90)" "true"
+	$(CPP) $(CPPFLAGS) $(PHYSICS) $(CPPINCLUDES) $< > $*.f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators -I./physics_nggps -I./dynamics -I./physics_nggps/physics_nggps_src -I../external/esmf_time_f90
+else
+	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators -I./physics_nggps -I./dynamics -I./physics_gfs/physics_nggps_src -I../external/esmf_time_f90
+endif
+endif
+endif
+
+
