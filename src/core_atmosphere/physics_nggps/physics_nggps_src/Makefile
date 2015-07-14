@@ -1,4 +1,4 @@
-.SUFFIXES: .f .o
+.SUFFIXES: .F .f .o
 
 all: dummy physics_nggps_src
 
@@ -199,6 +199,14 @@ ifeq "$(GEN_F90)" "true"
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
 else
 	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I../../../framework -I../../../operators -I..
+endif
+
+.F.o:
+ifeq "$(GEN_F90)" "true"
+	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
+else
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../../../framework -I../../../operators -I..
 endif
 
 clean:
