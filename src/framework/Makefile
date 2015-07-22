@@ -23,6 +23,7 @@ OBJS = mpas_kind_types.o \
        mpas_stream_list.o \
        mpas_forcing.o \
        mpas_c_interfacing.o \
+       mpas_cell_ordering.o \
        random_id.o \
        streams.o \
        pool_hash.o \
@@ -93,6 +94,8 @@ mpas_stream_list.o: mpas_derived_types.o mpas_kind_types.o mpas_io_units.o mpas_
 mpas_stream_manager.o: mpas_io_streams.o mpas_timekeeping.o mpas_derived_types.o mpas_io_units.o mpas_kind_types.o mpas_c_interfacing.o mpas_stream_list.o mpas_dmpar.o mpas_io.o
 
 mpas_forcing.o: mpas_derived_types.o mpas_timekeeping.o mpas_io_streams.o mpas_stream_manager.o
+
+mpas_cell_ordering.o: mpas_derived_types.o mpas_kind_types.o mpas_sort.o
 
 xml_stream_parser.o: xml_stream_parser.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPINCLUDES) -I../external/ezxml -c xml_stream_parser.c
