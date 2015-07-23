@@ -18,6 +18,7 @@ module mpas_bootstrapping
    use mpas_timekeeping
    use mpas_io_streams
    use mpas_io_units
+   use mpas_cell_ordering
 
 
    integer :: readCellStart, readCellEnd, nReadCells
@@ -103,6 +104,9 @@ module mpas_bootstrapping
       type (field1dReal), pointer :: xCellField,   yCellField,   zCellField
       type (field1dReal), pointer :: xEdgeField,   yEdgeField,   zEdgeField
       type (field1dReal), pointer :: xVertexField, yVertexField, zVertexField
+      type (field1dReal), pointer :: xCell_Block,  yCell_Block,  zCell_Block
+      type (field1dReal), pointer :: xEdge_Block,  yEdge_Block,  zEdge_Block
+      type (field1dReal), pointer :: xVertex_Block, yVertex_Block, zVertex_Block
 
       type (field1dInteger), pointer :: nCellsSolveField
       type (field1dInteger), pointer :: nVerticesSolveField
@@ -123,6 +127,8 @@ module mpas_bootstrapping
       integer, dimension(:), pointer :: local_cell_list
       integer, dimension(:), pointer :: block_id, block_start, block_count
       type (graph) :: partial_global_graph_info
+      integer :: nCellsSolve
+      integer, dimension(:), allocatable :: cellOrder
 
       type (MPAS_Time_type) :: startTime
       character(len=StrKIND) :: timeStamp, restartTimeStamp
@@ -233,18 +239,65 @@ module mpas_bootstrapping
 
       call mpas_block_creator_setup_blocks_and_0halo_cells(nHalos, domain, indexToCellID_Block, local_cell_list, block_id, &
                                                            block_start, block_count)
+      !
+      ! Do all-to-all to get from read indices to owned indices
+      !
       call mpas_block_creator_build_0halo_cell_fields(nHalos, indexToCellIDField, nEdgesOnCellField, cellsOnCellField, &
-                                                      verticesOnCellField, edgesOnCellField, indexToCellID_Block, &
-                                                      nEdgesOnCell_Block, cellsOnCell_Block, verticesOnCell_Block, &
-                                                      edgesOnCell_Block)
+                                                      verticesOnCellField, edgesOnCellField, &
+                                                      xCellField, yCellField, zCellField, &
+                                                      indexToCellID_Block, nEdgesOnCell_Block, cellsOnCell_Block, &
+                                                      verticesOnCell_Block, edgesOnCell_Block, &
+                                                      xCell_Block, yCell_Block, zCell_Block)
 
       call mpas_block_creator_build_0_and_1halo_edge_fields(nHalos, indexToEdgeIDField, cellsOnEdgeField, indexToCellID_Block, &
-                                                            nEdgesOnCell_Block, edgesOnCell_Block, indexToEdgeID_Block, &
-                                                            cellsOnEdge_Block, nEdgesSolveField)
-      call mpas_block_creator_build_0_and_1halo_edge_fields(nHalos, indexToVertexIDField, cellsOnVertexField, indexToCellID_Block, &
-                                                            nEdgesOnCell_Block, verticesOnCell_Block, indexToVertexID_Block, &
-                                                            cellsOnVertex_Block, nVerticesSolveField)
+                                                            nEdgesOnCell_Block, edgesOnCell_Block, &
+                                                            xEdgeField, yEdgeField, zEdgeField, &
+                                                            indexToEdgeID_Block, cellsOnEdge_Block, &
+                                                            xEdge_Block, yEdge_Block, zEdge_Block, &
+                                                            nEdgesSolveField)
 
+      call mpas_block_creator_build_0_and_1halo_edge_fields(nHalos, indexToVertexIDField, cellsOnVertexField, indexToCellID_Block, &
+                                                            nEdgesOnCell_Block, verticesOnCell_Block, &
+                                                            xVertexField, yVertexField, zVertexField, &
+                                                            indexToVertexID_Block, cellsOnVertex_Block, &
+                                                            xVertex_Block, yVertex_Block, zVertex_Block, &
+                                                            nVerticesSolveField)
+
+      !
+      ! Now we have the opportunity to use the fields created above to re-order cells, edges, and vertices
+      !
+write(0,*) 'REARRANGE...'
+write(0,*) 'shape(cellsOnCell_Block) ', shape(cellsOnCell_Block % array)
+write(0,*) 'shape(nEdgesOnCell_Block) ', shape(nEdgesOnCell_Block % array)
+write(0,*) 'shape(xCell_Block) ', shape(xCell_Block % array)
+      nCellsSolve = size(local_cell_list)
+write(0,*) 'nCellsSolve = ', nCellsSolve
+      allocate(cellOrder(nCellsSolve))
+      call mpas_orderCells(domain % dminfo, nCellsSolve, maxEdges, &
+                           IndexToCellID_Block % array(1:nCellsSolve), &
+                           xCell_Block % array(1:nCellsSolve), &
+                           yCell_Block % array(1:nCellsSolve), &
+                           zCell_Block % array(1:nCellsSolve), &
+                           cellsOnCell_Block % array(:,1:nCellsSolve), &
+                           nEdgesOnCell_Block % array(1:nCellsSolve), &
+                           cellOrder)
+
+      call MPAS_permuteCellFields(nCellsSolve, maxEdges, &
+                                  indexToCellID_Block % array(1:nCellsSolve), &
+                                  nEdgesOnCell_Block % array(1:nCellsSolve), &
+                                  cellsOnCell_Block % array(:,1:nCellsSolve), &
+                                  verticesOnCell_Block % array(:,1:nCellsSolve), &
+                                  edgesOnCell_Block % array(:,1:nCellsSolve), &
+                                  cellOrder)
+      
+      deallocate(cellOrder)
+
+      !
+      ! The essential purpose of the next three calls is to build halos so that we know 
+      !   nCells/nCellsSolve, nEdges/nEdgesSolve, nVertices/nVerticesSolve in the call 
+      !   to mpas_block_creator_finalize_block_phase1(), and also to generate exchange lists
+      !   for cell-, edge-, and vertex-based fields
+      !
       call mpas_block_creator_build_cell_halos(nHalos, indexToCellID_Block, nEdgesOnCell_Block, cellsOnCell_Block, &
                                                verticesOnCell_Block, edgesOnCell_Block, nCellsSolveField)
 
@@ -543,6 +596,44 @@ module mpas_bootstrapping
      call mpas_dmpar_init_multihalo_exchange_list(indexToCellID % copyList, nHalos)
      nullify(indexToCellID % next)
 
+     ! x-coordinate of cell
+     allocate(xCell)
+     allocate(xCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'xCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'xCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'xCell', xCell % array, ierr)
+     xCell % dimSizes(1) = nReadCells
+     xCell % block => readingBlock
+     xCell % sendList => indexToCellID % sendList
+     xCell % recvList => indexToCellID % recvList
+     xCell % copyList => indexToCellID % copyList
+     nullify(xCell % next)
+
+     ! y-coordinate of cell
+     allocate(yCell)
+     allocate(yCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'yCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'yCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'yCell', yCell % array, ierr)
+     yCell % dimSizes(1) = nReadCells
+     yCell % block => readingBlock
+     yCell % sendList => indexToCellID % sendList
+     yCell % recvList => indexToCellID % recvList
+     yCell % copyList => indexToCellID % copyList
+     nullify(yCell % next)
+
+     ! z-coordinate of cell
+     allocate(zCell)
+     allocate(zCell % array(nReadCells))
+     call MPAS_io_inq_var(inputHandle, 'zCell', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'zCell', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'zCell', zCell % array, ierr)
+     zCell % dimSizes(1) = nReadCells
+     zCell % block => readingBlock
+     zCell % sendList => indexToCellID % sendList
+     zCell % recvList => indexToCellID % recvList
+     zCell % copyList => indexToCellID % copyList
+     nullify(zCell % next)
 
      ! Number of cell/edges/vertices adjacent to each cell
      allocate(nEdgesOnCell)
@@ -633,7 +724,6 @@ module mpas_bootstrapping
      ! Global edge indices
      allocate(indexToEdgeID)
      allocate(indexToEdgeID % array(nReadEdges))
-     allocate(indexToEdgeID % array(nReadEdges))
      do i=1,nReadEdges
         readIndices(i) = i + readEdgeStart - 1
      end do
@@ -647,6 +737,44 @@ module mpas_bootstrapping
      call mpas_dmpar_init_multihalo_exchange_list(indexToEdgeID % copyList, nHalos+1)
      nullify(indexToEdgeID % next)
 
+     ! x-coordinate of edge
+     allocate(xEdge)
+     allocate(xEdge % array(nReadEdges))
+     call MPAS_io_inq_var(inputHandle, 'xEdge', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'xEdge', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'xEdge', xEdge % array, ierr)
+     xEdge % dimSizes(1) = nReadEdges
+     xEdge % block => readingBlock
+     xEdge % sendList => indexToEdgeID % sendList
+     xEdge % recvList => indexToEdgeID % recvList
+     xEdge % copyList => indexToEdgeID % copyList
+     nullify(xEdge % next)
+   
+     ! y-coordinate of edge
+     allocate(yEdge)
+     allocate(yEdge % array(nReadEdges))
+     call MPAS_io_inq_var(inputHandle, 'yEdge', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'yEdge', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'yEdge', yEdge % array, ierr)
+     yEdge % dimSizes(1) = nReadEdges
+     yEdge % block => readingBlock
+     yEdge % sendList => indexToEdgeID % sendList
+     yEdge % recvList => indexToEdgeID % recvList
+     yEdge % copyList => indexToEdgeID % copyList
+     nullify(yEdge % next)
+   
+     ! z-coordinate of edge
+     allocate(zEdge)
+     allocate(zEdge % array(nReadEdges))
+     call MPAS_io_inq_var(inputHandle, 'zEdge', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'zEdge', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'zEdge', zEdge % array, ierr)
+     zEdge % dimSizes(1) = nReadEdges
+     zEdge % block => readingBlock
+     zEdge % sendList => indexToEdgeID % sendList
+     zEdge % recvList => indexToEdgeID % recvList
+     zEdge % copyList => indexToEdgeID % copyList
+     nullify(zEdge % next)
 
      ! Global indices of cells adjacent to each edge
      !    used for determining which edges are owned by a block, where
@@ -706,6 +834,44 @@ module mpas_bootstrapping
      call mpas_dmpar_init_multihalo_exchange_list(indexToVertexID % copyList, nHalos+1)
      nullify(indexToVertexID % next)
 
+     ! x-coordinate of vertex
+     allocate(xVertex)
+     allocate(xVertex % array(nReadVertices))
+     call MPAS_io_inq_var(inputHandle, 'xVertex', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'xVertex', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'xVertex', xVertex % array, ierr)
+     xVertex % dimSizes(1) = nReadVertices
+     xVertex % block => readingBlock
+     xVertex % sendList => indexToVertexID % sendList
+     xVertex % recvList => indexToVertexID % recvList
+     xVertex % copyList => indexToVertexID % copyList
+     nullify(xVertex % next)
+   
+     ! y-coordinate of vertex
+     allocate(yVertex)
+     allocate(yVertex % array(nReadVertices))
+     call MPAS_io_inq_var(inputHandle, 'yVertex', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'yVertex', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'yVertex', yVertex % array, ierr)
+     yVertex % dimSizes(1) = nReadVertices
+     yVertex % block => readingBlock
+     yVertex % sendList => indexToVertexID % sendList
+     yVertex % recvList => indexToVertexID % recvList
+     yVertex % copyList => indexToVertexID % copyList
+     nullify(yVertex % next)
+   
+     ! z-coordinate of vertex
+     allocate(zVertex)
+     allocate(zVertex % array(nReadVertices))
+     call MPAS_io_inq_var(inputHandle, 'zVertex', ierr=ierr)
+     call MPAS_io_set_var_indices(inputHandle, 'zVertex', readIndices, ierr=ierr)
+     call mpas_io_get_var(inputHandle, 'zVertex', zVertex % array, ierr)
+     zVertex % dimSizes(1) = nReadVertices
+     zVertex % block => readingBlock
+     zVertex % sendList => indexToVertexID % sendList
+     zVertex % recvList => indexToVertexID % recvList
+     zVertex % copyList => indexToVertexID % copyList
+     nullify(zVertex % next)
 
      ! Global indices of cells adjacent to each vertex
      !    used for determining which vertices are owned by a block, where
