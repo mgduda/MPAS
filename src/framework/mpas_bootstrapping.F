@@ -128,7 +128,7 @@ module mpas_bootstrapping
       integer, dimension(:), pointer :: block_id, block_start, block_count
       type (graph) :: partial_global_graph_info
       integer :: nCellsSolve, nEdgesSolve, nVerticesSolve
-      integer, dimension(:), allocatable :: cellOrder
+      integer, dimension(:), allocatable :: cellOrder, edgeOrder, vertexOrder
 
       type (MPAS_Time_type) :: startTime
       character(len=StrKIND) :: timeStamp, restartTimeStamp
@@ -299,8 +299,39 @@ write(0,*) 'nCellsSolve = ', nCellsSolve
                                   verticesOnCell_Block % array(:,1:nCellsSolve), &
                                   edgesOnCell_Block % array(:,1:nCellsSolve), &
                                   cellOrder)
-      
       deallocate(cellOrder)
+
+      nEdgesSolve = nEdgesSolveField % array(1)
+write(0,*) 'nEdgesSolve = ', nEdgesSolve
+      allocate(edgeOrder(nEdgesSolve))
+      call mpas_orderEdges(domain % dminfo, nEdgesSolve, 2, &
+                           IndexToEdgeID_Block % array(1:nEdgesSolve), &
+                           xEdge_Block % array(1:nEdgesSolve), &
+                           yEdge_Block % array(1:nEdgesSolve), &
+                           zEdge_Block % array(1:nEdgesSolve), &
+                           edgeOrder)
+
+      call MPAS_permuteEdgeFields(nEdgesSolve, 2, &
+                                  indexToEdgeID_Block % array(1:nEdgesSolve), &
+                                  cellsOnEdge_Block % array(:,1:nEdgesSolve), &
+                                  edgeOrder)
+      deallocate(edgeOrder)
+
+      nVerticesSolve = nVerticesSolveField % array(1)
+write(0,*) 'nVerticesSolve = ', nVerticesSolve
+      allocate(vertexOrder(nVerticesSolve))
+      call mpas_orderEdges(domain % dminfo, nVerticesSolve, 3, &    ! really, 3 should be vertexDegree
+                           IndexToVertexID_Block % array(1:nVerticesSolve), &
+                           xVertex_Block % array(1:nVerticesSolve), &
+                           yVertex_Block % array(1:nVerticesSolve), &
+                           zVertex_Block % array(1:nVerticesSolve), &
+                           vertexOrder)
+
+      call MPAS_permuteEdgeFields(nVerticesSolve, 3, &    ! really, 3 should be vertexDegree
+                                  indexToVertexID_Block % array(1:nVerticesSolve), &
+                                  cellsOnVertex_Block % array(:,1:nVerticesSolve), &
+                                  vertexOrder)
+      deallocate(vertexOrder)
 
       !
       ! The essential purpose of the next three calls is to build halos so that we know 

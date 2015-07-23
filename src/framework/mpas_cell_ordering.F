@@ -4,7 +4,7 @@ module mpas_cell_ordering
    use mpas_kind_types
    use mpas_sort
 
-   public :: MPAS_orderCells, MPAS_permuteCellFields
+   public :: MPAS_orderCells, MPAS_orderEdges, MPAS_permuteCellFields, MPAS_permuteEdgeFields
 
    private
 
@@ -146,6 +146,36 @@ module mpas_cell_ordering
    end subroutine MPAS_orderCells
 
 
+! NB: this routine must return global indices in edgeOrder
+   subroutine MPAS_orderEdges(dminfo, nEdges, edgeDegree, indexToEdgeID, xEdge, yEdge, zEdge, edgeOrder)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      integer, intent(in) :: nEdges
+      integer, intent(in) :: edgeDegree
+      integer, dimension(nEdges), intent(in) :: indexToEdgeID
+      real (kind=RKIND), dimension(nEdges), intent(in) :: xEdge
+      real (kind=RKIND), dimension(nEdges), intent(in) :: yEdge
+      real (kind=RKIND), dimension(nEdges), intent(in) :: zEdge
+      integer, dimension(nEdges), intent(out) :: edgeOrder
+
+      integer :: iEdge
+      real (kind=RKIND), dimension(2,nEdges) :: temp2
+
+      do iEdge=1,nEdges
+         temp2(1,iEdge) = xEdge(iEdge)
+         temp2(2,iEdge) = real(iEdge)
+      end do
+      call MPAS_quicksort(nEdges, temp2)
+
+      do iEdge=1,nEdges
+         edgeOrder(iEdge) = indexToEdgeID(nint(temp2(2,iEdge)))
+      end do
+
+   end subroutine MPAS_orderEdges
+
+
    subroutine MPAS_permuteCellFields(nCells, maxEdges, indexToCellID, nEdgesOnCell, cellsOnCell, verticesOnCell, edgesOnCell, cellOrder)
 
       implicit none
@@ -229,6 +259,70 @@ module mpas_cell_ordering
       deallocate(temp2)
 
    end subroutine MPAS_permuteCellFields   
+
+
+   subroutine MPAS_permuteEdgeFields(nEdges, edgeDegree, indexToEdgeID, cellsOnEdge, edgeOrder)
+
+      implicit none
+
+      integer, intent(in) :: nEdges
+      integer, intent(in) :: edgeDegree
+      integer, dimension(nEdges), intent(inout) :: indexToEdgeID
+      integer, dimension(edgeDegree, nEdges), intent(inout) :: cellsOnEdge
+      integer, dimension(nEdges), intent(inout) :: edgeOrder
+
+      integer :: i, j
+      integer, dimension(nEdges) :: src
+      integer, dimension(:), allocatable :: temp1
+      integer, dimension(:,:), allocatable :: temp2
+
+      ! 
+      ! Given the current list of edge global indices (indexToEdgeID) and the new list (edgeOrder), 
+      !   we first create a permutation
+      ! 
+      allocate(temp2(2,nEdges))
+      do i=1,nEdges
+         temp2(1,i) = indexToEdgeID(i)
+         temp2(2,i) = i
+      end do
+      call MPAS_quicksort(nEdges, temp2)
+
+      do i=1,nEdges
+         j = MPAS_binary_search(temp2, 2, 1, nEdges, edgeOrder(i))
+         if (j <= nEdges) then
+            src(i) = temp2(2,j) 
+         else
+            write(0,*) 'Strange errors in MPAS_permuteEdgeFields...'
+         end if
+      end do
+      deallocate(temp2)
+
+
+      !
+      ! Knowing the source for all edges in the new arrays, we can permute into a temp array,
+      !   then copy back to the original arrays
+      !
+      allocate(temp1(nEdges))
+
+      ! indexToEdgeID
+      do i=1,nEdges
+         temp1(i) = indexToEdgeID(src(i))
+      end do
+      indexToEdgeID(:) = temp1(:)
+
+      deallocate(temp1)
+
+      allocate(temp2(edgeDegree, nEdges))
+
+      ! cellsOnEdge
+      do i=1,nEdges
+         temp2(:,i) = cellsOnEdge(:,src(i))
+      end do
+      cellsOnEdge(:,:) = temp2(:,:)
+
+      deallocate(temp2)
+
+   end subroutine MPAS_permuteEdgeFields
 
 
    integer function find_bdy_cell(nCells, maxEdges, indexToCellID, nEdgesOnCell, cellsOnCell)
