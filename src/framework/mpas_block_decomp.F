@@ -277,7 +277,8 @@ module mpas_block_decomp
 !>  Output edge list has 0-Halo edges first, followed by halo edges.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_block_decomp_partitioned_edge_list(nCells, cellIDList, maxCells, nEdges, cellsOnEdge, edgeIDList, ghostEdgeStart)!{{{
+   subroutine mpas_block_decomp_partitioned_edge_list(nCells, cellIDList, maxCells, nEdges, cellsOnEdge, &
+                                                      edgeIDList, xEdge, yEdge, zEdge, ghostEdgeStart)!{{{
 
       implicit none
 
@@ -287,10 +288,14 @@ module mpas_block_decomp
       integer, dimension(nCells), intent(in) :: cellIDList !< Input: List of owned cell IDs
       integer, dimension(maxCells, nEdges), intent(in) :: cellsOnEdge !< Input: Connectivity of cells on edges.
       integer, dimension(nEdges), intent(inout) :: edgeIDList !< Input/Output: List of edge IDs
+      real (kind=RKIND), dimension(nEdges), intent(inout) :: xEdge !< Input/Output: x-coordinate of edges
+      real (kind=RKIND), dimension(nEdges), intent(inout) :: yEdge !< Input/Output: y-coordinate of edges
+      real (kind=RKIND), dimension(nEdges), intent(inout) :: zEdge !< Input/Output: z-coordinate of edges
       integer, intent(inout) :: ghostEdgeStart !< Input/Output: Index to beginning of edge halo
 
       integer :: i, j, lastEdge
       integer, dimension(nEdges) :: edgeIDListLocal
+      real (kind=RKIND), dimension(nEdges) :: xEdgeLocal, yEdgeLocal, zEdgeLocal
       type (hashtable) :: h
 
       call mpas_hash_init(h)
@@ -304,6 +309,9 @@ module mpas_block_decomp
       ghostEdgeStart = nEdges+1
 
       edgeIDListLocal(:) = edgeIDList(:)
+      xEdgeLocal(:) = xEdge(:)
+      yEdgeLocal(:) = yEdge(:)
+      zEdgeLocal(:) = zEdge(:)
 
       do i=1,nEdges
          do j=1,maxCells
@@ -315,9 +323,15 @@ module mpas_block_decomp
          if (mpas_hash_search(h, cellsOnEdge(j,i))) then
             lastEdge = lastEdge + 1
             edgeIDList(lastEdge) = edgeIDListLocal(i)
+            xEdge(lastEdge) = xEdgeLocal(i)
+            yEdge(lastEdge) = yEdgeLocal(i)
+            zEdge(lastEdge) = zEdgeLocal(i)
          else
             ghostEdgeStart = ghostEdgeStart - 1
             edgeIDList(ghostEdgeStart) = edgeIDListLocal(i)
+            xEdge(ghostEdgeStart) = xEdgeLocal(i)
+            yEdge(ghostEdgeStart) = yEdgeLocal(i)
+            zEdge(ghostEdgeStart) = zEdgeLocal(i)
          end if
          if (ghostEdgeStart <= lastEdge) then
            write(stderrUnit,*) 'block_decomp_partitioned_edge_list: ',&

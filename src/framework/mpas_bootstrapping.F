@@ -127,7 +127,7 @@ module mpas_bootstrapping
       integer, dimension(:), pointer :: local_cell_list
       integer, dimension(:), pointer :: block_id, block_start, block_count
       type (graph) :: partial_global_graph_info
-      integer :: nCellsSolve
+      integer :: nCellsSolve, nEdgesSolve, nVerticesSolve
       integer, dimension(:), allocatable :: cellOrder
 
       type (MPAS_Time_type) :: startTime
@@ -270,6 +270,16 @@ write(0,*) 'REARRANGE...'
 write(0,*) 'shape(cellsOnCell_Block) ', shape(cellsOnCell_Block % array)
 write(0,*) 'shape(nEdgesOnCell_Block) ', shape(nEdgesOnCell_Block % array)
 write(0,*) 'shape(xCell_Block) ', shape(xCell_Block % array)
+write(0,*) '---'
+write(0,*) 'shape(cellsOnEdge_Block) ', shape(cellsOnEdge_Block % array)
+write(0,*) 'shape(xEdge_Block) ', shape(xEdge_Block % array)
+write(0,*) 'nEdgesSolve ', nEdgesSolveField % array
+write(0,*) 'xEdgeField = ', xEdgeField % array(1:10)
+write(0,*) 'xEdge_Block = ', xEdge_Block % array(1:10)
+write(0,*) '---'
+write(0,*) 'shape(cellsOnVertex_Block) ', shape(cellsOnVertex_Block % array)
+write(0,*) 'shape(xVertex_Block) ', shape(xVertex_Block % array)
+write(0,*) 'nVerticesSolve ', nVerticesSolveField % array
       nCellsSolve = size(local_cell_list)
 write(0,*) 'nCellsSolve = ', nCellsSolve
       allocate(cellOrder(nCellsSolve))
@@ -303,6 +313,7 @@ write(0,*) 'nCellsSolve = ', nCellsSolve
 
       call mpas_block_creator_build_edge_halos(nHalos, indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, &
                                                edgesOnCell_Block, indexToEdgeID_Block, cellsOnEdge_Block, nEdgesSolveField)
+
       call mpas_block_creator_build_edge_halos(nHalos, indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, &
                                                verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, &
                                                nVerticesSolveField)

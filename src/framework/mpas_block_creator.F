@@ -346,6 +346,7 @@ module mpas_block_creator
 
      type (field0dInteger), pointer :: offSetCursor, edgeLimitCursor
      type (field1dInteger), pointer :: indexToCellCursor, indexToEdgeCursor, nEdgesCursor, haloCursor, nEdgesSolveCursor
+     type(field1dReal), pointer :: xEdgeCursor, yEdgeCursor, zEdgeCursor
      type (field2dInteger), pointer :: edgesOnCellCursor, cellsOnEdgeCursor
 
      integer, dimension(:), pointer :: localEdgeList
@@ -364,9 +365,16 @@ module mpas_block_creator
      ! Setup initial block for each field
      allocate(cellsOnEdge_0Halo)
      allocate(indexToEdgeID_0Halo)
+     allocate(xEdge_0Halo)
+     allocate(yEdge_0Halo)
+     allocate(zEdge_0Halo)
 
      nullify(cellsOnEdge_0Halo % next)
      nullify(indexToEdgeID_0Halo % next)
+     nullify(xEdge_0Halo % next)
+     nullify(yEdge_0Halo % next)
+     nullify(zEdge_0Halo % next)
+
 
      ! Loop over blocks
      indexToCellCursor => indexToCellID_0Halo
@@ -374,6 +382,10 @@ module mpas_block_creator
      nEdgesCursor => nEdgesOnCell_0Halo
      indexToEdgeCursor => indexToEdgeID_0Halo
      cellsOnEdgeCursor => cellsOnEdge_0Halo
+     xEdgeCursor => xEdge_0Halo
+     yEdgeCursor => yEdge_0Halo
+     zEdgeCursor => zEdge_0Halo
+
      do while(associated(indexToCellCursor))
        ! Determine number of cells in block
        nCellsInBlock = indexToCellCursor % dimSizes(1)
@@ -393,6 +405,21 @@ module mpas_block_creator
        cellsOnEdgeCursor % dimSizes(2) = nEdgesLocal
        allocate(cellsOnEdgeCursor % array(cellsOnEdgeCursor % dimSizes(1), cellsOnEdgeCursor % dimSizes(2)))
 
+       ! Setup xEdge block
+       xEdgeCursor % block => indexToCellCursor % block
+       xEdgeCursor % dimSizes(1) = nEdgesLocal
+       allocate(xEdgeCursor % array(xEdgeCursor % dimSizes(1)))
+
+       ! Setup yEdge block
+       yEdgeCursor % block => indexToCellCursor % block
+       yEdgeCursor % dimSizes(1) = nEdgesLocal
+       allocate(yEdgeCursor % array(yEdgeCursor % dimSizes(1)))
+
+       ! Setup zEdge block
+       zEdgeCursor % block => indexToCellCursor % block
+       zEdgeCursor % dimSizes(1) = nEdgesLocal
+       allocate(zEdgeCursor % array(zEdgeCursor % dimSizes(1)))
+
        ! Setup exchange lists
        call mpas_dmpar_init_multihalo_exchange_list(indexToEdgeCursor % sendList, nHalos+1)
        call mpas_dmpar_init_multihalo_exchange_list(indexToEdgeCursor % recvList, nHalos+1)
@@ -402,6 +429,15 @@ module mpas_block_creator
        cellsOnEdgeCursor % sendList => indexToEdgeCursor % sendList
        cellsOnEdgeCursor % recvList => indexToEdgeCursor % recvList
        cellsOnEdgeCursor % copyList => indexToEdgeCursor % copyList
+       xEdgeCursor % sendList => indexToEdgeCursor % sendList
+       xEdgeCursor % recvList => indexToEdgeCursor % recvList
+       xEdgeCursor % copyList => indexToEdgeCursor % copyList
+       yEdgeCursor % sendList => indexToEdgeCursor % sendList
+       yEdgeCursor % recvList => indexToEdgeCursor % recvList
+       yEdgeCursor % copyList => indexToEdgeCursor % copyList
+       zEdgeCursor % sendList => indexToEdgeCursor % sendList
+       zEdgeCursor % recvList => indexToEdgeCursor % recvList
+       zEdgeCursor % copyList => indexToEdgeCursor % copyList
        
        ! Remove localEdgeList array
        deallocate(localEdgeList)
@@ -416,11 +452,23 @@ module mpas_block_creator
 
          allocate(cellsOnEdgeCursor % next)
          cellsOnEdgeCursor => cellsOnEdgeCursor % next
+
+         allocate(xEdgeCursor % next)
+         xEdgeCursor => xEdgeCursor % next
+
+         allocate(yEdgeCursor % next)
+         yEdgeCursor => yEdgeCursor % next
+
+         allocate(zEdgeCursor % next)
+         zEdgeCursor => zEdgeCursor % next
        end if
 
        ! Nullify next pointers
        nullify(indexToEdgeCursor % next)
        nullify(cellsOnEdgeCursor % next)
+       nullify(xEdgeCursor % next)
+       nullify(yEdgeCursor % next)
+       nullify(zEdgeCursor % next)
      end do ! indexToCursor loop over blocks
 
      ! Build exchangel ists from read in blocks to owned blocks.
@@ -428,6 +476,9 @@ module mpas_block_creator
 
      ! Perform all to all to get owned block data
      call mpas_dmpar_alltoall_field(cellsOnEdgeBlock, cellsOnEdge_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(xEdgeBlock, xEdge_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(yEdgeBlock, yEdge_0Halo, sendingHaloLayers)
+     call mpas_dmpar_alltoall_field(zEdgeBlock, zEdge_0Halo, sendingHaloLayers)
 
      ! Setup first block's fields if there is at least 1 block.
      if(associated(indexToEdgeID_0Halo)) then
@@ -450,11 +501,15 @@ module mpas_block_creator
      offSetCursor => offSetField
      edgeLimitCursor => edgeLimitField
      nEdgesSolveCursor => nEdgesSolve
+     xEdgeCursor => xEdge_0Halo
+     yEdgeCursor => yEdge_0Halo
+     zEdgeCursor => zEdge_0Halo
      do while(associated(indexToEdgeCursor))
        ! Determine 0 and 1 halo edges
        call mpas_block_decomp_partitioned_edge_list(indexToCellCursor % dimSizes(1), indexToCellCursor % array, &
                                                     edgeDegree, indexToEdgeCursor % dimSizes(1), cellsOnEdgeCursor % array, &
-                                                    indexToEdgeCursor % array, haloStart)
+                                                    indexToEdgeCursor % array, xEdgeCursor % array, yEdgeCursor % array, &
+                                                    zEdgeCursor % array, haloStart)
 
        ! Link blocks                                                
        haloCursor % block => indexToEdgeCursor % block
@@ -487,6 +542,9 @@ module mpas_block_creator
        indexToEdgeCursor => indexToEdgeCursor % next
        cellsOnEdgeCursor => cellsOnEdgeCursor % next
        indexToCellCursor => indexToCellCursor % next
+       xEdgeCursor => xEdgeCursor % next
+       yEdgeCursor => yEdgeCursor % next
+       zEdgeCursor => zEdgeCursor % next
        if(associateD(indexToEdgeCursor)) then
          allocate(haloCursor % next)
          haloCursor => haloCursor % next
