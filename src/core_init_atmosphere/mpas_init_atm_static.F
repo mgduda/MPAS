@@ -5,12 +5,14 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-!==================================================================================================
+!=================================================================================================================
  module mpas_init_atm_static
-!==================================================================================================
+!=================================================================================================================
  use atm_advection
  use mpas_dmpar
  use mpas_pool_routines
+ use mpas_init_atm_static_nggps
+ use mpas_init_atm_utilities
  use init_atm_hinterp
  use init_atm_llxy
 
@@ -18,17 +20,137 @@
 
  implicit none
  private
- public:: init_atm_static,           &
-          init_atm_static_orogwd,    &
-          init_atm_check_read_error, &
-          nearest_cell,              &
-          sphere_distance
+ public:: init_atm_static, &
+          init_atm_static_orogwd
 
  contains
 
-!==================================================================================================
- subroutine init_atm_static(mesh, dims, configs)
-!==================================================================================================
+!=================================================================================================================
+ subroutine init_atm_static(mesh,dims,configs)
+!=================================================================================================================
+
+!inout arguments:
+ type(mpas_pool_type),intent(in):: dims
+ type(mpas_pool_type),intent(in):: configs
+ type(mpas_pool_type),intent(inout):: mesh
+
+!local pointers:
+ logical,pointer:: on_a_sphere
+
+ integer,pointer:: maxEdges,nCells,nEdges,nVertices
+
+ real(kind=RKIND),pointer:: sphere_radius
+ real(kind=RKIND),dimension(:),pointer:: latEdge,latVertex
+ real(kind=RKIND),dimension(:),pointer:: fEdge,fVertex
+ real(kind=RKIND),dimension(:),pointer:: xCell,yCell,zCell
+ real(kind=RKIND),dimension(:),pointer:: xVertex,yVertex,zVertex
+ real(kind=RKIND),dimension(:),pointer:: xEdge,yEdge,zEdge
+ real(kind=RKIND),dimension(:),pointer:: dvEdge,dcEdge
+ real(kind=RKIND),dimension(:),pointer:: areaCell,areaTriangle
+ real(kind=RKIND),dimension(:,:),pointer:: kiteAreasOnVertex
+
+!local variables:
+ integer:: iEdge,iVtx
+
+!-----------------------------------------------------------------------------------------------------------------
+ write(0,*)
+ write(0,*) '--- enter subroutine init_atm_static:'
+
+
+!
+! Scale all distances and areas from a unit sphere to one with radius sphere_radius
+!
+ call mpas_pool_get_dimension(dims,'maxEdges' ,maxEdges )
+ call mpas_pool_get_dimension(dims,'nCells'   ,nCells   )
+ call mpas_pool_get_dimension(dims,'nEdges'   ,nEdges   )
+ call mpas_pool_get_dimension(dims,'nVertices',nVertices)
+
+ call mpas_pool_get_array(mesh,'latEdge',latEdge)
+ call mpas_pool_get_array(mesh,'latVertex',latVertex)
+ call mpas_pool_get_array(mesh,'fEdge',fEdge)
+ call mpas_pool_get_array(mesh,'fVertex',fVertex)
+ call mpas_pool_get_array(mesh,'xCell',xCell)
+ call mpas_pool_get_array(mesh,'yCell',yCell)
+ call mpas_pool_get_array(mesh,'zCell',zCell)
+ call mpas_pool_get_array(mesh,'xVertex',xVertex)
+ call mpas_pool_get_array(mesh,'yVertex',yVertex)
+ call mpas_pool_get_array(mesh,'zVertex',zVertex)
+ call mpas_pool_get_array(mesh,'xEdge',xEdge)
+ call mpas_pool_get_array(mesh,'yEdge',yEdge)
+ call mpas_pool_get_array(mesh,'zEdge',zEdge)
+ call mpas_pool_get_array(mesh,'dcEdge',dcEdge)
+ call mpas_pool_get_array(mesh,'dvEdge',dvEdge)
+ call mpas_pool_get_array(mesh,'areaCell',areaCell)
+ call mpas_pool_get_array(mesh,'areaTriangle',areaTriangle)
+ call mpas_pool_get_array(mesh,'kiteAreasOnVertex',kiteAreasOnVertex)
+
+ call mpas_pool_get_config(mesh,'on_a_sphere',on_a_sphere)
+ call mpas_pool_get_config(mesh,'sphere_radius',sphere_radius)
+
+ write(0,*) '--- end mpas_pool calls:'
+
+ xCell = xCell * sphere_radius
+ yCell = yCell * sphere_radius
+ zCell = zCell * sphere_radius
+ xVertex = xVertex * sphere_radius
+ yVertex = yVertex * sphere_radius
+ zVertex = zVertex * sphere_radius
+ xEdge = xEdge * sphere_radius
+ yEdge = yEdge * sphere_radius
+ zEdge = zEdge * sphere_radius
+ dvEdge = dvEdge * sphere_radius
+ dcEdge = dcEdge * sphere_radius
+ areaCell = areaCell * sphere_radius**2.0
+ areaTriangle = areaTriangle * sphere_radius**2.0
+ kiteAreasOnVertex = kiteAreasOnVertex * sphere_radius**2.0
+
+ write(0,*) '--- end kiteAreasOnVertex:'
+
+!
+! Initialize Coriolis parameter field on edges and vertices
+!
+ write(0,*) '--- nEdges    = ',nEdges
+ write(0,*) '--- nVertices = ',nVertices
+ write(0,*) '--- omega     = ',omega
+ do iEdge=1,nEdges
+    fEdge(iEdge)  = 2.0 * omega * sin(latEdge(iEdge))
+ end do
+ write(0,*) '--- end fEdge:'
+ do iVtx=1,nVertices
+    fVertex(iVtx) = 2.0 * omega * sin(latVertex(iVtx))
+ end do
+ write(0,*) '--- end fVertex:'
+
+!
+! Compute weights used in advection and deformation calculation
+!
+ call atm_initialize_advection_rk(mesh,nCells,nEdges,maxEdges,on_a_sphere,sphere_radius)
+ write(0,*) '--- end atm_initialize_advection_rk:'
+ call atm_initialize_deformation_weights(mesh,nCells,on_a_sphere,sphere_radius)
+ write(0,*) '--- end atm_initialize_deformation_weights:'
+
+#ifdef DO_PHYSICS
+!
+! Interpolate the static fields using the WPS data base:
+!
+ call init_atm_static_fields(mesh,dims,configs)
+ call init_atm_static_orogwd(mesh,dims,configs)
+
+#elif DO_PHYSICS_NGGPS
+!
+! Interpolate the static fields using the GFS physics data base:
+!
+ call init_atm_static_fields_forGFS(mesh,dims,configs)
+ call init_atm_static_orogwd_forGFS(mesh,dims,configs)
+#endif
+
+
+ end subroutine init_atm_static
+
+!=================================================================================================================
+ subroutine init_atm_static_fields(mesh,dims,configs)
+!=================================================================================================================
+
 
 !inout arguments:
  type (mpas_pool_type), intent(inout) :: mesh
@@ -49,7 +171,7 @@
  integer:: nx,ny,nz
  integer:: endian,isigned,istatus,wordsize
  integer:: i,j,k
- integer:: iCell,iEdge,iVtx,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
+ integer:: iCell,iPoint,iTileStart,iTileEnd,jTileStart,jTileEnd
  integer,dimension(5) :: interp_list
  integer,dimension(:),allocatable  :: nhs
  integer,dimension(:,:),allocatable:: ncat
@@ -63,22 +185,16 @@
  real(kind=RKIND),dimension(:,:),allocatable  :: maxsnowalb
  real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
 
- integer, pointer :: nCells, nEdges, nVertices, maxEdges
+ integer, pointer :: nCells,maxEdges
  logical, pointer :: on_a_sphere
  real (kind=RKIND), pointer :: sphere_radius
  
  integer, dimension(:), pointer :: nEdgesOnCell
  integer, dimension(:,:), pointer :: cellsOnCell
- real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
- real (kind=RKIND), dimension(:), pointer :: xVertex, yVertex, zVertex
- real (kind=RKIND), dimension(:), pointer :: xEdge, yEdge, zEdge
- real (kind=RKIND), dimension(:), pointer :: dvEdge, dcEdge
- real (kind=RKIND), dimension(:), pointer :: areaCell, areaTriangle
- real (kind=RKIND), dimension(:,:), pointer :: kiteAreasOnVertex
  real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
- real (kind=RKIND), dimension(:), pointer :: latVertex, lonVertex
- real (kind=RKIND), dimension(:), pointer :: latEdge, lonEdge
- real (kind=RKIND), dimension(:), pointer :: fEdge, fVertex
+!real (kind=RKIND), dimension(:), pointer :: latVertex, lonVertex
+!real (kind=RKIND), dimension(:), pointer :: latEdge, lonEdge
+!real (kind=RKIND), dimension(:), pointer :: fEdge, fVertex
 
  real (kind=RKIND), dimension(:), pointer :: ter
  real (kind=RKIND), dimension(:), pointer :: soiltemp
@@ -96,7 +212,7 @@
 
 
  write(0,*)
- write(0,*) '--- enter subroutine init_atm_static:'
+ write(0,*) '--- enter subroutine init_atm_static_fields:'
 
  call mpas_pool_get_config(configs, 'config_geog_data_path', config_geog_data_path)
  call mpas_pool_get_config(configs, 'config_landuse_data', config_landuse_data)
@@ -107,33 +223,8 @@
     geog_data_path(i+1:i+1) = '/'
  end if
 
-!
-! Scale all distances and areas from a unit sphere to one with radius sphere_radius
-!
-
-
- call mpas_pool_get_array(mesh, 'xCell', xCell)
- call mpas_pool_get_array(mesh, 'yCell', yCell)
- call mpas_pool_get_array(mesh, 'zCell', zCell)
- call mpas_pool_get_array(mesh, 'xVertex', xVertex)
- call mpas_pool_get_array(mesh, 'yVertex', yVertex)
- call mpas_pool_get_array(mesh, 'zVertex', zVertex)
- call mpas_pool_get_array(mesh, 'xEdge', xEdge)
- call mpas_pool_get_array(mesh, 'yEdge', yEdge)
- call mpas_pool_get_array(mesh, 'zEdge', zEdge)
- call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
- call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
- call mpas_pool_get_array(mesh, 'areaCell', areaCell)
- call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
- call mpas_pool_get_array(mesh, 'kiteAreasOnVertex', kiteAreasOnVertex)
  call mpas_pool_get_array(mesh, 'latCell', latCell)
  call mpas_pool_get_array(mesh, 'lonCell', lonCell)
- call mpas_pool_get_array(mesh, 'latEdge', latEdge)
- call mpas_pool_get_array(mesh, 'lonEdge', lonEdge)
- call mpas_pool_get_array(mesh, 'latVertex', latVertex)
- call mpas_pool_get_array(mesh, 'lonVertex', lonVertex)
- call mpas_pool_get_array(mesh, 'fEdge', fEdge)
- call mpas_pool_get_array(mesh, 'fVertex', fVertex)
  
  call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
  call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
@@ -151,47 +242,8 @@
  call mpas_pool_get_array(mesh, 'shdmin', shdmin)
  call mpas_pool_get_array(mesh, 'shdmax', shdmax)
 
- call mpas_pool_get_config(mesh, 'on_a_sphere', on_a_sphere)
- call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
-
- call mpas_pool_get_dimension(dims, 'nCells', nCells)
- call mpas_pool_get_dimension(dims, 'nEdges', nEdges)
- call mpas_pool_get_dimension(dims, 'nVertices', nVertices)
  call mpas_pool_get_dimension(dims, 'maxEdges', maxEdges)
-
- xCell = xCell * sphere_radius
- yCell = yCell * sphere_radius
- zCell = zCell * sphere_radius
- xVertex = xVertex * sphere_radius
- yVertex = yVertex * sphere_radius
- zVertex = zVertex * sphere_radius
- xEdge = xEdge * sphere_radius
- yEdge = yEdge * sphere_radius
- zEdge = zEdge * sphere_radius
- dvEdge = dvEdge * sphere_radius
- dcEdge = dcEdge * sphere_radius
- areaCell = areaCell * sphere_radius**2.0
- areaTriangle = areaTriangle * sphere_radius**2.0
- kiteAreasOnVertex = kiteAreasOnVertex * sphere_radius**2.0
-
-
-!
-! Initialize Coriolis parameter field on edges and vertices
-!
- do iEdge=1,nEdges
-    fEdge(iEdge)  = 2.0 * omega * sin(latEdge(iEdge))
- end do
- do iVtx=1,nVertices
-    fVertex(iVtx) = 2.0 * omega * sin(latVertex(iVtx))
- end do
-
-
-!
-! Compute weights used in advection and deformation calculation
-!
- call atm_initialize_advection_rk(mesh, nCells, nEdges, maxEdges, on_a_sphere, sphere_radius) 
- call atm_initialize_deformation_weights(mesh, nCells, on_a_sphere, sphere_radius) 
-
+ call mpas_pool_get_dimension(dims, 'nCells', nCells)
 
 !
 ! Set land use and soil category parameters for water and ice
@@ -792,7 +844,7 @@ if (rarray(i,j,1) == 0) cycle
  write(0,*) '--- end interpolate ALBEDO12M'
 
 
- end subroutine init_atm_static
+ end subroutine init_atm_static_fields
 
 !==================================================================================================
  subroutine init_atm_static_orogwd(mesh, dims, configs)
@@ -2010,79 +2062,6 @@ if (rarray(i,j,1) == 0) cycle
  write(0,*) '--- end interpolate VAR2D'
 
  end subroutine init_atm_static_orogwd
-
-!==================================================================================================
- subroutine init_atm_check_read_error(istatus, fname)
-!==================================================================================================
- implicit none
-
- integer, intent(in) :: istatus
- character (len=*), intent(in) :: fname
-
- if (istatus /= 0) then
-     call mpas_dmpar_global_abort('ERROR: Could not read file '//trim(fname))
- end if
-
- end subroutine init_atm_check_read_error
-
-!==================================================================================================
- integer function nearest_cell(target_lat, target_lon, start_cell, nCells, maxEdges, &
-                               nEdgesOnCell, cellsOnCell, latCell, lonCell)
-!==================================================================================================
- implicit none
-
- real (kind=RKIND), intent(in) :: target_lat, target_lon
- integer, intent(in) :: start_cell
- integer, intent(in) :: nCells, maxEdges
- integer, dimension(nCells), intent(in) :: nEdgesOnCell
- integer, dimension(maxEdges,nCells), intent(in) :: cellsOnCell
- real (kind=RKIND), dimension(nCells), intent(in) :: latCell, lonCell
-
- integer :: i
- integer :: iCell
- integer :: current_cell
- real (kind=RKIND) :: current_distance, d
- real (kind=RKIND) :: nearest_distance
-
- nearest_cell = start_cell
- current_cell = -1
-
- do while (nearest_cell /= current_cell)
-    current_cell = nearest_cell
-    current_distance = sphere_distance(latCell(current_cell), lonCell(current_cell), target_lat, &
-                                       target_lon, 1.0_RKIND)
-    nearest_cell = current_cell
-    nearest_distance = current_distance
-    do i = 1, nEdgesOnCell(current_cell)
-       iCell = cellsOnCell(i,current_cell)
-       if (iCell <= nCells) then
-          d = sphere_distance(latCell(iCell), lonCell(iCell), target_lat, target_lon, 1.0_RKIND)
-          if (d < nearest_distance) then
-             nearest_cell = iCell
-             nearest_distance = d
-          end if
-       end if
-    end do
- end do
-
- end function nearest_cell
-
-!==================================================================================================
- real (kind=RKIND) function sphere_distance(lat1, lon1, lat2, lon2, radius)
-
-!Compute the great-circle distance between (lat1, lon1) and (lat2, lon2) on a
-!sphere with given radius.
-!==================================================================================================
- implicit none
-
- real (kind=RKIND), intent(in) :: lat1, lon1, lat2, lon2, radius
- real (kind=RKIND) :: arg1
-
- arg1 = sqrt( sin(0.5*(lat2-lat1))**2 +  &
-              cos(lat1)*cos(lat2)*sin(0.5*(lon2-lon1))**2 )
- sphere_distance = 2.*radius*asin(arg1)
-
- end function sphere_distance
 
 !==================================================================================================
  end module mpas_init_atm_static
