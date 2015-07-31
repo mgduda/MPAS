@@ -23,6 +23,8 @@
                 <dim name="nFGSoilLevels"      definition="namelist:config_nfgsoillevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
                 <dim name="nMonths"            definition="namelist:config_months"/>
+                <dim name="nSeasons"           definition="namelist:config_seasons"/>
+                <dim name="nMtvr"              definition="namelist:config_nmtvr"/>/
         </dims>
 
 
@@ -46,6 +48,8 @@
                 <nml_option name="config_nfglevels"             type="integer"       default_value="38"/>
                 <nml_option name="config_nfgsoillevels"         type="integer"       default_value="4"/>
                 <nml_option name="config_months"                type="integer"       default_value="12"      in_defaults="false"/>
+                <nml_option name="config_seasons"               type="integer"       default_value="4"       in_defaults="false"/>
+                <nml_option name="config_nmtvr"                 type="integer"       default_value="14"      in_defaults="false"/>
         </nml_record>
 
         <nml_record name="data_sources" in_defaults="true">
@@ -173,6 +177,15 @@
                         <var name="ol2" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol3" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol4" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="facsf" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="facwf" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="alnsf4s" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="alnwf4s" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="alvsf4s" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="alvwf4s" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="slope" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="zorl12m" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="orogwd" packages="vertical_stage_in;met_stage_in"/>
                         <var name="deriv_two" packages="vertical_stage_in;met_stage_in"/>
                         <var name="advCells" packages="vertical_stage_in;met_stage_in"/>
                         <var name="defc_a" packages="vertical_stage_in;met_stage_in"/>
@@ -267,6 +280,20 @@
                         <var name="ol2"/>
                         <var name="ol3"/>
                         <var name="ol4"/>
+                        <var name="facsf"/>
+                        <var name="facwf"/>
+                        <var name="alnsf4s"/>
+                        <var name="alnwf4s"/>
+                        <var name="alvsf4s"/>
+                        <var name="alvwf4s"/>
+                        <var name="slope"/>
+                        <var name="zorl12m"/>
+                        <var name="orogwd"/>
+                        <var name="alnsf"/>
+                        <var name="alnwf"/>
+                        <var name="alvsf"/>
+                        <var name="alvwf"/>
+                        <var name="zorl"/>
                         <var name="deriv_two"/>
                         <var name="advCells"/>
                         <var name="defc_a"/>
@@ -408,21 +435,21 @@
                 <var name="cf2"                          type="real"     dimensions=""/>
                 <var name="cf3"                          type="real"     dimensions=""/>
 
-                <!-- static terrestrial fields -->
+                <!-- static terrestrial fields needed for the WRF and GFS physics -->
                 <var name="ter"                                  type="real"     dimensions="nCells"/>
                 <var name="landmask"                             type="integer"  dimensions="nCells"/>
                 <var name="ivgtyp"   name_in_code="lu_index"     type="integer"  dimensions="nCells"/>
-                <var name="mminlu"                               type="text"     dimensions=""/>
                 <var name="isltyp"   name_in_code="soilcat_top"  type="integer"  dimensions="nCells"/>
                 <var name="soilcat_bot"                          type="integer"  dimensions="nCells"/>
                 <var name="snoalb"                               type="real"     dimensions="nCells"/>
                 <var name="soiltemp"                             type="real"     dimensions="nCells"/>
-                <var name="greenfrac"                            type="real"     dimensions="nMonths nCells"/>
                 <var name="shdmin"                               type="real"     dimensions="nCells"/>
                 <var name="shdmax"                               type="real"     dimensions="nCells"/>
-                <var name="albedo12m"                            type="real"     dimensions="nMonths nCells"/>
+                <var name="greenfrac"                            type="real"     dimensions="nMonths nCells"/>
 
-                <!-- GWDO fields -->
+                <!-- static terrestrial fields only needed for the WRF physics -->
+                <var name="mminlu"                               type="text"     dimensions=""/>
+                <var name="albedo12m"                            type="real"     dimensions="nMonths nCells"/>
                 <var name="varsso"                               type="real"     dimensions="nCells"/>
                 <var name="var2d"                                type="real"     dimensions="nCells"/>
                 <var name="con"                                  type="real"     dimensions="nCells"/>
@@ -434,6 +461,17 @@
                 <var name="ol2"                                  type="real"     dimensions="nCells"/>
                 <var name="ol3"                                  type="real"     dimensions="nCells"/>
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
+
+                <!-- static terrrestrial fields only needed for the GFS physics -->
+                <var name="facsf"                                type="real"     dimensions="nCells"/>
+                <var name="facwf"                                type="real"     dimensions="nCells"/>
+                <var name="alnsf4s"                              type="real"     dimensions="nSeasons nCells"/>
+                <var name="alnwf4s"                              type="real"     dimensions="nSeasons nCells"/>
+                <var name="alvsf4s"                              type="real"     dimensions="nSeasons nCells"/>
+                <var name="alvwf4s"                              type="real"     dimensions="nSeasons nCells"/>
+                <var name="slope"                                type="real"     dimensions="nCells"/>
+                <var name="zorl12m"                              type="real"     dimensions="nMonths nCells"/>
+                <var name="orogwd"                               type="real"     dimensions="nMtvr nCells"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="hx"                         type="real"     dimensions="nVertLevelsP1 nCells"/>
@@ -519,6 +557,13 @@
                 <var name="vegfra"                            type="real"     dimensions="nCells Time"/>
                 <var name="sfc_albbck"                        type="real"     dimensions="nCells Time"/>
                 <var name="xland"                             type="real"     dimensions="nCells Time"/>
+
+                <!-- horizontally interpolated from first-guess data, only needed for the GFS physics, and should be read in by model -->
+                <var name="alnsf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alnwf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alvsf"                             type="real"     dimensions="nCells Time"/>
+                <var name="alvwf"                             type="real"     dimensions="nCells Time"/>
+                <var name="zorl"                              type="real"     dimensions="nCells Time"/>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">

@@ -1,20 +1,27 @@
 .SUFFIXES: .F .o
 
-OBJS = mpas_init_atm_core.o \
-       mpas_init_atm_core_interface.o \
-       mpas_init_atm_cases.o \
-       mpas_atm_advection.o \
-       mpas_init_atm_read_met.o \
-       mpas_init_atm_llxy.o \
-       mpas_init_atm_bitarray.o \
-       mpas_init_atm_queue.o \
-       mpas_init_atm_hinterp.o \
-       mpas_init_atm_static.o \
-       mpas_init_atm_surface.o \
-       read_geogrid.o \
-       mpas_atmphys_date_time.o \
-       mpas_atmphys_initialize_real.o \
-       mpas_atmphys_utilities.o
+#PHYSICS=-DDO_PHYSICS
+PHYSICS =-DDO_PHYSICS_NGGPS
+#PHYSICS=
+
+OBJS = \
+	mpas_init_atm_core.o \
+	mpas_init_atm_core_interface.o \
+	mpas_init_atm_cases.o \
+	mpas_atm_advection.o \
+	mpas_init_atm_read_met.o \
+	mpas_init_atm_llxy.o \
+	mpas_init_atm_bitarray.o \
+	mpas_init_atm_queue.o \
+	mpas_init_atm_hinterp.o \
+	mpas_init_atm_static.o \
+	mpas_init_atm_static_nggps.o \
+	mpas_init_atm_surface.o \
+	mpas_init_atm_utilities.o \
+	read_geogrid.o \
+	mpas_atmphys_date_time.o \
+	mpas_atmphys_initialize_real.o \
+	mpas_atmphys_utilities.o
 
 all: core_hyd
 
@@ -47,6 +54,7 @@ mpas_init_atm_cases.o: \
 	mpas_init_atm_hinterp.o \
 	mpas_init_atm_static.o \
 	mpas_init_atm_surface.o \
+	mpas_init_atm_utilities.o \
 	mpas_atmphys_initialize_real.o
 
 mpas_init_atm_hinterp.o: mpas_init_atm_queue.o mpas_init_atm_bitarray.o
@@ -67,7 +75,15 @@ mpas_init_atm_static.o: \
 	mpas_atm_advection.o \
 	mpas_init_atm_hinterp.o \
 	mpas_init_atm_llxy.o \
+	mpas_init_atm_static_nggps.o \
+	mpas_init_atm_utilities.o \
 	mpas_atmphys_utilities.o
+
+mpas_init_atm_static_nggps.o: \
+	mpas_init_atm_hinterp.o  \
+	mpas_init_atm_llxy.o     \
+	mpas_init_atm_read_met.o \
+	mpas_init_atm_utilities.o
 
 mpas_init_atm_surface.o: \
 	mpas_init_atm_hinterp.o  \
@@ -90,10 +106,10 @@ clean:
 .F.o:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
-	$(CPP) $(CPPFLAGS) $(CPPINCLUDES) $< > $*.f90
+	$(CPP) $(CPPFLAGS) $(CPPINCLUDES) $(PHYSICS) $< > $*.f90
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../framework -I../operators  -I../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../framework -I../operators  -I../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) $(PHYSICS) -I../framework -I../operators  -I../external/esmf_time_f90
 endif
 
 .c.o:
