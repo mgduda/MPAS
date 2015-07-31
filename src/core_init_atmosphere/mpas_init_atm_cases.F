@@ -20,6 +20,7 @@ module init_atm_cases
    use mpas_timer
    use mpas_init_atm_static
    use mpas_init_atm_surface
+   use mpas_init_atm_utilities
 
    ! Added only clause to keep xlf90 from getting confused from the overloaded abs intrinsic in mpas_timekeeping
    use mpas_timekeeping !, only: MPAS_Time_type, MPAS_TimeInterval_type, MPAS_Clock_type, &
@@ -202,7 +203,6 @@ module init_atm_cases
                end if
 
                call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
-               call init_atm_static_orogwd(mesh, block_ptr % dimensions, block_ptr % configs)
             end if
 
             !
