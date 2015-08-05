@@ -1073,7 +1073,8 @@ module atm_time_integration
       call mpas_pool_get_array(diag, 'cqw', cqw)
       call mpas_pool_get_array(diag, 'cqu', cqu)
 
-      do iCell = cellSolveStart,cellSolveEnd
+!      do iCell = cellSolveStart,cellSolveEnd
+      do iCell = cellStart,cellEnd
          qtot(1:nVertLevels,iCell) = 0.0
          do k = 1,nVertLevels
             do iq = moist_start, moist_end
@@ -1082,7 +1083,8 @@ module atm_time_integration
          end do
       end do    
 
-      do iCell = cellSolveStart,cellSolveEnd
+!      do iCell = cellSolveStart,cellSolveEnd
+      do iCell = cellStart,cellEnd
          do k = 2, nVertLevels
             qtotal = 0.0
             do iq = moist_start, moist_end
@@ -1430,7 +1432,7 @@ module atm_time_integration
       integer, dimension(:,:), pointer :: cellsOnEdge, edgesOnCell
       real (kind=RKIND), dimension(:,:), pointer :: edgesOnCell_sign
 
-      real (kind=RKIND) :: c2, rcv
+      real (kind=RKIND) :: c2, rcv, rsmp
 
       integer :: cell1, cell2, iEdge, iCell, i, k
       real (kind=RKIND) :: pgrad, flux, resm
@@ -1553,6 +1555,9 @@ module atm_time_integration
       ! so that we do not have to communicate updates of u to update the cell variables (rho, w, and theta). 
 
       !MGD this loop will not be very load balanced with if-test below
+
+      rsmp = 4./(1.+epssm)/dts
+
       do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
  
          cell1 = cellsOnEdge(1,iEdge)
@@ -1562,12 +1567,21 @@ module atm_time_integration
          if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
 
             do k=1,nVertLevels
-               pgrad =     ((zz_rtheta_pp_old(k,cell2)                    &
-                            -zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge)     &
-                          -zxu(k,iEdge)*(drthetadz(k,cell1)+drthetadz(k,cell2)))/(.5*(zz(k,cell2)+zz(k,cell1)))
-               pgrad = 0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
+!               pgrad =     ((zz_rtheta_pp_old(k,cell2)                    &
+!                            -zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge)     &
+!                          -zxu(k,iEdge)*(drthetadz(k,cell1)+drthetadz(k,cell2)))/(.5*(zz(k,cell2)+zz(k,cell1)))
+!               pgrad = 0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
+!
+!               ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - cqu(k,iEdge) * pgrad) 
 
-               ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - cqu(k,iEdge) * pgrad) 
+               pgrad =     ((zz_rtheta_pp_old(k,cell2)-zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
+!               pgrad =     ((rtheta_pp(k,cell2)-rtheta_pp(k,cell1))/dcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
+               pgrad = cqu(k,iEdge)*0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
+               pgrad = pgrad + 0.5*zxu(k,iEdge)*(                                         &
+                                   gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))              &
+                                  -rsmp*( cofwt(k,cell1)*rtheta_pp(k,cell1)/zz(k,cell1)   &
+                                         +cofwt(k,cell2)*rtheta_pp(k,cell2)/zz(k,cell2)) )
+               ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - pgrad) 
 
                ! accumulate ru_p for use later in scalar transport
 
