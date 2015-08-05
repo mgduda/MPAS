@@ -313,11 +313,35 @@ module atm_time_integration
 
          block => block % next
       end do
+
       call mpas_timer_stop('atm_compute_moist_coefficients')
 
       call mpas_timer_stop('atm_rk_integration_setup')
 
       DYNAMICS_SUBSTEPS : do dynamics_substep = 1, dynamics_split
+
+            block => domain % blocklist
+            do while (associated(block))
+               call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+               call mpas_pool_get_subpool(block % structs, 'state', state)
+               call mpas_pool_get_subpool(block % structs, 'diag', diag)
+               call mpas_pool_get_subpool(block % structs, 'tend', tend)
+   
+               call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+
+               rk_step = 1
+!$OMP PARALLEL DO
+               do thread=1,block % nThreads
+                  call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
+                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
+                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
+                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
+                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
+               end do
+!$OMP END PARALLEL DO
+               block => block % next
+            end do
+
 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
          ! BEGIN Runge-Kutta loop 
@@ -404,6 +428,7 @@ module atm_time_integration
             call mpas_dmpar_exch_halo_field(tend_u_field, (/ 1 /))
    
             call mpas_timer_start('small_step_prep')
+
             block => domain % blocklist
             do while (associated(block))
                call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -420,15 +445,6 @@ module atm_time_integration
                                              block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
                                              block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
                                              block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-
-                  if(rk_step == 1) then  ! test for linearizing about time t for vertically implicit step
-                  call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-                  end if
-
                end do
 !$OMP END PARALLEL DO
                block => block % next
@@ -1174,7 +1190,8 @@ module atm_time_integration
          cofrz(k) = dtseps*rdzw(k)
       end do
 
-      do iCell = cellSolveStart,cellSolveEnd  !  we only need to do cells we are solving for, not halo cells
+!      do iCell = cellSolveStart,cellSolveEnd  !  we only need to do cells we are solving for, not halo cells
+      do iCell = cellStart,cellEnd  !  we want cofwt for all cells
 
          do k=2,nVertLevels
             cofwr(k,iCell) =.5*dtseps*gravity*(fzm(k)*zz(k,iCell)+fzp(k)*zz(k-1,iCell))
@@ -3019,10 +3036,19 @@ module atm_time_integration
 
       if(rk_step == 1) then
 !  first push to tend_u_euler
+!         do k=1,nVertLevels
+!            tend_u_euler(k,iEdge) =  - cqu(k,iEdge)*((pp_fwd(k,cell2)-pp_fwd(k,cell1))/dcEdge(iEdge)   &
+!                                        - zxu(k,iEdge)*(dpdz(k,cell1)+dpdz(k,cell2)) ) / (.5*(zz(k,cell2)+zz(k,cell1)))
+!         end do
+
          do k=1,nVertLevels
-            tend_u_euler(k,iEdge) =  - cqu(k,iEdge)*((pp_fwd(k,cell2)-pp_fwd(k,cell1))/dcEdge(iEdge)   &
-                                        - zxu(k,iEdge)*(dpdz(k,cell1)+dpdz(k,cell2)) ) / (.5*(zz(k,cell2)+zz(k,cell1)))
+            tend_u_euler(k,iEdge) =  - cqu(k,iEdge)*( (pp_fwd(k,cell2)-pp_fwd(k,cell1))/(dcEdge(iEdge)*(.5*(zz(k,cell2)+zz(k,cell1)))) &
+                                                      + 0.5*gravity*zxu(k,iEdge)*(                                                     &
+                                                      (rb(k,cell1)*(qtot(k,cell1)) + rr_save(k,cell1)*(1.+qtot(k,cell1))) +            &
+                                                      (rb(k,cell2)*(qtot(k,cell2)) + rr_save(k,cell2)*(1.+qtot(k,cell2))) )           )
          end do
+
+
       end if
 
          ! vertical transport of u
