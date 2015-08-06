@@ -21,7 +21,9 @@ OBJS = \
 	read_geogrid.o \
 	mpas_atmphys_date_time.o \
 	mpas_atmphys_initialize_real.o \
-	mpas_atmphys_utilities.o
+	mpas_atmphys_utilities.o \
+	mpas_atmphys_nggps_date_time.o \
+	mpas_atmphys_nggps_initialize_real.o
 
 all: core_hyd
 
@@ -94,6 +96,14 @@ mpas_atmphys_initialize_real.o:  \
 	mpas_init_atm_surface.o  \
 	mpas_atmphys_date_time.o \
 	mpas_atmphys_utilities.o
+
+mpas_atmphys_gfs_date_time.o: \
+        mpas_atmphys_date_time.o
+
+mpas_atmphys_gfs_initialize_real.o: \
+        mpas_atmphys_date_time.o \
+        mpas_atmphys_nggps_date_time.o \
+        mpas_atmphys_utilities.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libdycore.a
