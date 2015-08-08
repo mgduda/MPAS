@@ -37,7 +37,7 @@ module atm_time_integration
 
    ! Used in advance_acoustic_step
    real (kind=RKIND), allocatable, dimension(:,:) :: ts, rs
-   real (kind=RKIND), allocatable, dimension(:,:) :: drthetadz
+!   real (kind=RKIND), allocatable, dimension(:,:) :: drthetadz
 
    ! Used in atm_advance_scalars_mono
    real (kind=RKIND), dimension(:,:), pointer :: scalar_old, scalar_new
@@ -472,7 +472,7 @@ module atm_time_integration
 ! Would be more efficient to allocate these outside the acoustic loop...
                   allocate(ts(nVertLevels,nCells+1))
                   allocate(rs(nVertLevels,nCells+1))
-                  allocate(drthetadz(nVertLevels,nCells+1))
+!                  allocate(drthetadz(nVertLevels,nCells+1))
 
 !$OMP PARALLEL DO
                   do thread=1,block % nThreads
@@ -489,7 +489,7 @@ module atm_time_integration
 
                   deallocate(ts)
                   deallocate(rs)
-                  deallocate(drthetadz)
+!                  deallocate(drthetadz)
 
                   block => block % next
                end do
@@ -1192,8 +1192,7 @@ module atm_time_integration
          cofrz(k) = dtseps*rdzw(k)
       end do
 
-!      do iCell = cellSolveStart,cellSolveEnd  !  we only need to do cells we are solving for, not halo cells
-      do iCell = cellStart,cellEnd  !  we want cofwt for all cells
+      do iCell = cellSolveStart,cellSolveEnd  !  we only need to do cells we are solving for, not halo cells
 
          do k=2,nVertLevels
             cofwr(k,iCell) =.5*dtseps*gravity*(fzm(k)*zz(k,iCell)+fzp(k)*zz(k-1,iCell))
@@ -1432,7 +1431,7 @@ module atm_time_integration
       integer, dimension(:,:), pointer :: cellsOnEdge, edgesOnCell
       real (kind=RKIND), dimension(:,:), pointer :: edgesOnCell_sign
 
-      real (kind=RKIND) :: c2, rcv, rsmp
+      real (kind=RKIND) :: c2, rcv
 
       integer :: cell1, cell2, iEdge, iCell, i, k
       real (kind=RKIND) :: pgrad, flux, resm
@@ -1531,16 +1530,17 @@ module atm_time_integration
             zz_rtheta_pp_old(k,iCell) = (1.0_RKIND + smdiv) * rtheta_pp(k,iCell) * zz(k,iCell) - smdiv * zz_rtheta_pp_old(k,iCell)
          end do
 
-         k = 1
-         drthetadz(k,iCell) = 0.5*(pzm(k,iCell)*(zz_rtheta_pp_old(k+1,iCell)-zz_rtheta_pp_old(k  ,iCell))       &
-                                  +pzp(k,iCell)*(zz_rtheta_pp_old(k+2,iCell)-zz_rtheta_pp_old(k  ,iCell)))
-         do k=2,nVertLevels-1
-           drthetadz(k,iCell) = 0.5*(pzp(k,iCell)*(zz_rtheta_pp_old(k+1,iCell)-zz_rtheta_pp_old(k  ,iCell))    &
-                                    +pzm(k,iCell)*(zz_rtheta_pp_old(k  ,iCell)-zz_rtheta_pp_old(k-1,iCell)))
-         end do
+!         k = 1
+!         drthetadz(k,iCell) = 0.5*(pzm(k,iCell)*(zz_rtheta_pp_old(k+1,iCell)-zz_rtheta_pp_old(k  ,iCell))       &
+!                                  +pzp(k,iCell)*(zz_rtheta_pp_old(k+2,iCell)-zz_rtheta_pp_old(k  ,iCell)))
+!         do k=2,nVertLevels-1
+!           drthetadz(k,iCell) = 0.5*(pzp(k,iCell)*(zz_rtheta_pp_old(k+1,iCell)-zz_rtheta_pp_old(k  ,iCell))    &
+!                                    +pzm(k,iCell)*(zz_rtheta_pp_old(k  ,iCell)-zz_rtheta_pp_old(k-1,iCell)))
+!         end do
+!
+!         k = nVertLevels
+!         drthetadz(k,iCell) = 0.5*(pzm(k,iCell)*(zz_rtheta_pp_old(k  ,iCell)-zz_rtheta_pp_old(k-1,iCell)))
 
-         k = nVertLevels
-         drthetadz(k,iCell) = 0.5*(pzm(k,iCell)*(zz_rtheta_pp_old(k  ,iCell)-zz_rtheta_pp_old(k-1,iCell)))
       end do
 
 !$OMP BARRIER
@@ -1556,8 +1556,6 @@ module atm_time_integration
 
       !MGD this loop will not be very load balanced with if-test below
 
-      rsmp = 4./(1.+epssm)/dts
-
       do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
  
          cell1 = cellsOnEdge(1,iEdge)
@@ -1567,6 +1565,7 @@ module atm_time_integration
          if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
 
             do k=1,nVertLevels
+
 !               pgrad =     ((zz_rtheta_pp_old(k,cell2)                    &
 !                            -zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge)     &
 !                          -zxu(k,iEdge)*(drthetadz(k,cell1)+drthetadz(k,cell2)))/(.5*(zz(k,cell2)+zz(k,cell1)))
@@ -1574,13 +1573,9 @@ module atm_time_integration
 !
 !               ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - cqu(k,iEdge) * pgrad) 
 
-               pgrad =     ((zz_rtheta_pp_old(k,cell2)-zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
-!               pgrad =     ((rtheta_pp(k,cell2)-rtheta_pp(k,cell1))/dcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
+               pgrad = ((zz_rtheta_pp_old(k,cell2)-zz_rtheta_pp_old(k,cell1))/dcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
                pgrad = cqu(k,iEdge)*0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
-               pgrad = pgrad + 0.5*zxu(k,iEdge)*(                                         &
-                                   gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))              &
-                                  -rsmp*( cofwt(k,cell1)*rtheta_pp(k,cell1)/zz(k,cell1)   &
-                                         +cofwt(k,cell2)*rtheta_pp(k,cell2)/zz(k,cell2)) )
+               pgrad = pgrad + 0.5*zxu(k,iEdge)*gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))
                ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - pgrad) 
 
                ! accumulate ru_p for use later in scalar transport
