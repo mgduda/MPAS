@@ -34,3 +34,4 @@ mpas_threading_init() in framework/mpas_threading.F
             block % vertexSolveThreadEnd(threadid+1)   = ((threadid+1) * nVerticesSolve / block % nThreads)
 !$OMP END PARALLEL
 ```
+##### Look into how to get timings by process and thread
