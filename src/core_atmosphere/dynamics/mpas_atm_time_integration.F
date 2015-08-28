@@ -240,16 +240,15 @@ module atm_time_integration
       if (.not. config_scalar_advection )  write(0,*) ' scalar advection turned off '
 
       number_of_sub_steps = config_number_of_sub_steps
-      rk_timestep(1) = dt_dynamics/3.
+      rk_timestep(1) = dt_dynamics/2.  ! 2nd order RK3 variant
       rk_timestep(2) = dt_dynamics/2.
       rk_timestep(3) = dt_dynamics
 
-!      rk_sub_timestep(1) = dt_dynamics/3.
-      rk_sub_timestep(1) = dt_dynamics/2.  !  this is to test the second-order variant of RK3 for dynamics
+      rk_sub_timestep(1) = dt_dynamics/real(number_of_sub_steps)  ! second order rk3 variant
       rk_sub_timestep(2) = dt_dynamics/real(number_of_sub_steps)
       rk_sub_timestep(3) = dt_dynamics/real(number_of_sub_steps)
 
-      number_sub_steps(1) = 1
+      number_sub_steps(1) = max(1,number_of_sub_steps/2)  ! 2nd-order rk3 variant
       number_sub_steps(2) = max(1,number_of_sub_steps/2)
       number_sub_steps(3) = number_of_sub_steps
 
@@ -368,7 +367,7 @@ module atm_time_integration
                call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
    
                allocate(delsq_theta(nVertLevels,nCells+1))
-               allocate(delsq_w(nVertLevels,nCells+1))
+              allocate(delsq_w(nVertLevels,nCells+1))
 !!               allocate(qtot(nVertLevels,nCells+1))  ! initializing this earlier in solution sequence
                allocate(delsq_divergence(nVertLevels,nCells+1))
                allocate(delsq_u(nVertLevels,nEdges+1))
@@ -378,7 +377,8 @@ module atm_time_integration
 
 !$OMP PARALLEL DO
                do thread=1,block % nThreads
-                  call atm_compute_dyn_tend( tend, state, diag, mesh, block % configs, nVertLevels, rk_step, dt, & 
+                  call atm_compute_dyn_tend( tend, state, diag, mesh, block % configs, nVertLevels, rk_step, &
+                                             dt_dynamics, rk_sub_timestep(rk_step),                          & 
                                              block % cellThreadStart(thread), block % cellThreadEnd(thread), &
                                              block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
                                              block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
@@ -665,7 +665,7 @@ module atm_time_integration
    
 !$OMP PARALLEL DO
                do thread=1,block % nThreads
-                  call atm_compute_solve_diagnostics(dt, state, 2, diag, mesh, block % configs, &
+                  call atm_compute_solve_diagnostics(dt_dynamics, state, 2, diag, mesh, block % configs, &
                                                      block % cellThreadStart(thread), block % cellThreadEnd(thread), &
                                                      block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
                                                      block % edgeThreadStart(thread), block % edgeThreadEnd(thread), rk_step)
@@ -2741,7 +2741,7 @@ module atm_time_integration
    end subroutine atm_advance_scalars_mono
 
 
-   subroutine atm_compute_dyn_tend(tend, state, diag, mesh, configs, nVertLevels, rk_step, dt, &
+   subroutine atm_compute_dyn_tend(tend, state, diag, mesh, configs, nVertLevels, rk_step, dt, dt_acoustic, &
                                    cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -2766,7 +2766,7 @@ module atm_time_integration
       type (mpas_pool_type), intent(in) :: configs
       integer, intent(in) :: nVertLevels              ! for allocating stack variables
       integer, intent(in) :: rk_step
-      real (kind=RKIND), intent(in) :: dt
+      real (kind=RKIND), intent(in) :: dt, dt_acoustic
       integer, intent(in) :: cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
 
@@ -3044,7 +3044,7 @@ module atm_time_integration
 
           do k = 1,nVertLevels
             tend_rho(k,iCell) = -h_divergence(k,iCell)-rdzw(k)*(rw(k+1,iCell)-rw(k,iCell))
-            pp_fwd(k,iCell) = pp(k,iCell) + smdiv*rgas_cprcv*theta_m(k,iCell)*exner(k,iCell)*tend_rho(k,iCell)
+            pp_fwd(k,iCell) = pp(k,iCell) + dt_acoustic*smdiv*rgas_cprcv*theta_m(k,iCell)*exner(k,iCell)*tend_rho(k,iCell)
             dpdz(k,iCell) = -gravity*(rb(k,iCell)*(qtot(k,iCell)) + rr_save(k,iCell)*(1.+qtot(k,iCell)))
           end do
 
