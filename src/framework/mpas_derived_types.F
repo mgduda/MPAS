@@ -21,8 +21,8 @@ module mpas_derived_types
 
    use mpas_kind_types
 
-   use pio
-   use pio_types
+!   use pio
+!   use pio_types
 
    use ESMF
    use ESMF_BaseMod

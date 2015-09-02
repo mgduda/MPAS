@@ -1,3 +1,4 @@
+
    ! File access modes
    integer, parameter :: MPAS_IO_READ  = 1, &
                          MPAS_IO_WRITE = 2
@@ -9,10 +10,10 @@
                          MPAS_IO_PNETCDF5 = 6
 
    ! Field and attribute types
-   integer, parameter :: MPAS_IO_REAL     =  7,  &
-                         MPAS_IO_DOUBLE   =  8,  &
-                         MPAS_IO_INT      =  9,  &
-                         MPAS_IO_LOGICAL  = 10,  &
+   integer, parameter :: MPAS_IO_REAL     = 7,  &
+                         MPAS_IO_DOUBLE   = 8,  &
+                         MPAS_IO_INT      = 9,  &
+                         MPAS_IO_LOGICAL  = 10, &
                          MPAS_IO_CHAR     = 11
 
    ! Field precision
@@ -48,20 +49,20 @@
                          MPAS_IO_ERR_NO_UNLIMITED_DIM   = -17, &
                          MPAS_IO_ERR_UNIMPLEMENTED      = -18, &
                          MPAS_IO_ERR_WOULD_CLOBBER      = -19, &
-                         MPAS_IO_ERR_NOEXIST_READ       = -20, &
-                         MPAS_IO_ERR_MISSING_DIM        = -21
+                         MPAS_IO_ERR_NOEXIST_READ       = -20
+
 
    type MPAS_IO_Handle_type
       logical :: initialized = .false.
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
-      type (file_desc_t) :: pio_file
+      integer :: ncid
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
-      integer :: pio_unlimited_dimid
+      integer :: unlimited_dimid
       integer :: preexisting_records = 0
-      integer (kind=PIO_offset) :: frame_number = 1
+      integer :: frame_number = 1
       type (dimlist_type), pointer :: dimlist_head => null()
       type (dimlist_type), pointer :: dimlist_tail => null()
       type (fieldlist_type), pointer :: fieldlist_head => null()
@@ -70,11 +71,13 @@
       type (attlist_type), pointer :: attlist_tail => null()
    end type MPAS_IO_Handle_type
 
+
    type decomphandle_type
       integer :: field_type
+      logical :: structured = .false.
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
-      type (io_desc_t) :: pio_iodesc
+      integer, dimension(:), pointer :: start, count
    end type decomphandle_type
 
    type atthandle_type
@@ -97,7 +100,6 @@
    type fieldhandle_type
       character (len=StrKIND) :: fieldname
       integer :: fieldid
-      type (Var_desc_t) :: field_desc
       integer :: field_type
       logical :: has_unlimited_dim = .false.
       integer :: ndims
@@ -128,3 +130,5 @@
       type (fieldlist_type), pointer :: next => null()
    end type fieldlist_type
 
+   type (decomplist_type), pointer, private :: decomp_list => null()
+   type (dm_info), private :: local_dminfo

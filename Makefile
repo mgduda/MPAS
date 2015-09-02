@@ -303,6 +303,7 @@ bluegene:
 CPPINCLUDES = 
 FCINCLUDES = 
 LIBS = 
+ifneq "$(PIO)" ""
 ifneq ($(wildcard $(PIO)/lib), ) # Check for newer PIO version
 	CPPINCLUDES = -I$(PIO)/include
 	FCINCLUDES = -I$(PIO)/include
@@ -311,6 +312,7 @@ else
 	CPPINCLUDES = -I$(PIO)
 	FCINCLUDES = -I$(PIO)
 	LIBS = -L$(PIO) -lpio
+endif
 endif
 
 ifneq "$(PNETCDF)" ""
