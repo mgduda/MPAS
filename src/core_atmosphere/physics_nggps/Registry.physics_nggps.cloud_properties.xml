@@ -1,0 +1,38 @@
+ <var_struct name="nggps_cloud_properties" time_levs="1">
+
+    <var name="cv" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="convective cloud amount"
+    />
+    <var name="cvb" type="real" dimensions="nCells Time" units="Pa" 
+         description="convective cloud base pressure"
+    />
+    <var name="cvt" type="real" dimensions="nCells Time" units="Pa" 
+         description="convective cloud top pressure"
+    />
+    <var name="cnvw" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="layer convective cloud water"
+    />
+    <var name="cnvc" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+         description="layer convective cloud fraction"
+    />
+    <var name="cnvqc_v" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="total convective condensate"
+    />
+    <var name="cldcov" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="total convective condensate"
+    />
+        <var name="deltaq" type="real" dimensions="nVertLevels nCells Time" units="?"
+         description="half-width of uniform total water distribution"
+    />
+    <var name="fcice" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+         description="fraction of ice clouds (Ferrier scheme)"
+    />
+    <var name="frain" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+         description="fraction of rain water (Ferrier scheme)"
+    />
+    <var name="rrime" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+         description="mass ratio of total to unrimed ice (Ferrier scheme)"
+    />
+
+ </var_struct>
+
