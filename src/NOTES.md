@@ -1,5 +1,38 @@
 ### Notes 8/28/15
 
+To build executable
+make ifort CORE=atmosphere
+
+To clean executable
+make clean CORE=atmosphere
+
+To run 4 tasks w/ 16 threads per task
+cd 120km
+bsub < run_4task_16tpt
+
+where run_4task_16tpt
+```
+#!/bin/csh
+#
+# LSF batch script to run an MPI application
+#
+#BSUB -P SCIS0005            # project code
+#BSUB -W 0:15                # wall-clock time (hrs:mins)
+#BSUB -n 4                   # number of tasks in job         
+#BSUB -R "span[ptile=1]"     # run 1 MPI tasks per node
+#BSUB -J run_4task_16tpt     # job name
+#BSUB -o run.%J.out          # output file name in which %J is replaced by the job ID
+#BSUB -e run.%J.err          # error file name in which %J is replaced by the job ID
+#BSUB -q regular             # queue
+
+limit stacksize unlimited
+setenv OMP_NUM_THREADS 16
+setenv MP_TASK_AFFINITY core:${OMP_NUM_THREADS}
+setenv LD_LIBRARY_PATH ${NETCDF}/lib:$LD_LIBRARY_PATH
+
+mpirun.lsf ../atmosphere_model
+```
+
 ##### Only the following files contain OpenMP directives
 
 core_atmosphere/mpas_atm_core.F
@@ -35,3 +68,17 @@ mpas_threading_init() in framework/mpas_threading.F
 !$OMP END PARALLEL
 ```
 ##### Look into how to get timings by process and thread
+
+### Notes 9/16/15
+
+##### Adding timing
+
+Added per-thread timings to following files:
+core_atmosphere/mpas_atm_core.F
+core_atmosphere/dynamics/mpas_atm_time_integration.F
+core_atmosphere/physics/mpas_atmphys_driver.F
+
+Not needed for these files
+core_atmosphere/physics/mpas_atmphys_driver_microphysics.F
+framework/mpas_threading.F
+

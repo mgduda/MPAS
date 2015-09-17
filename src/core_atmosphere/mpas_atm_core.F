@@ -240,6 +240,10 @@ module atm_core
 
       logical, pointer :: config_do_restart, config_do_DAcycling
 
+      double precision omp_get_wtime
+      double precision wtime_start, wtime_end, wtime_diff
+      double precision :: tarr(128), tmin, tmax
+      integer threadid, omp_get_thread_num
 
       call atm_compute_signs(mesh)
    
@@ -266,8 +270,11 @@ module atm_core
       allocate(ke_vertex(nVertLevels,nVertices+1))  ! ke_vertex is a module variable defined in mpas_atm_time_integration.F
       allocate(ke_edge(nVertLevels,nEdges+1))       ! ke_edge is a module variable defined in mpas_atm_time_integration.F
 
-!$OMP PARALLEL DO
+      write(0,*) 'RSS START atm_init_coupled_diagnostics'
+!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
       do thread=1,block % nThreads
+         wtime_start = omp_get_wtime()
+         threadid = omp_get_thread_num()
          if (.not. config_do_restart .or. (config_do_restart .and. config_do_DAcycling)) then
             call atm_init_coupled_diagnostics(state, 1, diag, mesh, block % configs, &
                                           block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -282,8 +289,15 @@ module atm_core
                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread))
+         wtime_end = omp_get_wtime()
+         wtime_diff = wtime_end - wtime_start
+         tarr(threadid+1) = wtime_diff
+         write(0,'(A50,I3,A6,F13.7)') 'RSS atm_init_coupled_diagnostics: threadid ', threadid, ' time ', wtime_diff
       end do
 !$OMP END PARALLEL DO
+      tmin = minval(tarr(1:block%nThreads))
+      tmax = maxval(tarr(1:block%nThreads))
+      write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS atm_init_coupled_diagnostics: stats ', tmin, tmax, tmax-tmin
 
       deallocate(ke_vertex)
       deallocate(ke_edge)
