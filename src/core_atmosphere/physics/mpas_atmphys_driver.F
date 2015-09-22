@@ -158,6 +158,8 @@
  block => domain % blocklist
  do while(associated(block))
 
+    !threadid = omp_get_thread_num()
+
     call mpas_pool_get_subpool(block%structs,'mesh'        ,mesh        )
     call mpas_pool_get_subpool(block%structs,'state'       ,state       )
     call mpas_pool_get_subpool(block%structs,'diag'        ,diag        )
@@ -172,108 +174,58 @@
     !physics prep step:
     time_lev = 1
 
-    write(0,*) 'RSS START MPAS_to_physics'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
     do thread=1,block % nThreads
-       wtime_start = omp_get_wtime()
-       threadid = omp_get_thread_num()
        call MPAS_to_physics(mesh,state,time_lev,diag,diag_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       wtime_end = omp_get_wtime()
-       wtime_diff = wtime_end - wtime_start
-       tarr(threadid+1) = wtime_diff
-       write(0,'(A50,I3,A6,F13.7)') 'RSS MPAS_to_physics: threadid ', threadid, ' time ', wtime_diff
     end do
 !$OMP END PARALLEL DO
-    tmin = minval(tarr(1:block%nThreads))
-    tmax = maxval(tarr(1:block%nThreads))
-    write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS MPAS_to_physics: stats ', tmin, tmax, tmax-tmin
 
     !call to cloud scheme:
     if(l_radtlw .or. l_radtsw) then
        call allocate_cloudiness
-       write(0,*) 'RSS START driver_cloudiness'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_cloudiness(diag_physics, &
                                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_cloudiness: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-    tmin = minval(tarr(1:block%nThreads))
-    tmax = maxval(tarr(1:block%nThreads))
-    write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_cloudiness: stats ', tmin, tmax, tmax-tmin
     endif
 
     !call to short wave radiation scheme:
     if(l_radtsw) then
        time_lev = 1
        call allocate_radiation_sw(xtime_s)
-       write(0,*) 'RSS START driver_radiation_sw'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_radiation_sw(itimestep,block%configs,mesh,state,time_lev,diag_physics, &
                                    atm_input,sfc_input,tend_physics,xtime_s, &
                                    block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_radiation_sw: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_radiation_sw: stats ', tmin, tmax, tmax-tmin
     endif
 
     !call to long wave radiation scheme:
     if(l_radtlw) then
        time_lev = 1
        call allocate_radiation_lw(xtime_s)
-       write(0,*) 'RSS START driver_radiation_lw'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_radiation_lw(xtime_s,block%configs,mesh,state,time_lev,diag_physics, &
                                    atm_input,sfc_input,tend_physics, &
                                    block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_radiation_lw: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_radiation_lw: stats ', tmin, tmax, tmax-tmin
     endif
 
     !call to accumulate long- and short-wave diagnostics if needed:
      if(config_bucket_update /= 'none' .and. config_bucket_radt .gt. 0._RKIND) then
-        write(0,*) 'RSS START update_radiation_diagnostics'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
         do thread=1,block % nThreads
-           wtime_start = omp_get_wtime()
-           threadid = omp_get_thread_num()
            call update_radiation_diagnostics(block%configs,mesh,diag_physics, &
                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS update_radiation_diagnostics: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS update_radiation_diagnostics: stats ', tmin, tmax, tmax-tmin
      endif
 
     !deallocate all radiation arrays:
@@ -285,145 +237,75 @@
     !call to surface-layer scheme:
     if(config_sfclayer_scheme .ne. 'off') then
        call allocate_sfclayer
-       write(0,*) 'RSS START driver_sfclayer'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_sfclayer(mesh,diag_physics,sfc_input, &
                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_sfclayer: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_sfclayer: stats ', tmin, tmax, tmax-tmin
        call deallocate_sfclayer
     endif
 
     !call to land-surface scheme:
     if(config_lsm_scheme .ne. 'off') then
        call allocate_lsm
-       write(0,*) 'RSS START driver_lsm'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_lsm(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                           block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_lsm: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_lsm: stats ', tmin, tmax, tmax-tmin
        call deallocate_lsm
     endif
 
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
        call allocate_pbl
-       write(0,*) 'RSS START driver_pbl'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_pbl(sfc_input,diag_physics,tend_physics, &
                           block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_pbl: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_pbl: stats ', tmin, tmax, tmax-tmin
        call deallocate_pbl
     endif
 
     !call to gravity wave drag over orography scheme:
     if(config_gwdo_scheme .ne. 'off') then
        call allocate_gwdo
-       write(0,*) 'RSS START driver_gwdo'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_gwdo(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
                            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_gwdo: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_gwdo: stats ', tmin, tmax, tmax-tmin
        call deallocate_gwdo
     endif
 
     !call to convection scheme:
-    write(0,*) 'RSS START update_convection_step1'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
     do thread=1,block % nThreads
-       wtime_start = omp_get_wtime()
-       threadid = omp_get_thread_num()
        call update_convection_step1(mesh,diag_physics,tend_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       wtime_end = omp_get_wtime()
-       wtime_diff = wtime_end - wtime_start
-       tarr(threadid+1) = wtime_diff
-       write(0,'(A50,I3,A6,F13.7)') 'RSS update_convection_step1: threadid ', threadid, ' time ', wtime_diff
     end do
 !$OMP END PARALLEL DO
-    tmin = minval(tarr(1:block%nThreads))
-    tmax = maxval(tarr(1:block%nThreads))
-    write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS update_convection_step1: stats ', tmin, tmax, tmax-tmin
     if(l_conv) then
        call allocate_convection
-       write(0,*) 'RSS START driver_convection'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
        do thread=1,block % nThreads
-          wtime_start = omp_get_wtime()
-          threadid = omp_get_thread_num()
           call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
                                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-          wtime_end = omp_get_wtime()
-          wtime_diff = wtime_end - wtime_start
-          tarr(threadid+1) = wtime_diff
-          write(0,'(A50,I3,A6,F13.7)') 'RSS driver_convection: threadid ', threadid, ' time ', wtime_diff
        end do
 !$OMP END PARALLEL DO
-       tmin = minval(tarr(1:block%nThreads))
-       tmax = maxval(tarr(1:block%nThreads))
-       write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS driver_convection: stats ', tmin, tmax, tmax-tmin
        call deallocate_convection
     endif
     !update diagnostics:
-    write(0,*) 'RSS START update_convection_step2'
-!$OMP PARALLEL DO PRIVATE(wtime_end, wtime_start, threadid)
+!$OMP PARALLEL DO
     do thread=1,block % nThreads
-       wtime_start = omp_get_wtime()
-       threadid = omp_get_thread_num()
        call update_convection_step2(block%configs,mesh,diag_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       wtime_end = omp_get_wtime()
-       wtime_diff = wtime_end - wtime_start
-       tarr(threadid+1) = wtime_diff
-       write(0,'(A50,I3,A6,F13.7)') 'RSS update_convection_step2: threadid ', threadid, ' time ', wtime_diff
     end do
 !$OMP END PARALLEL DO
-    tmin = minval(tarr(1:block%nThreads))
-    tmax = maxval(tarr(1:block%nThreads))
-    write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSS update_convection_step2: stats ', tmin, tmax, tmax-tmin
 
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics
