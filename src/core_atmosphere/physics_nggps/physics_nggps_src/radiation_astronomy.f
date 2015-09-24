@@ -171,6 +171,12 @@
 !
 !===>  ...  begin here
 !
+      write(0,*)
+      write(0,*) '--- enter subroutine sol_init:'
+      write(0,*) '--- me      = ', me
+      write(0,*) '--- isolar  = ', isolar
+      write(0,*) '--- vtagast = ', vtagast
+
       if ( me == 0 ) print *, VTAGAST    !print out version tag
 
 !  ---  initialization

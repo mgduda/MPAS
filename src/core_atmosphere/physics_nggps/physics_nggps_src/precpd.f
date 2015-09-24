@@ -1,4 +1,4 @@
-       subroutine precpd (im,ix,km,dt,del,prsl,ps,q,cwm,t,rn,sr
+       subroutine precpd (im,ix,km,dt,del,prsl,q,cwm,t,rn,sr
      &,                   rainp,u00k,psautco,prautco,evpco,wminco
      &,                   lprnt,jpr)
 !
@@ -35,7 +35,6 @@
 !       dt         : time step in seconds
 !       del(km)    : pressure layer thickness (bottom to top)
 !       prsl(km)   : pressure values for model layers (bottom to top)
-!       ps(im)     : surface pressure (centibars)
 !       q(ix,km)   : specific humidity (updated in the code)
 !       cwm(ix,km) : condensate mixing ratio (updated in the code)
 !       t(ix,km)   : temperature       (updated in the code)
@@ -73,12 +72,12 @@
       real (kind=kind_phys) q(ix,km),   t(ix,km),    cwm(ix,km)
      &,                                 del(ix,km),  prsl(ix,km)
 !    &,                     cll(im,km), del(ix,km),  prsl(ix,km)
-     &,                     ps(im),     rn(im),      sr(im)
+     &,                     rn(im),      sr(im)
      &,                     dt
 !hchuang code change [+1l] : add record to record information in vertical in
 !                       addition to total column precrl
      &,                     rainp(im,km), rnp(im),
-     &                      psautco, prautco, evpco, wminco(2)
+     &                      psautco(im), prautco(im), evpco, wminco(2)
 !
 !
       real (kind=kind_phys) err(im),      ers(im),     precrl(im)
@@ -97,7 +96,7 @@
        logical comput(im)
        logical lprnt
 !
-      real (kind=kind_phys) ke,   rdt,  us, cclimit, climit, cws, csm1
+      real (kind=kind_phys) ke,   rdt,  us, climit, cws, csm1
      &,                     crs1, crs2, cr, aa2,     dtcp,   c00, cmr
      &,                     tem,  c1,   c2, wwn
 !    &,                     tem,  c1,   c2, u00b,    u00t,   wwn
@@ -126,7 +125,6 @@
       ke      = evpco
 !     ke      = 7.0e-5
       us      = h1
-      cclimit = 1.0e-3
       climit  = 1.0e-20
       cws     = 0.025
 !
@@ -147,7 +145,7 @@
 !     c00 = 10.0e-1 * dt
 !     c00 = 3.0e-1 * dt          !05/09/2000
 !     c00 = 1.0e-4 * dt          !05/09/2000
-      c00 = prautco * dt         !05/09/2000
+!     c00 = prautco * dt         !05/09/2000
       cmr = 1.0 / 3.0e-4
 !     cmr = 1.0 / 5.0e-4
 !     c1  = 100.0
@@ -328,14 +326,15 @@
           if (comput(n) .and. ccr(n) > 0.0) then
             wws    = ww(n)
             cwmk   = max(cons_0, wws)
+            i      = ipr(n)
 !           amaxcm = max(cons_0, cwmk - wmink(n))
             if (iwl(n) == 1) then                 !  ice phase
-               amaxcm = max(cons_0, cwmk - wmini(ipr(n),k))
+               amaxcm = max(cons_0, cwmk - wmini(i,k))
                expf      = dt * exp(0.025*tmt0(n))
-               psaut     = min(cwmk, psautco*expf*amaxcm)
+               psaut     = min(cwmk, psautco(i)*expf*amaxcm)
                ww(n)     = ww(n) - psaut
                cwmk      = max(cons_0, ww(n))
-!              cwmk      = max(cons_0, ww(n)-wmini(ipr(n),k))
+!              cwmk      = max(cons_0, ww(n)-wmini(i,k))
                psaci     = min(cwmk, aa2*expf*precsl1(n)*cwmk)
 
                ww(n)     = ww(n) - psaci
@@ -353,7 +352,9 @@
 !
                tem2      = amaxcm * cmr * tem / max(ccr(n),cons_p01)
                tem2      = min(cons_50, tem2*tem2)
-               praut     = c00  * tem * amaxcm * (1.0-exp(-tem2))
+!              praut     = c00  * tem * amaxcm * (1.0-exp(-tem2))
+               praut     = (prautco(i)*dt) * tem * amaxcm
+     &                                     * (1.0-exp(-tem2))
                praut     = min(praut, cwmk)
                ww(n)     = ww(n) - praut
 !

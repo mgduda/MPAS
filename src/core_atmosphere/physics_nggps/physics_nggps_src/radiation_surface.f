@@ -217,6 +217,10 @@
           read (NIRADSF,12) cline
   12      format(a80)
 
+          write(0,*)
+          write(0,*) '--- surface emissivity:'
+          write(0,*) '--- imxems = ', imxems
+          write(0,*) '--- jmxems = ', jmxems
           read (NIRADSF,14) idxems
   14      format(80i1)
 

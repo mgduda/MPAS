@@ -182,7 +182,8 @@
         integer,parameter:: nrest=n+6
 !  Defined types
         type random_stat
-          private
+!         private
+!         public
           integer:: mti=n+1
           integer:: mt(0:n-1)
           integer:: iset

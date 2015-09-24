@@ -591,6 +591,10 @@
       kyrsav  = 1
       kmonsav = 1
 
+      write(0,*)
+      write(0,*) '--- enter subroutine aer_init:'
+      write(0,*) '--- nlay    = ', nlay
+
 !  --- ...  write aerosol parameter configuration to output logs
 
       if ( me == 0 ) then
@@ -624,12 +628,15 @@
       endif
 
       NSWLWBD = NSWBND + NLWBND
+      write(0,*) '--- nlay    = ', nlay
+      write(0,*) '--- nswlwbd = ', nswlwbd
 
       if ( iaerflg /= 100 ) then
 
 !  --- ...  set up spectral one wavenumber solar/ir fluxes
 
         call set_spectrum
+        write(0,*) '--- end subroutine set_spectrum:'
 !  ---  inputs:   (module constants)
 !  ---  outputs:  (in-scope variables)
 
@@ -642,6 +649,7 @@
      &     ( solfwv, eirfwv, me                                         &
 !  ---  outputs:
      &     )
+        write(0,*) '--- end subroutine clim_aerinit:'
 
 !       elseif ( iaermdl == 1 ) then                ! gocart-climatology scheme
 !       elseif ( iaermdl==1 .or. iaermdl==2 ) then  ! gocart-clim/prog scheme
@@ -715,6 +723,12 @@
 !===>  ...  begin here
 !
       print *, VTAGAER    ! print out version tag
+      write(0,*) '--- vtagaer = ', vtagaer
+      write(0,*) '--- iaerflg = ', iaerflg
+      write(0,*) '--- iaermdl = ', iaermdl
+      write(0,*) '--- lalwflg = ', lalwflg
+      write(0,*) '--- laswflg = ', laswflg
+      write(0,*) '--- lavoflg = ', lavoflg 
 
       if ( iaermdl == 0 ) then
         print *,' - Using OPAC-seasonal climatology for tropospheric',  &

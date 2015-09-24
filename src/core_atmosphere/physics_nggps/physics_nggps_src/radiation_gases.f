@@ -257,6 +257,9 @@
 !===>  ...  begin here
 !
       if ( me == 0 ) print *, VTAGGAS    ! print out version tag
+      write(0,*)
+      write(0,*) '--- enter subroutine gas_init:'
+      write(0,*) '--- ioznflg = ', ioznflg 
 
       kyrsav  = 0
       kmonsav = 1
@@ -333,6 +336,9 @@
 !  --- ...  co2 data section
 
       co2_glb = co2vmr_def
+      write(0,*) '--- co2_glb = ', co2_glb
+      write(0,*) '--- ico2flg = ', ico2flg
+      write(0,*) '--- ictmflg = ', ictmflg
 
       lab_ico2 : if ( ico2flg == 0 ) then
 
@@ -399,6 +405,7 @@
           endif    ! endif_file_exist_block
 
         else   lab_ictm                           ! input from observed data
+          write(0,*) '--- begin ico2flg = ', ico2flg
 
           if ( ico2flg == 1 ) then
             if ( me == 0 ) then

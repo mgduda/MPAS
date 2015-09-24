@@ -153,7 +153,7 @@
      &      sfcnirbmu, sfcnirdfu, sfcvisbmu, sfcvisdfu,                 &
      &      sfcnirbmd, sfcnirdfd, sfcvisbmd, sfcvisdfd
 
-      real(kind=kind_phys), dimension(ix,levs), intent(in) :: swh,  hlw, &
+      real(kind=kind_phys), dimension(ix,levs), intent(in) :: swh,  hlw,&
      &                                                        swhc, hlwc
 
 !  ---  input/output:
