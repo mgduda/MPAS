@@ -7,12 +7,14 @@ dummy:
 
 OBJS = \
 	calpreciptype.o \
+	cs_conv.o \
 	cnvc90.o \
 	date_def.o \
 	dcyc2.o \
 	dcyc2.pre.rad.o \
 	funcphys.o \
 	gbphys.o \
+	gcm_shoc.o \
 	get_prs.o \
 	gfs_phy_tracer_config.o \
 	gocart_tracer_config_stub.o \
@@ -36,6 +38,7 @@ OBJS = \
 	moninp.o \
 	moninp1.o \
 	moninq.o \
+	moninshoc.o \
 	mstadb.o \
 	mstadbtn.o \
 	mstcnv.o \
@@ -46,6 +49,7 @@ OBJS = \
 	physparam.o \
 	precpd.o \
 	precpdp.o \
+	precpd_shoc.o \
 	progt2.o \
 	progtm_module.o \
 	rad_initialize.o \
@@ -85,12 +89,14 @@ physics_nggps_src: $(OBJS)
 
 # DEPENDENCIES:
 calpreciptype.o		  : calpreciptype.f funcphys.o physcons.o
+cs_conv.o                 : cs_conv.f machine.o physcons.o funcphys.o
 cnvc90.o		  : cnvc90.f machine.o
 dcyc2.o			  : dcyc2.f machine.o physcons.o
 dcyc2.pre.rad.o		  : dcyc2.pre.rad.f machine.o physcons.o
 date_def.o		  : date_def.f machine.o
 funcphys.o		  : funcphys.f machine.o physcons.o 
 gbphys.o		  : gbphys.f machine.o physcons.o
+gcm_shoc.o                : gcm_shoc.f funcphys.o physcons.o
 get_prs.o		  : get_prs.f machine.o physcons.o tracer_const_h.o
 gfs_phy_tracer_config.o   : gfs_phy_tracer_config.f machine.o gocart_tracer_config_stub.o
 grrad.o			  : grrad.f machine.o funcphys.o physcons.o physparam.o radiation_aerosols.o radiation_astronomy.o \
@@ -111,6 +117,7 @@ moninedmf.o               : moninedmf.f machine.o funcphys.o physcons.o
 moninp.o		  : moninp.f machine.o physcons.o
 moninp1.o		  : moninp1.f machine.o physcons.o
 moninq.o		  : moninq.f machine.o funcphys.o physcons.o
+moninshoc.o		  : moninshoc.f machine.o funcphys.o physcons.o
 mstadb.o		  : mstadb.f machine.o funcphys.o physcons.o
 mstabdtn.o		  : mstabdtn.f machine.o funcphys.o physcons.o
 mstcnv.o 		  : mstcnv.f machine.o funcphys.o physcons.o
@@ -121,6 +128,7 @@ physcons.o		  : physcons.f machine.o
 physparam.o               : physparam.f machine.o
 precpd.o		  : precpd.f machine.o funcphys.o physcons.o
 precpdp.o		  : precpdp.f machine.o funcphys.o physcons.o
+precpd_shoc.o		  : precpdp.f machine.o funcphys.o physcons.o
 progt2.o		  : progt2.f machine.o progtm_module.o
 progtm_module.o		  : progtm_module.f machine.o
 rad_initialize.o          : rad_initialize.f physparam.o grrad.o
@@ -170,6 +178,7 @@ moninedmf.o \
 moninp.o \
 moninp1.o \
 moninq.o \
+moninshoc.o \
 mstadb.o \
 mstadbtn.o \
 mstcnv.o \
@@ -177,6 +186,7 @@ ozne_def.o \
 ozphys.o \
 precpd.o \
 precpdp.o \
+precpd_shoc.o \
 progt2.o \
 progtm_module.o \
 rayleigh_damp.o \
