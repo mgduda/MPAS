@@ -294,6 +294,7 @@
                         <var name="alvsf"/>
                         <var name="alvwf"/>
                         <var name="zorl"/>
+                        <var name="initial_date"/>
                         <var name="deriv_two"/>
                         <var name="advCells"/>
                         <var name="defc_a"/>
@@ -429,6 +430,8 @@
                 <var name="fEdge"                        type="real"     dimensions="nEdges"/>
                 <var name="fVertex"                      type="real"     dimensions="nVertices"/>
                 <var name="meshDensity"                  type="real"     dimensions="nCells"/>
+
+                <var name="initial_date"                 type="text"     dimensions=""/>
 
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1"                          type="real"     dimensions=""/>
