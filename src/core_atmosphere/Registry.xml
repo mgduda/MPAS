@@ -179,41 +179,33 @@
 			<var name="rho_base"/>
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
+			<var name="initial_date"/>
+			<var name="landmask"/>
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
-			<var name="mminlu"/>
-			<var name="landmask"/>
-			<var name="shdmin"/>
-			<var name="shdmax"/>
-			<var name="snoalb"/>
 			<var name="ter"/>
-			<var name="albedo12m"/>
+			<var name="orogwd"/>
+			<var name="alnsf4s"/>
+			<var name="alnwf4s"/>
+			<var name="alvsf4s"/>
+			<var name="alvwf4s"/>
+			<var name="alnsf"/>
+			<var name="alnwf"/>
+			<var name="alvsf"/>
+			<var name="alvwf"/>
+			<var name="facsf"/>
+			<var name="facwf"/>
 			<var name="greenfrac"/>
-			<var name="sfc_albbck"/>
-			<var name="skintemp"/>
+			<var name="vegfra"/>
+			<var name="zorl12m"/>
+			<var name="zorl"/>
+			<var name="snoalb"/>
 			<var name="snow"/>
 			<var name="snowc"/>
 			<var name="snowh"/>
-			<var name="sst"/>
-			<var name="tmn"/>
-			<var name="vegfra"/>
-			<var name="seaice"/>
 			<var name="xice"/>
-			<var name="xland"/>
-			<var name="dzs"/>
-			<var name="sh2o"/>
-			<var name="smois"/>
-			<var name="tslb"/>
-			<var name="var2d"/>
-			<var name="con"/>
-			<var name="oa1"/>
-			<var name="oa2"/>
-			<var name="oa3"/>
-			<var name="oa4"/>
-			<var name="ol1"/>
-			<var name="ol2"/>
-			<var name="ol3"/>
-			<var name="ol4"/>
+			<var name="skintemp"/>
+			<var name="sst"/>
 		</stream>
 
 		<stream name="restart" 
@@ -321,186 +313,7 @@
 			<var name="rho_p"/>
 			<var name="surface_pressure"/>
                         <var name="tend_sfc_pressure"/>
-			<var name="rt_diabatic_tend"/>
-			<var name="dcEdge_m"/>
-			<var name="nsteps_accum"/>
-			<var name="ndays_accum"/>
-			<var name="tlag"/>
-			<var name="tday_accum"/>
-			<var name="tyear_mean"/>
-			<var name="tyear_accum"/>
-			<var name="refl10cm_max"/>
-			<var name="i_rainnc"/>
-			<var name="sr"/>
-			<var name="rainncv"/>
-			<var name="rainnc"/>
-			<var name="snownc"/>
-			<var name="graupelnc"/>
-			<var name="i_rainc"/>
-			<var name="cuprec"/>
-			<var name="rainc"/>
-			<var name="raincv"/>
-			<var name="nca"/>
-			<var name="cubot"/>
-			<var name="cutop"/>
-			<var name="w0avg"/>
-			<var name="kpbl"/>
-			<var name="hpbl"/>
-			<var name="hfx"/>
-			<var name="mavail"/>
-			<var name="mol"/>
-			<var name="qfx"/>
-			<var name="qsfc"/>
-			<var name="ust"/>
-			<var name="ustm"/>
-			<var name="zol"/>
-			<var name="znt"/>
-			<var name="br"/>
-			<var name="cd"/>
-			<var name="cda"/>
-			<var name="chs"/>
-			<var name="chs2"/>
-			<var name="cqs2"/>
-			<var name="ck"/>
-			<var name="cka"/>
-			<var name="cpm"/>
-			<var name="flhc"/>
-			<var name="flqc"/>
-			<var name="gz1oz0"/>
-			<var name="lh"/>
-			<var name="psim"/>
-			<var name="psih"/>
-			<var name="qgh"/>
-			<var name="regime"/>
-			<var name="rmol"/>
-			<var name="wspd"/>
-			<var name="fh"/>
-			<var name="fm"/>
-			<var name="u10"/>
-			<var name="v10"/>
-			<var name="q2"/>
-			<var name="t2m"/>
-			<var name="th2m"/>
-			<var name="dusfcg"/>
-			<var name="dvsfcg"/>
-			<var name="dtaux3d"/>
-			<var name="dtauy3d"/>
-			<var name="rubldiff"/>
-			<var name="rvbldiff"/>
-			<var name="i_acswdnb"/>
-			<var name="i_acswdnbc"/>
-			<var name="i_acswdnt"/>
-			<var name="i_acswdntc"/>
-			<var name="i_acswupb"/>
-			<var name="i_acswupbc"/>
-			<var name="i_acswupt"/>
-			<var name="i_acswuptc"/>
-			<var name="acswdnb"/>
-			<var name="acswdnbc"/>
-			<var name="acswdnt"/>
-			<var name="acswdntc"/>
-			<var name="acswupb"/>
-			<var name="acswupbc"/>
-			<var name="acswupt"/>
-			<var name="acswuptc"/>
-			<var name="gsw"/>
-			<var name="i_aclwdnb"/>
-			<var name="i_aclwdnbc"/>
-			<var name="i_aclwdnt"/>
-			<var name="i_aclwdntc"/>
-			<var name="i_aclwupb"/>
-			<var name="i_aclwupbc"/>
-			<var name="i_aclwupt"/>
-			<var name="i_aclwuptc"/>
-			<var name="aclwdnb"/>
-			<var name="aclwdnbc"/>
-			<var name="aclwdnt"/>
-			<var name="aclwdntc"/>
-			<var name="aclwupb"/>
-			<var name="aclwupbc"/>
-			<var name="aclwupt"/>
-			<var name="aclwuptc"/>
-			<var name="glw"/>
-			<var name="o3clim"/>
-			<var name="o3vmr "/>
-			<var name="acsnom"/>
-			<var name="acsnow"/>
-			<var name="canwat"/>
-			<var name="chklowq"/>
-			<var name="grdflx"/>
-			<var name="lai"/>
-			<var name="noahres"/>
-			<var name="potevp"/>
-			<var name="sfc_albedo"/>
-			<var name="sfc_emiss"/>
-			<var name="sfc_emibck"/>
-			<var name="sfcrunoff"/>
-			<var name="smstav"/>
-			<var name="smstot"/>
-			<var name="snopcx"/>
-			<var name="snotime"/>
-			<var name="sstsk"/>
-			<var name="sstsk_dtc"/>
-			<var name="sstsk_dtw"/>
-			<var name="thc"/>
-			<var name="udrunoff"/>
-			<var name="xicem"/>
-			<var name="z0"/>
-			<var name="zs"/>
-			<var name="rthcuten"/>
-			<var name="rqvcuten"/>
-			<var name="rqccuten"/>
-			<var name="rqicuten"/>
-			<var name="rqrcuten"/>
-			<var name="rqscuten"/>
-			<var name="rqvdynten"/>
-			<var name="rucuten"/>
-			<var name="rvcuten"/>
-			<var name="rublten"/>
-			<var name="rvblten"/>
-			<var name="rthblten"/>
-			<var name="rqvblten"/>
-			<var name="rqcblten"/>
-			<var name="rqiblten"/>
-			<var name="rthratensw"/>
-			<var name="rthratenlw"/>
-			<var name="pin"/>
-			<var name="ozmixm"/>
-			<var name="isltyp"/>
-			<var name="ivgtyp"/>
-			<var name="mminlu"/>
-			<var name="landmask"/>
-			<var name="shdmin"/>
-			<var name="shdmax"/>
-			<var name="snoalb"/>
-			<var name="albedo12m"/>
-			<var name="greenfrac"/>
-			<var name="sfc_albbck"/>
-			<var name="skintemp"/>
-			<var name="snow"/>
-			<var name="snowc"/>
-			<var name="snowh"/>
-			<var name="sst"/>
-			<var name="tmn"/>
-			<var name="vegfra"/>
-			<var name="seaice"/>
-			<var name="xice"/>
-			<var name="xland"/>
-			<var name="dzs"/>
-			<var name="smcrel"/>
-			<var name="sh2o"/>
-			<var name="smois"/>
-			<var name="tslb"/>
-			<var name="var2d"/>
-			<var name="con"/>
-			<var name="oa1"/>
-			<var name="oa2"/>
-			<var name="oa3"/>
-			<var name="oa4"/>
-			<var name="ol1"/>
-			<var name="ol2"/>
-			<var name="ol3"/>
-			<var name="ol4"/>
+                        <var name="initial_date"/>
 		</stream>
 
 		<stream name="output" 
@@ -563,43 +376,6 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
-			<var name="i_rainnc"/>
-			<var name="rainnc"/>
-			<var name="precipw"/>
-			<var name="cuprec"/>
-			<var name="i_rainc"/>
-			<var name="rainc"/>
-			<var name="kpbl"/>
-			<var name="hpbl"/>
-			<var name="hfx"/>
-			<var name="qfx"/>
-			<var name="cd"/>
-			<var name="cda"/>
-			<var name="ck"/>
-			<var name="cka"/>
-			<var name="lh"/>
-			<var name="u10"/>
-			<var name="v10"/>
-			<var name="q2"/>
-			<var name="t2m"/>
-			<var name="th2m"/>
-			<var name="gsw"/>
-			<var name="glw"/>
-			<var name="acsnow"/>
-			<var name="pin"/>
-			<var name="ozmixm"/>
-			<var name="mminlu"/>
-			<var name="xland"/>
-			<var name="ter"/>
-			<var name="skintemp"/>
-			<var name="snow"/>
-			<var name="snowh"/>
-			<var name="sst"/>
-			<var name="vegfra"/>
-			<var name="xice"/>
-			<var name="sh2o"/>
-			<var name="smois"/>
-			<var name="tslb"/>
 		</stream>
 
 		<stream name="diagnostics" 
@@ -609,11 +385,6 @@
                         runtime_format="separate_file">
 
 			<var name="xtime"/>
-			<var name="olrtoa"/>
-			<var name="rainc"/>
-			<var name="rainnc"/>
-			<var name="refl10cm_max"/>
-			<var name="precipw"/>
 			<var name="mslp"/>
 			<var name="temperature_200hPa"/>
 			<var name="temperature_500hPa"/>
@@ -641,9 +412,6 @@
                         input_interval="none"
                         filename_interval="none"
                         runtime_format="separate_file">
-
-			<var name="sst"/>
-			<var name="xice"/>
 		</stream>
 	</streams>
 
@@ -700,6 +468,8 @@
                 <var name="meshScalingDel2"           type="real"     dimensions="nEdges"/>
                 <var name="meshScalingDel4"           type="real"     dimensions="nEdges"/>
 
+                <var name="initial_date"              type="text"     dimensions=""/>
+
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1"                       type="real"     dimensions=""/>
                 <var name="cf2"                       type="real"     dimensions=""/>
@@ -746,8 +516,6 @@
                 <var name="east"                      type="real"     dimensions="R3 nCells"/>
                 <var name="north"                     type="real"     dimensions="R3 nCells"/>
 
-                <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
-                <var name="m_hybi"                    type="real"     dimensions="nAerLevels nCells"/>
         </var_struct>
 
         <var_struct name="state" time_levs="2">
@@ -767,22 +535,9 @@
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
+                        <var name="qo3"     array_group="ozone"/>
                 </var_array>
 
-                <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
-                        <var name="sul"     array_group="aer_cam"/>
-                        <var name="sslt"    array_group="aer_cam"/>
-                        <var name="dust1"   array_group="aer_cam"/>
-                        <var name="dust2"   array_group="aer_cam"/>
-                        <var name="dust3"   array_group="aer_cam"/>
-                        <var name="dust4"   array_group="aer_cam"/>
-                        <var name="ocpho"   array_group="aer_cam"/>
-                        <var name="bcpho"   array_group="aer_cam"/>
-                        <var name="ocphi"   array_group="aer_cam"/>
-                        <var name="bcphi"   array_group="aer_cam"/>
-                        <var name="bg"      array_group="aer_cam"/>
-                        <var name="volc"    array_group="aer_cam"/>
-                </var_array>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
@@ -924,19 +679,22 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+                        <var name="tend_qo3"   name_in_code="qp3"       array_group="ozone"/>
                 </var_array>
         </var_struct>
 
 
 
 <!-- ================================================================================================== -->
-<!-- INCLUDE THE PHYSICS REGISTRIES:                                                                    -->
-<!-- ================================================================================================== -->
+<!-- INCLUDE NGGPS PHYSICS REGISTRIES:                                                                  -->
 
-#include "./physics/Registry.physics_diagnostics.xml"
-#include "./physics/Registry.physics_inputs.xml"
-#include "./physics/Registry.physics_namelists.xml"
-#include "./physics/Registry.physics_tendencies.xml"
-
+#include "./physics_nggps/Registry.physics_nggps.namelists.xml"
+#include "./physics_nggps/Registry.physics_nggps.atm_inputs.xml"
+#include "./physics_nggps/Registry.physics_nggps.cloud_properties.xml"
+#include "./physics_nggps/Registry.physics_nggps.diagnostics.xml"
+#include "./physics_nggps/Registry.physics_nggps.interface_fields.xml"
+#include "./physics_nggps/Registry.physics_nggps.radiation_tendencies.xml"
+#include "./physics_nggps/Registry.physics_nggps.sfc_properties.xml"
+#include "./physics_nggps/Registry.physics_nggps.tbd_ddt.xml"
 
 </registry>

@@ -202,8 +202,7 @@ module atm_core
       use mpas_rbf_interpolation
       use mpas_vector_reconstruction
       use mpas_stream_manager
-#ifdef DO_PHYSICS
-!     use mpas_atmphys_aquaplanet
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       use mpas_atmphys_control
       use mpas_atmphys_init
       use mpas_atmphys_manager
@@ -220,9 +219,15 @@ module atm_core
       type (mpas_pool_type), pointer :: state
       type (mpas_pool_type), pointer :: diag
       type (mpas_pool_type), pointer :: tend
+#if defined(DO_PHYSICS)
       type (mpas_pool_type), pointer :: sfc_input
       type (mpas_pool_type), pointer :: diag_physics
       type (mpas_pool_type), pointer :: atm_input
+#elif defined(DO_PHYSICS_NGGPS)
+      type (mpas_pool_type), pointer :: nggps_atm_inputs
+      type (mpas_pool_type), pointer :: nggps_diagnostics
+      type (mpas_pool_type), pointer :: nggps_sfc_properties
+#endif
 
       integer :: iCell
       
@@ -270,38 +275,54 @@ module atm_core
                             uReconstructZonal,         &
                             uReconstructMeridional     &
                            )
-   
-#ifdef DO_PHYSICS
-      !check that all the physics options are correctly defined and that at least one physics
-      !parameterization is called (using the logical moist_physics):
-      call physics_namelist_check(mesh, block % configs)
 
-      !proceed with initialization of physics parameterization if moist_physics is set to true:
-      call mpas_pool_get_subpool(block % structs, 'sfc_input', sfc_input)
+#if defined(DO_PHYSICS)
+     !check that all the physics options are correctly defined and that at least one physics
+     !parameterization is called (using the logical moist_physics):
+     call physics_namelist_check(mesh, block % configs)
 
-      ! Before calling physics_init, ensure that mminlu contains the name of the land use dataset
-      call mpas_pool_get_array(sfc_input, 'mminlu', mminlu)
-      if (len_trim(mminlu) == 0) then
-            write(0,*) '****************************************************************'
-            write(0,*) 'No information on land use dataset is available.'
-            write(0,*) 'Assume that we are using ''USGS''.'
-            write(0,*) '****************************************************************'
-            write(mminlu,'(a)') 'USGS'
-      end if
+     !proceed with initialization of physics parameterization if moist_physics is set to true:
+     call mpas_pool_get_subpool(block % structs, 'sfc_input', sfc_input)
 
+     ! Before calling physics_init, ensure that mminlu contains the name of the land use dataset
+     call mpas_pool_get_array(sfc_input, 'mminlu', mminlu)
+     if (len_trim(mminlu) == 0) then
+           write(0,*) '****************************************************************'
+           write(0,*) 'No information on land use dataset is available.'
+           write(0,*) 'Assume that we are using ''USGS''.'
+           write(0,*) '****************************************************************'
+           write(mminlu,'(a)') 'USGS'
+     end if
 
-      if (moist_physics) then
-         !initialization of some input variables in registry:
-         call mpas_pool_get_subpool(block % structs, 'tend', tend)
-         call mpas_pool_get_subpool(block % structs, 'diag_physics', diag_physics)
-         call mpas_pool_get_subpool(block % structs, 'atm_input', atm_input)
-         call physics_registry_init(mesh, block % configs, sfc_input)
-         call physics_run_init(block % configs, mesh, state, clock, stream_manager)
+     write(0,*)
+     write(0,*) '--- moist_physics = ', moist_physics
+     if (moist_physics) then
+        !initialization of some input variables in registry:
+        call mpas_pool_get_subpool(block % structs, 'tend', tend)
+        call mpas_pool_get_subpool(block % structs, 'diag_physics', diag_physics)
+        call mpas_pool_get_subpool(block % structs, 'atm_input', atm_input)
+        call physics_registry_init(mesh, block % configs, sfc_input)
+        call physics_run_init(block % configs, mesh, state, clock, stream_manager)
 
-         !initialization of all physics:
-         call physics_init(dminfo, clock, block % configs, mesh, diag, tend, state, 1, diag_physics, &
-                           atm_input, sfc_input)
-      endif
+        !initialization of all physics:
+        call physics_init(dminfo, clock, block % configs, mesh, diag, tend, state, 1, diag_physics, &
+                          atm_input, sfc_input)
+     endif
+
+#elif defined(DO_PHYSICS_NGGPS)
+     !check that all the physics options are correctly defined and that at least one physics
+     !parameterization is called (using the logical moist_physics):
+     call physics_namelist_check(mesh, block % configs)
+
+     if (moist_physics) then
+        call mpas_pool_get_subpool(block % structs, 'nggps_atm_inputs', nggps_atm_inputs)
+        call mpas_pool_get_subpool(block % structs, 'nggps_sfc_properties', nggps_sfc_properties)
+
+        call physics_run_init(block % configs, mesh, state, clock, stream_manager)
+
+        !initialization of all physics:
+        call physics_init(dminfo, clock, block % configs, mesh, nggps_atm_inputs, nggps_sfc_properties)
+     endif
 #endif
    
       call atm_compute_mesh_scaling(mesh, block % configs)
@@ -349,7 +370,8 @@ module atm_core
       integer :: stream_dir
       character(len=StrKIND) :: input_stream, read_time
 
-      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
+!     type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
+      type (mpas_pool_type), pointer :: state, diag, mesh
 
       ! For high-frequency diagnostics output
       character (len=StrKIND) :: tempfilename
@@ -375,7 +397,7 @@ module atm_core
          do while (associated(block_ptr))
             call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
             call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
-            call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
+!           call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             call atm_compute_output_diagnostics(state, 1, diag, mesh)
 
@@ -454,7 +476,7 @@ module atm_core
 
                call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
                call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
-               call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
+!              call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
                call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
                call atm_compute_output_diagnostics(state, 1, diag, mesh)
 
@@ -467,7 +489,7 @@ module atm_core
 
                call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
                call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
-               call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
+!              call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
                call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
                call atm_compute_restart_diagnostics(state, 1, diag, mesh)
 
@@ -609,7 +631,7 @@ module atm_core
       use mpas_timekeeping
       use mpas_kind_types
       use atm_time_integration
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       use mpas_atmphys_control
       use mpas_atmphys_driver
       use mpas_atmphys_manager
@@ -638,8 +660,7 @@ module atm_core
 
       call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
 
-
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
