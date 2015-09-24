@@ -273,7 +273,7 @@ module atm_time_integration
          ! mesh is needed for atm_compute_moist_coefficients
          call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
          do thread=1,block % nThreads
             call atm_rk_integration_setup(state, diag, &
                                           block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -302,7 +302,7 @@ module atm_time_integration
 
          allocate(qtot(nVertLevels,nCells+1))  ! new allocation of qtot
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
          do thread=1,block % nThreads
             call atm_compute_moist_coefficients( block % dimensions, state, diag, mesh, &     !MGD could do away with dimensions arg
                                                  block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -350,7 +350,7 @@ module atm_time_integration
                allocate(delsq_vorticity(nVertLevels,nVertices+1))
                allocate(dpdz(nVertLevels,nCells+1))
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                do thread=1,block % nThreads
                   call atm_compute_dyn_tend( tend, state, diag, mesh, block % configs, nVertLevels, rk_step, dt, & 
                                              block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -416,7 +416,7 @@ module atm_time_integration
    
                call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                do thread=1,block % nThreads
                   call atm_set_smlstep_pert_variables( tend, diag, mesh, block % configs, &
                                              block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -457,7 +457,7 @@ module atm_time_integration
                   allocate(rs(nVertLevels,nCells+1))
                   allocate(drthetadz(nVertLevels,nCells+1))
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                   do thread=1,block % nThreads
                      call atm_advance_acoustic_step( state, diag, tend,  mesh, block % configs, nCells, nVertLevels, &
                                              rk_sub_timestep(rk_step), small_step, &
@@ -513,7 +513,7 @@ module atm_time_integration
                call mpas_pool_get_subpool(block % structs, 'diag', diag)
                call mpas_pool_get_subpool(block % structs, 'tend', tend)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                do thread=1,block % nThreads
                   call atm_recover_large_step_variables( state, diag, tend, mesh, block % configs, rk_timestep(rk_step), &
                                              number_sub_steps(rk_step), rk_step, &
@@ -572,7 +572,7 @@ module atm_time_integration
                   !       so we use the advance_scalars routine for the first two RK substeps.
                   !
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                   do thread=1,block % nThreads
                      if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
                         call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nCells, nVertLevels, rk_timestep(rk_step), &
@@ -630,7 +630,7 @@ module atm_time_integration
                allocate(ke_vertex(nVertLevels,nVertices+1))
                allocate(ke_edge(nVertLevels,nEdges+1))
    
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                do thread=1,block % nThreads
                   call atm_compute_solve_diagnostics(dt, state, 2, diag, mesh, block % configs, &
                                                      block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -689,7 +689,7 @@ module atm_time_integration
             call mpas_pool_get_subpool(block % structs, 'state', state)
             call mpas_pool_get_subpool(block % structs, 'diag', diag)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
             do thread=1,block % nThreads
                call atm_rk_dynamics_substep_finish(state, diag, dynamics_substep, dynamics_split, &
                                                 block % cellThreadStart(thread), block % cellThreadEnd(thread), &
@@ -755,7 +755,7 @@ module atm_time_integration
                !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                !       so we use the advance_scalars routine for the first two RK substeps.
                !
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
                do thread=1,block % nThreads
                   if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
                      call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nCells, nVertLevels, rk_timestep(rk_step), &
@@ -872,7 +872,7 @@ module atm_time_integration
          if (config_microp_scheme .ne. 'off')  &
             call mpas_timer_start('microphysics')
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
+!$OMP PARALLEL DO
          do thread=1,block % nThreads
             call microphysics_driver ( block % configs, mesh, state, 2, diag, diag_physics, tend, itimestep, &
                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
@@ -1923,7 +1923,12 @@ module atm_time_integration
       integer, intent(in) :: cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
       logical, intent(in), optional :: advance_density
-
+      
+      real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2
+      real (kind=RKIND) :: areaCellInv
+      integer, dimension(10) :: ica
+      integer:: jj
+      
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND), dimension(:), pointer :: invAreaCell
       real (kind=RKIND) :: rho_zz_new_inv
@@ -2008,9 +2013,7 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
 
-
-
-!$OMP BARRIER
+!RSS Removed OpenMP barrier at start of routine. Not sure why it is needed
 
       !
       ! Runge Kutta integration, so we compute fluxes from scalar_new values, update starts from scalar_old
@@ -2037,6 +2040,35 @@ module atm_time_integration
             !  flux_arr stores the value of the scalar at the edge.
             !  a better name perhaps would be scalarEdge
 
+            select case(nAdvCellsForEdge(iEdge))
+            case(10)
+               do jj=1,10
+                  do k=1,nVertLevels
+                     scalar_weight2(k,jj) = uhAvg(k,iEdge)*(adv_coefs(jj,iEdge) + &
+                          sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(jj,iEdge))
+                  enddo
+               enddo
+               do jj=1,10
+                  ica(jj) = advCellsForEdge(jj,iEdge)
+               enddo
+               
+               do k=1,nVertLevels
+               do iScalar=1,num_scalars
+                  flux_arr(iscalar,k) = &
+                       scalar_weight2(k,1)  * scalar_new(iScalar,k,ica(1)) + &
+                       scalar_weight2(k,2)  * scalar_new(iScalar,k,ica(2)) + &
+                       scalar_weight2(k,3)  * scalar_new(iScalar,k,ica(3)) + &
+                       scalar_weight2(k,4)  * scalar_new(iScalar,k,ica(4)) + &
+                       scalar_weight2(k,5)  * scalar_new(iScalar,k,ica(5)) + &
+                       scalar_weight2(k,6)  * scalar_new(iScalar,k,ica(6)) + &
+                       scalar_weight2(k,7)  * scalar_new(iScalar,k,ica(7)) + &
+                       scalar_weight2(k,8)  * scalar_new(iScalar,k,ica(8)) + &
+                       scalar_weight2(k,9)  * scalar_new(iScalar,k,ica(9)) + &
+                       scalar_weight2(k,10) * scalar_new(iScalar,k,ica(10))
+               end do
+               end do
+
+            case default
             flux_arr(:,:) = 0.0
             do j=1,nAdvCellsForEdge(iEdge)
                iAdvCell = advCellsForEdge(j,iEdge)
@@ -2047,17 +2079,19 @@ module atm_time_integration
                   end do
                end do
             end do
+            end select
 
             ! here we add the horizontal flux divergence into the scalar tendency.
             ! note that the scalar tendency is modified.
 
+            areaCellInv = 1.0/areaCell(iCell)
             do k=1,nVertLevels
             do iScalar=1,num_scalars
                   scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) &
-                         - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*flux_arr(iScalar,k)/areaCell(iCell)
+                         - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*flux_arr(iScalar,k)*areaCellInv
             end do
             if (local_advance_density) then
-               rho_zz_int(k,iCell) = rho_zz_int(k,iCell) - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*dvEdge(iEdge)/areaCell(iCell)
+               rho_zz_int(k,iCell) = rho_zz_int(k,iCell) - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*dvEdge(iEdge)*areaCellInv
             end if
             end do
             
