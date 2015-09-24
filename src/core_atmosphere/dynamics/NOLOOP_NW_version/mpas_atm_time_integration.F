@@ -273,17 +273,27 @@ module atm_time_integration
          ! mesh is needed for atm_compute_moist_coefficients
          call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-         do thread=1,block % nThreads
+         write(0,*) 'RSSX START atm_rk_integration_setup'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!         do thread=1,block % nThreads
+!            wtime_start = omp_get_wtime()
+            threadid = omp_get_thread_num()
             call atm_rk_integration_setup(state, diag, &
-                                          block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                          block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                          block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                          block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                          block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                          block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-         end do
-!$OMP END PARALLEL DO
+                                          block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                          block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                          block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                          block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                          block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                          block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!            wtime_end = omp_get_wtime()
+!            wtime_diff = wtime_end - wtime_start
+!            tarr(threadid+1) = wtime_diff
+!            write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_rk_integration_setup: threadid ', threadid, ' time ', wtime_diff
+!!!         end do
+!$OMP END PARALLEL
+!         tmin = minval(tarr(1:block%nThreads))
+!         tmax = maxval(tarr(1:block%nThreads))
+!         write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_rk_integration_setup: stats ', tmin, tmax, tmax-tmin
 
          block => block % next
       end do
@@ -302,17 +312,27 @@ module atm_time_integration
 
          allocate(qtot(nVertLevels,nCells+1))  ! new allocation of qtot
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-         do thread=1,block % nThreads
+         write(0,*) 'RSSX START atm_compute_moist_coefficients'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!         do thread=1,block % nThreads
+!            wtime_start = omp_get_wtime()
+            threadid = omp_get_thread_num()
             call atm_compute_moist_coefficients( block % dimensions, state, diag, mesh, &     !MGD could do away with dimensions arg
-                                                 block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                 block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                                 block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                                 block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                                 block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                                 block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-         end do
-!$OMP END PARALLEL DO
+                                                 block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                                 block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                                 block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                                 block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                                 block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                                 block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!            wtime_end = omp_get_wtime()
+!            wtime_diff = wtime_end - wtime_start
+!            tarr(threadid+1) = wtime_diff
+!            write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_compute_moist_coefficients: threadid ', threadid, ' time ', wtime_diff
+!!!         end do
+!$OMP END PARALLEL
+!         tmin = minval(tarr(1:block%nThreads))
+!         tmax = maxval(tarr(1:block%nThreads))
+!         write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_compute_moist_coefficients: stats ', tmin, tmax, tmax-tmin
 
          block => block % next
       end do
@@ -350,17 +370,27 @@ module atm_time_integration
                allocate(delsq_vorticity(nVertLevels,nVertices+1))
                allocate(dpdz(nVertLevels,nCells+1))
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-               do thread=1,block % nThreads
+               write(0,*) 'RSSX START atm_compute_dyn_tend'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!               do thread=1,block % nThreads
+!                  wtime_start = omp_get_wtime()
+                  threadid = omp_get_thread_num()
                   call atm_compute_dyn_tend( tend, state, diag, mesh, block % configs, nVertLevels, rk_step, dt, & 
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-               end do
-!$OMP END PARALLEL DO
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!                  wtime_end = omp_get_wtime()
+!                  wtime_diff = wtime_end - wtime_start
+!                  tarr(threadid+1) = wtime_diff
+!                  write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_compute_dyn_tend: threadid ', threadid, ' time ', wtime_diff
+!!!               end do
+!$OMP END PARALLEL
+!               tmin = minval(tarr(1:block%nThreads))
+!               tmax = maxval(tarr(1:block%nThreads))
+!               write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_compute_dyn_tend: stats ', tmin, tmax, tmax-tmin
 
                deallocate(delsq_theta)
                deallocate(delsq_w)
@@ -416,20 +446,30 @@ module atm_time_integration
    
                call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-               do thread=1,block % nThreads
+               write(0,*) 'RSSX START atm_set_smlstep_pert_variables'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!               do thread=1,block % nThreads
+!                  wtime_start = omp_get_wtime()
+                  threadid = omp_get_thread_num()
                   call atm_set_smlstep_pert_variables( tend, diag, mesh, block % configs, &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
                   call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-               end do
-!$OMP END PARALLEL DO
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!                  wtime_end = omp_get_wtime()
+!                  wtime_diff = wtime_end - wtime_start
+!                  tarr(threadid+1) = wtime_diff
+!                  write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_set_smlstep_pert_variables: threadid ', threadid, ' time ', wtime_diff
+!!!               end do
+!$OMP END PARALLEL
+!               tmin = minval(tarr(1:block%nThreads))
+!               tmax = maxval(tarr(1:block%nThreads))
+!               write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_set_smlstep_pert_variables: stats ', tmin, tmax, tmax-tmin
                block => block % next
             end do
             call mpas_timer_stop('small_step_prep')
@@ -457,18 +497,28 @@ module atm_time_integration
                   allocate(rs(nVertLevels,nCells+1))
                   allocate(drthetadz(nVertLevels,nCells+1))
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-                  do thread=1,block % nThreads
+                  write(0,*) 'RSSX START atm_advance_acoustic_step'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!                  do thread=1,block % nThreads
+!                     wtime_start = omp_get_wtime()
+                     threadid = omp_get_thread_num()
                      call atm_advance_acoustic_step( state, diag, tend,  mesh, block % configs, nCells, nVertLevels, &
                                              rk_sub_timestep(rk_step), small_step, &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-                  end do
-!$OMP END PARALLEL DO
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!                     wtime_end = omp_get_wtime()
+!                     wtime_diff = wtime_end - wtime_start
+!                     tarr(threadid+1) = wtime_diff
+!                     write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_advance_acoustic_step: threadid ', threadid, ' time ', wtime_diff
+!!!                  end do
+!$OMP END PARALLEL
+!                  tmin = minval(tarr(1:block%nThreads))
+!                  tmax = maxval(tarr(1:block%nThreads))
+!                  write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_advance_acoustic_step: stats ', tmin, tmax, tmax-tmin
 
                   deallocate(ts)
                   deallocate(rs)
@@ -513,18 +563,28 @@ module atm_time_integration
                call mpas_pool_get_subpool(block % structs, 'diag', diag)
                call mpas_pool_get_subpool(block % structs, 'tend', tend)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-               do thread=1,block % nThreads
+               write(0,*) 'RSSX START atm_recover_large_step_variables'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!               do thread=1,block % nThreads
+!                  wtime_start = omp_get_wtime()
+                  threadid = omp_get_thread_num()
                   call atm_recover_large_step_variables( state, diag, tend, mesh, block % configs, rk_timestep(rk_step), &
                                              number_sub_steps(rk_step), rk_step, &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-               end do
-!$OMP END PARALLEL DO
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!                  wtime_end = omp_get_wtime()
+!                  wtime_diff = wtime_end - wtime_start
+!                  tarr(threadid+1) = wtime_diff
+!                  write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_recover_large_step_variables: threadid ', threadid, ' time ', wtime_diff
+!!!               end do
+!$OMP END PARALLEL
+!               tmin = minval(tarr(1:block%nThreads))
+!               tmax = maxval(tarr(1:block%nThreads))
+!               write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_recover_large_step_variables: stats ', tmin, tmax, tmax-tmin
                
                block => block % next
             end do
@@ -572,31 +632,41 @@ module atm_time_integration
                   !       so we use the advance_scalars routine for the first two RK substeps.
                   !
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-                  do thread=1,block % nThreads
+                  write(0,*) 'RSSX START atm_advance_scalars_1'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!                  do thread=1,block % nThreads
+!                     wtime_start = omp_get_wtime()
+                     threadid = omp_get_thread_num()
                      if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
                         call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nCells, nVertLevels, rk_timestep(rk_step), &
-                                                block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                                block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                                block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                                block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread), &
+                                                block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                                block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                                block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                                block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                                block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                                block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1), &
                                                 advance_density=.false. )
                      else
          
                         block % domain = domain 
                         call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step), &
-                                                block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                                block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                                block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                                block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread), &
+                                                block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                                block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                                block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                                block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                                block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                                block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1), &
                                                 advance_density=.false.)
                      end if
-                  end do
-!$OMP END PARALLEL DO
+!                     wtime_end = omp_get_wtime()
+!                     wtime_diff = wtime_end - wtime_start
+!                     tarr(threadid+1) = wtime_diff
+!                     write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_advance_scalars_1: threadid ', threadid, ' time ', wtime_diff
+!!!                  end do
+!$OMP END PARALLEL
+!                  tmin = minval(tarr(1:block%nThreads))
+!                  tmax = maxval(tarr(1:block%nThreads))
+!                  write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_advance_scalars_1: stats ', tmin, tmax, tmax-tmin
 
                   deallocate(scalar_old)
                   deallocate(scalar_new)
@@ -630,14 +700,24 @@ module atm_time_integration
                allocate(ke_vertex(nVertLevels,nVertices+1))
                allocate(ke_edge(nVertLevels,nEdges+1))
    
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-               do thread=1,block % nThreads
+               write(0,*) 'RSSX START atm_compute_solve_diagnostics'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!               do thread=1,block % nThreads
+!                  wtime_start = omp_get_wtime()
+                  threadid = omp_get_thread_num()
                   call atm_compute_solve_diagnostics(dt, state, 2, diag, mesh, block % configs, &
-                                                     block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                     block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                                     block % edgeThreadStart(thread), block % edgeThreadEnd(thread))
-               end do
-!$OMP END PARALLEL DO
+                                                     block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                                     block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                                     block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1))
+!                  wtime_end = omp_get_wtime()
+!                  wtime_diff = wtime_end - wtime_start
+!                  tarr(threadid+1) = wtime_diff
+!                  write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_compute_solve_diagnostics: threadid ', threadid, ' time ', wtime_diff
+!!!               end do
+!$OMP END PARALLEL
+!               tmin = minval(tarr(1:block%nThreads))
+!               tmax = maxval(tarr(1:block%nThreads))
+!               write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_compute_solve_diagnostics: stats ', tmin, tmax, tmax-tmin
 
                deallocate(ke_vertex)
                deallocate(ke_edge)
@@ -689,17 +769,27 @@ module atm_time_integration
             call mpas_pool_get_subpool(block % structs, 'state', state)
             call mpas_pool_get_subpool(block % structs, 'diag', diag)
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-            do thread=1,block % nThreads
+            write(0,*) 'RSSX START atm_rk_dynamics_substep_finish'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!            do thread=1,block % nThreads
+!               wtime_start = omp_get_wtime()
+               threadid = omp_get_thread_num()
                call atm_rk_dynamics_substep_finish(state, diag, dynamics_substep, dynamics_split, &
-                                                block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                                block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                                block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                                block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-            end do
-!$OMP END PARALLEL DO
+                                                block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                                block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                                block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                                block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                                block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                                block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1))
+!               wtime_end = omp_get_wtime()
+!               wtime_diff = wtime_end - wtime_start
+!               tarr(threadid+1) = wtime_diff
+!               write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_rk_dynamics_substep_finish: threadid ', threadid, ' time ', wtime_diff
+!!!            end do
+!$OMP END PARALLEL
+!            tmin = minval(tarr(1:block%nThreads))
+!            tmax = maxval(tarr(1:block%nThreads))
+!            write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_rk_dynamics_substep_finish: stats ', tmin, tmax, tmax-tmin
 
             block => block % next
          end do
@@ -755,31 +845,41 @@ module atm_time_integration
                !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                !       so we use the advance_scalars routine for the first two RK substeps.
                !
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-               do thread=1,block % nThreads
+               write(0,*) 'RSSX START atm_advance_scalars_2'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!               do thread=1,block % nThreads
+!                  wtime_start = omp_get_wtime()
+                  threadid = omp_get_thread_num()
                   if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
                      call atm_advance_scalars( tend, state, diag, mesh, block % configs, num_scalars, nCells, nVertLevels, rk_timestep(rk_step), &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread), &
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1), &
                                              advance_density=.true. )
                   else
       
                      block % domain = domain 
                      call atm_advance_scalars_mono( block, tend, state, diag, mesh, block % configs, nCells, nEdges, nVertLevels, rk_timestep(rk_step), &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % vertexThreadStart(thread), block % vertexThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % vertexSolveThreadStart(thread), block % vertexSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread), &
+                                             block % cellThreadStart(threadid+1), block % cellThreadEnd(threadid+1), &
+                                             block % vertexThreadStart(threadid+1), block % vertexThreadEnd(threadid+1), &
+                                             block % edgeThreadStart(threadid+1), block % edgeThreadEnd(threadid+1), &
+                                             block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1), &
+                                             block % vertexSolveThreadStart(threadid+1), block % vertexSolveThreadEnd(threadid+1), &
+                                             block % edgeSolveThreadStart(threadid+1), block % edgeSolveThreadEnd(threadid+1), &
                                              advance_density=.true.)
                   end if
-               end do
-!$OMP END PARALLEL DO
+!                  wtime_end = omp_get_wtime()
+!                  wtime_diff = wtime_end - wtime_start
+!                  tarr(threadid+1) = wtime_diff
+!                  write(0,'(A50,I3,A6,F13.7)') 'RSSX atm_advance_scalars_2: threadid ', threadid, ' time ', wtime_diff
+!!!               end do
+!$OMP END PARALLEL
+!               tmin = minval(tarr(1:block%nThreads))
+!               tmax = maxval(tarr(1:block%nThreads))
+!               write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX atm_advance_scalars_2: stats ', tmin, tmax, tmax-tmin
 
                deallocate(scalar_old)
                deallocate(scalar_new)
@@ -872,12 +972,22 @@ module atm_time_integration
          if (config_microp_scheme .ne. 'off')  &
             call mpas_timer_start('microphysics')
 
-!$OMP PARALLEL DO SCHEDULE(AUTO)
-         do thread=1,block % nThreads
+         write(0,*) 'RSSX START microphysics_driver'
+!$OMP PARALLEL PRIVATE(wtime_end, wtime_start, threadid) 
+!!!         do thread=1,block % nThreads
+!            wtime_start = omp_get_wtime()
+            threadid = omp_get_thread_num()
             call microphysics_driver ( block % configs, mesh, state, 2, diag, diag_physics, tend, itimestep, &
-                 block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-         end do
-!$OMP END PARALLEL DO
+                 block % cellSolveThreadStart(threadid+1), block % cellSolveThreadEnd(threadid+1))
+!            wtime_end = omp_get_wtime()
+!            wtime_diff = wtime_end - wtime_start
+!            tarr(threadid+1) = wtime_diff
+!            write(0,'(A50,I3,A6,F13.7)') 'RSSX microphysics_driver: threadid ', threadid, ' time ', wtime_diff
+!!!         end do
+!$OMP END PARALLEL
+!         tmin = minval(tarr(1:block%nThreads))
+!         tmax = maxval(tarr(1:block%nThreads))
+!         write(0,'(A50,1x,F13.7,1x,F13.7,1x,F13.7)') 'RSSX microphysics_driver: stats ', tmin, tmax, tmax-tmin
          call mpas_timer_stop('microphysics')
          block => block % next
       end do

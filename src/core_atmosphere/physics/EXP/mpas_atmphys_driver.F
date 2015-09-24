@@ -132,7 +132,7 @@
  double precision omp_get_wtime
  double precision wtime_start, wtime_end, wtime_diff
  double precision :: tarr(128), tmin, tmax
- integer threadid, omp_get_thread_num, i
+ integer threadid, omp_get_thread_num
 
 !==================================================================================================
 
@@ -157,9 +157,11 @@
 
  block => domain % blocklist
  do while(associated(block))
+!$OMP PARALLEL
 
     !threadid = omp_get_thread_num()
 
+!$OMP SINGLE
     call mpas_pool_get_subpool(block%structs,'mesh'        ,mesh        )
     call mpas_pool_get_subpool(block%structs,'state'       ,state       )
     call mpas_pool_get_subpool(block%structs,'diag'        ,diag        )
@@ -167,146 +169,181 @@
     call mpas_pool_get_subpool(block%structs,'atm_input'   ,atm_input   )
     call mpas_pool_get_subpool(block%structs,'sfc_input'   ,sfc_input   )
     call mpas_pool_get_subpool(block%structs,'tend_physics',tend_physics)
-
     !allocate arrays shared by all physics parameterizations:
     call allocate_forall_physics
-
     !physics prep step:
     time_lev = 1
+!$OMP END SINGLE
 
-!$OMP PARALLEL DO 
+!$OMP DO
     do thread=1,block % nThreads
        call MPAS_to_physics(mesh,state,time_lev,diag,diag_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
     end do
-!$OMP END PARALLEL DO
-
+!$OMP END DO
 
     !call to cloud scheme:
     if(l_radtlw .or. l_radtsw) then
+!$OMP SINGLE
        call allocate_cloudiness
-!$OMP PARALLEL DO
+!$OMP END SINGLE
+!$OMP DO
        do thread=1,block % nThreads
           call driver_cloudiness(diag_physics, &
                                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
-!$OMP END PARALLEL DO
+!$OMP END DO
     endif
 
-
-! ------------------------------------------------------------------------------
-! ------ NOTE - this is the only modification that seems to actually help ------
-    !call to short/long wave radiation scheme:
+    !call to short wave radiation scheme:
     if(l_radtsw) then
+!$OMP SINGLE
        time_lev = 1
        call allocate_radiation_sw(xtime_s)
+!$OMP END SINGLE
+!$OMP DO
+       do thread=1,block % nThreads
+          call driver_radiation_sw(itimestep,block%configs,mesh,state,time_lev,diag_physics, &
+                                   atm_input,sfc_input,tend_physics,xtime_s, &
+                                   block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+       end do
+!$OMP END DO
     endif
+
+    !call to long wave radiation scheme:
     if(l_radtlw) then
+!$OMP SINGLE
        time_lev = 1
        call allocate_radiation_lw(xtime_s)
-    endif
-    
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-    do i=1,block % cellSolveThreadEnd(block%nThreads)
-       if(l_radtsw) then
-          call driver_radiation_sw(itimestep,block%configs,mesh,state,time_lev,diag_physics, &
-               atm_input,sfc_input,tend_physics,xtime_s, i, i)
-       endif
-       if(l_radtlw) then
+!$OMP END SINGLE
+!$OMP DO
+       do thread=1,block % nThreads
           call driver_radiation_lw(xtime_s,block%configs,mesh,state,time_lev,diag_physics, &
-               atm_input,sfc_input,tend_physics, i, i)
-       endif
-       if(config_bucket_update /= 'none' .and. config_bucket_radt .gt. 0._RKIND) then
-          call update_radiation_diagnostics(block%configs,mesh,diag_physics, i, i)
-       endif
-    end do
-!$OMP END PARALLEL DO
+                                   atm_input,sfc_input,tend_physics, &
+                                   block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+       end do
+!$OMP END DO
+    endif
+
+    !call to accumulate long- and short-wave diagnostics if needed:
+     if(config_bucket_update /= 'none' .and. config_bucket_radt .gt. 0._RKIND) then
+!$OMP DO
+        do thread=1,block % nThreads
+           call update_radiation_diagnostics(block%configs,mesh,diag_physics, &
+                                            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+       end do
+!$OMP END DO
+     endif
 
     !deallocate all radiation arrays:
+!$OMP SINGLE
     if(config_radt_sw_scheme.ne.'off' .or. config_radt_lw_scheme.ne.'off') &
        call deallocate_cloudiness
     if(config_radt_sw_scheme.ne.'off') call deallocate_radiation_sw
     if(config_radt_lw_scheme.ne.'off') call deallocate_radiation_lw
-! ------------------------------------------------------------------------------
-
+!$OMP END SINGLE
 
     !call to surface-layer scheme:
     if(config_sfclayer_scheme .ne. 'off') then
+!$OMP SINGLE
        call allocate_sfclayer
-!$OMP PARALLEL DO 
+!$OMP END SINGLE
+!$OMP DO
        do thread=1,block % nThreads
           call driver_sfclayer(mesh,diag_physics,sfc_input, &
                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
-!$OMP END PARALLEL DO
+!$OMP END DO
+!$OMP SINGLE
        call deallocate_sfclayer
+!$OMP END SINGLE
     endif
 
     !call to land-surface scheme:
     if(config_lsm_scheme .ne. 'off') then
+!$OMP SINGLE
        call allocate_lsm
-!$OMP PARALLEL DO 
+!$OMP END SINGLE
+!$OMP DO
        do thread=1,block % nThreads
           call driver_lsm(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                           block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
-!$OMP END PARALLEL DO
+!$OMP END DO
+!$OMP SINGLE
        call deallocate_lsm
+!$OMP END SINGLE
     endif
 
     !call to pbl schemes:
     if(config_pbl_scheme .ne. 'off' .and. config_sfclayer_scheme .ne. 'off') then
+!$OMP SINGLE
        call allocate_pbl
-!$OMP PARALLEL DO 
+!$OMP END SINGLE
+!$OMP DO
        do thread=1,block % nThreads
           call driver_pbl(sfc_input,diag_physics,tend_physics, &
                           block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
-!$OMP END PARALLEL DO
+!$OMP END DO
+!$OMP SINGLE
        call deallocate_pbl
+!$OMP END SINGLE
     endif
 
     !call to gravity wave drag over orography scheme:
     if(config_gwdo_scheme .ne. 'off') then
+!$OMP SINGLE
        call allocate_gwdo
-!$OMP PARALLEL DO 
+!$OMP END SINGLE
+!$OMP DO
        do thread=1,block % nThreads
           call driver_gwdo(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
                            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
-!$OMP END PARALLEL DO
+!$OMP END DO
+!$OMP SINGLE
        call deallocate_gwdo
+!$OMP END SINGLE
     endif
 
-! ------------------------------------------------------------------------------
-! ------ NOTE - in theory this should help, but may be too small to measure ----
     !call to convection scheme:
-    if(l_conv) then
-       call allocate_convection
-    endif
-
-!$OMP PARALLEL DO
+!$OMP DO
     do thread=1,block % nThreads
        call update_convection_step1(mesh,diag_physics,tend_physics, &
-            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       if(l_conv) then
+                            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+    end do
+!$OMP END DO
+    if(l_conv) then
+!$OMP SINGLE
+       call allocate_convection
+!$OMP END SINGLE
+!$OMP DO
+       do thread=1,block % nThreads
           call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
-               block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       endif
+                                 block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+       end do
+!$OMP END DO
+!$OMP SINGLE
+       call deallocate_convection
+!$OMP END SINGLE
+    endif
+
+    !update diagnostics:
+!$OMP DO
+    do thread=1,block % nThreads
        call update_convection_step2(block%configs,mesh,diag_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-    enddo
-!$OMP END PARALLEL DO
-
-    if(l_conv) then
-       call deallocate_convection
-    endif
-! ------------------------------------------------------------------------------
+    end do
+!$OMP END DO
 
     !deallocate arrays shared by all physics parameterizations:
+!$OMP SINGLE
     call deallocate_forall_physics
-
     block => block % next
+!$OMP END SINGLE
+
+!OMP END PARALLEL
  end do 
 
  endif

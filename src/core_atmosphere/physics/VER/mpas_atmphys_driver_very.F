@@ -195,7 +195,6 @@
 
 
 ! ------------------------------------------------------------------------------
-! ------ NOTE - this is the only modification that seems to actually help ------
     !call to short/long wave radiation scheme:
     if(l_radtsw) then
        time_lev = 1
@@ -278,30 +277,30 @@
        call deallocate_gwdo
     endif
 
-! ------------------------------------------------------------------------------
-! ------ NOTE - in theory this should help, but may be too small to measure ----
     !call to convection scheme:
-    if(l_conv) then
-       call allocate_convection
-    endif
-
-!$OMP PARALLEL DO
+!$OMP PARALLEL DO 
     do thread=1,block % nThreads
        call update_convection_step1(mesh,diag_physics,tend_physics, &
-            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       if(l_conv) then
-          call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
-               block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-       endif
-       call update_convection_step2(block%configs,mesh,diag_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
-    enddo
+    end do
 !$OMP END PARALLEL DO
-
     if(l_conv) then
+       call allocate_convection
+!$OMP PARALLEL DO 
+       do thread=1,block % nThreads
+          call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
+                                 block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+       end do
+!$OMP END PARALLEL DO
        call deallocate_convection
     endif
-! ------------------------------------------------------------------------------
+    !update diagnostics:
+!$OMP PARALLEL DO 
+    do thread=1,block % nThreads
+       call update_convection_step2(block%configs,mesh,diag_physics, &
+                            block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
+    end do
+!$OMP END PARALLEL DO
 
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics
