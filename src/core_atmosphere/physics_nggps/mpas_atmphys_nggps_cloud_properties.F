@@ -12,6 +12,7 @@
  use mpas_pool_routines
 
  use mpas_atmphys_nggps_vars
+ use machine
  use nuopc_physics
 
  implicit none
@@ -32,6 +33,7 @@
     contains
        procedure:: mpas_setphys   => mpas_cld_prop_setphys
        procedure:: mpas_setrad    => mpas_cld_prop_setrad
+       procedure:: mpas_write     => mpas_cld_prop_write
        procedure:: allocate_mem   => mpas_cld_prop_allocate
        procedure:: deallocate_mem => mpas_cld_prop_deallocate 
 
@@ -117,6 +119,7 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
+ write(0,*)
  write(0,*) '--- enter subroutine mpas_cld_prop_setphys:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
@@ -208,6 +211,79 @@
  write(0,*) '--- end subroutine mpas_cld_prop_setrad'
 
  end subroutine mpas_cld_prop_setrad
+
+!=================================================================================================================
+ subroutine mpas_cld_prop_write(this,mesh,nggps_cloud_properties)
+!=================================================================================================================
+
+!input arguments:
+ type(mpas_pool_type),intent(in)        :: mesh
+ class(mpas_cloud_properties),intent(in):: this
+
+!inout arguments:
+ type(mpas_pool_type),intent(inout):: nggps_cloud_properties
+
+!local pointers:
+ integer,pointer:: nCellsSolve,nVertLevels
+
+ real(kind=RKIND),dimension(:),pointer  :: cv,cvt,cvb
+ real(kind=RKIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc,cnvqc_v
+
+ real(kind=kind_phys),dimension(:,:),pointer:: fcice_l,frain_l,rrime_l,deltaq_l,cnvw_l,cnvc_l, &
+                                               cldcov_l,cnvqc_l
+
+!local variables:
+ integer:: iCell,k
+
+!-----------------------------------------------------------------------------------------------------------------
+ write(0,*)
+ write(0,*) '--- enter subroutine mpas_cld_prop_write:'
+
+ call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
+
+ call mpas_pool_get_array(nggps_cloud_properties,'cv'     ,cv     )
+ call mpas_pool_get_array(nggps_cloud_properties,'cvt'    ,cvt    )
+ call mpas_pool_get_array(nggps_cloud_properties,'cvb'    ,cvb    )
+ call mpas_pool_get_array(nggps_cloud_properties,'cnvqc_v',cnvqc_v)
+ call mpas_pool_get_array(nggps_cloud_properties,'fcice'  ,fcice  )
+ call mpas_pool_get_array(nggps_cloud_properties,'frain'  ,frain  )
+ call mpas_pool_get_array(nggps_cloud_properties,'rrime'  ,rrime  )
+ call mpas_pool_get_array(nggps_cloud_properties,'deltaq' ,deltaq )
+ call mpas_pool_get_array(nggps_cloud_properties,'cnvw'   ,cnvw   )
+ call mpas_pool_get_array(nggps_cloud_properties,'cnvc'   ,cnvc   )
+ call mpas_pool_get_array(nggps_cloud_properties,'cldcov' ,cldcov )
+
+!... back to Registry:
+ cv       => this%cv
+ cvt      => this%cvt
+ cvb      => this%cvb
+
+ cnvqc_l  => this%cnvqc_v
+ fcice_l  => this%fcice
+ frain_l  => this%frain
+ rrime_l  => this%rrime
+ deltaq_l => this%deltaq
+ cnvw_l   => this%cnvw
+ cnvc_l   => this%cnvc
+ cldcov_l => this%cldcov
+
+ do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       cnvqc_v(k,iCell) = cnvqc_l(iCell,k)
+       fcice(k,iCell)   = fcice_l(iCell,k)
+       frain(k,iCell)   = frain_l(iCell,k)
+       rrime(k,iCell)   = rrime_l(iCell,k)
+       deltaq(k,iCell)  = deltaq_l(iCell,k)
+       cnvw(k,iCell)    = cnvw_l(iCell,k)
+       cnvc(k,iCell)    = cnvc_l(iCell,k)
+       cldcov(k,iCell)  = cldcov_l(iCell,k)
+    enddo
+ enddo
+
+ write(0,*) '--- end subroutine mpas_cld_prop_write'
+
+ end subroutine mpas_cld_prop_write
 
 !=================================================================================================================
  end module mpas_atmphys_nggps_cloud_properties

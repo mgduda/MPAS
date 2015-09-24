@@ -21,7 +21,7 @@
     <var name="cldcov" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="total convective condensate"
     />
-        <var name="deltaq" type="real" dimensions="nVertLevels nCells Time" units="?"
+    <var name="deltaq" type="real" dimensions="nVertLevels nCells Time" units="?"
          description="half-width of uniform total water distribution"
     />
     <var name="fcice" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
