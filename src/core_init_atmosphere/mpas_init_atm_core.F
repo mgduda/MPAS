@@ -27,6 +27,7 @@ module init_atm_core
       type (mpas_pool_type), pointer :: state, mesh 
       character (len=StrKIND), pointer :: xtime
       character (len=StrKIND), pointer :: config_start_time
+      character (len=StrKIND), pointer :: initial_date
       real (kind=RKIND), pointer :: sphere_radius
       integer :: ierr
 
@@ -38,11 +39,13 @@ module init_atm_core
          call mpas_pool_get_subpool(block % structs, 'state', state)
          call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
          call mpas_pool_get_array(state, 'xtime', xtime)
+         call mpas_pool_get_array(mesh, 'initial_date', initial_date)
          call mpas_pool_get_config(mesh, 'sphere_radius', sphere_radius)
          call mpas_pool_get_config(block % configs, 'config_start_time', config_start_time)
 
          startTimeStamp = config_start_time
          xtime = config_start_time
+         initial_date = startTimeStamp
          domain % sphere_radius = a      ! Appears in output files
          sphere_radius = a               ! Used in setting up test cases
 
