@@ -1925,7 +1925,7 @@ module atm_time_integration
       logical, intent(in), optional :: advance_density
       
       real (kind=RKIND), dimension(nVertLevels, 10) :: scalar_weight2
-      real (kind=RKIND) :: areaCellInv
+      real (kind=RKIND) :: areaCellInv, term1
       integer, dimension(10) :: ica
       integer:: jj
       
@@ -2013,7 +2013,7 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
 
-!RSS Removed OpenMP barrier at start of routine. Not sure why it is needed
+!$OMP BARRIER
 
       !
       ! Runge Kutta integration, so we compute fluxes from scalar_new values, update starts from scalar_old
@@ -2021,7 +2021,7 @@ module atm_time_integration
       !  horizontal flux divergence, accumulate in scalar_tend
 
       if (local_advance_density) then
-         do iCell=cellStart,cellEnd
+         do iCell=cellSolveStart,cellSolveEnd
             rho_zz_int(:,iCell) = 0.0
             scalar_tend_save(:,:,iCell) = scalar_tend(:,:,iCell)
          end do
@@ -2086,9 +2086,11 @@ module atm_time_integration
 
             areaCellInv = 1.0/areaCell(iCell)
             do k=1,nVertLevels
+            term1 = edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge) * areaCellInv
             do iScalar=1,num_scalars
-                  scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) &
-                         - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*flux_arr(iScalar,k)*areaCellInv
+!                  scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) &
+!                         - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*flux_arr(iScalar,k)*areaCellInv
+                  scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) - flux_arr(iScalar,k)*term1
             end do
             if (local_advance_density) then
                rho_zz_int(k,iCell) = rho_zz_int(k,iCell) - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*dvEdge(iEdge)*areaCellInv
@@ -2153,7 +2155,7 @@ module atm_time_integration
 
       if (local_advance_density) then
 !$OMP BARRIER
-         do iCell=cellStart,cellEnd
+         do iCell=cellSolveStart,cellSolveEnd
             scalar_tend(:,:,iCell) = scalar_tend_save(:,:,iCell)
          end do
       end if
