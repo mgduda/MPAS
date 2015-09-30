@@ -12,22 +12,24 @@ module gwd_core
 
    type (MPAS_Clock_type), pointer :: clock
 
-   real (kind=RKIND), parameter :: Re = 6371229.0
+   real (kind=RKIND), parameter :: Re = 6371229.0        ! Earth radius in MPAS-Atmosphere
    real (kind=RKIND), parameter :: Pi = 3.14159265359
    real (kind=RKIND), parameter :: rad2deg = 57.2957795131
 
-   integer, parameter :: topo_x = 43200
-   integer, parameter :: topo_y = 21600
+   integer, parameter :: topo_x = 43200            ! x-dimension of global 30-arc-second topography array
+   integer, parameter :: topo_y = 21600            ! y-dimension of global 30-arc-second topography array
    real (kind=RKIND), parameter :: pts_per_degree = real(topo_x,RKIND) / 360.0
    real (kind=RKIND), parameter :: start_lat = -90.0
    real (kind=RKIND), parameter :: start_lon = -180.0
 
-   real (kind=RKIND), dimension(:,:), pointer :: topo
-   real (kind=RKIND), dimension(:,:), pointer :: box
-   real (kind=RKIND) :: box_mean
-   integer :: nx, ny
+   real (kind=RKIND), dimension(:,:), pointer :: topo ! Global 30-arc-second topography
+   real (kind=RKIND), dimension(:,:), pointer :: box  ! Subset of topography covering a grid cell
+   real (kind=RKIND) :: box_mean                      ! Mean value of topography in box
+   integer :: nx, ny                                  ! Dimensions of box covering grid cell
+
 
    contains
+
 
    !***********************************************************************
    !
@@ -42,7 +44,7 @@ module gwd_core
    !>   but more generally can include anything the core needs to initialize.
    !
    !-----------------------------------------------------------------------
-   function gwd_core_init(domain, startTimeStamp) result(iErr)!{{{
+   function gwd_core_init(domain, startTimeStamp) result(iErr)
    
       use mpas_configure
       use mpas_derived_types
@@ -69,23 +71,23 @@ module gwd_core
       startTime = mpas_get_clock_time(clock, MPAS_START_TIME, iErr)
       call mpas_get_time(startTime, dateTimeString=startTimeStamp) 
 
-   end function gwd_core_init!}}}
+   end function gwd_core_init
 
 
    !***********************************************************************
    !
    !  function gwd_core_run
    !
-   !> \brief   MPAS Core Run Function
-   !> \author  Doug Jacobsen
-   !> \date    04/06/2015
+   !> \brief   Main routine for computing GWDO fields on an MPAS mesh
+   !> \author  Michael Duda
+   !> \date    29 May 2015
    !> \details 
-   !>  This function performs a run of the MPAS core. This can involve time
-   !>  stepping if the core requires time stepping, but more generally includes
-   !>  anything a core would typically do after it was initialized.
+   !>  This is the main routine for computing GWDO statistics on an MPAS mesh.
+   !>  It is assumed that the global 30-arc-second topography data have already
+   !>  been read into the 'topo' array.
    !
    !-----------------------------------------------------------------------
-   function gwd_core_run(domain) result(iErr)!{{{
+   function gwd_core_run(domain) result(iErr)
    
       use mpas_derived_types
       use mpas_kind_types
@@ -124,6 +126,11 @@ module gwd_core
          call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
          call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
          call mpas_pool_get_subpool(domain % blocklist % structs, 'model', model)
+
+         !
+         ! Retrieve pointers to arrays holding the latitudes and longitudes of
+         ! cells, and arrays that will hold the computed GWDO statistics
+         !
          call mpas_pool_get_dimension(mesh, 'nCells', nCells)
          call mpas_pool_get_array(state, 'topo', topo)
          call mpas_pool_get_array(mesh, 'latCell', latCell)
@@ -143,12 +150,14 @@ module gwd_core
          call mpas_pool_get_array(mesh, 'oa4', oa4)
          call mpas_pool_get_array(model, 'xtime', xtime)
 
+
          write(xtime,'(a)') trim(timeStamp)
 
          write(0,*) 'nCells = ', nCells
          write(0,*) 'min(topo)=', minval(topo)
          write(0,*) 'max(topo)=', maxval(topo)
          write(0,*) 'pointval=', topo(5,5)
+
 
          !
          ! Main loop to compute each of the GWDO fields for every horizontal
@@ -194,6 +203,9 @@ module gwd_core
             ol4(iCell) = get_ol4()
          end do
 
+         !
+         ! Write GWDO fields to an output file
+         !
          call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
 
          call mpas_advance_clock(clock)
@@ -201,7 +213,8 @@ module gwd_core
 
       iErr = 0
 
-   end function gwd_core_run!}}}
+   end function gwd_core_run
+
 
    !***********************************************************************
    !
@@ -216,7 +229,7 @@ module gwd_core
    !>  MPAS core.
    !
    !-----------------------------------------------------------------------
-   function gwd_core_finalize(domain) result(iErr)!{{{
+   function gwd_core_finalize(domain) result(iErr)
    
       use mpas_derived_types
    
@@ -230,8 +243,7 @@ module gwd_core
 
       call mpas_destroy_clock(clock, iErr)
 
-   end function gwd_core_finalize!}}}
-
+   end function gwd_core_finalize
 
 
    !***********************************************************************
