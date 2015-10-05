@@ -26,10 +26,11 @@
  contains
 
 !=================================================================================================================
- subroutine init_atm_static(mesh,dims,configs)
+ subroutine init_atm_static(dminfo,mesh,dims,configs)
 !=================================================================================================================
 
 !inout arguments:
+ type(dm_info):: dminfo
  type(mpas_pool_type),intent(in):: dims
  type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(inout):: mesh
@@ -140,8 +141,8 @@
 !
 ! Interpolate the static fields using the GFS physics data base:
 !
- call init_atm_static_fields_forGFS(mesh,dims,configs)
- call init_atm_static_orogwd_forGFS(mesh,dims,configs)
+ call init_atm_static_fields_forGFS(dminfo,mesh,dims,configs)
+ call init_atm_static_orogwd_forGFS(dminfo,mesh,dims,configs)
 #endif
 
 

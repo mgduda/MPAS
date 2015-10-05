@@ -203,7 +203,7 @@ module init_atm_cases
                   call mpas_dmpar_abort(domain % dminfo)
                end if
 
-               call init_atm_static(mesh, block_ptr % dimensions, block_ptr % configs)
+               call init_atm_static(domain % dminfo, mesh, block_ptr % dimensions, block_ptr % configs)
             end if
 
             !

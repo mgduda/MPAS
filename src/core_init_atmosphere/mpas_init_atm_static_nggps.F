@@ -8,6 +8,7 @@
 !=================================================================================================================
  module mpas_init_atm_static_nggps
  use mpas_kind_types
+ use mpas_dmpar
  use mpas_pool_routines
  use mpas_init_atm_utilities
  use init_atm_hinterp
@@ -30,10 +31,11 @@
  contains
 
 !=================================================================================================================
- subroutine init_atm_static_orogwd_forGFS(mesh,dims,configs)
+ subroutine init_atm_static_orogwd_forGFS(dminfo,mesh,dims,configs)
 !=================================================================================================================
 
 !input arguments:
+ type(dm_info):: dminfo
  type(mpas_pool_type),intent(in):: dims
  type(mpas_pool_type),intent(in):: configs
 
@@ -105,10 +107,11 @@
  end subroutine init_atm_static_orogwd_forGFS
 
 !=================================================================================================================
- subroutine init_atm_static_fields_forGFS(mesh,dims,configs)
+ subroutine init_atm_static_fields_forGFS(dminfo,mesh,dims,configs)
 !=================================================================================================================
 
 !input arguments:
+ type(dm_info):: dminfo
  type (mpas_pool_type),intent(in):: dims
  type (mpas_pool_type),intent(in):: configs
 
@@ -341,8 +344,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max vegtype = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min vegtype = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max vegtype = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min vegtype = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -361,7 +364,7 @@
     call latlon_to_ij(proj,lat,lon,x,y)
     if(y < dble(1) ) y = dble(1)
     if(y > dble(ny)) y = dble(ny)
-    if(lon > 180._RKIND) then
+    if(lon >= 180._RKIND) then
        lon = lon - 360._RKIND
        call latlon_to_ij(proj,lat,lon,x,y)
     endif
@@ -402,8 +405,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max soiltype = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min soiltype = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max soiltype = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min soiltype = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -433,7 +436,7 @@
     call latlon_to_ij(proj,lat,lon,x,y)
     if(y < dble(1) ) y = dble(1)
     if(y > dble(ny)) y = dble(ny)
-    if(lon > 180._RKIND) then
+    if(lon >= 180._RKIND) then
        lon = lon - 360._RKIND
        call latlon_to_ij(proj,lat,lon,x,y)
     endif
@@ -467,11 +470,19 @@
 !
  landmask(:) = 0
  do iCell = 1, nCells
-    if (lu_index(iCell) /= 0) landmask(iCell) = 1
+    if(lu_index(iCell) /= 0) landmask(iCell) = 1
  end do
  write(0,*) '--- end interpolate LANDMASK'
  write(0,*)
 
+ write(0,*) '--- begin check landmask:'
+ do iCell = 1, nCells
+    if(landmask(iCell) == 0 .and. (lu_index(iCell)/=0 .or. soilcat_top(iCell)/=0)) &
+       write(0,311) iCell,landmask(iCell),lu_index(iCell),soilcat_top(iCell)
+ enddo
+ 311 format('1111 land 1111:',5i9)
+ write(0,*) '--- end check landmask:'
+ write(0,*)
 
 !
 ! Interpolate SOILTEMP:
@@ -506,8 +517,8 @@
     xarray(ix,iy) = rarray(ix,iiy,1)
  enddo
  enddo
- write(0,*) '... max soiltemp  = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min soiltemp  = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max soiltemp  = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min soiltemp  = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -524,12 +535,19 @@
  interp_list(5) = 0
 
  do iCell = 1,nCells
-    lat = latCell(iCell)*DEG_PER_RAD
-    lon = lonCell(iCell)*DEG_PER_RAD
-    call latlon_to_ij(proj,lat,lon,x,y)
-    if(y < dble(1) ) y = dble(1 )
-    if(y > dble(ny)) y = dble(ny) 
-    soiltemp(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+
+    if(landmask(iCell) == 1) then
+       lat = latCell(iCell)*DEG_PER_RAD
+       lon = lonCell(iCell)*DEG_PER_RAD
+       call latlon_to_ij(proj,lat,lon,x,y)
+       if(y < dble(1) ) y = dble(1 )
+       if(y > dble(ny)) y = dble(ny) 
+       if(x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       endif
+       soiltemp(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+    endif
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -565,8 +583,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max snoalb  = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min snoalb  = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max snoalb  = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min snoalb  = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -602,6 +620,7 @@
  write(0,*) '--- end interpolate SNOALB'
  write(0,*)
 
+
 !
 ! Interpolate GREENFRAC:
 !
@@ -624,12 +643,12 @@
              'vegfrac12m/',1,'-',nx,'.',1,'-',ny
  write(0,*) trim(fname)
 
- allocate(xarray(nx,ny))
+ allocate(xarray(-2:nx+3,ny))
  allocate(rarray(nx,ny,nz))
  call read_geogrid(fname,len_trim(fname),rarray,nx,ny,nz,isigned,endian, &
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
- 
+
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
               loninc = dx,          &
@@ -646,24 +665,32 @@
 
  do iz = 1, nz
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) iz,'... max vegfra = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) iz,'... min vegfra = ',minval(xarray(1:nx,1:ny))
+    xarray(0,1:ny) = rarray(nx,1:ny,iz)
+    xarray(-1,1:ny) = rarray(nx-1,1:ny,iz)
+    xarray(-2,1:ny) = rarray(nx-2,1:ny,iz)
+    xarray(nx+1,1:ny) = rarray(1,1:ny,iz)
+    xarray(nx+2,1:ny) = rarray(2,1:ny,iz)
+    xarray(nx+3,1:ny) = rarray(3,1:ny,iz)
+    write(0,*) iz,'--- max vegfra = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) iz,'--- min vegfra = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
-       lat = latCell(iCell)*DEG_PER_RAD
-       lon = lonCell(iCell)*DEG_PER_RAD
-       call latlon_to_ij(proj, lat, lon, x, y)
-       if(x < 0.5) then
-          lon = lon + 360.0
+       if(landmask(iCell) == 1) then
+          lat = latCell(iCell)*DEG_PER_RAD
+          lon = lonCell(iCell)*DEG_PER_RAD
           call latlon_to_ij(proj, lat, lon, x, y)
-       else if(x >= 2500.5) then
-          lon = lon - 360.0
-          call latlon_to_ij(proj, lat, lon, x, y)
-       end if
-       if (y < 1.0) y = 1.0
-       if (y > 1249.0) y = 1249.0
-       greenfrac(iz,iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+          if(x < 0.5) then
+             lon = lon + 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          else if(x >= 2500.5) then
+             lon = lon - 360.0
+             call latlon_to_ij(proj, lat, lon, x, y)
+          end if
+          if (y < 1.0) y = 1.0
+          if (y > 1249.0) y = 1249.0
+          greenfrac(iz,iCell) = interp_sequence(x,y,1,xarray,-2,nx+3,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+       endif
     enddo
  enddo
  deallocate(rarray)
@@ -718,20 +745,22 @@
  interp_list(5) = 0
 
  do iCell = 1,nCells
-    lat = latCell(iCell)*DEG_PER_RAD
-    lon = lonCell(iCell)*DEG_PER_RAD
-    call latlon_to_ij(proj, lat, lon, x, y)
-    if(x < 0.5) then
-       lon = lon + 360.0
+    if(landmask(iCell) == 1) then
+       lat = latCell(iCell)*DEG_PER_RAD
+       lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
-    else if(x >= 2500.5) then
-       lon = lon - 360.0
-       call latlon_to_ij(proj, lat, lon, x, y)
-    end if
-    if (y < 1.0) y = 1.0
-    if (y > 1249.0) y = 1249.0
-    shdmax(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
-    shdmax(iCell) = shdmax(iCell)*0.01_RKIND
+       if(x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if(x >= 2500.5) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > 1249.0) y = 1249.0
+       shdmax(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+       shdmax(iCell) = shdmax(iCell)*0.01_RKIND
+    endif
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -751,7 +780,7 @@
  scalefactor = 1._RKIND
  dx          = 0.144_RKIND
  dy          = 0.144_RKIND
- known_x     = 1._RKIND 
+ known_x     = 1._RKIND
  known_y     = 1._RKIND
  known_lat   =  -89.93_RKIND
  known_lon   = -180.00_RKIND
@@ -785,20 +814,22 @@
  interp_list(5) = 0
 
  do iCell = 1,nCells
-    lat = latCell(iCell)*DEG_PER_RAD
-    lon = lonCell(iCell)*DEG_PER_RAD
-    call latlon_to_ij(proj, lat, lon, x, y)
-    if(x < 0.5) then
-       lon = lon + 360.0
+    if(landmask(iCell) == 1) then
+       lat = latCell(iCell)*DEG_PER_RAD
+       lon = lonCell(iCell)*DEG_PER_RAD
        call latlon_to_ij(proj, lat, lon, x, y)
-    else if(x >= 2500.5) then
-       lon = lon - 360.0 
-       call latlon_to_ij(proj, lat, lon, x, y)
-    end if
-    if (y < 1.0) y = 1.0
-    if (y > 1249.0) y = 1249.0
-    shdmin(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
-    shdmin(iCell) = shdmin(iCell)*0.01_RKIND
+       if(x < 0.5) then
+          lon = lon + 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       else if(x >= 2500.5) then
+          lon = lon - 360.0
+          call latlon_to_ij(proj, lat, lon, x, y)
+       end if
+       if (y < 1.0) y = 1.0
+       if (y > 1249.0) y = 1249.0
+       shdmin(iCell) = interp_sequence(x,y,1,xarray,1,nx,1,ny,1,1,-1.e30_RKIND,interp_list,1)
+       shdmin(iCell) = shdmin(iCell)*0.01_RKIND
+    endif
  enddo
  deallocate(rarray)
  deallocate(xarray)
@@ -834,8 +865,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max facsf  = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min facsf  = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max facsf  = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min facsf  = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -894,8 +925,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max facwf  = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min facwf  = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max facwf  = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min facwf  = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -967,8 +998,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnsf4s  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnsf4s  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '--- max alnsf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '--- min alnsf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
@@ -1031,8 +1062,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alnwf4s  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alnwf4s  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '--- max alnwf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '--- min alnwf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
@@ -1095,8 +1126,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvsf4s  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alvsf4s  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '--- max alvsf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '--- min alvsf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
@@ -1159,8 +1190,8 @@
 
  do iz = 1,nz 
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max alvwf4s  = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min alvwf4s  = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '--- max alvwf4s  = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '--- min alvwf4s  = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
@@ -1210,8 +1241,8 @@
                    scalefactor,wordsize,istatus)
  call init_atm_check_read_error(istatus,fname)
  xarray(1:nx,1:ny) = rarray(1:nx,1:ny,1)
- write(0,*) '... max slope = ',maxval(xarray(1:nx,1:ny))
- write(0,*) '... min slope = ',minval(xarray(1:nx,1:ny))
+ write(0,*) '--- max slope = ',maxval(xarray(1:nx,1:ny))
+ write(0,*) '--- min slope = ',minval(xarray(1:nx,1:ny))
 
  call map_set(PROJ_LATLON, proj,    &
               latinc = dy,          &
@@ -1290,8 +1321,8 @@
 
  do iz = 1,nz
     xarray(1:nx,1:ny) = rarray(1:nx,1:ny,iz)
-    write(0,*) '... max zorl12m = ',maxval(xarray(1:nx,1:ny))
-    write(0,*) '... min zorl12m = ',minval(xarray(1:nx,1:ny))
+    write(0,*) '--- max zorl12m = ',maxval(xarray(1:nx,1:ny))
+    write(0,*) '--- min zorl12m = ',minval(xarray(1:nx,1:ny))
     if(iz < nz) write(0,*)
 
     do iCell = 1,nCells
