@@ -26,6 +26,7 @@
                 <dim name="nAerLevels"         definition="namelist:naerlev"/>
                 <dim name="cam_dim1"           definition="namelist:camdim1"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"/>
+                <dim name="nScalars"           definition="namelist:config_nscalars"/>
         </dims>
 
 
@@ -71,6 +72,7 @@
                 <nml_option name="config_apvm_upwinding"             type="real"          default_value="0.5"         in_defaults="false"/>
                 <nml_option name="config_h_ScaleWithMesh"            type="logical"       default_value="true"/>
                 <nml_option name="config_num_halos"                  type="integer"       default_value="2"           in_defaults="false"/>
+                <nml_option name="config_nscalars"                   type="integer"       default_value="6"           in_defaults="false"/>
         </nml_record>
 
         <nml_record name="damping" in_defaults="true">
@@ -775,6 +777,7 @@
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
                 </var_array>
+                <var name="scalars_temp"    type="real"     dimensions="nVertLevels nScalars nCells Time"/>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
                         <var name="sul"     array_group="aer_cam"/>
@@ -932,6 +935,7 @@
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
                 </var_array>
+                <var name="scalars_tend_temp"  type="real"     dimensions="nVertLevels nScalars nCells Time"/>
         </var_struct>
 
 

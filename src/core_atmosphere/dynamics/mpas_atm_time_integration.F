@@ -612,6 +612,7 @@ module atm_time_integration
                   !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                   !       so we use the advance_scalars routine for the first two RK substeps.
                   !
+                  call scalars_to_temp( tend, state )
 !$OMP PARALLEL DO
                   do thread=1,block % nThreads
                      if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
@@ -637,6 +638,7 @@ module atm_time_integration
                      end if
                   end do
 !$OMP END PARALLEL DO
+                  call scalars_from_temp( tend, state )
 
                   deallocate(scalar_old)
                   deallocate(scalar_new)
@@ -807,6 +809,7 @@ module atm_time_integration
                !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                !       so we use the advance_scalars routine for the first two RK substeps.
                !
+               call scalars_to_temp( tend, state )
 !$OMP PARALLEL DO
                do thread=1,block % nThreads
                   if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
@@ -832,6 +835,7 @@ module atm_time_integration
                   end if
                end do
 !$OMP END PARALLEL DO
+               call scalars_from_temp( tend, state )
 
                deallocate(scalar_old)
                deallocate(scalar_new)
@@ -4259,6 +4263,86 @@ module atm_time_integration
       end if
 
    end subroutine atm_rk_dynamics_substep_finish
+
+
+   subroutine scalars_to_temp( tend, state )
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: tend
+      type (mpas_pool_type), intent(inout) :: state
+
+      integer, pointer :: num_scalars
+      integer, pointer :: nCells
+      integer, pointer :: nVertLevels
+
+      integer :: iCell, k, iScalar
+
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old_temp, scalar_new_temp, scalar_tend_temp
+
+write(0,*) 'Called scalars_to_temp'
+
+      call mpas_pool_get_dimension(state, 'nCells', nCells)
+      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+
+      call mpas_pool_get_array(state, 'scalars', scalar_old, 1)
+      call mpas_pool_get_array(state, 'scalars', scalar_new, 2)
+      call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
+
+      call mpas_pool_get_array(state, 'scalars_temp', scalar_old_temp, 1)
+      call mpas_pool_get_array(state, 'scalars_temp', scalar_new_temp, 2)
+      call mpas_pool_get_array(tend, 'scalars_tend_temp', scalar_tend_temp)
+
+
+      do iScalar=1,num_scalars
+         scalar_old_temp(1:nVertLevels, iScalar, 1:nCells)  = scalar_old(iScalar, 1:nVertLevels, 1:nCells)
+         scalar_new_temp(1:nVertLevels, iScalar, 1:nCells)  = scalar_new(iScalar, 1:nVertLevels, 1:nCells)
+         scalar_tend_temp(1:nVertLevels, iScalar, 1:nCells) = scalar_tend(iScalar, 1:nVertLevels, 1:nCells)
+      end do
+
+   end subroutine scalars_to_temp
+
+
+   subroutine scalars_from_temp( tend, state )
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: tend
+      type (mpas_pool_type), intent(inout) :: state
+
+      integer, pointer :: num_scalars
+      integer, pointer :: nCells
+      integer, pointer :: nVertLevels
+
+      integer :: iCell, k, iScalar
+
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old_temp, scalar_new_temp, scalar_tend_temp
+
+write(0,*) 'Called scalars_from_temp'
+
+      call mpas_pool_get_dimension(state, 'nCells', nCells)
+      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
+      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+
+      call mpas_pool_get_array(state, 'scalars', scalar_old, 1)
+      call mpas_pool_get_array(state, 'scalars', scalar_new, 2)
+      call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
+
+      call mpas_pool_get_array(state, 'scalars_temp', scalar_old_temp, 1)
+      call mpas_pool_get_array(state, 'scalars_temp', scalar_new_temp, 2)
+      call mpas_pool_get_array(tend, 'scalars_tend_temp', scalar_tend_temp)
+
+
+      do iScalar=1,num_scalars
+         scalar_old(iScalar, 1:nVertLevels, 1:nCells)  = scalar_old_temp(1:nVertLevels, iScalar, 1:nCells)  
+         scalar_new(iScalar, 1:nVertLevels, 1:nCells)  = scalar_new_temp(1:nVertLevels, iScalar, 1:nCells)  
+         scalar_tend(iScalar, 1:nVertLevels, 1:nCells) = scalar_tend_temp(1:nVertLevels, iScalar, 1:nCells) 
+      end do
+
+   end subroutine scalars_from_temp
 
 
 end module atm_time_integration
