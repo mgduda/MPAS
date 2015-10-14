@@ -3364,7 +3364,7 @@ module atm_time_integration
          end do
          
       end do
-!$OMP BARRIER
+!!!! BARRIER?
 
 #ifdef CURVATURE
       do iCell = cellSolveStart, cellSolveEnd
@@ -3578,7 +3578,7 @@ module atm_time_integration
 
          end do
       end do
-!$OMP BARRIER
+!!!! BARRIER?
 
 !  addition to pick up perturbation flux for rtheta_pp equation
 
