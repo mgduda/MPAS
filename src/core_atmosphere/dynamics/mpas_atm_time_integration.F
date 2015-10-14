@@ -2777,6 +2777,9 @@ module atm_time_integration
       integer, intent(in) :: cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
 
+      integer :: ii,jj
+      integer, dimension(10) :: ica
+      real (kind=RKIND), dimension(10,2) :: swa
 
       integer :: iEdge, iCell, iVertex, k, cell1, cell2, vertex1, vertex2, eoe, i, j, iq, iAdvCell
       real (kind=RKIND) :: invDt, flux, workpv
@@ -3315,7 +3318,7 @@ module atm_time_integration
          tend_w(1:nVertLevels+1,iCell) = 0.0
          do i=1,nEdgesOnCell(iCell)
             iEdge = edgesOnCell(i,iCell)
-            edge_sign = edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * 0.5
+            !edge_sign = edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * 0.5
 
             do k=2,nVertLevels
                ru_edge_w(k) = fzm(k)*ru(k,iEdge) + fzp(k)*ru(k-1,iEdge)
@@ -3323,22 +3326,45 @@ module atm_time_integration
 
             flux_arr(1:nVertLevels) = 0.0
 
-            ! flux_arr stores the value of w at the cell edge used in the horizontal transport
+            select case(nAdvCellsForEdge(iEdge))
+            case (10)
+                  do jj=1,10
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, ru_edge_w(k) > 0)
+                     flux_arr(k) = flux_arr(k) + ( &
+                          swa(1,ii)*w(k,ica(1)) + swa(2,ii)*w(k,ica(2)) + &
+                          swa(3,ii)*w(k,ica(3)) + swa(4,ii)*w(k,ica(4)) + &
+                          swa(5,ii)*w(k,ica(5)) + swa(6,ii)*w(k,ica(6)) + &
+                          swa(7,ii)*w(k,ica(7)) + swa(8,ii)*w(k,ica(8)) + &
+                          swa(9,ii)*w(k,ica(9)) + swa(10,ii)*w(k,ica(10)))
+                  enddo
+            
+            case default
 
-            do j=1,nAdvCellsForEdge(iEdge)
-               iAdvCell = advCellsForEdge(j,iEdge)
-               do k=2,nVertLevels
-                  scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order * sign(1.0_RKIND,ru_edge_w(k)) * adv_coefs_3rd(j,iEdge)
-                  flux_arr(k) = flux_arr(k) + scalar_weight * w(k,iAdvCell)
-               end do
-            end do
+                ! flux_arr stores the value of w at the cell edge used in the horizontal transport
+
+                do j=1,nAdvCellsForEdge(iEdge)
+                    iAdvCell = advCellsForEdge(j,iEdge)
+                    do k=2,nVertLevels
+                        scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order * sign(1.0_RKIND,ru_edge_w(k)) * adv_coefs_3rd(j,iEdge)
+                        flux_arr(k) = flux_arr(k) + scalar_weight * w(k,iAdvCell)
+                    end do
+                end do
+            
+            end select
 
             do k=2,nVertLevels
                tend_w(k,iCell) = tend_w(k,iCell) - edgesOnCell_sign(i,iCell) * ru_edge_w(k)*flux_arr(k)
             end do
 
          end do
+         
       end do
+!$OMP BARRIER
 
 #ifdef CURVATURE
       do iCell = cellSolveStart, cellSolveEnd
@@ -3515,14 +3541,36 @@ module atm_time_integration
             iEdge = edgesOnCell(i,iCell)
 
             flux_arr(1:nVertLevels) = 0.0
+            
+            select case(nAdvCellsForEdge(iEdge))
+            case (10)
+                  do jj=1,10
+                     ica(jj)    = advCellsForEdge(jj,iEdge)
+                     swa(jj,1)  = adv_coefs(jj,iEdge)   + coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                     swa(jj,2)  = adv_coefs(jj,iEdge)   - coef_3rd_order*adv_coefs_3rd(jj,iEdge)
+                  enddo
+                  do k=1,nVertLevels
+                     ii = merge(1, 2, ru(k,iEdge) > 0)
+                     flux_arr(k) = flux_arr(k) + ( &
+                          swa(1,ii)*theta_m(k,ica(1)) + swa(2,ii)*theta_m(k,ica(2)) + &
+                          swa(3,ii)*theta_m(k,ica(3)) + swa(4,ii)*theta_m(k,ica(4)) + &
+                          swa(5,ii)*theta_m(k,ica(5)) + swa(6,ii)*theta_m(k,ica(6)) + &
+                          swa(7,ii)*theta_m(k,ica(7)) + swa(8,ii)*theta_m(k,ica(8)) + &
+                          swa(9,ii)*theta_m(k,ica(9)) + swa(10,ii)*theta_m(k,ica(10)))
+                  enddo
+                
+                
+            case default
 
-            do j=1,nAdvCellsForEdge(iEdge)
-               iAdvCell = advCellsForEdge(j,iEdge)
-               do k=1,nVertLevels
-                  scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru(k,iEdge))*adv_coefs_3rd(j,iEdge)
-                  flux_arr(k) = flux_arr(k) + scalar_weight* theta_m(k,iAdvCell)
-               end do
-            end do
+                do j=1,nAdvCellsForEdge(iEdge)
+                   iAdvCell = advCellsForEdge(j,iEdge)
+                   do k=1,nVertLevels
+                      scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru(k,iEdge))*adv_coefs_3rd(j,iEdge)
+                      flux_arr(k) = flux_arr(k) + scalar_weight * theta_m(k,iAdvCell)
+                   end do
+                end do
+            
+            end select
 
             do k=1,nVertLevels
                tend_theta(k,iCell) = tend_theta(k,iCell) - edgesOnCell_sign(i,iCell) * ru(k,iEdge) * flux_arr(k)
@@ -3530,6 +3578,7 @@ module atm_time_integration
 
          end do
       end do
+!$OMP BARRIER
 
 !  addition to pick up perturbation flux for rtheta_pp equation
 
