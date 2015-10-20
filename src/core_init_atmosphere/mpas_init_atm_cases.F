@@ -2542,7 +2542,7 @@ module init_atm_cases
 
       real (kind=RKIND) :: r_earth, etavs, ztemp, zd, zt, dz, gam, delt, str
 
-      real (kind=RKIND), dimension(nVertLevels, nCells) :: rel_hum, temperature, qv
+      real (kind=RKIND), dimension(nVertLevels, nCells) :: rel_hum, qv
       real (kind=RKIND) :: ptmp, es, rs, rgas_moist, qvs, xnutr, znut, ptemp, rcv
       integer :: iter
 
@@ -2565,6 +2565,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(nlat) :: lat_2d
       real (kind=RKIND) :: dlat
       real (kind=RKIND) :: z_edge, z_edge3, d2fdx2_cell1, d2fdx2_cell2
+      real (kind=RKIND) :: alt, als, zetal, zl
 
       character (len=StrKIND), pointer :: config_met_prefix
       character (len=StrKIND), pointer :: config_start_time
@@ -2574,6 +2575,7 @@ module init_atm_cases
       integer, pointer :: config_nsm
       real (kind=RKIND), pointer :: config_dzmin
       real (kind=RKIND), pointer :: config_ztop
+      logical, pointer :: config_tc_vertical_grid
       integer, pointer :: config_nfglevels
       integer, pointer :: config_nfgsoillevels
       logical, pointer :: config_smooth_surfaces
@@ -2597,6 +2599,9 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: theta
       real (kind=RKIND), dimension(:,:), pointer :: rho
       real (kind=RKIND), dimension(:,:), pointer :: relhum
+      real (kind=RKIND), dimension(:,:), pointer :: spechum
+      real (kind=RKIND), dimension(:,:), pointer :: o3mmr
+      real (kind=RKIND), dimension(:,:), pointer :: temperature
       real (kind=RKIND), dimension(:,:), pointer :: ru
       real (kind=RKIND), dimension(:,:), pointer :: rw
       real (kind=RKIND), dimension(:), pointer :: precipw
@@ -2615,11 +2620,63 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: z_fg
       real (kind=RKIND), dimension(:,:), pointer :: t_fg
       real (kind=RKIND), dimension(:,:), pointer :: rh_fg
+      real (kind=RKIND), dimension(:,:), pointer :: sh_fg
+      real (kind=RKIND), dimension(:,:), pointer :: o3_fg
       real (kind=RKIND), dimension(:,:), pointer :: gfs_z
       real (kind=RKIND), dimension(:,:), pointer :: p_fg
       real (kind=RKIND), dimension(:,:), pointer :: st_fg
       real (kind=RKIND), dimension(:,:), pointer :: sm_fg
       real (kind=RKIND), dimension(:), pointer :: soilz
+
+!---- NGGPS INTERPOLATION OF SURFACE FIELDS (ldf/2105-10-05):
+      integer:: kk
+
+      !static fields already interpolated to the MPAS mesh in subroutine init_atm_static_fields_forGFS
+      !and overwritten when reading the intermediate high-resolution latitude-longitude surface file: 
+      real(kind=RKIND),dimension(:),pointer:: shdmax,shdmin,slope,snoalb,soiltemp
+      real(kind=RKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,facsf,facwf
+
+      !first-guess fields overwritten when reading the high-resolution latitude-longitude input 
+      !surface file: 
+      real(kind=RKIND),dimension(:),pointer:: vegfra
+
+      !first-guess fields interpolated from the intermediate high-resolution latitude-longitude surface file :
+      integer,dimension(:),pointer:: lu_index,soilcat_top
+
+      real(kind=RKIND),dimension(:),pointer  :: vgtype,sltype
+      real(kind=RKIND),dimension(:),pointer  :: canopy,f10m,ffhh,ffmm,uustar,zorl
+      real(kind=RKIND),dimension(:),pointer  :: q2m,t2m
+      real(kind=RKIND),dimension(:),pointer  :: hice,tisfc,snowh
+      real(kind=RKIND),dimension(:,:),pointer:: sl_fg
+
+      call mpas_pool_get_array(mesh,'vgtype'  ,vgtype  )
+      call mpas_pool_get_array(mesh,'sltype'  ,sltype  )
+      call mpas_pool_get_array(mesh,'facsf'   ,facsf   )
+      call mpas_pool_get_array(mesh,'facwf'   ,facwf   )
+      call mpas_pool_get_array(mesh,'shdmax'  ,shdmax  )
+      call mpas_pool_get_array(mesh,'shdmin'  ,shdmin  )
+      call mpas_pool_get_array(mesh,'slope'   ,slope   )
+      call mpas_pool_get_array(mesh,'snoalb'  ,snoalb  )
+      call mpas_pool_get_array(mesh,'soiltemp',soiltemp)
+
+      call mpas_pool_get_array(fg,'alnsf' ,alnsf )
+      call mpas_pool_get_array(fg,'alnwf' ,alnwf )
+      call mpas_pool_get_array(fg,'alvsf' ,alvsf )
+      call mpas_pool_get_array(fg,'alvwf' ,alvwf )
+      call mpas_pool_get_array(fg,'canopy',canopy)
+      call mpas_pool_get_array(fg,'f10m'  ,f10m  )
+      call mpas_pool_get_array(fg,'ffhh'  ,ffhh  )
+      call mpas_pool_get_array(fg,'ffmm'  ,ffmm  )
+      call mpas_pool_get_array(fg,'q2m'   ,q2m   )
+      call mpas_pool_get_array(fg,'t2m'   ,t2m   )
+      call mpas_pool_get_array(fg,'uustar',uustar)
+      call mpas_pool_get_array(fg,'vegfra',vegfra)
+      call mpas_pool_get_array(fg,'sl_fg' ,sl_fg )
+      call mpas_pool_get_array(fg,'hice'  ,hice  )
+      call mpas_pool_get_array(fg,'tisfc' ,tisfc )
+      call mpas_pool_get_array(fg,'snowh' ,snowh )
+      call mpas_pool_get_array(fg,'zorl'  ,zorl  )
+!---- END NGGPS interpolation of surface fields.
 
       call mpas_pool_get_config(configs, 'config_met_prefix', config_met_prefix)
       call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
@@ -2629,6 +2686,7 @@ module init_atm_cases
       call mpas_pool_get_config(configs, 'config_nsm', config_nsm)
       call mpas_pool_get_config(configs, 'config_dzmin', config_dzmin)
       call mpas_pool_get_config(configs, 'config_ztop', config_ztop)
+      call mpas_pool_get_config(configs, 'config_tc_vertical_grid', config_tc_vertical_grid)
       call mpas_pool_get_config(configs, 'config_nfglevels', config_nfglevels)
       call mpas_pool_get_config(configs, 'config_nfgsoillevels', config_nfgsoillevels)
       call mpas_pool_get_config(configs, 'config_smooth_surfaces', config_smooth_surfaces)
@@ -2676,6 +2734,9 @@ module init_atm_cases
       call mpas_pool_get_array(diag, 'pressure', pressure)
       call mpas_pool_get_array(diag, 'surface_pressure', surface_pressure)
       call mpas_pool_get_array(diag, 'relhum', relhum)
+      call mpas_pool_get_array(diag, 'spechum', spechum)
+      call mpas_pool_get_array(diag, 'o3mmr', o3mmr)
+      call mpas_pool_get_array(diag, 'temperature', temperature)
       call mpas_pool_get_array(diag, 'ru', ru)
       call mpas_pool_get_array(diag, 'rw', rw)
 
@@ -2720,6 +2781,8 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'z', z_fg)
       call mpas_pool_get_array(fg, 't', t_fg)
       call mpas_pool_get_array(fg, 'rh', rh_fg)
+      call mpas_pool_get_array(fg, 'sh', sh_fg)
+      call mpas_pool_get_array(fg, 'o3', o3_fg)
       call mpas_pool_get_array(fg, 'gfs_z', gfs_z)
       call mpas_pool_get_array(fg, 'p', p_fg)
 
@@ -2866,15 +2929,56 @@ module init_atm_cases
 
 !     Metrics for hybrid coordinate and vertical stretching
 
-      str = 1.5
-!      str = 1.
-      zt = config_ztop
-      dz = zt/float(nz1)
+      if(config_tc_vertical_grid) then
 
-      do k=1,nz
-         zw(k) = (real(k-1)/real(nz1))**str*zt
-         if (k > 1) dzw(k-1) = zw(k)-zw(k-1)
-      end do
+!--------------------------------------------------------------------------------------------------
+!--- NGGPS vertical discretization following what is used for the TC experiments:
+!--------------------------------------------------------------------------------------------------
+         write(0,*) 'Setting up vertical levels as in 2014 TC experiments:'
+
+         zt = config_ztop
+         dz = zt/float(nz1)
+
+! ww: for 41 level fit
+!        als   =  .075
+!        alt   = 1.23
+!        zetal =  .31
+! ww: for 55 level fit
+         als   =  .075
+         alt   = 1.70
+         zetal =  .75
+
+         do k = 1, nz
+            zl = 1.-alt*(1.-zetal)
+            if((real(k-1)/real(nz1)) .lt. zetal) then
+                 zw(k) = (als*real(k-1)/real(nz1)           &
+                       + (3.*(1.-alt) + 2.*(alt-als)*zetal) &
+                       * ((k-1)*dz/(zt*zetal))**2           &
+                       - (2.*(1.-alt) + (alt-als)*zetal)    &
+                       * (real(k-1)*dz/(zt*zetal))**3) * zt
+            else
+                 zw(k) = (zl+alt*(real(k-1)/real(nz1)-zetal))*zt
+            end if
+            if (k > 1) dzw(k-1) = zw(k)-zw(k-1)
+         end do
+
+      else
+
+!--------------------------------------------------------------------------------------------------
+!--- default vertical discretization as in MPAS 4.0 and earlier:
+!--------------------------------------------------------------------------------------------------
+         write(0,*) 'Setting up vertical levels as in MPAS 4.0 and earlier:'
+
+         str = 1.5
+         zt = config_ztop
+         dz = zt/float(nz1)
+
+         do k = 1, nz
+            zw(k) = (real(k-1)/real(nz1))**str*zt
+            if (k > 1) dzw(k-1) = zw(k)-zw(k-1)
+         end do
+
+      endif
 
 !     ah(k) governs the transition between terrain-following 
 !        and pure height coordinates
@@ -3127,9 +3231,9 @@ module init_atm_cases
       !ldf end.
 
       !
-      ! First, try to locate the LANDSEA field for use as an interpolation mask
+      ! First, try to locate the LANDSEA field for use as an interpolation mask:
       !
-      call read_met_init(trim(config_met_prefix), .false., config_start_time(1:13), istatus)
+      call read_met_init(trim(config_met_prefix),.false.,config_start_time(1:13),istatus)
 
       if (istatus /= 0) then
          write(0,*) '********************************************************************************'
@@ -3139,25 +3243,23 @@ module init_atm_cases
          call mpas_dmpar_abort(dminfo)
       end if
 
-      call read_next_met_field(field, istatus)
+      call read_next_met_field(field,istatus)
 
-      do while (istatus == 0)
-         if (index(field % field, 'LANDSEA') /= 0) then
-
-            allocate(maskslab(-2:field % nx+3, field % ny))
-            maskslab(1:field % nx, 1:field % ny) = field % slab(1:field % nx, 1:field % ny)
-            maskslab(0, 1:field % ny)  = field % slab(field % nx, 1:field % ny)
-            maskslab(-1, 1:field % ny) = field % slab(field % nx-1, 1:field % ny)
-            maskslab(-2, 1:field % ny) = field % slab(field % nx-2, 1:field % ny)
-            maskslab(field % nx+1, 1:field % ny) = field % slab(1, 1:field % ny)
-            maskslab(field % nx+2, 1:field % ny) = field % slab(2, 1:field % ny)
-            maskslab(field % nx+3, 1:field % ny) = field % slab(3, 1:field % ny)
-write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
-
-         end if
+      do while(istatus == 0)
+         if(trim(field%field) == 'LANDSEA') then
+            allocate(maskslab(-2:field%nx+3,field%ny))
+            maskslab(1:field%nx,1:field%ny) = field%slab(1:field%nx,1:field%ny)
+            maskslab(0,1:field%ny)  = field%slab(field%nx,1:field%ny)
+            maskslab(-1,1:field%ny) = field%slab(field%nx-1,1:field%ny)
+            maskslab(-2,1:field % ny) = field%slab(field%nx-2,1:field%ny)
+            maskslab(field%nx+1,1:field%ny) = field%slab(1,1:field%ny)
+            maskslab(field%nx+2,1:field%ny) = field%slab(2,1:field%ny)
+            maskslab(field%nx+3,1:field%ny) = field%slab(3,1:field%ny)
+            write(0,*) 'minval, maxval of LANDSEA = ',minval(maskslab),maxval(maskslab)
+         endif
    
-         deallocate(field % slab)
-         call read_next_met_field(field, istatus)
+         deallocate(field%slab)
+         call read_next_met_field(field,istatus)
       end do
 
       call read_met_close()
@@ -3169,6 +3271,152 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
          write(0,*) '********************************************************************************'
          call mpas_dmpar_abort(dminfo)
       end if
+
+      !
+      ! NGGPS interpolation: interpolate the ivgtyp and isltyp fields to the MPAS mesh to recalculate the
+      ! landmask using the SFCIO intermediate file and overwrite the IVTYP, ISLTYP, and LANDMASK first
+      ! interpolated in the call to subroutine init_atm_static_fields_forGFS:
+      ! Laura D. Fowler (2015-10-12):
+      !
+
+      call read_met_init(trim(config_met_prefix),.false.,config_start_time(1:13),istatus)
+      if (istatus /= 0) then
+         write(0,*) '********************************************************************************'
+         write(0,*) 'Error opening initial meteorological data file to interpolate IVGTYP and ISLTYP'//   &
+                     trim(config_met_prefix)//':'//config_start_time(1:13)
+         write(0,*) '********************************************************************************'
+         call mpas_dmpar_abort(dminfo)
+      end if
+
+      call read_next_met_field(field,istatus)
+
+      do while(istatus == 0)
+         if(trim(field%field)=='VGTYPE' .or. trim(field%field)=='SLTYPE') then
+
+            !set up projection:
+            call map_init(proj)
+            if(field%iproj == PROJ_LATLON) then
+               call map_set(PROJ_LATLON,proj, &
+                            latinc = real(field%deltalat,RKIND),       &
+                            loninc = real(field%deltalon,RKIND),       &
+                            knowni = 1.0_RKIND,                        &
+                            knownj = 1.0_RKIND,                        &
+                            lat1   = real(field%startlat,RKIND),       &
+                            lon1   = real(field%startlon,RKIND))
+            elseif(field%iproj == PROJ_GAUSS) then
+               call map_set(PROJ_GAUSS,proj, &
+                            nlat   = nint(field%deltalat),             &
+                            loninc = 360.0_RKIND/real(field%nx,RKIND), &
+                            lat1   = real(field%startlat,RKIND),       &
+                            lon1   = real(field%startlon,RKIND))
+            endif
+
+!           interp_list(1) = FOUR_POINT
+!           interp_list(2) = SEARCH
+!           interp_list(3) = 0
+            interp_list(1) = SEARCH
+            interp_list(2) = 0
+
+            maskval = -1.0
+            masked  = -1
+            fillval = 0.0
+            msgval  = -1.e30
+
+            if(trim(field%field) == 'VGTYPE') then
+               write(0,*)
+               write(0,*) 'Interpolating IVGTYP'
+!              interp_list(1) = SIXTEEN_POINT
+!              interp_list(2) = FOUR_POINT
+!              interp_list(3) = W_AVERAGE4
+!              interp_list(4) = SEARCH
+!              interp_list(5) = 0
+!              maskval = 13.0_RKIND             
+               nInterpPoints  = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'vgtype',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'SLTYPE') then
+               write(0,*)
+               write(0,*) 'Interpolating ISLTYP'
+!              interp_list(1) = SIXTEEN_POINT
+!              interp_list(2) = FOUR_POINT
+!              interp_list(3) = W_AVERAGE4
+!              interp_list(4) = SEARCH
+!              interp_list(5) = 0
+!              maskval = 9.0_RKIND
+               nInterpPoints  = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'sltype',destField1d)
+               ndims = 1
+            endif
+
+            allocate(rslab(-2:field%nx+3,field%ny))
+            rslab(1:field%nx,1:field%ny) = field % slab(1:field%nx,1:field%ny)
+            rslab(0,1:field%ny)  = field%slab(field%nx,1:field%ny)
+            rslab(-1,1:field%ny) = field%slab(field%nx-1,1:field%ny)
+            rslab(-2,1:field%ny) = field%slab(field%nx-2,1:field%ny)
+            rslab(field%nx+1,1:field%ny) = field%slab(1,1:field%ny)
+            rslab(field%nx+2,1:field%ny) = field%slab(2,1:field%ny)
+            rslab(field%nx+3,1:field%ny) = field%slab(3,1:field%ny)
+            write(0,*) '--- max field%slab = ',maxval(field%slab(1:field%nx,1:field%ny))
+            write(0,*) '--- min field%slab = ',minval(field%slab(1:field%nx,1:field%ny))
+
+            do i = 1, nInterpPoints
+               lat = latPoints(i)*DEG_PER_RAD
+               lon = lonPoints(i)*DEG_PER_RAD
+               call latlon_to_ij(proj, lat, lon, x, y)
+               if(x < 0.5) then
+                  lon = lon + 360.0
+                  call latlon_to_ij(proj, lat, lon, x, y)
+               end if
+               if (y > field%ny) y = field%ny
+               if (y < 1) y = 1
+               destField1d(i) = interp_sequence(x,y,1,rslab,-2,field%nx+3,1,field%ny,1,1,msgval, &
+                                       interp_list,1,maskval=maskval,mask_array=maskslab)
+            end do
+            write(0,*) '--- max destField1d =',maxval(destField1d(1:nInterpPoints))
+            write(0,*) '--- min destField1d =',minval(destField1d(1:nInterpPoints))
+            deallocate(rslab)
+
+         endif
+         deallocate(field%slab)
+
+         call read_next_met_field(field,istatus)
+      enddo
+      call read_met_close()
+
+      !--- overwrite IVGTYP, ISLTYP, and recalculate LANDMASK:
+      call mpas_pool_get_array(mesh,'lu_index'   ,lu_index   )
+      call mpas_pool_get_array(mesh,'soilcat_top',soilcat_top)
+
+      nInterpPoints = nCells
+      lu_index(1:nInterpPoints)    = 0
+      soilcat_top(1:nInterpPoints) = 0
+      landmask(1:nInterpPoints)    = 0
+
+      do i = 1, nInterpPoints
+         if(vgtype(i)==0._RKIND .or. sltype(i)==0._RKIND) then
+            if(vgtype(i)==0._RKIND .and. sltype(i)/=0._RKIND) then
+               write(0,*) 'Turning sltype into water at ', i
+               sltype(i) = 0._RKIND
+            elseif(vgtype(i)/=0._RKIND .and. sltype(i)==0._RKIND) then
+               write(0,*) 'Turning vgtype into water at ', i
+               vgtype(i) = 0._RKIND
+            endif
+         endif
+         lu_index(i)    = int(vgtype(i))
+         soilcat_top(i) = int(sltype(i))
+
+         if(lu_index(i) /=0) landmask(i) = 1
+      enddo
+
+      !
+      ! end NGGPS interpolation.
+      ! Laura D. Fowler (2015-10-12).
+      !
+
 
       edge_mask(:) = 1
 
@@ -3204,64 +3452,104 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
 
          mask_array => landmask
 
-         if (index(field % field, 'UU') /= 0 .or. &
-             index(field % field, 'VV') /= 0 .or. &
-             index(field % field, 'TT') /= 0 .or. &
-             index(field % field, 'RH') /= 0 .or. &
-             index(field % field, 'GHT') /= 0 .or. &
-             index(field % field, 'PMSL') /= 0 .or. &
-             index(field % field, 'PSFC') /= 0 .or. &
-             index(field % field, 'SOILHGT') /= 0 .or. &
-             index(field % field, 'SM000010') /= 0 .or. &
-             index(field % field, 'SM010040') /= 0 .or. &
-             index(field % field, 'SM040100') /= 0 .or. &
-             index(field % field, 'SM100200') /= 0 .or. &
-             index(field % field, 'SM010200') /= 0 .or. &
-             index(field % field, 'SM000007') /= 0 .or. &
-             index(field % field, 'SM007028') /= 0 .or. &
-             index(field % field, 'SM028100') /= 0 .or. &
-             index(field % field, 'SM100255') /= 0 .or. &
-             index(field % field, 'ST000010') /= 0 .or. &
-             index(field % field, 'ST010040') /= 0 .or. &
-             index(field % field, 'ST040100') /= 0 .or. &
-             index(field % field, 'ST100200') /= 0 .or. &
-             index(field % field, 'ST010200') /= 0 .or. &
-             index(field % field, 'ST000007') /= 0 .or. &
-             index(field % field, 'ST007028') /= 0 .or. &
-             index(field % field, 'ST028100') /= 0 .or. &
-             index(field % field, 'ST100255') /= 0 .or. &
-             index(field % field, 'PRES') /= 0 .or. &
-             index(field % field, 'SNOW') /= 0 .or. &
-             index(field % field, 'SEAICE') /= 0 .or. &
-             index(field % field, 'SKINTEMP') /= 0) then
-
-            if (index(field % field, 'SM000010') /= 0 .or. &
-                index(field % field, 'SM010040') /= 0 .or. &
-                index(field % field, 'SM040100') /= 0 .or. &
-                index(field % field, 'SM100200') /= 0 .or. &
-                index(field % field, 'SM010200') /= 0 .or. &
-                index(field % field, 'SM000007') /= 0 .or. &
-                index(field % field, 'SM007028') /= 0 .or. &
-                index(field % field, 'SM028100') /= 0 .or. &
-                index(field % field, 'SM100255') /= 0 .or. &
-                index(field % field, 'ST000010') /= 0 .or. &
-                index(field % field, 'ST010040') /= 0 .or. &
-                index(field % field, 'ST040100') /= 0 .or. &
-                index(field % field, 'ST100200') /= 0 .or. &
-                index(field % field, 'ST010200') /= 0 .or. &
-                index(field % field, 'ST000007') /= 0 .or. &
-                index(field % field, 'ST007028') /= 0 .or. &
-                index(field % field, 'ST028100') /= 0 .or. &
-                index(field % field, 'ST100255') /= 0 .or. &
-                index(field % field, 'SNOW') /= 0 .or. &
-                index(field % field, 'SEAICE') /= 0 .or. &
-                index(field % field, 'SKINTEMP') /= 0) then
-               k = 1
-            else if (index(field % field, 'PMSL') == 0 .and. &
-                     index(field % field, 'PSFC') == 0 .and. &
-                     index(field % field, 'SOILHGT') == 0) then
-               do k=1,config_nfglevels
-                  if (vert_level(k) == field % xlvl .or. vert_level(k) == -1.0) exit
+         if(trim(field%field) == 'UU'       .or. &
+            trim(field%field) == 'VV'       .or. &
+            trim(field%field) == 'TT'       .or. &
+            trim(field%field) == 'RH'       .or. &
+            trim(field%field) == 'SPECHUMD' .or. &
+            trim(field%field) == 'OZONE'    .or. &
+            trim(field%field) == 'GHT'      .or. &
+            trim(field%field) == 'PRES'     .or. &
+            trim(field%field) == 'PMSL'     .or. &
+            trim(field%field) == 'PSFC'     .or. &
+            trim(field%field) == 'SOILHGT'  .or. &
+            trim(field%field) == 'SM000010' .or. &
+            trim(field%field) == 'SM010040' .or. &
+            trim(field%field) == 'SM040100' .or. &
+            trim(field%field) == 'SM100200' .or. &
+            trim(field%field) == 'ST000010' .or. &
+            trim(field%field) == 'ST010040' .or. &
+            trim(field%field) == 'ST040100' .or. &
+            trim(field%field) == 'ST100200' .or. &
+            trim(field%field) == 'SNOW'     .or. &
+            trim(field%field) == 'SEAICE'   .or. &
+            trim(field%field) == 'SKINTEMP' .or. &
+!--- BEGIN INTERPOLATION OF ADDITIONAL NGGPS SURFACE FILES (Laura D. Fowler/2015-10-15)::
+            trim(field%field) == 'FACSF'    .or. &
+            trim(field%field) == 'FACWF'    .or. &
+            trim(field%field) == 'SHDMAX'   .or. &
+            trim(field%field) == 'SHDMIN'   .or. &
+            trim(field%field) == 'SLOPE'    .or. &
+            trim(field%field) == 'SNOALB'   .or. &
+            trim(field%field) == 'SOILTEMP' .or. &
+            trim(field%field) == 'ALNSF'    .or. &
+            trim(field%field) == 'ALNWF'    .or. &
+            trim(field%field) == 'ALVSF'    .or. &
+            trim(field%field) == 'ALVWF'    .or. &
+            trim(field%field) == 'CANOPY'   .or. &
+            trim(field%field) == 'F10M'     .or. &
+            trim(field%field) == 'FFHH'     .or. &
+            trim(field%field) == 'FFMM'     .or. &
+            trim(field%field) == 'HICE'     .or. &
+            trim(field%field) == 'TISFC'    .or. &
+            trim(field%field) == 'SNOWH'    .or. &
+            trim(field%field) == 'Q2M'      .or. &
+            trim(field%field) == 'T2M'      .or. &
+            trim(field%field) == 'UUSTAR'   .or. &
+            trim(field%field) == 'VEGFRA'   .or. &
+            trim(field%field) == 'ZORL'     .or. &
+            trim(field%field) == 'SL000010' .or. &
+            trim(field%field) == 'SL010040' .or. &
+            trim(field%field) == 'SL040100' .or. &
+            trim(field%field) == 'SL100200') then
+!--- end NGGSP.
+            if (trim(field%field) == 'SM000010' .or. &
+                trim(field%field) == 'SM010040' .or. &
+                trim(field%field) == 'SM040100' .or. &
+                trim(field%field) == 'SM100200' .or. &
+                trim(field%field) == 'SM010200' .or. &
+                trim(field%field) == 'ST000010' .or. &
+                trim(field%field) == 'ST010040' .or. &
+                trim(field%field) == 'ST040100' .or. &
+                trim(field%field) == 'ST100200' .or. &
+                trim(field%field) == 'SNOW'     .or. &
+                trim(field%field) == 'SEAICE'   .or. &
+                trim(field%field) == 'SKINTEMP' .or. &
+!--- BEGIN INTERPOLATION OF ADDITIONAL NGGPS SURFACE FILES (Laura D. Fowler/2015-10-15)::
+                trim(field%field) == 'FACSF'    .or. &
+                trim(field%field) == 'FACWF'    .or. &
+                trim(field%field) == 'SHDMAX'   .or. &
+                trim(field%field) == 'SHDMIN'   .or. &
+                trim(field%field) == 'SLOPE'    .or. &
+                trim(field%field) == 'SNOALB'   .or. &
+                trim(field%field) == 'SOILTEMP' .or. &
+                trim(field%field) == 'ALNSF'    .or. &
+                trim(field%field) == 'ALNWF'    .or. &
+                trim(field%field) == 'ALVSF'    .or. &
+                trim(field%field) == 'ALVWF'    .or. &
+                trim(field%field) == 'CANOPY'   .or. &
+                trim(field%field) == 'F10M'     .or. &
+                trim(field%field) == 'FFHH'     .or. &
+                trim(field%field) == 'FFMM'     .or. &
+                trim(field%field) == 'HICE'     .or. &
+                trim(field%field) == 'TISFC'    .or. &
+                trim(field%field) == 'SNOWH'    .or. &
+                trim(field%field) == 'Q2M'      .or. &
+                trim(field%field) == 'T2M'      .or. &
+                trim(field%field) == 'UUSTAR'   .or. &
+                trim(field%field) == 'VEGFRA'   .or. &
+                trim(field%field) == 'ZORL'     .or. & 
+                trim(field%field) == 'SL000010' .or. &
+                trim(field%field) == 'SL010040' .or. &
+                trim(field%field) == 'SL040100' .or. &
+                trim(field%field) == 'SL100200' ) then
+!--- end NGGSP.
+                k = 1
+            elseif(trim(field%field) /= 'PMSL'   .and. &
+                   trim(field%field) /= 'PSFC'   .and. &
+                   trim(field%field) /= 'SOILHGT') then
+               do k = 1, config_nfglevels
+                  if(vert_level(k) == field%xlvl .or. vert_level(k) == -1.0) exit
                end do
                if (k > config_nfglevels) then
                   write(0,*) '*******************************************************************'
@@ -3270,10 +3558,10 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
                   write(0,*) '*******************************************************************'
                   call mpas_dmpar_abort(dminfo)
                end if
-               if (vert_level(k) == -1.0) vert_level(k) = field % xlvl
+               if(vert_level(k) == -1.0) vert_level(k) = field%xlvl
             else
                k = 1
-            end if
+            endif
 
             !
             ! Set up projection
@@ -3301,484 +3589,670 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
             !
             ! Horizontally interpolate the field at level k
             !
-            if (index(field % field, 'UU') /= 0) then
-write(0,*) 'Interpolating U at ', k, vert_level(k)
-
+            if(trim(field%field) == 'UU') then
+               write(0,*)
+               write(0,*) 'Interpolating UU at ',k,vert_level(k)
                mask_array => edge_mask
-
                nInterpPoints = nEdges
                latPoints => latEdge
                lonPoints => lonEdge
-               call mpas_pool_get_array(fg, 'u', destField2d)
+               call mpas_pool_get_array(fg,'u',destField2d)
                ndims = 2
-            else if (index(field % field, 'VV') /= 0) then
-write(0,*) 'Interpolating V at ', k, vert_level(k)
-
+            elseif(trim(field%field) == 'VV') then
+               write(0,*)
+               write(0,*) 'Interpolating VV at ',k,vert_level(k)
                mask_array => edge_mask
-
                nInterpPoints = nEdges
                latPoints => latEdge
                lonPoints => lonEdge
-               call mpas_pool_get_array(fg, 'v', destField2d)
+               call mpas_pool_get_array(fg,'v',destField2d)
                ndims = 2
-            else if (index(field % field, 'TT') /= 0) then
-write(0,*) 'Interpolating T at ', k, vert_level(k)
+            elseif(trim(field%field) == 'TT') then
+               write(0,*)
+               write(0,*) 'Interpolating TT at ',k,vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 't', destField2d)
+               call mpas_pool_get_array(fg,'t',destField2d)
                ndims = 2
-            else if (index(field % field, 'RH') /= 0) then
-write(0,*) 'Interpolating RH at ', k, vert_level(k)
+            elseif(trim(field%field) == 'RH') then
+               write(0,*)
+               write(0,*) 'Interpolating RH at ',k,vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'rh', destField2d)
+               call mpas_pool_get_array(fg,'rh',destField2d)
                ndims = 2
-            else if (index(field % field, 'GHT') /= 0) then
-write(0,*) 'Interpolating GHT at ', k, vert_level(k)
+            elseif(trim(field%field) == 'SPECHUMD') then
+               write(0,*)
+               write(0,*) 'Interpolating SPECHUMD at',k,vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'z', destField2d)
+               call mpas_pool_get_array(fg,'sh',destField2d)
                ndims = 2
-            else if (index(field % field, 'PRES') /= 0) then
-write(0,*) 'Interpolating PRES at ', k, vert_level(k)
+            elseif(trim(field%field) == 'OZONE') then
+               write(0,*)
+               write(0,*) 'Interpolating OZONE at ',k,vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'p', destField2d)
+               call mpas_pool_get_array(fg,'o3',destField2d)
                ndims = 2
-            else if (index(field % field, 'PMSL') /= 0) then
-write(0,*) 'Interpolating PMSL'
+            elseif(trim(field%field) == 'GHT') then
+               write(0,*)
+               write(0,*) 'Interpolating GHT at ',k,vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'pmsl', destField1d)
+               call mpas_pool_get_array(fg,'z',destField2d)
+               ndims = 2
+            elseif(trim(field%field) == 'PRES') then
+               write(0,*)
+               write(0,*) 'Interpolating PRES at ',k,vert_level(k)
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'p',destField2d)
+               ndims = 2
+            elseif(trim(field%field) == 'PMSL') then
+               write(0,*)
+               write(0,*) 'Interpolating PMSL'
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'pmsl',destField1d)
                ndims = 1
-            else if (index(field % field, 'PSFC') /= 0) then
-write(0,*) 'Interpolating PSFC'
+            elseif(trim(field%field) == 'PSFC') then
+               write(0,*)
+               write(0,*) 'Interpolating PSFC'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'psfc', destField1d)
+               call mpas_pool_get_array(fg,'psfc',destField1d)
                ndims = 1
-            else if (index(field % field, 'SOILHGT') /= 0) then
-write(0,*) 'Interpolating SOILHGT'
+            elseif(trim(field%field) == 'SOILHGT') then
+               write(0,*)
+               write(0,*) 'Interpolating SOILHGT'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'soilz', destField1d)
+               call mpas_pool_get_array(fg,'soilz',destField1d)
                ndims = 1
-            else if (index(field % field, 'SM000010') /= 0) then
-write(0,*) 'Interpolating SM000010'
-
+            elseif(trim(field%field) == 'SM000010') then
+               write(0,*)
+               write(0,*) 'Interpolating SM000010'
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
                interp_list(3) = SEARCH
                interp_list(4) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 1.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
+               call mpas_pool_get_array(fg,'sm_fg',destField2d)
                k = 1
                ndims = 2
                dzs_fg(k,:) = 10.
-               zs_fg(k,:) = 10.
-            else if (index(field % field, 'SM010200') /= 0) then
-write(0,*) 'Interpolating SM010200'
-
+               zs_fg(k,:)  = 10.
+            elseif(trim(field%field) == 'SM010040') then
+               write(0,*)
+               write(0,*) 'Interpolating SM010040'
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
                interp_list(3) = SEARCH
                interp_list(4) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 1.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
-               k = 2
-               ndims = 2
-               dzs_fg(k,:) = 200.-10.
-               zs_fg(k,:) = 200.
-            else if (index(field % field, 'SM010040') /= 0) then
-write(0,*) 'Interpolating SM010040'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = SEARCH
-               interp_list(4) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 1.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
+               call mpas_pool_get_array(fg,'sm_fg',destField2d)
                k = 2
                ndims = 2
                dzs_fg(k,:) = 40.-10.
-               zs_fg(k,:) = 40.
-            else if (index(field % field, 'SM040100') /= 0) then
-write(0,*) 'Interpolating SM040100'
-
+               zs_fg(k,:)  = 40.
+            elseif(trim(field%field) == 'SM040100') then
+               write(0,*)
+               write(0,*) 'Interpolating SM040100'
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
                interp_list(3) = SEARCH
                interp_list(4) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 1.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
+               call mpas_pool_get_array(fg,'sm_fg',destField2d)
                k = 3
                ndims = 2
                dzs_fg(k,:) = 100.-40.
-               zs_fg(k,:) = 100.
-            else if (index(field % field, 'SM100200') /= 0) then
-write(0,*) 'Interpolating SM100200'
-
+               zs_fg(k,:)  = 100.
+            elseif(trim(field%field) == 'SM100200') then
+               write(0,*)
+               write(0,*) 'Interpolating SM100200'
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
                interp_list(3) = SEARCH
                interp_list(4) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 1.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
+               call mpas_pool_get_array(fg,'sm_fg',destField2d)
                k = 4
                ndims = 2
                dzs_fg(k,:) = 200.-100.
-               zs_fg(k,:) = 200.
-            else if (index(field % field, 'SM000007') /= 0) then
-write(0,*) 'Interpolating SM000007'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = SEARCH
-               interp_list(4) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 1.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
-               k = 1
-               ndims = 2
-               dzs_fg(k,:) = 7.
-               zs_fg(k,:) = 7.
-            else if (index(field % field, 'SM007028') /= 0) then
-write(0,*) 'Interpolating SM007028'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = SEARCH
-               interp_list(4) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 1.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
-               k = 2
-               ndims = 2
-               dzs_fg(k,:) = 28.-7.
-               zs_fg(k,:) = 28.
-            else if (index(field % field, 'SM028100') /= 0) then
-write(0,*) 'Interpolating SM028100'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = SEARCH
-               interp_list(4) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 1.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
-               k = 3
-               ndims = 2
-               dzs_fg(k,:) = 100.-28.
-               zs_fg(k,:) = 100.
-            else if (index(field % field, 'SM100255') /= 0) then
-write(0,*) 'Interpolating SM100255'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = SEARCH
-               interp_list(4) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 1.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'sm_fg', destField2d)
-               k = 4
-               ndims = 2
-               dzs_fg(k,:) = 255.-100.
-               zs_fg(k,:) = 255.
-            else if (index(field % field, 'ST000010') /= 0) then
-write(0,*) 'Interpolating ST000010'
-
+               zs_fg(k,:)  = 200.
+            elseif(trim(field%field) == 'ST000010') then
+               write(0,*)
+               write(0,*) 'Interpolating ST000010'
                interp_list(1) = SIXTEEN_POINT
                interp_list(2) = FOUR_POINT
                interp_list(3) = W_AVERAGE4
                interp_list(4) = SEARCH
                interp_list(5) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 285.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
+               call mpas_pool_get_array(fg,'st_fg',destField2d)
                k = 1
                ndims = 2
                dzs_fg(k,:) = 10.
-               zs_fg(k,:) = 10.
-            else if (index(field % field, 'ST010200') /= 0) then
-write(0,*) 'Interpolating ST010200'
-
+               zs_fg(k,:)  = 10.
+            elseif(trim(field%field) == 'ST010040') then
+               write(0,*)
+               write(0,*) 'Interpolating ST010040'
                interp_list(1) = SIXTEEN_POINT
                interp_list(2) = FOUR_POINT
                interp_list(3) = W_AVERAGE4
                interp_list(4) = SEARCH
                interp_list(5) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 285.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
-               k = 2
-               ndims = 2
-               dzs_fg(k,:) = 200.-10.
-               zs_fg(k,:) = 200.
-            else if (index(field % field, 'ST010040') /= 0) then
-write(0,*) 'Interpolating ST010040'
-
-               interp_list(1) = SIXTEEN_POINT
-               interp_list(2) = FOUR_POINT
-               interp_list(3) = W_AVERAGE4
-               interp_list(4) = SEARCH
-               interp_list(5) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 285.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
+               call mpas_pool_get_array(fg,'st_fg',destField2d)
                k = 2
                ndims = 2
                dzs_fg(k,:) = 40.-10.               
-               zs_fg(k,:) = 40.
-            else if (index(field % field, 'ST040100') /= 0) then
-write(0,*) 'Interpolating ST040100'
-
+               zs_fg(k,:)  = 40.
+            elseif(trim(field%field) == 'ST040100') then
+               write(0,*)
+               write(0,*) 'Interpolating ST040100'
                interp_list(1) = SIXTEEN_POINT
                interp_list(2) = FOUR_POINT
                interp_list(3) = W_AVERAGE4
                interp_list(4) = SEARCH
                interp_list(5) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 285.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
+               call mpas_pool_get_array(fg,'st_fg',destField2d)
                k = 3
                ndims = 2
                dzs_fg(k,:) = 100.-40.             
-               zs_fg(k,:) = 100.
-            else if (index(field % field, 'ST100200') /= 0) then
-write(0,*) 'Interpolating ST100200'
-
+               zs_fg(k,:)  = 100.
+            elseif(trim(field%field) == 'ST100200') then
+               write(0,*)
+               write(0,*) 'Interpolating ST100200'
                interp_list(1) = SIXTEEN_POINT
                interp_list(2) = FOUR_POINT
                interp_list(3) = W_AVERAGE4
                interp_list(4) = SEARCH
                interp_list(5) = 0
-
                maskval = 0.0
-               masked = 0
+               masked  = 0
                fillval = 285.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
+               call mpas_pool_get_array(fg,'st_fg',destField2d)
                k = 4
                ndims = 2
                dzs_fg(k,:) = 200.-100.
-               zs_fg(k,:) = 200.
-            else if (index(field % field, 'ST000007') /= 0) then
-write(0,*) 'Interpolating ST000007'
-
-               interp_list(1) = SIXTEEN_POINT
-               interp_list(2) = FOUR_POINT
-               interp_list(3) = W_AVERAGE4
-               interp_list(4) = SEARCH
-               interp_list(5) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 285.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
-               k = 1
-               ndims = 2
-               dzs_fg(k,:) = 7.
-               zs_fg(k,:) = 7.
-            else if (index(field % field, 'ST007028') /= 0) then
-write(0,*) 'Interpolating ST007028'
-
-               interp_list(1) = SIXTEEN_POINT
-               interp_list(2) = FOUR_POINT
-               interp_list(3) = W_AVERAGE4
-               interp_list(4) = SEARCH
-               interp_list(5) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 285.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
-               k = 2
-               ndims = 2
-               dzs_fg(k,:) = 28.-7.
-               zs_fg(k,:) = 28.
-            else if (index(field % field, 'ST028100') /= 0) then
-write(0,*) 'Interpolating ST028100'
-
-               interp_list(1) = SIXTEEN_POINT
-               interp_list(2) = FOUR_POINT
-               interp_list(3) = W_AVERAGE4
-               interp_list(4) = SEARCH
-               interp_list(5) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 285.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
-               k = 3
-               ndims = 2
-               dzs_fg(k,:) = 100.-28.
-               zs_fg(k,:) = 100.
-            else if (index(field % field, 'ST100255') /= 0) then
-write(0,*) 'Interpolating ST100255'
-
-               interp_list(1) = SIXTEEN_POINT
-               interp_list(2) = FOUR_POINT
-               interp_list(3) = W_AVERAGE4
-               interp_list(4) = SEARCH
-               interp_list(5) = 0
-
-               maskval = 0.0
-               masked = 0
-               fillval = 285.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'st_fg', destField2d)
-               k = 4
-               ndims = 2
-               dzs_fg(k,:) = 255.-100.
-               zs_fg(k,:) = 255.
-            else if (index(field % field, 'SNOW') /= 0) then
-write(0,*) 'Interpolating SNOW'
-
-               interp_list(1) = FOUR_POINT
-               interp_list(2) = W_AVERAGE4
-               interp_list(3) = 0
-
-               masked = 0
-               fillval = 0.0
-
-               nInterpPoints = nCells
-               latPoints => latCell
-               lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'snow', destField1d)
-               ndims = 1
-            else if (index(field % field, 'SEAICE') /= 0) then
-write(0,*) 'Interpolating SEAICE'
-
+               zs_fg(k,:)  = 200.
+            elseif(trim(field%field) == 'SNOW') then
+               write(0,*)
+               write(0,*) 'Interpolating SNOW'
+!              interp_list(1) = FOUR_POINT
+!              interp_list(2) = W_AVERAGE4
+!              interp_list(3) = 0
+!              masked  = 0
+!              fillval = 0.0
                interp_list(1) = FOUR_POINT
                interp_list(2) = W_AVERAGE4
                interp_list(3) = SEARCH
                interp_list(4) = 0
-
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'snow',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'SEAICE') then
+               write(0,*)
+               write(0,*) 'Interpolating SEAICE'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
                maskval = 1.0
-               masked = 1
+               masked  = 1
                fillval = 0.0
-
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'xice', destField1d)
+               call mpas_pool_get_array(fg,'xice',destField1d)
                ndims = 1
-            else if (index(field % field, 'SKINTEMP') /= 0) then
-write(0,*) 'Interpolating SKINTEMP'
+            elseif(trim(field%field) == 'SKINTEMP') then
+               write(0,*)
+               write(0,*) 'Interpolating SKINTEMP'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
-               call mpas_pool_get_array(fg, 'skintemp', destField1d)
+               call mpas_pool_get_array(fg,'skintemp',destField1d)
                ndims = 1
-            end if
+!--- BEGIN INTERPOLATION OF ADDITIONAL NGGPS SURFACE FILES (Laura D. Fowler/2015-10-15)::
+            elseif(trim(field%field) == 'FACSF') then
+               write(0,*)
+               write(0,*) 'Interpolating FACSF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'facsf',destField1d)
+            elseif(trim(field%field) == 'FACWF') then
+               write(0,*)
+               write(0,*) 'Interpolating FACWF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'facwf',destField1d)
+            elseif(trim(field%field) == 'SHDMAX') then
+               write(0,*)
+               write(0,*) 'Interpolating SHDMAX'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'shdmax',destField1d)
+            elseif(trim(field%field) == 'SHDMIN') then
+               write(0,*)
+               write(0,*) 'Interpolating SHDMIN'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'shdmin',destField1d)
+            elseif(trim(field%field) == 'SLOPE') then
+               write(0,*)
+               write(0,*) 'Interpolating SLOPE'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'slope',destField1d)
+            elseif(trim(field%field) == 'SNOALB') then
+               write(0,*)
+               write(0,*) 'Interpolating SNOALB'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'snoalb',destField1d)
+            elseif(trim(field%field) == 'SOILTEMP') then
+               write(0,*)
+               write(0,*) 'Interpolating SOILTEMP'
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(mesh,'soiltemp',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'ALNSF') then
+               write(0,*)
+               write(0,*) 'Interpolating ALNSF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.06
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'alnsf',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'ALNWF') then
+               write(0,*)
+               write(0,*) 'Interpolating ALNWF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.06
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'alnwf',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'ALVSF') then
+               write(0,*)
+               write(0,*) 'Interpolating ALVSF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.06
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'alvsf',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'ALVWF') then
+               write(0,*)
+               write(0,*) 'Interpolating ALVWF'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.06
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'alvwf',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'CANOPY') then
+               write(0,*)
+               write(0,*) 'Interpolating CANOPY'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'canopy',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'F10M') then
+               write(0,*)
+               write(0,*) 'Interpolating F10M'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'f10m',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'FFHH') then
+               write(0,*)
+               write(0,*) 'Interpolating FFHH'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'ffhh',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'FFMM') then
+               write(0,*)
+               write(0,*) 'Interpolating FFMM'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'ffmm',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'HICE') then
+               write(0,*)
+               write(0,*) 'Interpolating HICE'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 1.0
+               masked  = 1
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'hice',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'TISFC') then
+               write(0,*)
+               write(0,*) 'Interpolating TISFC'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'tisfc',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'SNOWH') then
+               write(0,*) 'Interpolating SNOWH'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'snowh',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'Q2M') then 
+               write(0,*)
+               write(0,*) 'Interpolating Q2M'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'q2m',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'T2M') then
+               write(0,*)
+               write(0,*) 'Interpolating T2M'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'t2m',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'UUSTAR') then
+               write(0,*)
+               write(0,*) 'Interpolating UUSTAR'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'uustar',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'VEGFRA') then
+               write(0,*)
+               write(0,*) 'Interpolating VEGFRA'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'vegfra',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'ZORL') then
+               write(0,*)
+               write(0,*) 'Interpolating ZORL'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 0.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'zorl',destField1d)
+               ndims = 1
+            elseif(trim(field%field) == 'SL000010') then
+               write(0,*)
+               write(0,*) 'Interpolating SL000010'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 1.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'sl_fg',destField2d)
+               k = 1
+               ndims = 2
+               dzs_fg(k,:) = 10.
+               zs_fg(k,:)  = 10.
+            elseif(trim(field%field) == 'SL010040') then
+               write(0,*)
+               write(0,*) 'Interpolating SL010040'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 1.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'sl_fg',destField2d)
+               k = 2
+               ndims = 2
+               dzs_fg(k,:) = 40.-10.
+               zs_fg(k,:)  = 40.
+            elseif(trim(field%field) == 'SL040100') then
+               write(0,*)
+               write(0,*) 'Interpolating SL040100'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 1.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'sl_fg',destField2d)
+               k = 3
+               ndims = 2
+               dzs_fg(k,:) = 100.-40.
+               zs_fg(k,:)  = 100.
+            elseif(trim(field%field) == 'SL100200') then
+               write(0,*)
+               write(0,*) 'Interpolating SL100200'
+               interp_list(1) = FOUR_POINT
+               interp_list(2) = W_AVERAGE4
+               interp_list(3) = SEARCH
+               interp_list(4) = 0
+               maskval = 0.0
+               masked  = 0
+               fillval = 1.0
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg,'sl_fg',destField2d)
+               k = 4
+               ndims = 2
+               dzs_fg(k,:) = 200.-100.
+               zs_fg(k,:)  = 200.
+!--- end NGGPS.
+            endif
 
             allocate(rslab(-2:field % nx+3, field % ny))
             rslab(1:field % nx, 1:field % ny) = field % slab(1:field % nx, 1:field % ny)
@@ -3788,38 +4262,58 @@ write(0,*) 'Interpolating SKINTEMP'
             rslab(field % nx+1, 1:field % ny) = field % slab(1, 1:field % ny)
             rslab(field % nx+2, 1:field % ny) = field % slab(2, 1:field % ny)
             rslab(field % nx+3, 1:field % ny) = field % slab(3, 1:field % ny)
-
-            do i=1,nInterpPoints
-               if (mask_array(i) /= masked) then
+            write(0,*) '--- max field%slab  = ', maxval(field%slab(1:field%nx,1:field%ny))
+            write(0,*) '--- min field%slab  = ', minval(field%slab(1:field%nx,1:field%ny))
+            do i = 1, nInterpPoints
+               if(mask_array(i) /= masked) then
                   lat = latPoints(i)*DEG_PER_RAD
                   lon = lonPoints(i)*DEG_PER_RAD
-                  call latlon_to_ij(proj, lat, lon, x, y)
+                  call latlon_to_ij(proj,lat,lon,x,y)
                   if (x < 0.5) then
                      lon = lon + 360.0
                      call latlon_to_ij(proj, lat, lon, x, y)
                   end if
-                  if (ndims == 1) then
+                  if(y > field%ny) y = field%ny
+                  if(y < 1) y=1
+                  if(ndims == 1) then
                      if (maskval /= -1.0) then
-                        destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1, maskval=maskval, mask_array=maskslab)
+                        destField1d(i) = interp_sequence(x,y,1,rslab,-2,field%nx+3,1,field%ny,1,1,msgval,interp_list,1, &
+                                                         maskval=maskval,mask_array=maskslab)
                      else
-                        destField1d(i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1)
+                        destField1d(i) = interp_sequence(x,y,1,rslab,-2,field%nx+3,1,field%ny,1,1,msgval,interp_list,1)
                      end if
-                  else if (ndims == 2) then
-                     if (maskval /= -1.0) then
-                        destField2d(k,i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1, maskval=maskval, mask_array=maskslab)
+                     if(destField1d(i) .le. -1e+20) then
+                        write(0,*) '--- nx = ', field%nx
+                        write(0,*) '--- ny = ', field%ny
+                        write(0,201) i,lat,y,lon,x,destField1d(i)
+                     endif
+                  elseif(ndims == 2) then
+                     if(i.eq.1) then
+                        write(0,*) '--- nx = ', field%nx
+                        write(0,*) '--- ny = ', field%ny
+                     endif
+                     if(maskval /= -1.0) then
+                        destField2d(k,i) = interp_sequence(x,y,1,rslab,-2,field%nx+3,1,field%ny,1,1,msgval,interp_list,1, &
+                                                           maskval=maskval, mask_array=maskslab)
                      else
                         destField2d(k,i) = interp_sequence(x, y, 1, rslab, -2, field % nx + 3, 1, field % ny, 1, 1, msgval, interp_list, 1)
                      end if
                   end if
                else
-                  if (ndims == 1) then
+                  if(ndims == 1) then
                      destField1d(i) = fillval
-                  else if (ndims == 2) then
+                  elseif (ndims == 2) then
                      destField2d(k,i) = fillval
-                  end if
-               end if
-            end do
-
+                  endif
+               endif
+            enddo
+            if(ndims == 1) then
+               write(0,*) '--- max DestField1d = ', maxval(destField1d(1:nInterpPoints))
+               write(0,*) '--- min DestField1d = ', minval(destField1d(1:nInterpPoints))
+            elseif(ndims == 2) then
+               write(0,*) '--- max DestField2d = ', maxval(destField2d(k,1:nInterpPoints))
+               write(0,*) '--- min DestField2d = ', minval(destField2d(k,1:nInterpPoints))
+            endif
             deallocate(rslab)
      
          end if
@@ -3827,6 +4321,7 @@ write(0,*) 'Interpolating SKINTEMP'
          deallocate(field % slab)
          call read_next_met_field(field, istatus)
       end do
+      201 format(i9,4(1x,e15.8))
 
       call read_met_close()
 
@@ -3883,24 +4378,24 @@ write(0,*) 'Interpolating SKINTEMP'
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !MGD CHECK
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-do iCell=1,nCells
-   if (landmask(iCell) == 1) then
+!do iCell=1,nCells
+!   if (landmask(iCell) == 1) then
 
-      do k = 1, config_nfgsoillevels
-         if (st_fg(k,iCell) <= 0.0) write(0,*) 'Bad st_fg ', k, iCell
-      end do
+!      do k = 1, config_nfgsoillevels
+!         if (st_fg(k,iCell) <= 0.0) write(0,*) 'Bad st_fg ', k, iCell
+!      end do
+!
+!      do k = 1, config_nfgsoillevels
+!         if (sm_fg(k,iCell) <= 0.0) then
+!            write(0,*) 'Bad sm_fg ', sm_fg(k,iCell), k, iCell
+!            sm_fg(k,iCell) = 0.001
+!         end if
+!      end do
+!     !LDF end.
 
-      do k = 1, config_nfgsoillevels
-         if (sm_fg(k,iCell) <= 0.0) then
-            write(0,*) 'Bad sm_fg ', sm_fg(k,iCell), k, iCell
-            sm_fg(k,iCell) = 0.001
-         end if
-      end do
-      !LDF end.
-
-   end if
-end do
-write(0,*) 'Done with soil consistency check'
+!  end if
+!end do
+!write(0,*) 'Done with soil consistency check'
 
 
       !
@@ -4016,6 +4511,7 @@ write(0,*) 'PROCESSING SEAICE'
          end do
       end do
 
+
       !  
       ! Vertically interpolate meteorological data
       !  
@@ -4027,16 +4523,17 @@ write(0,*) 'PROCESSING SEAICE'
          sorted_arr(:,:) = -999.0
          do k=1,nfglevels_actual
             sorted_arr(1,k) = z_fg(k,iCell)
-!NOSFC            if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
+!NOSFC      if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
             if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
             sorted_arr(2,k) = t_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
          do k=1,nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-!           t(k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1)
-            t(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            t(k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1)
+!           t(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                           sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            temperature(k,iCell) = t(k,iCell)
          end do
 
 
@@ -4044,34 +4541,76 @@ write(0,*) 'PROCESSING SEAICE'
          sorted_arr(:,:) = -999.0
          do k=1,nfglevels_actual
             sorted_arr(1,k) = z_fg(k,iCell)
-!NOSFC            if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
+!NOSFC      if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
             if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
             sorted_arr(2,k) = rh_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
-         do k=nVertLevels,1,-1
+         do k=1,nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=0)
-            scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                                       sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
-            if (target_z < z_fg(1,iCell)) scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell) 
+            scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, &
+                                           sorted_arr, order=1, extrap=0)
+!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                                          sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            if (target_z < z_fg(1,iCell)) &
+                scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
             relhum(k,iCell) = scalars(index_qv,k,iCell)
          end do
 
+
+         ! SPECHUM
+         sorted_arr(:,:) = -999.0
+         do k=1,nfglevels_actual
+            sorted_arr(1,k) = z_fg(k,iCell)
+            if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
+            sorted_arr(2,k) = sh_fg(k,iCell)
+         end do
+         call mpas_quicksort(nfglevels_actual, sorted_arr)
+         do k=1,nVertLevels
+            target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
+            scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, &
+                                           sorted_arr(:,1:nfglevels_actual), order=1, extrap=1)
+!           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                                       sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            if (target_z < z_fg(1,iCell) ) &
+                scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
+            spechum(k,iCell) = scalars(index_qv,k,iCell)
+         end do
+
+
+         ! OZONE
+         sorted_arr(:,:) = -999.0
+         do k=1,nfglevels_actual
+            sorted_arr(1,k) = z_fg(k,iCell)
+            if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
+            sorted_arr(2,k) = o3_fg(k,iCell)
+         end do
+         call mpas_quicksort(nfglevels_actual, sorted_arr)
+         do k=1,nVertLevels
+            target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
+            o3mmr(k,iCell) = vertical_interp(target_z,nfglevels_actual, &
+                             sorted_arr(:,1:nfglevels_actual),order=1,extrap=1)
+!           o3mmr(k,iCell) = vertical_interp(target_z,nfglevels_actual-1, &
+!                               sorted_arr(:,1:nfglevels_actual-1),order=1,extrap=1)
+            if (target_z < z_fg(1,iCell)) &
+                o3mmr(k,iCell) = o3mmr(k+1,iCell)
+         end do
 
          ! GHT
          sorted_arr(:,:) = -999.0
          do k=1,nfglevels_actual
             sorted_arr(1,k) = z_fg(k,iCell)
-!NOSFC            if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
+!NOSFC      if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
             if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
             sorted_arr(2,k) = z_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
          do k=1,nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-!           gfs_z(k,iCell) = vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1)
-            gfs_z(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
+            gfs_z(k,iCell) = vertical_interp(target_z, nfglevels_actual, &
+                                sorted_arr, order=1, extrap=1)
+!           gfs_z(k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+!                               sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
          end do
 
 
@@ -4089,9 +4628,10 @@ write(0,*) 'PROCESSING SEAICE'
          call mpas_quicksort(nfglevels_actual, sorted_arr)
          do k=1,nVertLevels
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-!           pressure(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1))
-            pressure(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual-1, &
-                                         sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1))
+            pressure(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual, &
+                                       sorted_arr, order=1, extrap=1))
+!           pressure(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual-1, &
+!                                      sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1))
          end do
 
 
@@ -4111,8 +4651,8 @@ write(0,*) 'PROCESSING SEAICE'
 !            target_z = zgrid(k,iCell)
 !            gfs_p(k,iCell) = exp(vertical_interp(target_z, nfglevels_actual, sorted_arr, order=1, extrap=1))
 !         end do
-
-      end do
+ 
+     end do
 
 
       do iEdge=1,nEdges
@@ -4188,7 +4728,10 @@ write(0,*) 'PROCESSING SEAICE'
             es = 6.112 * exp((17.27*(t(k,iCell) - 273.16))/(t(k,iCell) - 35.86))
             es = min(es,0.99*0.01*pressure(k,iCell))             ! WCS 20141003, from LF; temporary fix 
             rs = 0.622 * es * 100. / (pressure(k,iCell) - es * 100.)
-            scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
+            !scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
+
+            ! QV computed from specific humidity
+            scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell) / ( 1. - scalars(index_qv,k,iCell) )
 
             ! PI
             p(k,iCell) = (pressure(k,iCell) / p0) ** (rgas / cp)
@@ -4454,6 +4997,7 @@ write(0,*) 'PROCESSING SEAICE'
          sealevel = 201300.0
       end if
 
+
       !
       ! Extrapolation required
       !
@@ -4491,6 +5035,7 @@ write(0,*) 'PROCESSING SEAICE'
       end do
 
       vertical_interp = wm*zf(2,lm) + wp*zf(2,lp)
+
 
       return
 

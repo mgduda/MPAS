@@ -66,6 +66,7 @@
                 <nml_option name="config_smooth_surfaces"       type="logical"       default_value="true"/>
                 <nml_option name="config_dzmin"                 type="real"          default_value="0.3"/>
                 <nml_option name="config_nsm"                   type="integer"       default_value="30"/>
+                <nml_option name="config_tc_vertical_grid"      type="logical"       default_value="false"/>
         </nml_record>
 
         <nml_record name="preproc_stages" in_defaults="true">
@@ -280,21 +281,6 @@
                         <var name="ol2"/>
                         <var name="ol3"/>
                         <var name="ol4"/>
-                        <var name="facsf"/>
-                        <var name="facwf"/>
-                        <var name="alnsf4s"/>
-                        <var name="alnwf4s"/>
-                        <var name="alvsf4s"/>
-                        <var name="alvwf4s"/>
-                        <var name="slope"/>
-                        <var name="zorl12m"/>
-                        <var name="orogwd"/>
-                        <var name="alnsf"/>
-                        <var name="alnwf"/>
-                        <var name="alvsf"/>
-                        <var name="alvwf"/>
-                        <var name="zorl"/>
-                        <var name="initial_date"/>
                         <var name="deriv_two"/>
                         <var name="advCells"/>
                         <var name="defc_a"/>
@@ -366,6 +352,38 @@
                         <var name="theta_base" packages="met_stage_out"/>
                         <var name="surface_pressure" packages="met_stage_out"/>
                         <var name="precipw" packages="met_stage_out"/>
+                        <var name="sh_fg" packages="met_stage_out"/>
+                        <var name="o3_fg" packages="met_stage_out"/>
+                        <var name="sl_fg" packages="met_stage_out"/>
+                        <var name="spechum" packages="met_stage_out"/>
+                        <var name="o3mmr" packages="met_stage_out"/>
+                        <var name="temperature" packages="met_stage_out"/>
+                        <var name="vgtype" packages="met_stage_out"/>
+                        <var name="sltype" packages="met_stage_out"/>
+                        <var name="canopy" packages="met_stage_out"/>
+                        <var name="f10m" packages="met_stage_out"/>
+                        <var name="ffmm" packages="met_stage_out"/>
+                        <var name="ffhh" packages="met_stage_out"/>
+                        <var name="q2m" packages="met_stage_out"/>
+                        <var name="t2m" packages="met_stage_out"/>
+                        <var name="uustar" packages="met_stage_out"/>
+                        <var name="hice" packages="met_stage_out"/>
+                        <var name="tisfc" packages="met_stage_out"/>
+                        <var name="facsf"/>
+                        <var name="facwf"/>
+                        <var name="alnsf4s"/>
+                        <var name="alnwf4s"/>
+                        <var name="alvsf4s"/>
+                        <var name="alvwf4s"/>
+                        <var name="slope"/>
+                        <var name="zorl12m"/>
+                        <var name="orogwd"/>
+                        <var name="alnsf"/>
+                        <var name="alnwf"/>
+                        <var name="alvsf"/>
+                        <var name="alvwf"/>
+                        <var name="zorl"/>
+                        <var name="initial_date"/>
 		</stream>
 
 		<stream name="surface" 
@@ -431,28 +449,26 @@
                 <var name="fVertex"                      type="real"     dimensions="nVertices"/>
                 <var name="meshDensity"                  type="real"     dimensions="nCells"/>
 
-                <var name="initial_date"                 type="text"     dimensions=""/>
-
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1"                          type="real"     dimensions=""/>
                 <var name="cf2"                          type="real"     dimensions=""/>
                 <var name="cf3"                          type="real"     dimensions=""/>
 
-                <!-- static terrestrial fields needed for the WRF and GFS physics -->
+                <!-- static terrestrial fields -->
                 <var name="ter"                                  type="real"     dimensions="nCells"/>
                 <var name="landmask"                             type="integer"  dimensions="nCells"/>
                 <var name="ivgtyp"   name_in_code="lu_index"     type="integer"  dimensions="nCells"/>
+                <var name="mminlu"                               type="text"     dimensions=""/>
                 <var name="isltyp"   name_in_code="soilcat_top"  type="integer"  dimensions="nCells"/>
                 <var name="soilcat_bot"                          type="integer"  dimensions="nCells"/>
                 <var name="snoalb"                               type="real"     dimensions="nCells"/>
                 <var name="soiltemp"                             type="real"     dimensions="nCells"/>
+                <var name="greenfrac"                            type="real"     dimensions="nMonths nCells"/>
                 <var name="shdmin"                               type="real"     dimensions="nCells"/>
                 <var name="shdmax"                               type="real"     dimensions="nCells"/>
-                <var name="greenfrac"                            type="real"     dimensions="nMonths nCells"/>
-
-                <!-- static terrestrial fields only needed for the WRF physics -->
-                <var name="mminlu"                               type="text"     dimensions=""/>
                 <var name="albedo12m"                            type="real"     dimensions="nMonths nCells"/>
+
+                <!-- GWDO fields -->
                 <var name="varsso"                               type="real"     dimensions="nCells"/>
                 <var name="var2d"                                type="real"     dimensions="nCells"/>
                 <var name="con"                                  type="real"     dimensions="nCells"/>
@@ -465,9 +481,12 @@
                 <var name="ol3"                                  type="real"     dimensions="nCells"/>
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
 
-                <!-- static terrrestrial fields only needed for the GFS physics -->
+                <!-- static terrrestrial fields only needed to run the GFS physics (NGGPS project) -->
+                <var name="initial_date"                         type="text"     dimensions=""/>
                 <var name="facsf"                                type="real"     dimensions="nCells"/>
                 <var name="facwf"                                type="real"     dimensions="nCells"/>
+                <var name="vgtype"                               type="real"     dimensions="nCells"/>
+                <var name="sltype"                               type="real"     dimensions="nCells"/>
                 <var name="alnsf4s"                              type="real"     dimensions="nSeasons nCells"/>
                 <var name="alnwf4s"                              type="real"     dimensions="nSeasons nCells"/>
                 <var name="alvsf4s"                              type="real"     dimensions="nSeasons nCells"/>
@@ -561,12 +580,28 @@
                 <var name="sfc_albbck"                        type="real"     dimensions="nCells Time"/>
                 <var name="xland"                             type="real"     dimensions="nCells Time"/>
 
-                <!-- horizontally interpolated from first-guess data, only needed for the GFS physics, and should be read in by model -->
+                <!-- horizontally interpolated from first-guess data, and should be read in by model  (GFS physics only): -->
                 <var name="alnsf"                             type="real"     dimensions="nCells Time"/>
                 <var name="alnwf"                             type="real"     dimensions="nCells Time"/>
                 <var name="alvsf"                             type="real"     dimensions="nCells Time"/>
                 <var name="alvwf"                             type="real"     dimensions="nCells Time"/>
                 <var name="zorl"                              type="real"     dimensions="nCells Time"/>
+
+                <!-- added horizontally interpolated from first-guess data from intermediate surface file, and -->
+                <!-- only needed to run the GFS physics (NGGPS project) -->
+                <var name="sh_fg"      name_in_code="sh"      type="real"     dimensions="nFGLevels nCells Time"/>
+                <var name="o3_fg"      name_in_code="o3"      type="real"     dimensions="nFGLevels nCells Time"/>
+                <var name="sl_fg"                             type="real"     dimensions="nFGSoilLevels nCells Time"/>
+                <var name="canopy"                            type="real"     dimensions="nCells Time"/>
+                <var name="f10m"                              type="real"     dimensions="nCells Time"/>
+                <var name="ffmm"                              type="real"     dimensions="nCells Time"/>
+                <var name="ffhh"                              type="real"     dimensions="nCells Time"/>
+                <var name="q2m"                               type="real"     dimensions="nCells Time"/>
+                <var name="t2m"                               type="real"     dimensions="nCells Time"/>
+                <var name="uustar"                            type="real"     dimensions="nCells Time"/>
+                <var name="hice"                              type="real"     dimensions="nCells Time"/>
+                <var name="tisfc"                             type="real"     dimensions="nCells Time"/>
+
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
@@ -589,6 +624,11 @@
                 <var name="theta_base"                        type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="cqw"                               type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="surface_pressure"                  type="real"     dimensions="nCells Time"/>
+
+                <!-- added horizontally interpolated diagnostics fields and used with the GFS physics (NGGPS project) -->
+                <var name="spechum"                           type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="o3mmr"                             type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="temperature"                       type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- coupled variables needed by the solver, but not output -->
                 <var name="ru"                                type="real"     dimensions="nVertLevels nEdges Time"/>
