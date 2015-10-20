@@ -39,6 +39,12 @@ ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
 physcore:
 	( cd physics_nggps; $(MAKE) all )
 	( mkdir libphys; cd libphys; ar -x ../physics_nggps/libphys.a )
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/*.f77 .)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/global_climaeropac_global.txt aerosol.dat)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/global_solarconstant_noaa_an.txt solarconstant_noaa_an.txt)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2013.txt co2historicaldata_2013.txt)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2014.txt co2historicaldata_2014.txt)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2015.txt co2historicaldata_2015.txt)
 endif
 endif
 
@@ -83,6 +89,7 @@ clean:
 	( cd dynamics; $(MAKE) clean )
 	( cd ../..; rm -f *.f77 )
 	( cd ../..; rm -f *.dat )
+	( cd ../..; rm -f *.txt )
 	$(RM) -r libphys
 	$(RM) *.o *.mod *.f90 libdycore.a
 
