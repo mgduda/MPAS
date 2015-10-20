@@ -179,12 +179,46 @@
 			<var name="rho_base"/>
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
-			<var name="initial_date"/>
-			<var name="landmask"/>
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
+			<var name="mminlu"/>
+			<var name="landmask"/>
+			<var name="shdmin"/>
+			<var name="shdmax"/>
+			<var name="snoalb"/>
 			<var name="ter"/>
+			<var name="albedo12m"/>
+			<var name="greenfrac"/>
+			<var name="sfc_albbck"/>
+			<var name="skintemp"/>
+			<var name="snow"/>
+			<var name="snowc"/>
+			<var name="snowh"/>
+			<var name="sst"/>
+			<var name="tmn"/>
+			<var name="vegfra"/>
+			<var name="seaice"/>
+			<var name="xice"/>
+			<var name="xland"/>
+			<var name="dzs"/>
+			<var name="sh2o"/>
+			<var name="smois"/>
+			<var name="tslb"/>
+			<var name="var2d"/>
+			<var name="con"/>
+			<var name="oa1"/>
+			<var name="oa2"/>
+			<var name="oa3"/>
+			<var name="oa4"/>
+			<var name="ol1"/>
+			<var name="ol2"/>
+			<var name="ol3"/>
+			<var name="ol4"/>
+			<var name="initial_date"/>
+			<var name="sltype"/>
+			<var name="vgtype"/>
 			<var name="orogwd"/>
+			<var name="slope"/>
 			<var name="alnsf4s"/>
 			<var name="alnwf4s"/>
 			<var name="alvsf4s"/>
@@ -195,17 +229,17 @@
 			<var name="alvwf"/>
 			<var name="facsf"/>
 			<var name="facwf"/>
-			<var name="greenfrac"/>
-			<var name="vegfra"/>
 			<var name="zorl12m"/>
 			<var name="zorl"/>
-			<var name="snoalb"/>
-			<var name="snow"/>
-			<var name="snowc"/>
-			<var name="snowh"/>
-			<var name="xice"/>
-			<var name="skintemp"/>
-			<var name="sst"/>
+			<var name="canopy"/>
+			<var name="f10m"/>
+			<var name="ffhh"/>
+			<var name="ffmm"/>
+			<var name="uustar"/>
+			<var name="hice"/>
+			<var name="tisfc"/>
+			<var name="q2m"/>
+			<var name="t2m"/>
 		</stream>
 
 		<stream name="restart" 
@@ -412,6 +446,9 @@
                         input_interval="none"
                         filename_interval="none"
                         runtime_format="separate_file">
+
+			<var name="sst"/>
+			<var name="xice"/>
 		</stream>
 	</streams>
 
@@ -516,6 +553,8 @@
                 <var name="east"                      type="real"     dimensions="R3 nCells"/>
                 <var name="north"                     type="real"     dimensions="R3 nCells"/>
 
+                <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
+                <var name="m_hybi"                    type="real"     dimensions="nAerLevels nCells"/>
         </var_struct>
 
         <var_struct name="state" time_levs="2">
@@ -538,6 +577,20 @@
                         <var name="qo3"     array_group="ozone"/>
                 </var_array>
 
+                <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
+                        <var name="sul"     array_group="aer_cam"/>
+                        <var name="sslt"    array_group="aer_cam"/>
+                        <var name="dust1"   array_group="aer_cam"/>
+                        <var name="dust2"   array_group="aer_cam"/>
+                        <var name="dust3"   array_group="aer_cam"/>
+                        <var name="dust4"   array_group="aer_cam"/>
+                        <var name="ocpho"   array_group="aer_cam"/>
+                        <var name="bcpho"   array_group="aer_cam"/>
+                        <var name="ocphi"   array_group="aer_cam"/>
+                        <var name="bcphi"   array_group="aer_cam"/>
+                        <var name="bg"      array_group="aer_cam"/>
+                        <var name="volc"    array_group="aer_cam"/>
+                </var_array>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
@@ -656,7 +709,6 @@
         </var_struct>
 
         <var_struct name="tend" time_levs="1">
-
                 
                 <!-- tendencies for prognostic variables -->
                 <var name="tend_u"             name_in_code="u"           type="real"     dimensions="nVertLevels nEdges Time"/>
@@ -681,8 +733,56 @@
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
                         <var name="tend_qo3"   name_in_code="qp3"       array_group="ozone"/>
                 </var_array>
+
         </var_struct>
 
+        <var_struct name="sfc_input" time_levs="1">
+
+                <!-- ================================================================================================== -->
+                <!-- ... SURFACE CHARACTERISTICS THAT NEED TO BE READ FROM GRID.NC:                                     -->
+                <!-- ================================================================================================== -->
+
+                <!--  albedo12m      :monthly climatological albedo                                                 [-] -->
+                <!--  mminlu         :land use classification scheme                                                [-] -->
+                <!--  sfc_albbck     :background albedo                                                             [-] -->
+                <!--  seaice         :sea-ice mask (=1 when xice is greater than 0; =0 otherwise)                   [-] -->
+                <!--  xland          :land mask    (1 for land; 2 for water)                                        [-] -->
+                <!--  dzs            :thickness of soil layers                                                      [m] -->
+
+                <var name="mminlu"      type="text"     dimensions=""/>
+                <var name="albedo12m"   type="real"     dimensions="nMonths nCells"/>
+                <var name="dzs"         type="real"     dimensions="nSoilLevels nCells"/> 
+                <var name="sfc_albbck"  type="real"     dimensions="nCells Time"/>
+                <var name="seaice"      type="real"     dimensions="nCells Time"/>
+                <var name="xland"       type="real"     dimensions="nCells Time"/>
+
+                <!-- ================================================================================================== -->
+                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
+                <!-- ================================================================================================== -->
+
+                <!--  var2d      : orographic variance                                                             (m2) -->
+                <!--  con        : orographic convexity                                                            (m2) -->
+                <!--  oa1        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa2        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa3        : orographic direction asymmetry function                                          (-) -->
+                <!--  oa4        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol1        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol2        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol3        : orographic direction asymmetry function                                          (-) -->
+                <!--  ol4        : orographic direction asymmetry function                                          (-) -->
+
+                <var name="var2d"       type="real"     dimensions="nCells"/>
+                <var name="con"         type="real"     dimensions="nCells"/>
+                <var name="oa1"         type="real"     dimensions="nCells"/>
+                <var name="oa2"         type="real"     dimensions="nCells"/>
+                <var name="oa3"         type="real"     dimensions="nCells"/>
+                <var name="oa4"         type="real"     dimensions="nCells"/>
+                <var name="ol1"         type="real"     dimensions="nCells"/>
+                <var name="ol2"         type="real"     dimensions="nCells"/>
+                <var name="ol3"         type="real"     dimensions="nCells"/>
+                <var name="ol4"         type="real"     dimensions="nCells"/>
+
+        </var_struct>
 
 
 <!-- ================================================================================================== -->
