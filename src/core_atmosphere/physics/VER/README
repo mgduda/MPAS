@@ -1,0 +1,12 @@
+version 0 - original version of code
+
+version 1 - collection of radiation routines into loop using dynamic
+scheduling and collection of loops at end of routine that can be
+collected without affecting memory footprint. Roughly 10% reduction in
+physics wall time
+
+version 2 - collection of radiation routines into loop using dynamic
+scheduling and collapase of all following loops into a single
+loop. Higher memory footprint since all temporary arrays will be
+allocated at the same time. Make negligible, at best change in run
+time (possibley 0.1 to 0.2 seconds out of ~37)

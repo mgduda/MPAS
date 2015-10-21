@@ -129,10 +129,8 @@
  integer:: time_lev
  integer:: thread
 
- double precision omp_get_wtime
- double precision wtime_start, wtime_end, wtime_diff
- double precision :: tarr(128), tmin, tmax
- integer threadid, omp_get_thread_num, i
+ integer i, ub, lincr
+
 
 !==================================================================================================
 
@@ -157,8 +155,6 @@
 
  block => domain % blocklist
  do while(associated(block))
-
-    !threadid = omp_get_thread_num()
 
     call mpas_pool_get_subpool(block%structs,'mesh'        ,mesh        )
     call mpas_pool_get_subpool(block%structs,'state'       ,state       )
@@ -193,10 +189,7 @@
 !$OMP END PARALLEL DO
     endif
 
-
-! ------------------------------------------------------------------------------
-! ------ NOTE - this is the only modification that seems to actually help ------
-    !call to short/long wave radiation scheme:
+    ! allocate arrays for radiation calculations
     if(l_radtsw) then
        time_lev = 1
        call allocate_radiation_sw(xtime_s)
@@ -206,18 +199,22 @@
        call allocate_radiation_lw(xtime_s)
     endif
     
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1)
-    do i=1,block % cellSolveThreadEnd(block%nThreads)
+    !call to short/long wavelength radiation scheme and radiation diagnoistics:
+    lincr = 5
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ub)
+    do i=1,block % cellSolveThreadEnd(block%nThreads), lincr
+       ! upper bound (ub) set to avoid out of bounds array access
+       ub = min(i+lincr-1, block % cellSolveThreadEnd(block%nThreads))
        if(l_radtsw) then
           call driver_radiation_sw(itimestep,block%configs,mesh,state,time_lev,diag_physics, &
-               atm_input,sfc_input,tend_physics,xtime_s, i, i)
+               atm_input,sfc_input,tend_physics,xtime_s, i, ub)
        endif
        if(l_radtlw) then
           call driver_radiation_lw(xtime_s,block%configs,mesh,state,time_lev,diag_physics, &
-               atm_input,sfc_input,tend_physics, i, i)
+               atm_input,sfc_input,tend_physics, i, ub)
        endif
        if(config_bucket_update /= 'none' .and. config_bucket_radt .gt. 0._RKIND) then
-          call update_radiation_diagnostics(block%configs,mesh,diag_physics, i, i)
+          call update_radiation_diagnostics(block%configs,mesh,diag_physics, i, ub)
        endif
     end do
 !$OMP END PARALLEL DO
@@ -227,8 +224,6 @@
        call deallocate_cloudiness
     if(config_radt_sw_scheme.ne.'off') call deallocate_radiation_sw
     if(config_radt_lw_scheme.ne.'off') call deallocate_radiation_lw
-! ------------------------------------------------------------------------------
-
 
     !call to surface-layer scheme:
     if(config_sfclayer_scheme .ne. 'off') then
@@ -278,13 +273,12 @@
        call deallocate_gwdo
     endif
 
-! ------------------------------------------------------------------------------
-! ------ NOTE - in theory this should help, but may be too small to measure ----
-    !call to convection scheme:
+    !allocate arrays for convection
     if(l_conv) then
        call allocate_convection
     endif
 
+    !call to convection scheme:
 !$OMP PARALLEL DO
     do thread=1,block % nThreads
        call update_convection_step1(mesh,diag_physics,tend_physics, &
@@ -298,10 +292,11 @@
     enddo
 !$OMP END PARALLEL DO
 
+    !deallocate arrays for convection
     if(l_conv) then
        call deallocate_convection
     endif
-! ------------------------------------------------------------------------------
+
 
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics
