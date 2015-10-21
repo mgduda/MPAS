@@ -1,1 +1,6 @@
 *.f90
+LOOP_NW_version
+LOOP_version
+NOLOOP_NW_version
+NOLOOP_version
+WRK
