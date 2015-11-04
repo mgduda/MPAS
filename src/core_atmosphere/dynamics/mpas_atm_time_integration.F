@@ -176,7 +176,8 @@ module atm_time_integration
       real (kind=RKIND), pointer :: config_dt
       character (len=StrKIND), pointer :: config_microp_scheme
 
-      integer, pointer :: num_scalars, index_qv, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertices, nVerticesSolve, nVertLevels
+      integer, pointer :: nCells, nCellsSolve, nEdges, nEdgesSolve, nVertices, nVerticesSolve, nVertLevels
+      integer :: num_scalars, index_qv
 
       type (mpas_pool_type), pointer :: state
       type (mpas_pool_type), pointer :: diag
@@ -591,7 +592,7 @@ module atm_time_integration
                   call mpas_pool_get_dimension(mesh, 'nCells', nCells)
                   call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
                   call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-                  call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+                  num_scalars = 6
 
                   allocate(scalar_old(nVertLevels,nCells+1))
                   allocate(scalar_new(nVertLevels,nCells+1))
@@ -612,7 +613,6 @@ module atm_time_integration
                   !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                   !       so we use the advance_scalars routine for the first two RK substeps.
                   !
-                  call scalars_to_temp( tend, state )
 !$OMP PARALLEL DO
                   do thread=1,block % nThreads
                      if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
@@ -638,7 +638,6 @@ module atm_time_integration
                      end if
                   end do
 !$OMP END PARALLEL DO
-                  call scalars_from_temp( tend, state )
 
                   deallocate(scalar_old)
                   deallocate(scalar_new)
@@ -786,7 +785,7 @@ module atm_time_integration
                call mpas_pool_get_dimension(mesh, 'nCells', nCells)
                call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
                call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-               call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+               num_scalars = 6
 
                allocate(scalar_old(nVertLevels,nCells+1))
                allocate(scalar_new(nVertLevels,nCells+1))
@@ -796,7 +795,7 @@ module atm_time_integration
                allocate(flux_arr(nVertLevels,nEdges+1))
                allocate(wdtn(nVertLevels+1,nCells+1))
                allocate(rho_zz_int(nVertLevels,nCells+1))
-               allocate(scalar_tend(num_scalars,nVertLevels,nCells+1))
+               allocate(scalar_tend(nVertLevels,num_scalars,nCells+1))
                if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
                   allocate(horiz_flux_arr(num_scalars,nVertLevels,nEdges+1))
                else
@@ -809,7 +808,6 @@ module atm_time_integration
                !       the functionality of the advance_scalars routine; however, it is noticeably slower, 
                !       so we use the advance_scalars routine for the first two RK substeps.
                !
-               call scalars_to_temp( tend, state )
 !$OMP PARALLEL DO
                do thread=1,block % nThreads
                   if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
@@ -835,7 +833,6 @@ module atm_time_integration
                   end if
                end do
 !$OMP END PARALLEL DO
-               call scalars_from_temp( tend, state )
 
                deallocate(scalar_old)
                deallocate(scalar_new)
@@ -914,14 +911,14 @@ module atm_time_integration
          call mpas_pool_get_subpool(block % structs, 'tend', tend)
          call mpas_pool_get_array(state, 'scalars', scalars_1, 1)
          call mpas_pool_get_array(state, 'scalars', scalars_2, 2)
-         call mpas_pool_get_dimension(state, 'index_qv', index_qv)
          call mpas_pool_get_array(tend_physics, 'rqvdynten', rqvdynten)
+         index_qv = 1
 
          !NOTE: The calculation of the tendency due to horizontal and vertical advection for the water vapor mixing ratio
          !requires that the subroutine atm_advance_scalars_mono was called on the third Runge Kutta step, so that a halo
          !update for the scalars at time_levs(1) is applied. A halo update for the scalars at time_levs(2) is done above. 
          if (config_monotonic) then
-            rqvdynten(:,:) = ( scalars_2(index_qv,:,:) - scalars_1(index_qv,:,:) ) / config_dt
+            rqvdynten(:,:) = ( scalars_2(:,index_qv,:) - scalars_1(:,index_qv,:) ) / config_dt
          else
             rqvdynten(:,:) = 0._RKIND
          end if
@@ -996,15 +993,15 @@ module atm_time_integration
             call mpas_pool_get_array(state, 'scalars', scalars, 2)
             call mpas_pool_get_dimension(state, 'nCellsSolve', nCellsSolve)
             call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
-            call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+            num_scalars = 6
 
             do iScalar = 1, num_scalars
                scalar_min = 0.0
                scalar_max = 0.0
                do iCell = 1, nCellsSolve
                do k = 1, nVertLevels
-                  scalar_min = min(scalar_min, scalars(iScalar,k,iCell))
-                  scalar_max = max(scalar_max, scalars(iScalar,k,iCell))
+                  scalar_min = min(scalar_min, scalars(k,iScalar,iCell))
+                  scalar_max = max(scalar_max, scalars(k,iScalar,iCell))
                end do
                end do
                call mpas_dmpar_min_real(domain % dminfo, scalar_min, global_scalar_min)
@@ -1102,7 +1099,7 @@ module atm_time_integration
       integer, pointer :: nCells, nEdges, nVertLevels, nCellsSolve
       real (kind=RKIND) :: qtotal
       integer, dimension(:,:), pointer :: cellsOnEdge
-      integer, pointer :: moist_start, moist_end
+      integer :: moist_start, moist_end
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
       real (kind=RKIND), dimension(:,:), pointer :: cqw
       real (kind=RKIND), dimension(:,:), pointer :: cqu
@@ -1111,8 +1108,8 @@ module atm_time_integration
       call mpas_pool_get_dimension(dims, 'nEdges', nEdges)
       call mpas_pool_get_dimension(dims, 'nVertLevels', nVertLevels)
       call mpas_pool_get_dimension(dims, 'nCellsSolve', nCellsSolve)
-      call mpas_pool_get_dimension(state, 'moist_start', moist_start)
-      call mpas_pool_get_dimension(state, 'moist_end', moist_end)
+      moist_start = 1
+      moist_end = 6
 
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(state, 'scalars', scalars, 2)
@@ -1124,7 +1121,7 @@ module atm_time_integration
          qtot(1:nVertLevels,iCell) = 0.0
          do k = 1,nVertLevels
             do iq = moist_start, moist_end
-               qtot(k,iCell) = qtot(k,iCell) + scalars(iq, k, iCell)
+               qtot(k,iCell) = qtot(k,iCell) + scalars(k, iq, iCell)
             end do
          end do
       end do    
@@ -1134,7 +1131,7 @@ module atm_time_integration
          do k = 2, nVertLevels
             qtotal = 0.0
             do iq = moist_start, moist_end
-               qtotal = qtotal + 0.5 * (scalars(iq, k, iCell) + scalars(iq, k-1, iCell))
+               qtotal = qtotal + 0.5 * (scalars(k, iq, iCell) + scalars(k-1, iq, iCell))
             end do
             qtotal = 0.5*(qtot(k,iCell)+qtot(k-1,iCell))
             cqw(k,iCell) = 1.0 / (1.0 + qtotal)
@@ -1150,7 +1147,7 @@ module atm_time_integration
             do k = 1, nVertLevels
                qtotal = 0.0
                do iq = moist_start, moist_end
-                  qtotal = qtotal + 0.5 * ( scalars(iq, k, cell1) + scalars(iq, k, cell2) )
+                  qtotal = qtotal + 0.5 * ( scalars(k, iq, cell1) + scalars(k, iq, cell2) )
                end do
                cqu(k,iEdge) = 1.0 / (1.0 + qtotal)
             end do
@@ -1195,7 +1192,7 @@ module atm_time_integration
       real (kind=RKIND), pointer :: epssm
       real (kind=RKIND) :: dtseps, c2, qtotal, rcv
 
-      integer, pointer :: moist_start, moist_end
+      integer :: moist_start, moist_end
 
 
       call mpas_pool_get_config(configs, 'config_epssm', epssm)
@@ -1224,8 +1221,8 @@ module atm_time_integration
 
       call mpas_pool_get_array(state, 'theta_m', t, 2)
       call mpas_pool_get_array(state, 'scalars', scalars, 2)
-      call mpas_pool_get_dimension(state, 'moist_start', moist_start)
-      call mpas_pool_get_dimension(state, 'moist_end', moist_end)
+      moist_start = 1
+      moist_end = 6
 
 
       !  set coefficients
@@ -2095,7 +2092,7 @@ module atm_time_integration
             do k=1,nVertLevels
                scalar_weight = adv_coefs(j,iEdge) + sign(coef_3rd_order,uhAvg(k,iEdge))*adv_coefs_3rd(j,iEdge)   ! Assume coef_3rd_order always >= 0
                do iScalar=1,num_scalars
-                  horiz_flux_arr(iScalar,k,iEdge) = horiz_flux_arr(iScalar,k,iEdge) + scalar_weight * scalar_new(iScalar,k,iAdvCell)
+                  horiz_flux_arr(iScalar,k,iEdge) = horiz_flux_arr(iScalar,k,iEdge) + scalar_weight * scalar_new(k,iScalar,iAdvCell)
                end do
             end do
          end do
@@ -2121,7 +2118,7 @@ module atm_time_integration
                do k=1,nVertLevels
                   rho_zz_int(k,iCell) = rho_zz_int(k,iCell) - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*dvEdge(iEdge)/areaCell(iCell)
                   do iScalar=1,num_scalars
-                        scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) &
+                        scalar_tend(k,iScalar,iCell) = scalar_tend(k,iScalar,iCell) &
                                - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*horiz_flux_arr(iScalar,k,iEdge)/areaCell(iCell)
                   end do
                end do
@@ -2150,7 +2147,7 @@ module atm_time_integration
                ! note that the scalar tendency is modified.
                do k=1,nVertLevels
                   do iScalar=1,num_scalars
-                        scalar_tend(iScalar,k,iCell) = scalar_tend(iScalar,k,iCell) &
+                        scalar_tend(k,iScalar,iCell) = scalar_tend(k,iScalar,iCell) &
                                - edgesOnCell_sign(i,iCell) * uhAvg(k,iEdge)*horiz_flux_arr(iScalar,k,iEdge)/areaCell(iCell)
                   end do
                end do
@@ -2173,26 +2170,26 @@ module atm_time_integration
 
          k = 2
          do iScalar=1,num_scalars
-            wdtn(iScalar,k) = wwAvg(k,iCell)*(fnm(k)*scalar_new(iScalar,k,iCell)+fnp(k)*scalar_new(iScalar,k-1,iCell))
+            wdtn(iScalar,k) = wwAvg(k,iCell)*(fnm(k)*scalar_new(k,iScalar,iCell)+fnp(k)*scalar_new(k-1,iScalar,iCell))
          end do
           
          do k=3,nVertLevels-1
             do iScalar=1,num_scalars
-               wdtn(iScalar,k) = flux3( scalar_new(iScalar,k-2,iCell),scalar_new(iScalar,k-1,iCell),  &
-                                        scalar_new(iScalar,k  ,iCell),scalar_new(iScalar,k+1,iCell),  &
+               wdtn(iScalar,k) = flux3( scalar_new(k-2,iScalar,iCell),scalar_new(k-1,iScalar,iCell),  &
+                                        scalar_new(k,  iScalar,iCell),scalar_new(k+1,iScalar,iCell),  &
                                         wwAvg(k,iCell), coef_3rd_order )
             end do
          end do
          k = nVertLevels
          do iScalar=1,num_scalars
-            wdtn(iScalar,k) = wwAvg(k,iCell)*(fnm(k)*scalar_new(iScalar,k,iCell)+fnp(k)*scalar_new(iScalar,k-1,iCell))
+            wdtn(iScalar,k) = wwAvg(k,iCell)*(fnm(k)*scalar_new(k,iScalar,iCell)+fnp(k)*scalar_new(k-1,iScalar,iCell))
          end do
 
          do k=1,nVertLevels
             rho_zz_new_inv = 1.0_RKIND / rho_zz_int(k,iCell)
             do iScalar=1,num_scalars
-               scalar_new(iScalar,k,iCell) = (   scalar_old(iScalar,k,iCell)*rho_zz_old(k,iCell) &
-                     + dt*( scalar_tend(iScalar,k,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) ) * rho_zz_new_inv
+               scalar_new(k,iScalar,iCell) = (   scalar_old(k,iScalar,iCell)*rho_zz_old(k,iCell) &
+                     + dt*( scalar_tend(k,iScalar,iCell) -rdnw(k)*(wdtn(iScalar,k+1)-wdtn(iScalar,k)) ) ) * rho_zz_new_inv
             end do
          end do
 
@@ -2276,7 +2273,8 @@ module atm_time_integration
 
       integer, parameter :: SCALE_IN = 1, SCALE_OUT = 2
 
-      integer, pointer :: nCellsSolve, num_scalars
+      integer, pointer :: nCellsSolve
+      integer :: num_scalars
       integer :: icellmax, kmax
 
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw, meshScalingDel2, meshScalingDel4
@@ -2309,7 +2307,7 @@ module atm_time_integration
       call mpas_pool_get_config(configs, 'config_coef_3rd_order', coef_3rd_order)
 
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
-      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+      num_scalars = 6
 
       call mpas_pool_get_array(diag, 'kdiff', kdiff)
       call mpas_pool_get_array(diag, 'ruAvg', uhAvg)
@@ -2358,8 +2356,8 @@ module atm_time_integration
 #ifndef DO_PHYSICS
          scalar_tend(:,:,iCell) = 0.0  !  testing purposes - we have no sources or sinks
 #endif
-         scalars_old(iScalar,k,iCell) = scalars_old(iScalar,k,iCell)+dt*scalar_tend(iScalar,k,iCell) / rho_zz_old(k,iCell)
-         scalar_tend(iScalar,k,iCell) = 0.0
+         scalars_old(k,iScalar,iCell) = scalars_old(k,iScalar,iCell)+dt*scalar_tend(k,iScalar,iCell) / rho_zz_old(k,iCell)
+         scalar_tend(k,iScalar,iCell) = 0.0
       end do
       end do
       end do
@@ -2408,8 +2406,8 @@ module atm_time_integration
 
          do iCell=cellStart,cellEnd
             do k=1,nVertLevels
-               scalar_old(k,iCell) = scalars_old(iScalar,k,iCell)
-               scalar_new(k,iCell) = scalars_new(iScalar,k,iCell)
+               scalar_old(k,iCell) = scalars_old(k,iScalar,iCell)
+               scalar_new(k,iCell) = scalars_new(k,iScalar,iCell)
             end do
          end do
 
@@ -2749,7 +2747,7 @@ module atm_time_integration
 
          do iCell=cellStart,cellEnd
             do k=1, nVertLevels
-               scalars_new(iScalar,k,iCell) = max(0.0_RKIND,scalar_new(k,iCell))
+               scalars_new(k,iScalar,iCell) = max(0.0_RKIND,scalar_new(k,iCell))
             end do
          end do
 
@@ -2793,7 +2791,7 @@ module atm_time_integration
       real (kind=RKIND) :: edge_sign, pr_scale, r_dc, r_dv, u_mix_scale
 
       integer, pointer :: nCells, nEdges, nVertices, nCellsSolve, nEdgesSolve, vertexDegree
-      integer, pointer :: moist_start, moist_end
+      integer :: moist_start, moist_end
       real (kind=RKIND) :: h_mom_eddy_visc4
       real (kind=RKIND) :: h_theta_eddy_visc4
       real (kind=RKIND) :: u_diffusion
@@ -2964,8 +2962,8 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nEdgesSolve', nEdgesSolve)
       call mpas_pool_get_dimension(mesh, 'vertexDegree', vertexDegree)
 
-      call mpas_pool_get_dimension(state, 'moist_start', moist_start)
-      call mpas_pool_get_dimension(state, 'moist_end', moist_end)
+      moist_start = 1
+      moist_end = 6
 
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
       call mpas_pool_get_array(mesh, 'nAdvCellsForEdge', nAdvCellsForEdge)
@@ -4028,7 +4026,7 @@ module atm_time_integration
       integer :: i, k, iCell, iEdge, cell1, cell2
       real (kind=RKIND), pointer :: coef_3rd_order
       integer, pointer :: nCells, nEdges, nVertLevels
-      integer, pointer :: index_qv
+      integer :: index_qv
       real (kind=RKIND) :: p0, rcv, flux
       integer, dimension(:), pointer :: nEdgesOnCell
       integer, dimension(:,:), pointer :: cellsOnEdge, edgesOnCell
@@ -4058,7 +4056,7 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      index_qv = 1
 
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
@@ -4098,7 +4096,7 @@ module atm_time_integration
 
       do iCell=cellStart,cellEnd
          do k=1,nVertLevels
-            theta_m(k,iCell) = theta(k,iCell) * (1._RKIND + rvord * scalars(index_qv,k,iCell))
+            theta_m(k,iCell) = theta(k,iCell) * (1._RKIND + rvord * scalars(k,index_qv,iCell))
             rho_zz(k,iCell) = rho(k,iCell) / zz(k,iCell)
          end do
       end do
@@ -4263,86 +4261,6 @@ module atm_time_integration
       end if
 
    end subroutine atm_rk_dynamics_substep_finish
-
-
-   subroutine scalars_to_temp( tend, state )
-
-      implicit none
-
-      type (mpas_pool_type), intent(in) :: tend
-      type (mpas_pool_type), intent(inout) :: state
-
-      integer, pointer :: num_scalars
-      integer, pointer :: nCells
-      integer, pointer :: nVertLevels
-
-      integer :: iCell, k, iScalar
-
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old_temp, scalar_new_temp, scalar_tend_temp
-
-write(0,*) 'Called scalars_to_temp'
-
-      call mpas_pool_get_dimension(state, 'nCells', nCells)
-      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
-      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
-
-      call mpas_pool_get_array(state, 'scalars', scalar_old, 1)
-      call mpas_pool_get_array(state, 'scalars', scalar_new, 2)
-      call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
-
-      call mpas_pool_get_array(state, 'scalars_temp', scalar_old_temp, 1)
-      call mpas_pool_get_array(state, 'scalars_temp', scalar_new_temp, 2)
-      call mpas_pool_get_array(tend, 'scalars_tend_temp', scalar_tend_temp)
-
-
-      do iScalar=1,num_scalars
-         scalar_old_temp(1:nVertLevels, iScalar, 1:nCells)  = scalar_old(iScalar, 1:nVertLevels, 1:nCells)
-         scalar_new_temp(1:nVertLevels, iScalar, 1:nCells)  = scalar_new(iScalar, 1:nVertLevels, 1:nCells)
-         scalar_tend_temp(1:nVertLevels, iScalar, 1:nCells) = scalar_tend(iScalar, 1:nVertLevels, 1:nCells)
-      end do
-
-   end subroutine scalars_to_temp
-
-
-   subroutine scalars_from_temp( tend, state )
-
-      implicit none
-
-      type (mpas_pool_type), intent(in) :: tend
-      type (mpas_pool_type), intent(inout) :: state
-
-      integer, pointer :: num_scalars
-      integer, pointer :: nCells
-      integer, pointer :: nVertLevels
-
-      integer :: iCell, k, iScalar
-
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old_temp, scalar_new_temp, scalar_tend_temp
-
-write(0,*) 'Called scalars_from_temp'
-
-      call mpas_pool_get_dimension(state, 'nCells', nCells)
-      call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
-      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
-
-      call mpas_pool_get_array(state, 'scalars', scalar_old, 1)
-      call mpas_pool_get_array(state, 'scalars', scalar_new, 2)
-      call mpas_pool_get_array(tend, 'scalars_tend', scalar_tend)
-
-      call mpas_pool_get_array(state, 'scalars_temp', scalar_old_temp, 1)
-      call mpas_pool_get_array(state, 'scalars_temp', scalar_new_temp, 2)
-      call mpas_pool_get_array(tend, 'scalars_tend_temp', scalar_tend_temp)
-
-
-      do iScalar=1,num_scalars
-         scalar_old(iScalar, 1:nVertLevels, 1:nCells)  = scalar_old_temp(1:nVertLevels, iScalar, 1:nCells)  
-         scalar_new(iScalar, 1:nVertLevels, 1:nCells)  = scalar_new_temp(1:nVertLevels, iScalar, 1:nCells)  
-         scalar_tend(iScalar, 1:nVertLevels, 1:nCells) = scalar_tend_temp(1:nVertLevels, iScalar, 1:nCells) 
-      end do
-
-   end subroutine scalars_from_temp
 
 
 end module atm_time_integration

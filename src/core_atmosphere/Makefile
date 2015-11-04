@@ -1,13 +1,13 @@
 .SUFFIXES: .F .o
 
-PHYSICS=-DDO_PHYSICS
-#PHYSICS=
+#PHYSICS=-DDO_PHYSICS
+PHYSICS=
 
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \
        mpas_atm_interp_diagnostics.o
 
-all: physcore dycore atmcore
+all: dycore atmcore
 
 core_reg:
 	$(CPP) $(CPPFLAGS) $(CPPINCLUDES) Registry.xml > Registry_processed.xml
@@ -36,8 +36,8 @@ physcore:
 dycore:
 	( cd dynamics; $(MAKE) all PHYSICS="$(PHYSICS)" )
 
-atmcore: physcore dycore $(OBJS)
-	ar -ru libdycore.a $(OBJS) dynamics/*.o libphys/*.o
+atmcore: dycore $(OBJS)
+	ar -ru libdycore.a $(OBJS) dynamics/*.o
 
 mpas_atm_core_interface.o: mpas_atm_core.o
 

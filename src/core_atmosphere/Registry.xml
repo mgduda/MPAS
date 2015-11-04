@@ -176,7 +176,7 @@
 			<var name="defc_a"/>
 			<var name="defc_b"/>
 			<var name="coeffs_reconstruct"/>
-			<var_array name="scalars"/>
+			<var name="scalars_swap"/>
 			<var name="xtime"/>
 			<var name="u"/>
 			<var name="w"/>
@@ -300,7 +300,7 @@
 			<var name="coeffs_reconstruct"/>
 			<var name="east"/>
 			<var name="north"/>
-			<var_array name="scalars"/>
+			<var name="scalars_swap"/>
 			<var name="xtime"/>
 			<var name="u"/>
 			<var name="w"/>
@@ -563,7 +563,7 @@
 			<var name="surface_pressure"/>
 			<var name="rho"/>
 			<var name="theta"/>
-			<var_array name="scalars"/>
+			<var name="scalars_swap"/>
 			<var name="relhum"/>
 			<var name="divergence"/>
 			<var name="vorticity"/>
@@ -769,15 +769,7 @@
                 <var name="rho_zz"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="theta_m"   type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="m_ps"      type="real"     dimensions="nCells Time"/>
-                <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time">
-                        <var name="qv"      array_group="moist"/>
-                        <var name="qc"      array_group="moist"/>
-                        <var name="qr"      array_group="moist"/>
-                        <var name="qi"      array_group="moist"/>
-                        <var name="qs"      array_group="moist"/>
-                        <var name="qg"      array_group="moist"/>
-                </var_array>
-                <var name="scalars_temp"    type="real"     dimensions="nVertLevels nScalars nCells Time"/>
+                <var name="scalars_swap"   name_in_code="scalars" type="real" dimensions="nVertLevels nScalars nCells Time"/>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
                         <var name="sul"     array_group="aer_cam"/>
@@ -927,15 +919,7 @@
                 <var name="tend_sfc_pressure"                             type="real"     dimensions="nCells Time"/>
 
                 <!-- scalar tendencies -->
-                <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
-                        <var name="tend_qv"    name_in_code="qv"        array_group="moist"/>
-                        <var name="tend_qc"    name_in_code="qc"        array_group="moist"/>
-                        <var name="tend_qr"    name_in_code="qr"        array_group="moist"/>
-                        <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
-                        <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
-                        <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
-                </var_array>
-                <var name="scalars_tend_temp"  type="real"     dimensions="nVertLevels nScalars nCells Time"/>
+                <var name="scalars_tend_swap"  name_in_code="scalars_tend" type="real"    dimensions="nVertLevels nScalars nCells Time"/>
         </var_struct>
 
 

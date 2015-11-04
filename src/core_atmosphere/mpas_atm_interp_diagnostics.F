@@ -35,7 +35,7 @@
  integer :: iCell,iVert,iVertD,k,kk
  integer, pointer :: nCells, nVertLevels, nVertices, vertexDegree
  integer :: nVertLevelsP1
- integer, pointer :: index_qv
+ integer :: index_qv
  integer, dimension(:,:), pointer :: cellsOnVertex
 
  type (field2DReal), pointer:: pressure_p_field
@@ -103,7 +103,7 @@
  call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
  call mpas_pool_get_dimension(mesh, 'nVertices', nVertices)
  call mpas_pool_get_dimension(mesh, 'vertexDegree', vertexDegree)
- call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+ index_qv = 1
 
  nVertLevelsP1 = nVertLevels + 1
 
@@ -116,7 +116,7 @@
  call mpas_pool_get_array(state, 'theta_m', theta_m, time_lev)
  call mpas_pool_get_array(state, 'scalars', scalars, time_lev)
 
- qvapor  => scalars(index_qv,:,:)    !MGD does this actually work?
+ qvapor  => scalars(:,index_qv,:)    !MGD does this actually work?
  
  call mpas_pool_get_field(diag, 'pressure_p', pressure_p_field)
  call mpas_dmpar_exch_halo_field(pressure_p_field)

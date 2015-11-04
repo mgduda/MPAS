@@ -557,14 +557,15 @@ module atm_core
       type (mpas_pool_type), intent(in) :: mesh
    
       integer :: iCell, k
-      integer, pointer :: nCells, nVertLevels, index_qv
+      integer :: index_qv
+      integer, pointer :: nCells, nVertLevels
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
       real (kind=RKIND), dimension(:,:), pointer :: pressure_base, pressure_p, pressure
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      index_qv = 1
 
       call mpas_pool_get_array(state, 'theta_m', theta_m, time_lev)
       call mpas_pool_get_array(state, 'rho_zz', rho_zz, time_lev)
@@ -580,7 +581,7 @@ module atm_core
 
       do iCell=1,nCells
          do k=1,nVertLevels
-            theta(k,iCell) = theta_m(k,iCell) / (1._RKIND + rvord * scalars(index_qv,k,iCell))
+            theta(k,iCell) = theta_m(k,iCell) / (1._RKIND + rvord * scalars(k,index_qv,iCell))
             rho(k,iCell) = rho_zz(k,iCell) * zz(k,iCell)
             pressure(k,iCell) = pressure_base(k,iCell) + pressure_p(k,iCell)
          end do
@@ -611,13 +612,14 @@ module atm_core
       type (mpas_pool_type), intent(in) :: mesh
    
       integer :: iCell, k
-      integer, pointer :: nCells, nVertLevels, index_qv
+      integer :: index_qv
+      integer, pointer :: nCells, nVertLevels
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      index_qv = 1
 
       call mpas_pool_get_array(state, 'theta_m', theta_m, time_lev)
       call mpas_pool_get_array(state, 'rho_zz', rho_zz, time_lev)
@@ -630,7 +632,7 @@ module atm_core
 
       do iCell=1,nCells
          do k=1,nVertLevels
-            theta(k,iCell) = theta_m(k,iCell) / (1.0_RKIND + rvord * scalars(index_qv,k,iCell))
+            theta(k,iCell) = theta_m(k,iCell) / (1.0_RKIND + rvord * scalars(k,index_qv,iCell))
             rho(k,iCell) = rho_zz(k,iCell) * zz(k,iCell)
          end do
       end do
