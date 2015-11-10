@@ -1,0 +1,61 @@
+ <var_struct name="nggps_tbd_ddt" time_levs="1">
+
+    <var name="acv" type="real" dimensions="nCells Time" units="dimensionless"
+         description="array containing accumulated convective clouds"
+    />
+    <var name="acvb" type="real" dimensions="nCells Time" units="dimensionless"
+         description="arrays used by cnvc90 bottom"
+    />
+    <var name="acvt" type="real" dimensions="nCells Time" units="dimensionless"
+         description="arrays used by cnvc90 top"
+    />
+    <var name="sh2o" name_in_code="slc" type="real" dimensions="nSoilLevels nCells Time" units="?"
+         description="liquid soil temperature"
+    />
+    <var name="smois" name_in_code="smc" type="real" dimensions="nSoilLevels nCells Time" units="?"
+         description="total soil moisture"
+    />
+    <var name="tslb" name_in_code="stc" type="real" dimensions="nSoilLevels nCells Time" units="K"
+         description="soil temperature"
+    />
+    <var name="upd_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+         description="convective updraft mass flux"
+    />
+    <var name="dwn_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+         description="convective downdraft mass flux"
+    />
+    <var name="det_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+         description="convective detrainment mass flux"
+    />
+    <var name="tprcp" type="real" dimensions="nCells Time" units="?"
+         description="total precipitation"
+    />
+    <var name="srflag" type="real" dimensions="nCells Time" units="?"
+         description="snow/rain flag for precipitation"
+    />
+        <var name="tref" type="real" dimensions="nCells Time" units="K"
+         description="reference Temperature"
+    />
+    <var name="z_c" type="real" dimensions="nCells Time" units="?"
+         description="sub-layer cooling thickness"
+    />
+    <var name="c_0" type="real" dimensions="nCells Time" units="?"
+         description="coefficient1 to calculate d(Tz)/d(Ts)"
+    />
+    <var name="c_d" type="real" dimensions="nCells Time" units="?"
+         description="coefficient2 to calculate d(Tz)/d(Ts)"
+    />
+    <var name="w_0" type="real" dimensions="nCells Time" units="?"
+         description="coefficient3 to calculate d(Tz)/d(Ts)"
+    />
+    <var name="w_d" type="real" dimensions="nCells Time" units="?"
+         description="coefficient3 to calculate d(Tz)/d(Ts)"
+    />
+    <var name="phy_f2d" type="real" dimensions="numP2d nCells Time" units="-"
+         description="2-dimensional restart arrays"
+    />
+    <var name="phy_f3d" type="real" dimensions="numP3d nVertLevels nCells Time" units="-"
+         description="3-dimensional restart arrays"
+    />
+ </var_struct>
+
