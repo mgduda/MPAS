@@ -1,0 +1,16 @@
+ <var_struct name="nggps_atm_inputs" time_levs="1">
+
+    <var name="pl_time" type="real" dimensions="nMonthsP1" units="-" description=" "
+    />
+    <var name="pl_pres" type="real" dimensions="nOznLevels" units="ln(Pa)" 
+       description="fixed pressure levels of input ozone mixing ratio"
+    />
+    <var name="ozmixm" type="real" dimensions="nMonths nOznLevels nOznPlCoeff nCells" units="kg kg^{-1}" 
+       description="input climatological ozone mixing ratio"
+    />
+    <var name="ozmix" type="real" dimensions="nOznLevels nOznPlCoeff nCells" units="kg kg^{-1}" 
+       description="ozone mixing ratio"
+    />
+
+ </var_struct>
+

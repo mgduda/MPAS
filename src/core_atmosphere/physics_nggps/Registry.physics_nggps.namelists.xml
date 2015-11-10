@@ -1,0 +1,46 @@
+ <dims>
+
+    <dim name="FOUR"           definition="4"/>
+    <dim name="SIX"            definition="6"/>
+    <dim name="nMonths"        definition="namelist:months"/>
+    <dim name="nMonthsP1"      definition="nMonths+1"/>
+    <dim name="nSeasons"       definition="namelist:seasons"/>
+    <dim name="nSoilLevels"    definition="namelist:num_soil_layers"/>
+    <dim name="nMtvr"          definition="namelist:norogwd"/>
+    <dim name="nAerLevels"     definition="namelist:naerlev"/>
+    <dim name="nVertLevelsP2"  definition="nVertLevels+2"/>
+    <dim name="numP2d"         definition="namelist:num2d"/>
+    <dim name="numP3d"         definition="namelist:num3d"/>
+    <dim name="nOznLevels"     definition="namelist:noznlev"/>
+    <dim name="nOznPlCoeff"    definition="namelist:nozcoef"/>
+    <dim name="nFxr"           definition="namelist:nflxr"/>
+    <dim name="nBands"         definition="namelist:nbands_spectral"/>
+
+ </dims>
+
+ <nml_record name="physics" in_defaults="true">
+
+    <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
+    <nml_option name="num_soil_layers"             type="integer"     default_value="4"      in_defaults="false"/>
+    <nml_option name="months"                      type="integer"     default_value="12"     in_defaults="false"/>
+    <nml_option name="seasons"                     type="integer"     default_value="4"      in_defaults="false"/>
+    <nml_option name="norogwd"                     type="integer"     default_value="14"     in_defaults="false"/>
+
+    <nml_option name="num2d"                       type="integer"     default_value="3"      in_defaults="false"/>
+    <nml_option name="num3d"                       type="integer"     default_value="4"      in_defaults="false"/>
+    <nml_option name="naerlev"                     type="integer"     default_value="29"     in_defaults="false"/>
+    <nml_option name="noznlev"                     type="integer"     default_value="80"     in_defaults="false"/>
+    <nml_option name="nozcoef"                     type="integer"     default_value="4"      in_defaults="false"/>
+    <nml_option name="nflxr"                       type="integer"     default_value="39"     in_defaults="false"/>
+    <nml_option name="nbands_spectral"             type="integer"     default_value="16"     in_defaults="false"/>
+
+    <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
+    <nml_option name="config_microp_scheme"        type="character"   default_value="off"/>
+
+    <nml_option name="config_radtlw_interval"      type="character"   default_value="00:30:00"/>
+    <nml_option name="config_radtsw_interval"      type="character"   default_value="00:30:00"/>
+    <nml_option name="config_greeness_update"      type="character"   default_value="24:00:00" in_defaults="false"/>
+    <nml_option name="config_bucket_update"        type="character"   default_value="06:00:00"/>
+
+ </nml_record>
+

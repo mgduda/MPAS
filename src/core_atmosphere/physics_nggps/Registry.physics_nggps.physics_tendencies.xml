@@ -1,0 +1,106 @@
+ <var_struct name="nggps_physics_tendencies" time_levs="1">
+
+    <var name="tend_thphysics" name_in_code="thphysics" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}" 
+         description="tendency of potential temperature due to all physics processes"
+    />
+    <var name="tend_qvphysics" name_in_code="qvphysics" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}" 
+         description="tendency of water vapor mixing ratio due to all physics processes"
+    />
+    <var name="tend_qcphysics" name_in_code="qcphysics" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}" 
+         description="tendency of total cloud condensate due to all physics processes"
+    />
+    <var name="tend_qo3physics" name_in_code="qo3physics" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}" 
+         description="tendency of ozone mixing ratio due to all physics processes"
+    />
+    <var name="tend_uphysics" name_in_code="uphysics" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}" 
+         description="tendency of reconstructed zonal wind due to all physics processes"
+    />
+    <var name="tend_vphysics" name_in_code="vphysics" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}" 
+         description="tendency of reconstructed meridional wind due to all physics processes"
+    />
+
+    <var name="rthratenlw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}" 
+         description="long-wave radiative heating rate"
+    />
+    <var name="rthratensw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}" 
+         description="short-wave radiative heating rate"
+    />
+
+    <var name="tend_thradlw" name_in_code="thradlw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to long-wave radiation"
+    />
+    <var name="tend_thradsw" name_in_code="thradsw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to short-wave radiation"
+    />
+    <var name="tend_thdiffusion" name_in_code="thdiffusion" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to diffusion"
+    />
+    <var name="tend_thcudeep" name_in_code="thcudeep" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to deep convection and moist convective adjustment"
+    />
+    <var name="tend_thcushallow" name_in_code="thcushallow" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to shallow convection"
+    />
+    <var name="tend_thmicrop" name_in_code="thmicrop" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="tendency of potential temperature due to cloud microphysics"
+    />
+    <var name="tend_qvdiffusion" name_in_code="qvdiffusion" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of water vapor mixing ratio due to diffusion"
+    /> 
+    <var name="tend_qvcudeep" name_in_code="qvcudeep" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of water vapor mixing ratio due to deep convection and moist convective adjustment"
+    /> 
+    <var name="tend_qvcushallow" name_in_code="qvcushallow" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of water vapor mixing ratio due to shallow convection"
+    /> 
+    <var name="tend_qvmicrop" name_in_code="qvmicrop" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of water vapor mixing ratio due to cloud microphysics"
+    /> 
+    <var name="tend_qcdiffusion" name_in_code="qcdiffusion" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of total cloud water mixing ratio due to diffusion"
+    /> 
+    <var name="tend_qccudeep" name_in_code="qccudeep" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of total cloud water mixing ratio due to deep convection and moist convective adjustment"
+    /> 
+    <var name="tend_qccushallow" name_in_code="qccushallow" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of total cloud water mixing ratio due to shallow convection"
+    /> 
+    <var name="tend_qcmicrop" name_in_code="qcmicrop" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of total cloud water mixing ratio due to cloud microphysics"
+    /> 
+    <var name="tend_qo3diffusion" name_in_code="qo3diffusion" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of ozone mixing ratio due to diffusion"
+    /> 
+    <var name="tend_qo3prodct" name_in_code="qo3prodct" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1} s^{-1}"
+         description="tendency of ozone mixing ratio due to ozone production"
+    /> 
+    <var name="tend_udiffusion" name_in_code="udiffusion" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of u-momentum due to diffusion"
+    /> 
+    <var name="tend_ugwdo" name_in_code="ugwdo" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of u-momentum due to gravity wave drag over orography"
+    /> 
+    <var name="tend_ucudeep" name_in_code="ucudeep" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of u-momentum due to deep convection"
+    /> 
+    <var name="tend_ugwdc" name_in_code="ugwdc" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of u-momentum due to convective grsvity wave drag"
+    /> 
+    <var name="tend_vdiffusion" name_in_code="vdiffusion" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of v-momentum due to diffusion"
+    /> 
+    <var name="tend_vgwdo" name_in_code="vgwdo" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of v-momentum due to gravity wave drag over orography"
+    /> 
+    <var name="tend_vcudeep" name_in_code="vcudeep" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of v-momentum due to deep convection"
+    /> 
+    <var name="tend_vgwdc" name_in_code="vgwdc" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
+         description="tendency of v-momentum due to convective grsvity wave drag"
+    />
+
+ </var_struct>
+
+
+
+
