@@ -1,0 +1,41 @@
+ <var_struct name="nggps_radiation_tendencies" time_levs="1">
+
+    <var name="sfalb" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="mean surface diffused sw albedo"
+    />
+    <var name="coszen" type="real" dimensions="nCells Time" units="dimensionless"
+         description="mean cosine of zenith angle over radiation call time-step"
+    />
+    <var name="tsflw" type="real" dimensions="nCells Time" units="K"
+         description="surface air temperature during long-wave radiation call"
+    />
+    <var name="semis" type="real" dimensions="nCells Time" units="-"
+         description="surface long-wave emissivity"
+    />
+    <var name="coszdg" type="real" dimensions="nCells Time" units="-"
+         description="daytime mean cosine over radiation call"
+    />
+    <var name="rqtk" type="real" dimensions="nCells Time" units="?"
+         description="mass change due to moisture variation"
+    />
+    <var name="htrlw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="total sky long-wave heating rate"
+    />
+    <var name="htrsw" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="total sky short-wave heating rate"
+    />
+    <var name="dtdtr" type="real" dimensions="nVertLevels nCells Time" units="K" 
+         description="temperature change due to radiative heating per time step"
+    />
+    <var name="swhc" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="clear sky short_wave heating rates"
+    />
+    <var name="hlwc" type="real" dimensions="nVertLevels nCells Time" units="K s^{-1}"
+         description="clear sky long_wave heating rates"
+    />
+    <var name="hlwd" type="real" dimensions="SIX nVertLevels nCells Time" units="K s^{-1}"
+         description="idea sky lw heating rates"
+    />
+
+ </var_struct>
+
