@@ -1,0 +1,133 @@
+ <var_struct name="nggps_sfc_properties" time_levs="1">
+
+    <var name="landmask" type="integer" dimensions="nCells" units="dimensionless" 
+         description="sea/land mask array without sea-ice mask (0=sea,1=land)"
+    />
+    <var name="isltyp" type="integer" dimensions="nCells" units="-" 
+         description="soil category for land-surface scheme"
+    />
+    <var name="ivgtyp" type="integer" dimensions="nCells" units="-" 
+         description="vegetation category for land-surface scheme"
+    />
+    <var name="alvsf4s" type="real" dimensions="nSeasons nCells" units="dimensionless" 
+         description="climatological visible surface albedo with strong cosz dependency"
+    />
+    <var name="alnsf4s" type="real" dimensions="nSeasons nCells" units="dimensionless" 
+         description="climatological near-ir surface albedo with strong cosz dependency"
+    />
+    <var name="alvwf4s" type="real" dimensions="nSeasons nCells" units="dimensionless" 
+         description="climatological visible surface albedo with weak cosz dependency"
+    />
+    <var name="alnwf4s" type="real" dimensions="nSeasons nCells" units="dimensionless"
+         description="climatological near-ir surface albedo with weak cosz dependency"
+    />
+    <var name="facsf" type="real" dimensions="nCells" units="dimensionless" 
+         description="fractional coverage with strong cosz dependency"
+    />
+    <var name="facwf" type="real" dimensions="nCells" units="dimensionless"
+         description="fractional coverage with weak cosz dependency"
+    />
+    <var name="greenfrac" type="real" dimensions="nMonths nCells" units="-" 
+         description="monthly-mean climatological greeness fraction"
+    />
+    <var name="orogwd" name_in_code="orogwd" type="real" dimensions="nMtvr nCells" units="-" 
+         description="variables needed for gravity wave drag over orography"
+    />
+    <var name="shdmax" type="real" dimensions="nCells" units="-" 
+         description="annual maximum vegetation fraction"
+    />
+    <var name="shdmin" type="real" dimensions="nCells" units="-" 
+         description="annual minimum vegetation fraction"
+    />
+    <var name="slope" type="real" dimensions="nCells" units="dimensionless"
+         description="surface slope type for land-surface model"
+    />
+    <var name="snoalb" type="real" dimensions="nCells" units="dimensionless"
+         description="maximum snow albedo"
+    />
+    <var name="ter" name_in_code="oro" type="real" dimensions="nCells" units="m"
+         description="terrain height (orography)"
+    />
+    <var name="oro_uf" type="real" dimensions="nCells" units="m" 
+         description="unfiltered terrain height (orography)"
+    />
+    <var name="tmn" name_in_code="tg3" type="real" dimensions="nCells" units="K" 
+         description="deep soil temperature"
+    />
+    <var name="zorl12m" type="real" dimensions="nMonths nCells" units="cm" 
+         description="monthly-mean climatological mixing length"
+    />
+    <var name="alnsf" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="mean near-ir surface albedo with strong cosz dependency"
+    />
+    <var name="alnwf" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="mean near-ir surface albedo with weak cosz dependency"
+    />
+    <var name="alvsf" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="mean visible surface albedo with strong cosz dependency"
+    />
+    <var name="alvwf" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="mean visible surface albedo with weak cosz dependency"
+    />
+    <var name="canopy" type="real" dimensions="nCells Time" units="?" 
+         description="canopy water"
+    />
+    <var name="f10m" type="real" dimensions="nCells Time" units="?" 
+         description="10-meter fm parameter from PBL scheme"
+    />
+    <var name="ffhh" type="real" dimensions="nCells Time" units="?"
+         description="fh parameter from PBL scheme"
+    />
+    <var name="ffmm" type="real" dimensions="nCells Time" units="?"
+         description="fm parameter from PBL scheme"
+    />
+    <var name="hice" type="real" dimensions="nCells Time" units="m"
+         description="thickness of sea-ice"
+    />
+    <var name="q2m" type="real" dimensions="nCells Time" units="kg kg^{-1}" 
+         description="2-meter specific humidity"
+    />
+    <var name="slmsk" type="real" dimensions="nCells Time" units="dimensionless"
+         description="sea/land mask array (0=sea,1=land,2=sea-ice)"
+    />
+    <var name="skintemp" name_in_code="tsfc" type="real" dimensions="nCells Time" units="K"
+         description="surface temperature"
+    />
+    <var name="snowc" name_in_code="sncovr" type="real" dimensions="nCells Time" units="dimensionless"
+         description="snow cover"
+    />
+    <var name="snowh" name_in_code="snwdph" type="real" dimensions="nCells Time" units="mm"
+         description="snow depth water equivalent"
+    />
+    <var name="sltype" name_in_code="stype" type="real" dimensions="nCells Time" units="-"
+         description="soil category for land-surface scheme (as isltyp)"
+    />
+    <var name="t2m" type="real" dimensions="nCells Time" units="K"
+         description="2-meter temperature"
+    />
+    <var name="tisfc" type="real" dimensions="nCells Time" units="K"
+         description="sea surface temperature over ice fraction"
+    />
+    <var name="sst" type="real" name_in_code="tsea" dimensions="nCells Time" units="K"
+         description="sea surface temperature"
+    />
+    <var name="uustar" type="real" dimensions="nCells Time" units="-"
+         description="boundary layer parameter"
+    />
+    <var name="vegfra" name_in_code="vfrac" type="real" dimensions="nCells Time" units="-"
+         description="vegetation fraction"
+    />
+    <var name="vgtype" name_in_code="vtype" type="real" dimensions="nCells Time" units="-"
+         description="vegetation category for land-surface scheme (as ivgtyp)"
+    />
+    <var name="snow" name_in_code="weasd" type="real" dimensions="nCells Time" units="kg m^{2}"
+         description="sheleg water equiv of accumulated snow depth over land and sea ice"
+    />
+    <var name="xice" name_in_code="fice" type="real" dimensions="nCells Time" units="dimensionless" 
+         description="ice fraction over open water grid"
+    />
+    <var name="zorl" type="real" dimensions="nCells Time" units="cm"
+         description="surface roughness"
+    />
+
+ </var_struct>
