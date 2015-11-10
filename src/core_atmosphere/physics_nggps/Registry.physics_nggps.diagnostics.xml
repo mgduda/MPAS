@@ -1,0 +1,202 @@
+ <var_struct name="nggps_diagnostics" time_levs="1">
+    <var name="fluxr" type="real" dimensions="nFxr nCells Time" units="W m^{-2}"
+         description=" "
+    />
+    <var name="dswcmp" type="real" dimensions="FOUR nCells Time" units="W m^{-2}"
+         description="?"
+    />
+    <var name="uswcmp" type="real" dimensions="FOUR nCells Time" units="W m^{-2}"
+         description="?"
+    />
+    <var name="toplwup" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="toa total sky upward lw flux"
+    />
+    <var name="toplwupc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="toa clear sky upward lw flux"
+    />
+    <var name="topswup" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="toa total sky upward sw flux"
+    />
+    <var name="topswupc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="toa clear sky upward sw flux"
+    />
+    <var name="topswdn" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="toa total sky downward sw flux"
+    />
+    <var name="topfsw" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="?"
+    />
+    <var name="topflw" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="?"
+    />
+    <var name="dlwsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="accumulated all-sky downward surface long-wave radiation flux"
+    />
+    <var name="ulwsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="accumulated all-sky surface upward long-wave radiation flux"
+    />
+    <var name="dusfc" type="real" dimensions="nCells Time" units="?"
+         description="accumulated u-component of surface stress"
+    />
+    <var name="dvsfc" type="real" dimensions="nCells Time" units="?"
+         description="accumulated v-component of surface stress"
+    />
+    <var name="dtsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="accumulated sensible heat flux"
+    />
+    <var name="dqsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="accumulated latent heat flux"
+    />
+    <var name="dugwd" type="real" dimensions="nCells Time" units="?"
+         description="vertically integrated u change by OGWD"
+    />
+    <var name="dvgwd" type="real" dimensions="nCells Time" units="?"
+         description="vertically integrated v change by OGWD"
+    />
+    <var name="psmean" type="real" dimensions="nCells Time" units="Pa"
+         description="accumulated surface pressure"
+    />
+    <var name="evbsa" type="real" dimensions="nCells Time" units="?"
+         description="accumulated NOAH lsm diagnostic"
+    />
+    <var name="evcwa" type="real" dimensions="nCells Time" units="?"
+         description="accumulated NOAH lsm diagnostic"
+    />
+    <var name="sbsnoa" type="real" dimensions="nCells Time" units="-"
+         description="accumulated NOAH lsm diagnostics"
+    />
+    <var name="snohfa" type="real" dimensions="nCells Time" units="-"
+         description="accumulated NOAH lsm diagnostics"
+    />
+    <var name="snowca" type="real" dimensions="nCells Time" units="-"
+         description="accumulated NOAH lsm diagnostics"
+    />
+    <var name="transa" type="real" dimensions="nCells Time" units="-"
+         description="accumulated NOAH lsm diagnostics"
+    />
+    <var name="ep" type="real" dimensions="nCells Time" units="-"
+         description="potential evaporation"
+    />
+    <var name="gflux" type="real" dimensions="nCells Time" units="?"
+         description="accumulated ground conductive heat flux"
+    />
+    <var name="runoff" type="real" dimensions="nCells Time" units="-"
+         description="total water runoff"
+    />
+    <var name="srunoff" type="real" dimensions="nCells Time" units="-"
+         description="surface runoff"
+    />
+    <var name="spfhmax" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+         description="2-meter maximum specific humidity"
+    />
+    <var name="spfhmin" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+         description="2-meter minimum specific humidity"
+    />
+    <var name="tmpmax" type="real" dimensions="nCells Time" units="K"
+         description="2-meter maximum temperature"
+    />
+    <var name="tmpmin" type="real" dimensions="nCells Time" units="K"
+         description="2-meter minimum temperature"
+    />
+    <var name="cldwrk" type="real" dimensions="nCells Time" units="-"
+         description="cloud workfunction (valid only with sas)"
+    />
+    <var name="cnvprcp" type="real" dimensions="nCells Time" units="kg m^{-2}"
+         description="accumulated convective precipitation (kg/m2)"
+    />
+    <var name="totprcp" type="real" dimensions="nCells Time" units="kg m^{-2}"
+         description="accumulated total precipitation"
+    />
+    <var name="soilm" type="real" dimensions="nCells Time" units="m" 
+         description="soil moisture"
+    />
+    <var name="rain" type="real" dimensions="nCells Time" units="kg m^{-2}"
+         description="instantaneous total precipitation"
+    />
+    <var name="rainc" type="real" dimensions="nCells Time" units="kg m^{-2}"
+         description="instantaneous total precipitation"
+    />
+    <var name="suntim" type="real" dimensions="nCells Time" units="s"
+         description="accumulated duration of sunshine"
+    />
+    <var name="u10m" type="real" dimensions="nCells Time" units="m s^{-1}" 
+         description="10-meter zonal wind"
+    />
+    <var name="v10m" type="real" dimensions="nCells Time" units="m s^{-1}" 
+         description="10-meter meridional wind"
+    />
+    <var name="zlvl" type="real" dimensions="nCells Time" units="m" 
+         description="layer 1 height"
+    />
+    <var name="psurf" type="real" dimensions="nCells Time" units="Pa" 
+         description="surface pressure"
+    />
+    <var name="hpbl" type="real" dimensions="nCells Time" units="m" 
+         description="height of planetary boundary layer"
+    />
+    <var name="pwat" type="real" dimensions="nCells Time" units="kg m^{-2}" 
+         description="precipitable water"
+    />
+    <var name="t1" type="real" dimensions="nCells Time" units="K" 
+         description="1-meter temperature"
+    />
+    <var name="q1" type="real" dimensions="nCells Time" units="kg kg^{-1}" 
+         description="1-meter specific humidity"
+    />
+    <var name="u1" type="real" dimensions="nCells Time" units="m s^{-1}" 
+         description="1-meter zonal wind"
+    />
+    <var name="v1" type="real" dimensions="nCells Time" units="m s^{-1}" 
+         description="1-meter meridional wind"
+    />
+    <var name="chh" type="real" dimensions="nCells Time" units="?" 
+         description="thermal exchange coefficient"
+    />
+    <var name="cmm" type="real" dimensions="nCells Time" units="?" 
+         description="momentum exchange coefficient"
+    />
+    <var name="dlwsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous all-sky downward surface long-wave radiation flux"
+    />
+    <var name="ulwsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous all-sky upward surface long-wave radiation flux"
+    />
+    <var name="dswsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous all-sky downward surface short-wave radiation flux"
+    />
+    <var name="uswsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous all-sky upward surface short-wave radiation flux"
+    />
+    <var name="dusfci" type="real" dimensions="nCells Time" units="?"
+         description="instantaneous u component of surface stress"
+    />
+    <var name="dvsfci" type="real" dimensions="nCells Time" units="?"
+         description="instantaneous v component of surface stress"
+    />
+    <var name="dtsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous surface sensible heat flux"
+    />
+    <var name="dqsfci" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="instantaneous surface latent heat flux"
+    />
+    <var name="gfluxi" type="real" dimensions="nCells Time" units="?" 
+         description="instantaneous surface ground heat flux"
+    />
+    <var name="epi" type="real" dimensions="nCells Time" units="?" 
+         description="instantaneous surface potential evaporation"
+    />
+    <var name="smcwlt2" type="real" dimensions="nCells Time" units="?" 
+         description="wilting point (volumetric)"
+    />
+    <var name="smcref2" type="real" dimensions="nCells Time" units="?" 
+         description="soil moisture threshold (volumetric)"
+    />
+    <var name="wet1" type="real" dimensions="nCells Time" units="?" 
+         description="normalized soil wetness"
+    />
+    <var name="sr" type="real" dimensions="nCells Time" units="-" 
+         description="ratio of snow to total precipitation"
+    />
+
+ </var_struct>
+
