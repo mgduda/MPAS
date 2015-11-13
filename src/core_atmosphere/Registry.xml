@@ -731,7 +731,7 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
-                        <var name="tend_qo3"   name_in_code="qp3"       array_group="ozone"/>
+                        <var name="tend_qo3"   name_in_code="qo3"       array_group="ozone"/>
                 </var_array>
 
         </var_struct>
@@ -793,6 +793,7 @@
 #include "./physics_nggps/Registry.physics_nggps.cloud_properties.xml"
 #include "./physics_nggps/Registry.physics_nggps.diagnostics.xml"
 #include "./physics_nggps/Registry.physics_nggps.interface_fields.xml"
+#include "./physics_nggps/Registry.physics_nggps.physics_tendencies.xml"
 #include "./physics_nggps/Registry.physics_nggps.radiation_tendencies.xml"
 #include "./physics_nggps/Registry.physics_nggps.sfc_properties.xml"
 #include "./physics_nggps/Registry.physics_nggps.tbd_ddt.xml"
