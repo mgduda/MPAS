@@ -14,7 +14,7 @@ OBJS = \
 	mpas_atmphys_nggps_date_time.o \
 	mpas_atmphys_nggps_diagnostics.o \
 	mpas_atmphys_nggps_driver.o \
-	mpas_atmphys_nggps_driver_radiation.o \
+	mpas_atmphys_nggps_driver_out.o \
 	mpas_atmphys_nggps_dynamic_parameters.o \
 	mpas_atmphys_nggps_init.o \
 	mpas_atmphys_nggps_interface_fields.o \
@@ -26,6 +26,7 @@ OBJS = \
 	mpas_atmphys_nggps_state_fields_in.o \
 	mpas_atmphys_nggps_state_fields_out.o \
 	mpas_atmphys_nggps_tbd_ddt.o \
+	mpas_atmphys_nggps_todynamics.o \
 	mpas_atmphys_nggps_update.o \
         mpas_atmphys_nggps_update_surface.o \
 	mpas_atmphys_nggps_vars.o \
@@ -60,9 +61,9 @@ mpas_atmphys_nggps_diagnostics.o: \
 	./physics_nggps_src/radsw_param.o
 
 mpas_atmphys_nggps_driver.o: \
-	mpas_atmphys_nggps_driver_radiation.o \
 	mpas_atmphys_nggps_cloud_properties.o \
 	mpas_atmphys_nggps_diagnostics.o \
+	mpas_atmphys_nggps_driver_out.o \
 	mpas_atmphys_nggps_dynamic_parameters.o \
 	mpas_atmphys_nggps_interface_fields.o \
         mpas_atmphys_nggps_radiation_tendencies.o \
@@ -72,6 +73,13 @@ mpas_atmphys_nggps_driver.o: \
 	mpas_atmphys_nggps_tbd_ddt.o \
 	mpas_atmphys_nggps_vars.o \
 	nuopc_physics.o
+
+mpas_atmphys_nggps_driver_out.o: \
+	mpas_atmphys_nggps_vars.o \
+	nuopc_physics.o \
+	./physics_nggps_src/machine.o \
+	./physics_nggps_src/radlw_param.o \
+	./physics_nggps_src/radsw_param.o
 
 mpas_atmphys_nggps_driver_radiation.o: \
 	mpas_atmphys_nggps_dynamic_parameters.o \
@@ -99,6 +107,7 @@ mpas_atmphys_interface_fields.o: \
 	./physics_nggps_src/radsw_param.o
 
 mpas_atmphys_nggps_manager.o : \
+	mpas_atmphys_nggps_o3climatology.o \
 	mpas_atmphys_nggps_update.o \
 	mpas_atmphys_nggps_update_surface.o \
 	mpas_atmphys_nggps_vars.o \
@@ -135,6 +144,9 @@ mpas_atmphys_nggps_tbd_ddt.o: \
 	nuopc_physics.o \
 	./physics_nggps_src/machine.o
 
+mpas_atmphys_nggps_todynamics.o: \
+	mpas_atmphys_nggps_constants.o
+
 mpas_atmphys_nggps_update_surface.o: \
 	mpas_atmphys_nggps_date_time.o \
 	mpas_atmphys_date_time.o
@@ -143,6 +155,7 @@ mpas_atmphys_nggps_vars.o: \
 	nuopc_physics.o \
 	./physics_nggps_src/machine.o \
 	./physics_nggps_src/funcphys.o \
+	./physics_nggps_src/mersenne_twister.o \
 	./physics_nggps_src/physcons.o \
 	./physics_nggps_src/physparam.o \
 	./physics_nggps_src/ozne_def.o \
