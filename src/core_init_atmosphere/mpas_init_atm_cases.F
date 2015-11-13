@@ -4173,7 +4173,7 @@ module init_atm_cases
                interp_list(4) = 0
                maskval = 0.0
                masked  = 0
-               fillval = 0.0
+               fillval = 0.011
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
@@ -4539,6 +4539,7 @@ write(0,*) 'PROCESSING SEAICE'
 
          ! RH
          sorted_arr(:,:) = -999.0
+         scalars(index_qv,:,iCell) = 0._RKIND
          do k=1,nfglevels_actual
             sorted_arr(1,k) = z_fg(k,iCell)
 !NOSFC      if (vert_level(k) == 200100.0) sorted_arr(1,k) = fg % soilz % array(iCell)
@@ -4560,6 +4561,7 @@ write(0,*) 'PROCESSING SEAICE'
 
          ! SPECHUM
          sorted_arr(:,:) = -999.0
+         scalars(index_qv,:,iCell) = 0._RKIND
          do k=1,nfglevels_actual
             sorted_arr(1,k) = z_fg(k,iCell)
             if (vert_level(k) == 200100.0) sorted_arr(1,k) = 99999.0
@@ -4576,7 +4578,6 @@ write(0,*) 'PROCESSING SEAICE'
                 scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
             spechum(k,iCell) = scalars(index_qv,k,iCell)
          end do
-
 
          ! OZONE
          sorted_arr(:,:) = -999.0
@@ -4674,6 +4675,21 @@ write(0,*) 'PROCESSING SEAICE'
 
       end do
 
+      write(0,*)
+      write(0,*) '--- max sh_fg   = ', maxval(sh_fg(1:nfglevels_actual,1:nCells))
+      write(0,*) '--- min sh_fg   = ', minval(sh_fg(1:nfglevels_actual,1:nCells))
+      write(0,*)
+      write(0,*) '--- max spechum = ', maxval(spechum(1:nVertLevels,1:nCells))
+      write(0,*) '--- min spechum = ', minval(spechum(1:nVertLevels,1:nCells))
+      write(0,*)
+      write(0,*) '--- max qv      = ', maxval(scalars(index_qv,1:nVertLevels,1:nCells))
+      write(0,*) '--- min qv      = ', minval(scalars(index_qv,1:nVertLevels,1:nCells))
+      write(0,*)
+      write(0,*) '--- max o3_fg   = ', maxval(o3_fg(1:nfglevels_actual,1:nCells))
+      write(0,*) '--- min o3_fg   = ', minval(o3_fg(1:nfglevels_actual,1:nCells))
+      write(0,*)
+      write(0,*) '--- max o3mmr   = ', maxval(o3mmr(1:nVertLevels,1:nCells))
+      write(0,*) '--- min o3mmr   = ', minval(o3mmr(1:nVertLevels,1:nCells))
 
       !
       ! Reconstruct zonal and meridional winds for diagnostic puposes:
@@ -4731,7 +4747,7 @@ write(0,*) 'PROCESSING SEAICE'
             !scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
 
             ! QV computed from specific humidity
-            scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell) / ( 1. - scalars(index_qv,k,iCell) )
+            scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell)/(1._RKIND - scalars(index_qv,k,iCell) )
 
             ! PI
             p(k,iCell) = (pressure(k,iCell) / p0) ** (rgas / cp)
@@ -4746,6 +4762,10 @@ write(0,*) 'PROCESSING SEAICE'
          end do
       end do
 
+      write(0,*)
+      write(0,*) '--- mixing ratio:'
+      write(0,*) '--- max qv      = ', maxval(scalars(index_qv,1:nVertLevels,1:nCells))
+      write(0,*) '--- min qv      = ', minval(scalars(index_qv,1:nVertLevels,1:nCells))
 
       !
       ! Calculation of the initial precipitable water:
