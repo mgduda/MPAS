@@ -204,9 +204,9 @@ tracer_const_h.o \
 tridi2t3.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $*.f > $*.f90
-	$(FC) $(FFLAGS77_OPT) -c $*.f90 $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(FFLAGS77) -c $*.f90 $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS77_OPT) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS77) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 endif
 
 .f.o:

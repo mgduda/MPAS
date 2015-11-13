@@ -145,7 +145,7 @@ ifort:
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
 	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
-	"FFLAGS77_DEBUG = -real-size 64 -g -convert big_endian -fpp -FI -CU -CB -check all -fpe0 -traceback" \
+	"FFLAGS77_DEBUG = -real-size 64 -g -convert big_endian -fpp -FI -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CXXFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
@@ -392,12 +392,14 @@ ifeq "$(DEBUG)" "true"
 
 ifndef FFLAGS_DEBUG
 	FFLAGS=$(FFLAGS_OPT)
+	FFLAGS77=$(FFLAGS77_OPT)
 	CFLAGS=$(CFLAGS_OPT)
 	CXXFLAGS=$(CXXFLAGS_OPT)
 	LDFLAGS=$(LDFLAGS_OPT)
 	DEBUG_MESSAGE="Debug flags are not defined for this compile group. Defaulting to Optimized flags"
 else # FFLAGS_DEBUG IF
 	FFLAGS=$(FFLAGS_DEBUG)
+	FFLAGS77=$(FFLAGS77_DEBUG)
 	CFLAGS=$(CFLAGS_DEBUG)
 	CXXFLAGS=$(CXXFLAGS_DEBUG)
 	LDFLAGS=$(LDFLAGS_DEBUG)
@@ -407,6 +409,7 @@ endif # FFLAGS_DEBUG IF
 
 else # DEBUG IF
 	FFLAGS=$(FFLAGS_OPT)
+	FFLAGS77=$(FFLAGS77_OPT)
 	CFLAGS=$(CFLAGS_OPT)
 	CXXFLAGS=$(CXXFLAGS_OPT)
 	LDFLAGS=$(LDFLAGS_OPT)
@@ -577,6 +580,7 @@ endif
                  CFLAGS="$(CFLAGS)" \
                  CXXFLAGS="$(CXXFLAGS)" \
                  FFLAGS="$(FFLAGS)" \
+                 FFLAGS77="$(FFLAGS77)" \
                  LDFLAGS="$(LDFLAGS)" \
                  RM="$(RM)" \
                  CPP="$(CPP)" \
