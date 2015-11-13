@@ -229,8 +229,7 @@
  real(kind=RKIND),dimension(:),pointer  :: cv,cvt,cvb
  real(kind=RKIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc,cnvqc_v
 
- real(kind=kind_phys),dimension(:,:),pointer:: fcice_l,frain_l,rrime_l,deltaq_l,cnvw_l,cnvc_l, &
-                                               cldcov_l,cnvqc_l
+ real(kind=kind_phys),dimension(:,:),pointer:: fcice_l,frain_l,rrime_l,deltaq_l,cnvw_l,cnvc_l,cnvqc_l
 
 !local variables:
  integer:: iCell,k
@@ -252,7 +251,6 @@
  call mpas_pool_get_array(nggps_cloud_properties,'deltaq' ,deltaq )
  call mpas_pool_get_array(nggps_cloud_properties,'cnvw'   ,cnvw   )
  call mpas_pool_get_array(nggps_cloud_properties,'cnvc'   ,cnvc   )
- call mpas_pool_get_array(nggps_cloud_properties,'cldcov' ,cldcov )
 
 !... back to Registry:
  cv       => this%cv
@@ -266,7 +264,6 @@
  deltaq_l => this%deltaq
  cnvw_l   => this%cnvw
  cnvc_l   => this%cnvc
- cldcov_l => this%cldcov
 
  do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
@@ -277,7 +274,6 @@
        deltaq(k,iCell)  = deltaq_l(iCell,k)
        cnvw(k,iCell)    = cnvw_l(iCell,k)
        cnvc(k,iCell)    = cnvc_l(iCell,k)
-       cldcov(k,iCell)  = cldcov_l(iCell,k)
     enddo
  enddo
 
