@@ -1,4 +1,12 @@
-!at tune step========================================================= !
+!=================================================================================================================
+! Modifications made to the sourcecode for use in the MPAS framework:
+! * added a few "&" at the end of lines for compilation using ifort, pgi, and gfortran within the
+!   MPAS framework.
+! * commented out calls to the subroutines get_prs and get_phi since the non-hydrostatic pressure,
+!   exner function, and geopotential heights are provided at full and half-levels.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-10.
+
+!=================================================================================================================
 !  description:                                                         !
 !                                                                       !
 !     gbphys is the driver subroutine to invoke GFS AM physics          !
@@ -829,6 +837,14 @@
 !
 !  --- ...                       figure out number of extra tracers
 !
+      write(0,*)
+      write(0,*) '--- enter subroutine gbphys:'
+      write(0,*) '--- trans_trac = ', trans_trac
+      write(0,*) '--- ntrac = ', ntrac
+      write(0,*) '--- ntcw  = ', ntcw
+      write(0,*) '--- ntoz  = ', ntoz
+      write(0,*) '--- ncld  = ', ncld     
+
       tottracer = 0            ! no convective transport of tracers
       if (trans_trac) then
         if (ntcw > 0) then
@@ -847,6 +863,12 @@
         tottracer = tracers
         if (ntoz > 0) tottracer = tottracer + 1  ! ozone is added separately
       endif
+      write(0,*) 
+      write(0,*) '--- trc_shft  = ', trc_shft
+      write(0,*) '--- tracers   = ', tracers     
+      write(0,*) '--- tottracer = ', tottracer
+      write(0,*) 
+
       if (ntke > 0) ntk = ntke - trc_shft + 3
 
 !     if (lprnt) write(0,*)' trans_trac=',trans_trac,' tottracer=',     &
@@ -882,12 +904,22 @@
         enddo
       endif
 !
-      call get_prs(im,ix,levs,ntrac,tgrs,qgrs,                          &
-     &             thermodyn_id, sfcpress_id,                           &
-     &             gen_coord_hybrid,                                    &
-     &             prsi,prsik,prsl,prslk,phii,phil,del)
+!... commented out the call to subroutine get_prs since MPAS provides the pressure, exner function, and
+!... geopotential heights through the argument list; moved the calculation of the pressure thickness
+!... outside subroutine get_prs.
+!... Laura D. Fowler (2015-11-06):
+      do k = 1, levs
+         do i = 1, ix
+            del(i,k) = prsi(i,k) - prsi(i,k+1)
+         enddo
+      enddo
+!     call get_prs(im,ix,levs,ntrac,tgrs,qgrs,                          &
+!    &             thermodyn_id, sfcpress_id,                           &
+!    &             gen_coord_hybrid,                                    &
+!    &             prsi,prsik,prsl,prslk,phii,phil,del)
 !    &             prsi,prsik,prsl,prslk,phii,phil,del,lprnt)
-!
+!... end Laura D. Fowler.
+
 !     if (lprnt) then
 !       write(0,*)' prsi=',prsi(ipr,:)
 !       write(0,*)' prsik=',prsik(ipr,:),' me=',me,' kdt=',kdt
@@ -1877,10 +1909,13 @@
         enddo
       endif   ! end if_ldiag3d/lgocart
 
-      call get_phi(im,ix,levs,ntrac,gt0,gq0,                            &
-     &             thermodyn_id, sfcpress_id,                           &
-     &             gen_coord_hybrid,                                    &
-     &             prsi,prsik,prsl,prslk,phii,phil)
+!... commented out the call to subroutine get_phi since MPAS provides the pressure, exner function, and
+!... geopotential heights through the argument list
+!... Laura D. Fowler (2015-11-06):
+!     call get_phi(im,ix,levs,ntrac,gt0,gq0,                            &
+!    &             thermodyn_id, sfcpress_id,                           &
+!    &             gen_coord_hybrid,                                    &
+!    &             prsi,prsik,prsl,prslk,phii,phil)
 
 !     if (lprnt) then
 !       print *,' phii2=',phii(ipr,:)
