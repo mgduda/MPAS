@@ -17,10 +17,12 @@ module atm_time_integration
    use mpas_timekeeping, only: MPAS_Time_type, MPAS_TimeInterval_type, &
                                mpas_set_time, mpas_set_timeInterval, mpas_get_time, operator(+), add_t_ti
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS)
    use mpas_atmphys_driver_microphysics
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
+#elif defined(DO_PHYSICS_NGGPS)
+   use mpas_atmphys_todynamics
 #endif
 
    contains
@@ -278,7 +280,7 @@ module atm_time_integration
             end do
             if (debug) write(0,*) ' finished compute_dyn_tend '
 
-#ifdef DO_PHYSICS
+#if defined(DO_PHYSICS)
             if (debug) write(0,*) ' add physics tendencies '
             block => domain % blocklist
             do while (associated(block))
@@ -298,6 +300,25 @@ module atm_time_integration
                block => block % next
             end do
             if (debug) write(0,*) ' finished add physics tendencies '
+#elif defined(DO_PHYSICS_NGGPS)
+            if (debug) write(0,*) ' add nggps physics tendencies '
+            block => domain % blocklist
+            do while (associated(block))
+               call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+               call mpas_pool_get_subpool(block % structs, 'state', state)
+               call mpas_pool_get_subpool(block % structs, 'diag', diag)
+               call mpas_pool_get_subpool(block % structs, 'tend', tend)
+               call mpas_pool_get_subpool(block % structs, 'nggps_physics_tendencies', tend_physics)
+               call physics_addtend( block, &
+                                      mesh, &
+                                     state, &     
+                                      diag, &
+                                      tend, &
+                              tend_physics, &
+                                   rk_step )
+               block => block % next
+            end do
+            if (debug) write(0,*) ' finished add nggps physics tendencies '
 #endif
 
             !***********************************
@@ -1684,7 +1705,7 @@ module atm_time_integration
       call mpas_pool_get_config(configs, 'config_v_theta_eddy_visc2', v_theta_eddy_visc2)
 
 
-#ifndef DO_PHYSICS
+#if !(defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS))
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
 #endif
 
@@ -2039,7 +2060,7 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'qv_init', qv_init)
       call mpas_pool_get_array(mesh, 'zgrid', zgrid)
 
-#ifndef DO_PHYSICS
+#if !(defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS))
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
 #endif
 

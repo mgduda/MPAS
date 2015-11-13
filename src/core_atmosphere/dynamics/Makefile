@@ -16,8 +16,22 @@ clean:
 .F.o:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
+ifeq ($(PHYSICS),-DDO_PHYSICS)
 	$(CPP) $(CPPFLAGS) $(PHYSICS) $(CPPINCLUDES) $< > $*.f90
 	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../framework -I../../operators -I../physics -I../physics/physics_wrf -I../../external/esmf_time_f90
 else
+ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
+	$(CPP) $(CPPFLAGS) $(PHYSICS) $(CPPINCLUDES) $< > $*.f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../framework -I../../operators -I../physics_nggps -I../physics_nggps/physics_nggps_src -I../../external/esmf_time_f90
+endif
+endif
+
+else
+ifeq ($(PHYSICS),-DDO_PHYSICS)
 	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../../framework -I../../operators -I../physics -I../physics/physics_wrf -I../../external/esmf_time_f90
+else
+ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
+	$(FC) $(CPPFLAGS) $(PHYSICS) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I../../framework -I../../operators -I../physics_nggps -I../physics_nggps/physics_nggps_src -I../../external/esmf_time_f90
+endif
+endif
 endif
