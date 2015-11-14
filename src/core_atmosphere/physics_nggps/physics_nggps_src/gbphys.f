@@ -5,6 +5,9 @@
 ! * commented out calls to the subroutines get_prs and get_phi since the non-hydrostatic pressure,
 !   exner function, and geopotential heights are provided at full and half-levels.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-10.
+! * changed the declaration of the variable rqtk from intent(out) to intent(inout). added intent(inout) to the
+!   declaration of the variable dtdtr.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-13.
 
 !=================================================================================================================
 !  description:                                                         !
@@ -662,8 +665,12 @@
      &      t2mi_cpl,q2mi_cpl,                                          &
      &      u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,                   &
 !    &      u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl, &
-
-     &      tref,    z_c,     c_0,     c_d,     w_0,   w_d, rqtk
+!... changed the declaration of variable rqtk from intent(out) to intent(inout):
+!... Laura D. Fowler (2015-11-06):
+!    &      tref,    z_c,     c_0,     c_d,     w_0,   w_d, rqtk
+     &      tref,    z_c,     c_0,     c_d,     w_0,   w_d
+      real(kind=kind_phys),intent(inout),dimension(im),optional:: rqtk
+!... end Laura D. Fowler.
 
       real(kind=kind_phys), dimension(ix,levs),       intent(out) ::    &
      &      gt0, gu0, gv0
@@ -700,7 +707,13 @@
 
 !     real(kind=kind_phys), dimension(ix,levs)     :: ud_mf, dd_mf,     &
 !    &      dt_mf, del
-      real(kind=kind_phys), dimension(ix,levs)     :: del, dtdtr
+
+!... changed the declaration of variable dtdtr to intent(inout):
+!... Laura D. Fowler (2015-11-13):
+      real(kind=kind_phys),intent(inout),dimension(ix,levs):: dtdtr
+      real(kind=kind_phys),dimension(ix,levs):: del
+!... end Laura D. Fowler.
+
       real(kind=kind_phys), dimension(im,levs-1)   :: dkt
 
       real(kind=kind_phys), dimension(im,levs)     :: rhc, dtdt,        &

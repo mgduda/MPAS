@@ -34,6 +34,11 @@
 
  end type
 
+!modifications to sourcecode:
+!----------------------------
+! * in subroutine mpas_rad_tend_set, initialized the variables rqtk and dtdtr_l to zero.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-15. 
+
  
  contains
 
@@ -143,12 +148,21 @@
     do k = 1, nVertLevels
        htrsw_l(iCell,k) = htrsw(k,iCell)
        htrlw_l(iCell,k) = htrlw(k,iCell)
-       dtdtr_l(iCell,k) = dtdtr(k,iCell)
+!      dtdtr_l(iCell,k) = dtdtr(k,iCell)
        swhc_l(iCell,k)  = swhc(k,iCell)
        hlwc_l(iCell,k)  = hlwc(k,iCell)
        do n = 1, 6
           hlwd_l(iCell,k,n) = hlwd(n,k,iCell)
        enddo   
+    enddo
+ enddo
+
+!In gbphys, the variables dtdtr and rqtk are accumulated, but I am not sure at what point and where they are
+!initialized. To avoid the occurrence of an initialized variables, I reset them to zero prior to the set call:
+ do iCell = 1, nCellsSolve
+    rqtk(iCell) = 0._kind_phys
+    do k = 1, nVertLevels
+       dtdtr_l(iCell,k) = 0._kind_phys
     enddo
  enddo
 
