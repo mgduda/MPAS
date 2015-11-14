@@ -23,12 +23,6 @@
     <var name="topswdn" type="real" dimensions="nCells Time" units="W m^{-2}"
          description="toa total sky downward sw flux"
     />
-    <var name="topfsw" type="real" dimensions="nCells Time" units="W m^{-2}"
-         description="?"
-    />
-    <var name="topflw" type="real" dimensions="nCells Time" units="W m^{-2}"
-         description="?"
-    />
     <var name="dlwsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
          description="accumulated all-sky downward surface long-wave radiation flux"
     />

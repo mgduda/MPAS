@@ -84,7 +84,7 @@
          description="tendency of u-momentum due to deep convection"
     /> 
     <var name="tend_ugwdc" name_in_code="ugwdc" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
-         description="tendency of u-momentum due to convective grsvity wave drag"
+         description="tendency of u-momentum due to convective gravity wave drag"
     /> 
     <var name="tend_vdiffusion" name_in_code="vdiffusion" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
          description="tendency of v-momentum due to diffusion"
@@ -96,7 +96,7 @@
          description="tendency of v-momentum due to deep convection"
     /> 
     <var name="tend_vgwdc" name_in_code="vgwdc" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1} s^{-1}"
-         description="tendency of v-momentum due to convective grsvity wave drag"
+         description="tendency of v-momentum due to convective gravity wave drag"
     />
 
  </var_struct>
