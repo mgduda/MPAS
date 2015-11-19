@@ -538,6 +538,7 @@
                         <var name="qv"      array_group="moist"/>
                         <var name="qc"      array_group="moist"/>
                         <var name="qr"      array_group="moist"/>
+                        <var name="qo3"     array_group="ozone"/>
                 </var_array>
         </var_struct>
 

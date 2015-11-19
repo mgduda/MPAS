@@ -2628,7 +2628,9 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: sm_fg
       real (kind=RKIND), dimension(:), pointer :: soilz
 
-!---- NGGPS INTERPOLATION OF SURFACE FIELDS (ldf/2105-10-05):
+!---- NGGPS INTERPOLATION OF HIGH-RESOLUTION SURFACE FIELDS:
+!     Laura D. Fowler (laura@ucar.edu) / 2015-10-15.
+      integer, pointer:: index_qo3
       integer:: kk
 
       !static fields already interpolated to the MPAS mesh in subroutine init_atm_static_fields_forGFS
@@ -2648,6 +2650,8 @@ module init_atm_cases
       real(kind=RKIND),dimension(:),pointer  :: q2m,t2m
       real(kind=RKIND),dimension(:),pointer  :: hice,tisfc,snowh
       real(kind=RKIND),dimension(:,:),pointer:: sl_fg
+
+      call mpas_pool_get_dimension(state,'index_qo3',index_qo3)
 
       call mpas_pool_get_array(mesh,'vgtype'  ,vgtype  )
       call mpas_pool_get_array(mesh,'sltype'  ,sltype  )
@@ -2676,7 +2680,7 @@ module init_atm_cases
       call mpas_pool_get_array(fg,'tisfc' ,tisfc )
       call mpas_pool_get_array(fg,'snowh' ,snowh )
       call mpas_pool_get_array(fg,'zorl'  ,zorl  )
-!---- END NGGPS interpolation of surface fields.
+!---- END NGGPS INTERPOLATION OF HIGH-RESOLUTION SURFACE FIELDS.
 
       call mpas_pool_get_config(configs, 'config_met_prefix', config_met_prefix)
       call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
@@ -4595,6 +4599,7 @@ write(0,*) 'PROCESSING SEAICE'
 !                               sorted_arr(:,1:nfglevels_actual-1),order=1,extrap=1)
             if (target_z < z_fg(1,iCell)) &
                 o3mmr(k,iCell) = o3mmr(k+1,iCell)
+            scalars(index_qo3,k,iCell) = o3mmr(k,iCell)
          end do
 
          ! GHT
