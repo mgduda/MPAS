@@ -23,6 +23,13 @@
  public:: nuopc_rad_write, &
           nuopc_phys_write 
 
+!modifications:
+!--------------
+! * in subroutine nuopc_phys_write, corrected the physics tendency for water vapor so that it is expressed in term
+!   of a mixing ratio instead of in term of a specific humidity.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19. 
+
+
  contains
 
 
@@ -327,11 +334,13 @@
  do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
        tend_thphysics(k,iCell)  = (gt0(iCell,k)-tgrs(iCell,k))*dti/prslk(iCell,k)
-       tend_qvphysics(k,iCell)  = (gq0(iCell,k,1)-qgrs(iCell,k,1))*dti
        tend_qo3physics(k,iCell) = (gq0(iCell,k,2)-qgrs(iCell,k,2))*dti
        tend_qcphysics(k,iCell)  = (gq0(iCell,k,3)-qgrs(iCell,k,3))*dti
        tend_uphysics(k,iCell)   = (gu0(iCell,k)-ugrs(iCell,k))*dti
        tend_vphysics(k,iCell)   = (gv0(iCell,k)-vgrs(iCell,k))*dti
+       !conversion from specific humidity to water vapor mixing ratio:
+       tend_qvphysics(k,iCell) = gq0(iCell,k,1)/(1._RKIND-gq0(iCell,k,1))
+       tend_qvphysics(k,iCell) = (tend_qvphysics(k,iCell)-qgrs(iCell,k,1)/(1._RKIND-qgrs(iCell,k,1)))*dti
 !      write(0,202) iCell,k,tend_thphysics(k,iCell),tend_qvphysics(k,iCell),tend_qo3physics(k,iCell), &
 !                   tend_qcphysics(k,iCell),tend_uphysics(k,iCell),tend_vphysics(k,iCell)
     enddo
