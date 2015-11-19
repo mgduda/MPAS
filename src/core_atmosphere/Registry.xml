@@ -394,10 +394,6 @@
 			<var name="q2m"/>
 			<var name="t2m"/>
 			<var name="uustar"/>
-			<var name="pl_time"/>
-			<var name="pl_pres"/>
-			<var name="ozmixm"/>
-			<var name="ozmix"/>
 			<var name="cv"/>
 			<var name="cvb"/>
 			<var name="cvt"/>
