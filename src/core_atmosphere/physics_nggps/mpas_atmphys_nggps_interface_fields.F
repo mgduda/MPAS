@@ -39,6 +39,12 @@
 
  end type
 
+!modifications to sourcecode:
+!----------------------------
+! * in subroutine mpas_interface_fld_setphys, removed the variables sfcdsw, sfcnsw, and sfcdlw, which are not
+!   needed and not defined in Registry.physics_nggps.interface_fields.xml.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19. 
+
  
  contains
 
@@ -112,15 +118,14 @@
  real(kind=RKIND),dimension(:),pointer:: sfclwdn,sfcswdn,sfcswup
  real(kind=RKIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
                                          sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd
- real(kind=RKIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl, &
-                                    dnirbm_cpl,    &
-                                    dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,nswsfc_cpl,   &
-                                    nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,xt,xs,xu,xv,xz,zm,     &
-                                    xtts,xzts,d_conv,ifd,dt_cool,qrain,dusfci_cpl,dvsfci_cpl,          &
-                                    dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl,         &
-                                    dnirdfi_cpl,dvisbmi_cpl,dvisdfi_cpl,nlwsfci_cpl,nswsfci_cpl,       &
-                                    nnirbmi_cpl,nnirdfi_cpl,nvisbmi_cpl,nvisdfi_cpl,t2mi_cpl,q2mi_cpl, &
-                                    u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl
+ real(kind=RKIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
+                                         dnirbm_cpl,dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,      &
+                                         nswsfc_cpl,nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,dusfci_cpl,    &
+                                         dvsfci_cpl,dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl, & 
+                                         dnirdfi_cpl,dvisbmi_cpl,dvisdfi_cpl,nlwsfci_cpl,nswsfci_cpl,          &
+                                         nnirbmi_cpl,nnirdfi_cpl,nvisbmi_cpl,nvisdfi_cpl,t2mi_cpl,q2mi_cpl,    &
+                                         u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl
+ real(kind=kind_phys),dimension(:),pointer:: xt,xs,xu,xv,xz,zm,xtts,xzts,d_conv,ifd,dt_cool,qrain
 
  real(kind=kind_phys),dimension(:),pointer:: sfcnsw_l
 
@@ -315,16 +320,16 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nBands
- real(kind=RKIND),dimension(:),pointer:: sfcdsw, sfcnsw, sfcdlw, sfcnirbmu,sfcnirdfu, sfcvisbmu,       &
-                                    sfcvisdfu,sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd,dusfc_cpl,       &
-                                    dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,dnirbm_cpl,    &
-                                    dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,nswsfc_cpl,   &
-                                    nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,xt,xs,xu,xv,xz,zm,     &
-                                    xtts,xzts,d_conv,ifd,dt_cool,qrain,dusfci_cpl,dvsfci_cpl,          &
-                                    dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl,         &
-                                    dnirdfi_cpl,dvisbmi_cpl,dvisdfi_cpl,nlwsfci_cpl,nswsfci_cpl,       &
-                                    nnirbmi_cpl,nnirdfi_cpl,nvisbmi_cpl,nvisdfi_cpl,t2mi_cpl,q2mi_cpl, &
-                                    u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl
+ real(kind=RKIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
+                                         sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd
+ real(kind=RKIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
+                                         dnirbm_cpl,dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,      &
+                                         nswsfc_cpl,nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,dusfci_cpl,    &
+                                         dvsfci_cpl,dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl, &
+                                         dnirdfi_cpl,dvisbmi_cpl,dvisdfi_cpl,nlwsfci_cpl,nswsfci_cpl,          &
+                                         nnirbmi_cpl,nnirdfi_cpl,nvisbmi_cpl,nvisdfi_cpl,t2mi_cpl,q2mi_cpl,    &
+                                         u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl
+ real(kind=RKIND),dimension(:),pointer:: xt,xs,xu,xv,xz,zm,xtts,xzts,d_conv,ifd,dt_cool,qrain
 
  real(kind=RKIND),dimension(:,:),pointer  :: htrlw0,htrsw0
  real(kind=RKIND),dimension(:,:,:),pointer:: htrlwb,htrswb
@@ -344,9 +349,6 @@
  call mpas_pool_get_dimension(mesh,'nBands'     ,nBands     )
 
 !... from physics:
- call mpas_pool_get_array(nggps_interface_fields,'sfcdsw'     ,sfcdsw)
- call mpas_pool_get_array(nggps_interface_fields,'sfcnsw'     ,sfcnsw)
- call mpas_pool_get_array(nggps_interface_fields,'sfcdlw'     ,sfcdlw)
  call mpas_pool_get_array(nggps_interface_fields,'dusfc_cpl'  ,dusfc_cpl)
  call mpas_pool_get_array(nggps_interface_fields,'dvsfc_cpl'  ,dvsfc_cpl)
  call mpas_pool_get_array(nggps_interface_fields,'dvsfc_cpl'  ,dvsfc_cpl)
@@ -408,9 +410,6 @@
  call mpas_pool_get_array(nggps_interface_fields,'htrswb'  ,htrswb  )
 
 !... back to Registry:
- sfcdsw     => this%sfcdsw
- sfcnsw     => this%sfcnsw
- sfcdlw     => this%sfcdlw
  dusfc_cpl  => this%dusfc_cpl
  dvsfc_cpl  => this%dvsfc_cpl
  dvsfc_cpl  => this%dvsfc_cpl

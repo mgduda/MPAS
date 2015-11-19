@@ -27,7 +27,7 @@
    <var name="sfcswup" type="real" dimensions="nCells Time" units="W m^{-2}"
         description="total sky upward sw flux at sfc"
    />
-    <var name="sfcswdn" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcswdn" type="real" dimensions="nCells Time" units="W m^{-2}"
         description="total sky downward sw flux at sfc"
    />
    <var name="sfcswupc" type="real" dimensions="nCells Time" units="W m^{-2}"
