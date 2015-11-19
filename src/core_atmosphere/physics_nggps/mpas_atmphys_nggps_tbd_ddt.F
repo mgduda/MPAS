@@ -46,12 +46,15 @@
 
  end type
 
-!add-ons and modifications:
+!modifications:
+!--------------
 ! * added the local arrays fscav_l and fswtr_l for tracer scavenging, and phyfctd_l for the Chikira-Sugiyama
 !   convection scheme with the release of nuopc_physics.F90 version 2. 
 !   Laura D. Fowler (laura@ucar.edu) / 2015-09-22.
+! * temporarily fixed the array rann_l to 0.6 for debugging.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19/
 
- 
+
  contains
 
 
@@ -169,7 +172,7 @@
  logical:: test
 
  integer:: iCell,k,n
- integer:: ncld,ntrac,nctp
+ integer:: ncld,ntrac,nctp,nrcm
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -209,6 +212,7 @@
  ncld  = mdl_parameters%ncld
  ntrac = mdl_parameters%ntrac
  nctp  = mdl_parameters%nctp
+ nrcm  = mdl_parameters%nrcm
 
  dpshc_l   => this%dpshc_l
  slc_l     => this%slc_l
@@ -249,6 +253,11 @@
        do n = 1, numP3d
           phyf3d_l(iCell,k,n) = phy_f3d(n,k,iCell)
        enddo
+    enddo
+ enddo
+ do iCell = 1, nCellsSolve
+    do n = 1, nrcm
+       rann_l(iCell,n) = 0.6_RKIND
     enddo
  enddo
  do iCell = 1, nCellsSolve
