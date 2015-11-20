@@ -5,7 +5,9 @@ PHYSICS=-DDO_PHYSICS
 
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \
-       mpas_atm_interp_diagnostics.o
+       mpas_atm_interp_diagnostics.o \
+       mpas_atm_advection.o \
+       mpas_init_atm_cases.o
 
 all: physcore dycore atmcore
 
@@ -41,7 +43,9 @@ atmcore: physcore dycore $(OBJS)
 
 mpas_atm_core_interface.o: mpas_atm_core.o
 
-mpas_atm_core.o: dycore mpas_atm_interp_diagnostics.o
+mpas_atm_core.o: dycore mpas_atm_interp_diagnostics.o mpas_init_atm_cases.o
+
+mpas_init_atm_cases.o: mpas_atm_advection.o
 
 clean:
 	( cd physics; $(MAKE) clean )
