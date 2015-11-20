@@ -5,10 +5,14 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
-module mpas_io_streams
 
 #define COMMA ,
+#define STREAM_DEBUG_SUBROUTINE_ENTRY(M) ! write(stderrUnit,*) 'mpas_io_streams: enter subroutine '//M
 #define STREAM_DEBUG_WRITE(M) write(stderrUnit,*) M
+#define STREAM_WARNING_WRITE(M) write(stderrUnit,*) 'WARNING: '//M
+#define STREAM_ERROR_WRITE(M) write(stderrUnit,*) 'ERROR: '//M
+
+module mpas_io_streams
 
 #ifdef SINGLE_PRECISION
 #define REAL_IO_TYPE MPAS_IO_REAL
@@ -93,6 +97,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_createStream')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
 
@@ -151,7 +158,8 @@ module mpas_io_streams
       type (MPAS_Time_type) :: sliceTime, startTime
       type (MPAS_TimeInterval_type) :: timeDiff, minTimeDiff
 
-!      write(stderrUnit,*) 'Called MPAS_seekStream'
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_seekStream')
 
       !
       ! Initialize output arguments
@@ -280,7 +288,7 @@ module mpas_io_streams
       integer :: timeDim
 
 
-!      write(stderrUnit,*) 'Called MPAS_streamTime'
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamTime')
 
       !
       ! Initialize output arguments
@@ -331,6 +339,9 @@ module mpas_io_streams
       integer, dimension(:), pointer :: dimSizes
       type (field_list_type), pointer :: field_list_cursor
       type (field_list_type), pointer :: new_field_list_node
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_0dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -410,6 +421,9 @@ module mpas_io_streams
       type (mpas_pool_type), pointer :: meshPool
       integer, dimension(:), pointer :: indexArray
       integer, pointer :: indexDimension
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_1dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -513,6 +527,8 @@ module mpas_io_streams
       integer, pointer :: indexDimension
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_2dInteger')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -615,6 +631,8 @@ module mpas_io_streams
       integer, pointer :: indexDimension
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_3dInteger')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -711,6 +729,9 @@ module mpas_io_streams
       type (field_list_type), pointer :: new_field_list_node
       integer :: local_precision
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_0dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -799,6 +820,8 @@ module mpas_io_streams
       integer, dimension(:), pointer :: indexArray
       integer, pointer :: indexDimension
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_1dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -911,6 +934,8 @@ module mpas_io_streams
       integer, pointer :: indexDimension
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_2dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1021,6 +1046,8 @@ module mpas_io_streams
       integer, dimension(:), pointer :: indexArray
       integer, pointer :: indexDimension
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_3dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1133,6 +1160,8 @@ module mpas_io_streams
       integer, pointer :: indexDimension
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_4dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1244,6 +1273,8 @@ module mpas_io_streams
       integer, pointer :: indexDimension
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_5dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1347,6 +1378,9 @@ module mpas_io_streams
       type (field_list_type), pointer :: field_list_cursor
       type (field_list_type), pointer :: new_field_list_node
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_0dChar')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1441,6 +1475,9 @@ module mpas_io_streams
       integer, dimension(:), pointer :: dimSizesInq
       type (field_list_type), pointer :: field_list_cursor
       type (field_list_type), pointer :: new_field_list_node
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamAddField_generic')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1613,6 +1650,8 @@ module mpas_io_streams
       type (field_list_type), pointer :: field_cursor
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_0dInteger')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1656,6 +1695,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_1dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1702,6 +1743,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_2dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1750,6 +1793,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_3dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1801,6 +1846,8 @@ module mpas_io_streams
       type (field_list_type), pointer :: field_cursor
 
 
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_0dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -1844,6 +1891,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_1dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1890,6 +1939,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_2dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1938,6 +1989,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_3dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -1988,6 +2041,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_4dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -2040,6 +2095,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_5dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -2094,6 +2151,8 @@ module mpas_io_streams
 
       type (field_list_type), pointer :: field_cursor
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_streamUpdateField_0dChar')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -2163,6 +2222,9 @@ module mpas_io_streams
       real (kind=RKIND), dimension(:,:,:), pointer :: real3d_temp
       real (kind=RKIND), dimension(:,:,:,:), pointer :: real4d_temp
       real (kind=RKIND), dimension(:,:,:,:,:), pointer :: real5d_temp
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStream')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -2919,6 +2981,9 @@ module mpas_io_streams
       real (kind=RKIND), dimension(:,:,:,:),   pointer :: real4d_temp
       real (kind=RKIND), dimension(:,:,:,:,:), pointer :: real5d_temp
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStream')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3477,6 +3542,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStreamAtt_0dInteger')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3504,6 +3572,9 @@ module mpas_io_streams
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStreamAtt_1dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3533,6 +3604,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStreamAtt_0dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3561,6 +3635,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStreamAtt_1dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3588,6 +3665,9 @@ module mpas_io_streams
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_readStreamAtt_text')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3618,6 +3698,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStreamAtt_0dInteger')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3646,6 +3729,9 @@ module mpas_io_streams
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStreamAtt_1dInteger')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3676,6 +3762,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStreamAtt_0dReal')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3704,6 +3793,9 @@ module mpas_io_streams
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStreamAtt_1dReal')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3734,6 +3826,9 @@ module mpas_io_streams
 
       integer :: io_err
 
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_writeStreamAtt_text')
+
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
       !
@@ -3760,6 +3855,9 @@ module mpas_io_streams
 
       integer :: io_err
       type (field_list_type), pointer :: field_cursor
+
+
+      STREAM_DEBUG_SUBROUTINE_ENTRY('MPAS_closeStream')
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
