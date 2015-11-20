@@ -37,7 +37,7 @@
                 <nml_option name="config_time_integration"           type="character"     default_value="SRK3"        in_defaults="false"/>
                 <nml_option name="config_dt"                         type="real"          default_value="720.0"/>
                 <nml_option name="config_calendar_type"              type="character"     default_value="gregorian"   in_defaults="false"/>
-                <nml_option name="config_start_time"                 type="character"     default_value="2010-10-23_00:00:00"/>
+                <nml_option name="config_start_time"                 type="character"     default_value="0000-01-01_00:00:00"/>
                 <nml_option name="config_stop_time"                  type="character"     default_value="none"        in_defaults="false"/>
                 <nml_option name="config_run_duration"               type="character"     default_value="5_00:00:00"/>
                 <nml_option name="config_split_dynamics_transport"   type="logical"       default_value="true"/>
@@ -78,11 +78,11 @@
         </nml_record>
 
         <nml_record name="vertical_grid" in_defaults="true">
-                <nml_option name="config_nvertlevels"                type="integer"       default_value="26"/>
+                <nml_option name="config_nvertlevels"                type="integer"       default_value="127"/>
         </nml_record>
 
         <nml_record name="damping" in_defaults="true">
-                <nml_option name="config_zd"                         type="real"          default_value="22000.0"/>
+                <nml_option name="config_zd"                         type="real"          default_value="37000.0"/>
                 <nml_option name="config_xnutr"                      type="real"          default_value="0.2"/>
         </nml_record>
 
@@ -116,7 +116,7 @@
 	<streams>
 		<stream name="input" 
                         type="input" 
-                        filename_template="x1.40962.init.nc" 
+                        filename_template="x1.40962.grid.nc" 
                         input_interval="initial_only"
                         immutable="true">
 
@@ -691,7 +691,7 @@
                 <nml_option name="config_greeness_update"            type="character"     default_value="24:00:00"   in_defaults="false"/>
                 <nml_option name="config_bucket_update"              type="character"     default_value="none"/>
 
-                <nml_option name="config_physics_suite"              type="character"     default_value="mesoscale_reference"  in_defaults="true"/>
+                <nml_option name="config_physics_suite"              type="character"     default_value="none"       in_defaults="true"/>
 
                 <nml_option name="config_microp_scheme"              type="character"     default_value="suite"      in_defaults="false"/>
                 <nml_option name="config_convection_scheme"          type="character"     default_value="suite"      in_defaults="false"/>
