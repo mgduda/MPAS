@@ -5,6 +5,13 @@
 ! Additional copyright and license information can be found in the LICENSE file
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
+
+#define COMMA ,
+#define IO_DEBUG_SUBROUTINE_ENTRY(M) ! write(stderrUnit,*) 'mpas_io: enter subroutine '//M
+#define IO_DEBUG_WRITE(M) ! write(stderrUnit,*) M
+#define IO_WARNING_WRITE(M) write(stderrUnit,*) 'WARNING: '//M
+#define IO_ERROR_WRITE(M) write(stderrUnit,*) 'ERROR: '//M
+
 module mpas_io
 
    use mpas_derived_types
@@ -84,9 +91,11 @@ module mpas_io
 
       integer :: local_ierr
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_init')
+
       local_ierr = 0
 
-!      write(stderrUnit,*) 'Called MPAS_io_init()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       if (present(io_system)) then
@@ -149,6 +158,9 @@ module mpas_io
       integer, intent(in) :: io_type_in
       integer, intent(out), optional :: ierr
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_set_iotype')
+
       if (present(ierr)) then
          ierr = MPAS_IO_NOERR
       end if
@@ -177,6 +189,9 @@ module mpas_io
       type (mpas_io_context_type), intent(inout) :: ioContext
       integer, intent(out), optional :: ierr
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_unset_iotype')
+
       if (present(ierr)) then
          ierr = MPAS_IO_NOERR
       end if
@@ -202,7 +217,9 @@ module mpas_io
       logical :: local_clobber, local_truncate
       logical :: exists
 
-!      write(stderrUnit,*) 'Called MPAS_io_open()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_open')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       if (present(clobber_file)) then
@@ -334,7 +351,9 @@ module mpas_io
 
       integer :: pio_ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_inq_unlimited_dim()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_inq_unlimited_dim')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -370,7 +389,9 @@ module mpas_io
       type (dimlist_type), pointer :: dim_cursor
       integer :: pio_ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_inq_dim()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_inq_dim')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -452,7 +473,9 @@ module mpas_io
       type (dimlist_type), pointer :: new_dimlist_node
       type (dimlist_type), pointer :: dim_cursor
 
-!      write(stderrUnit,*) 'Called MPAS_io_def_dim()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_def_dim')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -574,7 +597,8 @@ module mpas_io
       integer :: pio_ierr
 
 
-!      write(stderrUnit,*) 'Called MPAS_io_inq_var()'
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_inq_var')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -788,7 +812,8 @@ module mpas_io
       integer :: local_precision
 
 
-!      write(stderrUnit,*) 'Called MPAS_io_def_var()'
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_def_var')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -985,7 +1010,9 @@ module mpas_io
 
       type (fieldlist_type), pointer :: field_cursor
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_indices()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_indices')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -1041,7 +1068,9 @@ module mpas_io
       integer (kind=PIO_OFFSET), dimension(:), pointer :: compdof
       type (decomplist_type), pointer :: decomp_cursor, new_decomp
 
-!      write(stderrUnit,*) 'Called MPAS_io_set_var_indices()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_set_var_indices')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -1308,6 +1337,9 @@ module mpas_io
       real (kind=R4KIND), dimension(:,:,:), allocatable :: singleArray3d
       real (kind=R4KIND), dimension(:,:,:,:), allocatable :: singleArray4d
       real (kind=R4KIND), dimension(:,:,:,:,:), allocatable :: singleArray5d
+
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_generic')
 
       ! Sanity checks
       if (.not. handle % initialized) then
@@ -1715,7 +1747,9 @@ module mpas_io
       integer, intent(out) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_int0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_int0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, intVal=val, ierr=ierr)
@@ -1732,7 +1766,9 @@ module mpas_io
       integer, dimension(:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_int1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_int1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, intArray1d=array, ierr=ierr)
@@ -1749,7 +1785,8 @@ module mpas_io
       integer, dimension(:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_int2d()'
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_int2d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, intArray2d=array, ierr=ierr)
@@ -1766,7 +1803,9 @@ module mpas_io
       integer, dimension(:,:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_int3d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_int3d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, intArray3d=array, ierr=ierr)
@@ -1783,7 +1822,9 @@ module mpas_io
       integer, dimension(:,:,:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_int4d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_int4d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, intArray4d=array, ierr=ierr)
@@ -1800,7 +1841,9 @@ module mpas_io
       real (kind=RKIND), intent(out) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realVal=val, ierr=ierr)
@@ -1817,7 +1860,9 @@ module mpas_io
       real (kind=RKIND), dimension(:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realArray1d=array, ierr=ierr)
@@ -1834,7 +1879,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real2d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real2d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realArray2d=array, ierr=ierr)
@@ -1851,7 +1898,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real3d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real3d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realArray3d=array, ierr=ierr)
@@ -1868,7 +1917,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real4d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real4d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realArray4d=array, ierr=ierr)
@@ -1885,7 +1936,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:,:,:), intent(out) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_real5d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_real5d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, realArray5d=array, ierr=ierr)
@@ -1902,7 +1955,9 @@ module mpas_io
       character (len=*), intent(out) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_var_char0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_var_char0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_get_var_generic(handle, fieldname, charVal=val, ierr=ierr)
@@ -1917,6 +1972,8 @@ module mpas_io
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out), optional :: ierr
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_would_clobber_records')
 
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
@@ -1979,6 +2036,9 @@ module mpas_io
       real (kind=R4KIND), dimension(:,:,:), allocatable :: singleArray3d
       real (kind=R4KIND), dimension(:,:,:,:), allocatable :: singleArray4d
       real (kind=R4KIND), dimension(:,:,:,:,:), allocatable :: singleArray5d
+
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_generic')
 
       ! Sanity checks
       if (.not. handle % initialized) then
@@ -2425,7 +2485,9 @@ module mpas_io
       integer, intent(in) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_int0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_int0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, intVal=val, ierr=ierr)
@@ -2442,7 +2504,9 @@ module mpas_io
       integer, dimension(:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_int1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_int1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, intArray1d=array, ierr=ierr)
@@ -2459,7 +2523,9 @@ module mpas_io
       integer, dimension(:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_int2d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_int2d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, intArray2d=array, ierr=ierr)
@@ -2476,7 +2542,9 @@ module mpas_io
       integer, dimension(:,:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_int3d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_int3d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, intArray3d=array, ierr=ierr)
@@ -2493,7 +2561,9 @@ module mpas_io
       integer, dimension(:,:,:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_int4d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_int4d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, intArray4d=array, ierr=ierr)
@@ -2510,7 +2580,9 @@ module mpas_io
       real (kind=RKIND), intent(in) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realVal=val, ierr=ierr)
@@ -2527,7 +2599,9 @@ module mpas_io
       real (kind=RKIND), dimension(:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realArray1d=array, ierr=ierr)
@@ -2544,7 +2618,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real2d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real2d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realArray2d=array, ierr=ierr)
@@ -2561,7 +2637,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real3d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real3d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realArray3d=array, ierr=ierr)
@@ -2578,7 +2656,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real4d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real4d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realArray4d=array, ierr=ierr)
@@ -2595,7 +2675,9 @@ module mpas_io
       real (kind=RKIND), dimension(:,:,:,:,:), intent(in) :: array
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_real5d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_real5d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, realArray5d=array, ierr=ierr)
@@ -2612,7 +2694,9 @@ module mpas_io
       character (len=*), intent(in) :: val
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_var_char0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_var_char0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       call MPAS_io_put_var_generic(handle, fieldname, charVal=val, ierr=ierr)
@@ -2636,7 +2720,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_att_int0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_att_int0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -2762,7 +2848,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_att_int1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_att_int1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -2899,7 +2987,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_att_real0d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_att_real0d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3025,7 +3115,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_att_real1d()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_att_real1d')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3162,7 +3254,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
-!      write(stderrUnit,*) 'Called MPAS_io_get_att_text()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_get_att_text')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3289,9 +3383,11 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: attlist_cursor, new_attlist_node
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_att_int0d')
+
       attValueLocal = attValue
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_att_int0d()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3428,10 +3524,12 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: attlist_cursor, new_attlist_node
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_att_int1d')
+
       allocate(attValueLocal(size(attValue, dim=1)))
       attValueLocal(:) = attValue(:)
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_att_int1d()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3576,9 +3674,11 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: attlist_cursor, new_attlist_node
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_att_real0d')
+
       attValueLocal = attValue
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_att_real0d()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3715,11 +3815,13 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: attlist_cursor, new_attlist_node
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_att_real1d')
+
       allocate(attValueLocal( size(attValue, dim=1) ) )
 
       attValueLocal(:) = attValue(:)
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_att_real1d()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -3865,6 +3967,9 @@ module mpas_io
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: attlist_cursor, new_attlist_node
 
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_put_att_text')
+
       valLen = len_trim(attValue)
       trimmedVal = trim(attValue)
 
@@ -3875,7 +3980,6 @@ module mpas_io
          attValueLocal = trimmedVal
       end if
 
-!      write(stderrUnit,*) 'Called MPAS_io_put_att_text()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -4031,7 +4135,9 @@ module mpas_io
       integer, intent(in) :: frame
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_set_frame()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_set_frame')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       handle % frame_number = frame
@@ -4046,7 +4152,9 @@ module mpas_io
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_advance_frame()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_advance_frame')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       handle % frame_number = handle % frame_number + 1
@@ -4061,7 +4169,9 @@ module mpas_io
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out), optional :: ierr
 
-!      write(stderrUnit,*) 'Called MPAS_io_sync()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_sync')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -4086,7 +4196,9 @@ module mpas_io
       type (fieldlist_type), pointer :: fieldlist_ptr, fieldlist_del
       type (attlist_type), pointer :: attlist_ptr, attlist_del
 
-!      write(stderrUnit,*) 'Called MPAS_io_close()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_close')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -4157,7 +4269,9 @@ module mpas_io
       integer :: pio_ierr
       type (decomplist_type), pointer :: decomp_cursor, decomp_del
 
-!      write(stderrUnit,*) 'Called MPAS_io_finalize()'
+
+      IO_DEBUG_SUBROUTINE_ENTRY('MPAS_io_finalize')
+
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       decomp_cursor => ioContext % decomp_list
