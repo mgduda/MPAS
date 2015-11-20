@@ -8,6 +8,7 @@
 
 #define COMMA ,
 #define IO_DEBUG_SUBROUTINE_ENTRY(M) ! write(stderrUnit,*) 'mpas_io: enter subroutine '//M
+#define IO_DEBUG_PIO_RETURN_CODE(M) ! write(stderrUnit,*) 'mpas_io: '//M
 #define IO_DEBUG_WRITE(M) ! write(stderrUnit,*) M
 #define IO_WARNING_WRITE(M) write(stderrUnit,*) 'WARNING: '//M
 #define IO_ERROR_WRITE(M) write(stderrUnit,*) 'ERROR: '//M
@@ -291,9 +292,11 @@ module mpas_io
  
          if (exists .and. (.not. local_truncate)) then
             pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_write)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_openfile() err=' COMMA pio_ierr)
             MPAS_io_open % preexisting_file = .true.
          else
             pio_ierr = PIO_createfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), pio_mode)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_createfile() err=' COMMA pio_ierr)
             if (exists) then
                write(stderrUnit,'(a)') 'MPAS I/O: Truncating existing data in output file '//trim(filename)
             end if
@@ -306,6 +309,7 @@ module mpas_io
             return
          end if
          pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_openfile() err=' COMMA pio_ierr)
       endif
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -314,6 +318,7 @@ module mpas_io
 
       if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
          pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % pio_unlimited_dimid)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_inquire() err=' COMMA pio_ierr)
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
@@ -325,6 +330,7 @@ module mpas_io
          ! shouldn't break for files with unlimited dimensions.
          if ( MPAS_io_open % pio_unlimited_dimid /= -1 ) then
             pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % pio_unlimited_dimid, MPAS_io_open % preexisting_records)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimlen() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                return
@@ -367,6 +373,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_inq_dimname(handle % pio_file, handle % pio_unlimited_dimid, dimname) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimname() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NO_UNLIMITED_DIM
          dimname = ' '
@@ -424,6 +431,7 @@ module mpas_io
       new_dimlist_node % dimhandle % dimname = dimname
 
       pio_ierr = PIO_inq_dimid(handle % pio_file, trim(dimname), new_dimlist_node % dimhandle % dimid)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimid() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_MISSING_DIM
          deallocate(new_dimlist_node % dimhandle)
@@ -435,6 +443,7 @@ module mpas_io
       if (new_dimlist_node % dimhandle % dimid == handle % pio_unlimited_dimid) new_dimlist_node % dimhandle % is_unlimited_dim = .true.
 
       pio_ierr = PIO_inq_dimlen(handle % pio_file, new_dimlist_node % dimhandle % dimid, new_dimlist_node % dimhandle % dimsize)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimlen() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          deallocate(new_dimlist_node % dimhandle)
@@ -551,8 +560,10 @@ module mpas_io
       if (dimsize == MPAS_IO_UNLIMITED_DIM) then
          new_dimlist_node % dimhandle % is_unlimited_dim = .true.
          pio_ierr = PIO_def_dim(handle % pio_file, trim(dimname), PIO_unlimited, new_dimlist_node % dimhandle % dimid)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_def_dim() err=' COMMA pio_ierr)
       else
          pio_ierr = PIO_def_dim(handle % pio_file, trim(dimname), dimsize, new_dimlist_node % dimhandle % dimid)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_def_dim() err=' COMMA pio_ierr)
       end if
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -634,7 +645,9 @@ module mpas_io
 
          ! Get variable ID
          pio_ierr = PIO_inq_varid(handle % pio_file, trim(fieldname), new_fieldlist_node % fieldhandle % fieldid)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_inq_varid() err=' COMMA pio_ierr)
          pio_ierr = PIO_inq_varid(handle % pio_file, trim(fieldname), new_fieldlist_node % fieldhandle % field_desc)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_inq_varid() err=' COMMA pio_ierr)
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             deallocate(new_fieldlist_node % fieldhandle)
@@ -646,6 +659,7 @@ module mpas_io
          ! Get field type
          pio_ierr = PIO_inq_vartype(handle % pio_file, new_fieldlist_node % fieldhandle % fieldid, &
                                     new_fieldlist_node % fieldhandle % field_type)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_inq_vartype() err=' COMMA pio_ierr)
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             deallocate(new_fieldlist_node % fieldhandle)
@@ -670,6 +684,7 @@ module mpas_io
 
          ! Get number of dimensions
          pio_ierr = PIO_inq_varndims(handle % pio_file, new_fieldlist_node % fieldhandle % fieldid, new_fieldlist_node % fieldhandle % ndims)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_inq_varndims() err=' COMMA pio_ierr)
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             deallocate(new_fieldlist_node % fieldhandle)
@@ -682,6 +697,7 @@ module mpas_io
          ! Get dimension IDs
          if (new_fieldlist_node % fieldhandle % ndims > 0) then
             pio_ierr = PIO_inq_vardimid(handle % pio_file, new_fieldlist_node % fieldhandle % fieldid, dimids)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_inq_vardimid() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                deallocate(new_fieldlist_node % fieldhandle)
@@ -702,6 +718,7 @@ module mpas_io
             end if
 
             pio_ierr = PIO_inq_dimlen(handle % pio_file, dimids(i), new_fieldlist_node % fieldhandle % dims(i) % dimsize)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimlen() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                deallocate(new_fieldlist_node % fieldhandle)
@@ -711,6 +728,7 @@ module mpas_io
             end if
 
             pio_ierr = PIO_inq_dimname(handle % pio_file, dimids(i), new_fieldlist_node % fieldhandle % dims(i) % dimname)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_inq_dimname() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                deallocate(new_fieldlist_node % fieldhandle)
@@ -971,6 +989,7 @@ module mpas_io
       else
          pio_ierr = PIO_def_var(handle % pio_file, trim(fieldname), pio_type, dimids, new_fieldlist_node % fieldhandle % field_desc)
       end if
+      IO_DEBUG_PIO_RETURN_CODE('PIO_def_var() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -978,6 +997,7 @@ module mpas_io
 
       ! Get the varid for use by put_att routines
       pio_ierr = PIO_inq_varid(handle % pio_file, trim(fieldname), new_fieldlist_node % fieldhandle % fieldid)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_varid() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -1730,6 +1750,7 @@ module mpas_io
          end if
       end if
 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_var() / PIO_read_darray() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2050,6 +2071,7 @@ module mpas_io
          handle % data_mode = .true.
 
          pio_ierr = PIO_enddef(handle % pio_file)
+         IO_DEBUG_PIO_RETURN_CODE('PIO_enddef() err=' COMMA pio_ierr)
          ! If we are working with a preexisting file, we likely didn't define
          ! new dimensions or variables, in which case PIO_enddef() will return
          ! an error under harmless circumstances; so, don't return only for
@@ -2468,6 +2490,8 @@ module mpas_io
             end if
          end if
       end if
+
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_var() / PIO_write_darray() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2784,6 +2808,7 @@ module mpas_io
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2794,6 +2819,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2914,6 +2940,7 @@ module mpas_io
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2925,6 +2952,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_inq_attlen(handle % pio_file, varid, attName, attlen)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_attlen() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -2932,6 +2960,7 @@ module mpas_io
 
       allocate(attValue(attlen))
       pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3051,6 +3080,7 @@ module mpas_io
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3061,6 +3091,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3181,6 +3212,7 @@ module mpas_io
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3192,6 +3224,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_inq_attlen(handle % pio_file, varid, attName, attlen)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_attlen() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3199,6 +3232,7 @@ module mpas_io
 
       allocate(attValue(attlen))
       pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3318,6 +3352,7 @@ module mpas_io
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_inq_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3328,6 +3363,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+      IO_DEBUG_PIO_RETURN_CODE('PIO_get_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3497,6 +3533,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3645,6 +3682,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3788,6 +3826,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -3937,6 +3976,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -4089,6 +4129,7 @@ module mpas_io
       end if
 
       pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal)) 
+      IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
       if (pio_ierr /= PIO_noerr) then
 
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -4101,16 +4142,19 @@ module mpas_io
          !
          if (handle % preexisting_file .and. .not. handle % data_mode) then
             pio_ierr = PIO_redef(handle % pio_file)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_redef() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                return
             end if
 
             pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal)) 
+            IO_DEBUG_PIO_RETURN_CODE('PIO_put_att() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                return
             end if
 
             pio_ierr = PIO_enddef(handle % pio_file)
+            IO_DEBUG_PIO_RETURN_CODE('PIO_enddef() err=' COMMA pio_ierr)
             if (pio_ierr /= PIO_noerr) then
                return
             end if
@@ -4288,6 +4332,7 @@ module mpas_io
       if (present(finalize_iosystem)) then
          if ( finalize_iosystem ) then
            call PIO_finalize(ioContext % pio_iosystem, pio_ierr)
+           IO_DEBUG_PIO_RETURN_CODE('PIO_finalize() err=' COMMA pio_ierr)
            if (pio_ierr /= PIO_noerr) then
               if (present(ierr)) ierr = MPAS_IO_ERR_PIO
               return
