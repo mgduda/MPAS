@@ -156,6 +156,12 @@
 			<var name="cellsOnVertex"/>
 			<var name="kiteAreasOnVertex"/>
 			<var name="meshDensity"/>
+			<var name="reference_p0"/>
+			<var name="reference_u"/>
+			<var name="reference_rho"/>
+			<var name="reference_theta"/>
+			<var name="reference_w"/>
+			<var name="reference_psfc"/>
 		</stream>
 
 		<stream name="restart" 
@@ -351,6 +357,21 @@
 			<var name="vorticity_850hPa"/>
 		</stream>
 
+		<stream name="benchmark" 
+                        type="output" 
+                        filename_template="benchmark.$Y-$M-$D_$h.$m.$s.nc" 
+                        output_interval="none"
+                        runtime_format="separate_file">
+
+			<var name="xtime"/>
+			<var name="computed_p0"/>
+			<var name="computed_u"/>
+			<var name="computed_rho"/>
+			<var name="computed_theta"/>
+			<var name="computed_w"/>
+			<var name="computed_psfc"/>
+		</stream>
+
 	</streams>
 
 
@@ -501,6 +522,22 @@
                         <var name="bg"      array_group="aer_cam"/>
                         <var name="volc"    array_group="aer_cam"/>
                 </var_array>
+        </var_struct>
+
+        <var_struct name="reference" time_levs="1">
+                <var name="reference_p0"             type="real"     dimensions="nCells"/>
+                <var name="reference_u"              type="real"     dimensions="nEdges"/>
+                <var name="reference_rho"            type="real"     dimensions="nCells"/>
+                <var name="reference_theta"          type="real"     dimensions="nCells"/>
+                <var name="reference_w"              type="real"     dimensions="nCells"/>
+                <var name="reference_psfc"           type="real"     dimensions="nCells"/>
+
+                <var name="computed_p0"              type="real"     dimensions="nCells"/>
+                <var name="computed_u"               type="real"     dimensions="nEdges"/>
+                <var name="computed_rho"             type="real"     dimensions="nCells"/>
+                <var name="computed_theta"           type="real"     dimensions="nCells"/>
+                <var name="computed_w"               type="real"     dimensions="nCells"/>
+                <var name="computed_psfc"            type="real"     dimensions="nCells"/>
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
