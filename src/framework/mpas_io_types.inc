@@ -55,13 +55,13 @@
       logical :: initialized = .false.
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
-      type (file_desc_t) :: pio_file
+      integer :: ncid
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
-      integer :: pio_unlimited_dimid
+      integer :: unlimited_dimid
       integer :: preexisting_records = 0
-      integer (kind=PIO_offset) :: frame_number = 1
+      integer :: frame_number = 1
       type (dimlist_type), pointer :: dimlist_head => null()
       type (dimlist_type), pointer :: dimlist_tail => null()
       type (fieldlist_type), pointer :: fieldlist_head => null()
@@ -76,7 +76,6 @@
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
       integer, dimension(:), pointer :: start, count
-      type (io_desc_t) :: pio_iodesc
    end type decomphandle_type
 
    type atthandle_type

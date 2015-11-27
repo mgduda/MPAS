@@ -102,7 +102,7 @@ module mpas_framework
       if (pio_num_iotasks == 0) then
          pio_num_iotasks = domain % dminfo % nprocs
       end if
-      call MPAS_io_init(domain % dminfo, pio_num_iotasks, pio_stride, io_system)
+      call MPAS_io_init(domain % dminfo, pio_num_iotasks, pio_stride)
 
    end subroutine mpas_framework_init_phase2!}}}
 
@@ -117,15 +117,14 @@ module mpas_framework
 !>  This routine finalizes the MPAS framework. It calls routines related to finalizing different parts of MPAS, that are housed within the framework.
 !
 !-----------------------------------------------------------------------  
-   subroutine mpas_framework_finalize(dminfo, domain, io_system)!{{{
+   subroutine mpas_framework_finalize(dminfo, domain)!{{{
   
       implicit none
 
       type (dm_info), pointer :: dminfo
       type (domain_type), pointer :: domain
-      type (iosystem_desc_t), optional, pointer :: io_system
 
-      call MPAS_io_finalize(io_system)
+      call MPAS_io_finalize()
 
       call mpas_deallocate_domain(domain)
 
