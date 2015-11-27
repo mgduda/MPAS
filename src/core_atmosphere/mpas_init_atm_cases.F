@@ -443,7 +443,7 @@ module init_atm_cases
       do i=1, nEdges
         iCell1 = cellsOnEdge(1,i)
         iCell2 = cellsOnEdge(2,i)
-        do k=1,nz
+        do k=1,nz1
           zxu (k,i) = 0.5 * (zgrid(k,iCell2)-zgrid(k,iCell1) + zgrid(k+1,iCell2)-zgrid(k+1,iCell1)) / dcEdge(i)
         end do
       end do

@@ -710,7 +710,7 @@
 
         <var_struct name="diag_physics" time_levs="1">
 
-                <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="relhum_phys"   name_in_code="relhum"      type="real"     dimensions="nVertLevels nCells Time"/>
 
 #if 0
                 <var name="dcEdge_m"      type="real"     dimensions="nCells"/>
