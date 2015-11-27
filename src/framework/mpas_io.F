@@ -1041,6 +1041,7 @@ module mpas_io
       integer (kind=PIO_OFFSET) :: pd, indx
       integer :: i 
       integer :: early_return, early_return_global
+      integer :: is_structured, is_structured_global
       integer (kind=PIO_OFFSET) :: i1, i2, i3, i4, i5
       integer, dimension(:), pointer :: dimlist
       integer (kind=PIO_OFFSET), dimension(:), pointer :: compdof
@@ -1209,6 +1210,43 @@ module mpas_io
       new_decomp % decomphandle % dims(ndims) = field_cursor % fieldhandle % dims(ndims) % dimsize
       dimlist(ndims) = size(indices)
       pd = pd * int(dimlist(ndims),PIO_OFFSET)
+
+      !
+      ! Here, we determine whether this field is structured or unstructured
+      !
+      is_structured = 0
+      if ((indices(size(indices)) - indices(1) + 1) == size(indices)) then
+         do i=2,size(indices)
+            if (indices(i) /= indices(i-1) + 1) then
+               exit
+            end if
+         end do
+         if (i == size(indices)+1) then
+            is_structured = 1
+         end if
+      end if 
+
+      call mpas_dmpar_min_int(local_dminfo, is_structured, is_structured_global)
+
+      if (is_structured_global == 1) then
+
+         new_decomp % decomphandle % structured = .true.
+
+         allocate(new_decomp % decomphandle % start(ndims))
+         allocate(new_decomp % decomphandle % count(ndims))
+
+         do i=1,ndims-1
+            new_decomp % decomphandle % start(i) = 1
+            new_decomp % decomphandle % count(i) = dimlist(i)
+         end do
+         new_decomp % decomphandle % start(ndims) = indices(1)
+         new_decomp % decomphandle % count(ndims) = size(indices)
+
+      else
+
+         new_decomp % decomphandle % structured = .false.
+
+      end if
 
       allocate(compdof(pd)) 
 
@@ -4232,6 +4270,10 @@ module mpas_io
 !if (.not. associated(decomp_del % decomphandle)) write(stderrUnit,*) 'OOPS... do not have decomphandle'
          deallocate(decomp_del % decomphandle % dims)
          deallocate(decomp_del % decomphandle % indices)
+         if (decomp_del % decomphandle % structured) then
+            deallocate(decomp_del % decomphandle % start)
+            deallocate(decomp_del % decomphandle % count)
+         end if
          call PIO_freedecomp(pio_iosystem, decomp_del % decomphandle % pio_iodesc)
          deallocate(decomp_del % decomphandle)
          deallocate(decomp_del)
