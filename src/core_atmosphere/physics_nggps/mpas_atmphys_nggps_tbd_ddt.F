@@ -52,7 +52,9 @@
 !   convection scheme with the release of nuopc_physics.F90 version 2. 
 !   Laura D. Fowler (laura@ucar.edu) / 2015-09-22.
 ! * temporarily fixed the array rann_l to 0.6 for debugging.
-!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19/
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19.
+! * added deallocation of local array ozmix_l.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-27.
 
 
  contains
@@ -129,6 +131,8 @@
  if(associated(this%rann_l)   ) deallocate(this%rann_l   )
  if(associated(this%phyf2d_l) ) deallocate(this%phyf2d_l )
  if(associated(this%phyf3d_l) ) deallocate(this%phyf3d_l )
+
+ if(associated(this%ozmix_l)  ) deallocate(this%ozmix_l  )
 
 !... new pointers added in nuopc_physics.F90 version 2:
  if(associated(this%fscav_l)  ) deallocate(this%fscav_l  )
