@@ -98,7 +98,7 @@
    type fieldhandle_type
       character (len=StrKIND) :: fieldname
       integer :: fieldid
-      type (Var_desc_t) :: field_desc
+!      type (Var_desc_t) :: field_desc
       integer :: field_type
       logical :: has_unlimited_dim = .false.
       integer :: ndims

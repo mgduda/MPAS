@@ -68,13 +68,12 @@ module mpas_framework
 !>  the time keeper, and the IO infrastructure.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_framework_init_phase2(domain, io_system, calendar)!{{{
+   subroutine mpas_framework_init_phase2(domain, calendar)!{{{
 
       implicit none
 
       type (domain_type), pointer :: domain
 
-      type (iosystem_desc_t), optional, pointer :: io_system
       character(len=*), intent(in), optional :: calendar
 
       character(len=StrKIND), pointer :: config_calendar_type
