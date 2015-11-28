@@ -28,6 +28,12 @@
  private
  public:: physics_driver
 
+!modifications to sourcecode:
+!----------------------------
+! * added the mpas_pool_type nggps_dynamic_parameters to the argument list of subroutines mpas_dyn_param_setrad
+!   and mpas_dyn_param_setphys.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
+
 
  contains
 
@@ -51,6 +57,7 @@
                                 nggps_atm_inputs,           & 
                                 nggps_cloud_properties,     &
                                 nggps_diagnostics,          &
+                                nggps_dynamic_parameters,   &
                                 nggps_interface_fields,     &
                                 nggps_physics_tendencies,   &
                                 nggps_radiation_tendencies, &
@@ -84,6 +91,7 @@
     call mpas_pool_get_subpool(block%structs,'nggps_atm_inputs'          ,nggps_atm_inputs          )
     call mpas_pool_get_subpool(block%structs,'nggps_cloud_properties'    ,nggps_cloud_properties    )
     call mpas_pool_get_subpool(block%structs,'nggps_diagnostics'         ,nggps_diagnostics         )
+    call mpas_pool_get_subpool(block%structs,'nggps_dynamic_parameters'  ,nggps_dynamic_parameters  )
     call mpas_pool_get_subpool(block%structs,'nggps_interface_fields'    ,nggps_interface_fields    )
     call mpas_pool_get_subpool(block%structs,'nggps_physics_tendencies'  ,nggps_physics_tendencies  )
     call mpas_pool_get_subpool(block%structs,'nggps_radiation_tendencies',nggps_radiation_tendencies)
@@ -117,7 +125,7 @@
 
 !      call mpas_cld_props%mpas_setrad(mesh,nggps_cloud_properties)
 !      call mpas_diags%mpas_setrad(mesh,nggps_diagnostics)
-       call mpas_dyn_parameters%mpas_setrad(block%configs,mesh,itimestep,xtime_s)
+       call mpas_dyn_parameters%mpas_setrad(block%configs,mesh,nggps_dynamic_parameters,itimestep,xtime_s)
 !      call mpas_intrfc_flds%mpas_setrad(mesh,nggps_interface_fields)
 !      call mpas_rad_tendencies%mpas_setrad(mesh,nggps_radiation_tendencies)
 !      call mpas_sfc_prop%mpas_setrad(mesh,nggps_sfc_properties)
@@ -151,7 +159,7 @@
     call mpas_stateout%mpas_setphys(mesh)
     call mpas_cld_props%mpas_setphys(mesh,nggps_cloud_properties)
     call mpas_diags%mpas_setphys(mesh,nggps_diagnostics)
-    call mpas_dyn_parameters%mpas_setphys(block%configs,mesh,itimestep,xtime_s)
+    call mpas_dyn_parameters%mpas_setphys(block%configs,mesh,nggps_dynamic_parameters,itimestep,xtime_s)
     call mpas_intrfc_flds%mpas_setphys(mesh,nggps_interface_fields)
     call mpas_sfc_prop%mpas_setphys(mesh,nggps_sfc_properties)
     call mpas_tbds%allocate_mem(mesh)
