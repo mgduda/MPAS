@@ -22,6 +22,7 @@
  private
  public:: physics_timetracker,physics_run_init
 
+ character(len=StrKIND),public:: physics_timeStamp
  integer,public:: year                 !Current year.
  integer,public:: month                !Current month.
  integer,public:: day                  !Current day.
@@ -46,6 +47,12 @@
  character(len=*), parameter:: acfieldsAlarmID = 'acfields'
 
  integer:: h, d, dd, m, mm, s, s_n, s_d, DoY, yr
+
+
+!modifications to sourcecode:
+!----------------------------
+! * In subroutine physics_timetracker, renamed and made public the variable timeStamp to physics_timeStamp.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
 
 
  contains
@@ -78,7 +85,6 @@
  type(MPAS_Time_Type):: currTime
 
  logical:: LeapYear
- character(len=StrKIND):: timeStamp
  integer:: ierr
  real(kind=RKIND):: utc_s
  real(kind=RKIND):: xtime_m
@@ -106,7 +112,7 @@
             '     TIME STAMP  =', 1x,a32,/)
 
  currTime = mpas_get_clock_time(clock,MPAS_NOW,ierr)
- call mpas_get_time(curr_time=currTime,dateTimeString=timeStamp,YYYY=yr,MM=mm,DD=d,H=h, &
+ call mpas_get_time(curr_time=currTime,dateTimeString=physics_timeStamp,YYYY=yr,MM=mm,DD=d,H=h, &
                     M=m,S=s,S_n=s_n,S_d=s_d,DoY=DoY,ierr=ierr)
 
  utc_h = real(h) + real(m) / 60.0 + real(s + s_n / s_d) / 3600.0
@@ -121,7 +127,8 @@
  julday  = DoY
  curr_julday = real(julday-1) + utc_h / 24.0
  LeapYear = isLeapYear(year)
- write(0,100) year,month,day,hour,minute,second,msecond,julday,gmt,utc_h,curr_julday,LeapYear,timeStamp
+ write(0,100) year,month,day,hour,minute,second,msecond,julday,gmt,utc_h,curr_julday, &
+              LeapYear,physics_timeStamp
 
  block => domain % blocklist
  do while(associated(block))
