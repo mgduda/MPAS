@@ -11,6 +11,7 @@ module atm_time_integration
    use mpas_kind_types
    use mpas_constants
    use mpas_dmpar
+   use mpas_timer
    use mpas_vector_reconstruction
    ! Added only clause to keep xlf90 from getting confused from the overloaded abs intrinsic in mpas_timekeeping
    use mpas_timekeeping, only: MPAS_Time_type, MPAS_TimeInterval_type, &
@@ -213,6 +214,7 @@ module atm_time_integration
       call mpas_dmpar_exch_halo_field(rtheta_p_field)
 
 
+      call mpas_timer_start('atm_rk_integration_setup')
       block => domain % blocklist
       do while (associated(block))
          call mpas_pool_get_subpool(block % structs, 'state', state)
@@ -220,6 +222,7 @@ module atm_time_integration
          call atm_rk_integration_setup(state, diag)
          block => block % next
       end do
+      call mpas_timer_stop('atm_rk_integration_setup')
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
       ! BEGIN Runge-Kutta loop 
@@ -229,6 +232,7 @@ module atm_time_integration
 
          if(debug) write(0,*) ' rk substep ', rk_step
 
+         call mpas_timer_start('atm_compute_moist_coefficients')
          block => domain % blocklist
          do while (associated(block))
             ! The coefficients are set for owned cells (cqw) and for all edges of owned cells, 
@@ -238,9 +242,11 @@ module atm_time_integration
             call atm_compute_moist_coefficients( block % dimensions, state, diag, mesh )    !MGD could do away with dimensions arg
             block => block % next
          end do
+         call mpas_timer_stop('atm_compute_moist_coefficients')
 
 
          if (debug) write(0,*) ' compute_dyn_tend '
+         call mpas_timer_start('atm_compute_dyn_tend')
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'state', state)
@@ -254,6 +260,7 @@ module atm_time_integration
 
             block => block % next
          end do
+         call mpas_timer_stop('atm_compute_dyn_tend')
          if (debug) write(0,*) ' finished compute_dyn_tend '
 
 #ifdef DO_PHYSICS
@@ -289,6 +296,7 @@ module atm_time_integration
          call mpas_pool_get_field(tend, 'u', tend_u_field)
          call mpas_dmpar_exch_halo_field(tend_u_field, (/ 1 /))
 
+         call mpas_timer_start('small_step_prep')
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -303,6 +311,7 @@ module atm_time_integration
 
             block => block % next
          end do
+         call mpas_timer_stop('small_step_prep')
 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          ! begin acoustic steps loop
@@ -312,6 +321,7 @@ module atm_time_integration
 
             if(debug) write(0,*) ' acoustic step ',small_step
       
+            call mpas_timer_start('atm_advance_acoustic_step')
             block => domain % blocklist
             do while (associated(block))
                call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -326,6 +336,7 @@ module atm_time_integration
 
                block => block % next
             end do
+            call mpas_timer_stop('atm_advance_acoustic_step')
 
             if(debug) write(0,*) ' acoustic step complete '
   
@@ -354,6 +365,7 @@ module atm_time_integration
          call mpas_pool_get_field(diag, 'rtheta_pp', rtheta_pp_field)
          call mpas_dmpar_exch_halo_field(rtheta_pp_field, (/ 2 /))
 
+         call mpas_timer_start('atm_recover_large_step_variables')
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -365,6 +377,7 @@ module atm_time_integration
 
             block => block % next
          end do
+         call mpas_timer_stop('atm_recover_large_step_variables')
 
 ! u
          !CR: SMALLER STENCIL?: call mpas_dmpar_exch_halo_field(block % state % time_levs(2) % state % u, (/ 3 /))
@@ -377,6 +390,11 @@ module atm_time_integration
 
          if (config_scalar_advection) then
 
+         if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+            call mpas_timer_start('atm_advance_scalars')
+         else
+            call mpas_timer_start('atm_advance_scalars_mono')
+         end if
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'tend', tend)
@@ -402,6 +420,11 @@ module atm_time_integration
             end if
             block => block % next
          end do
+         if (rk_step < 3 .or. (.not. config_monotonic .and. .not. config_positive_definite)) then
+            call mpas_timer_stop('atm_advance_scalars')
+         else
+            call mpas_timer_stop('atm_advance_scalars_mono')
+         end if
 
          else
  
@@ -409,6 +432,7 @@ module atm_time_integration
 
          end if
 
+         call mpas_timer_start('atm_compute_solve_diagnostics')
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'state', state)
@@ -419,6 +443,7 @@ module atm_time_integration
 
             block => block % next
          end do
+         call mpas_timer_stop('atm_compute_solve_diagnostics')
 
          if(debug) write(0,*) ' diagnostics complete '
 
