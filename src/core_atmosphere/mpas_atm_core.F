@@ -226,6 +226,7 @@ module atm_core
 #elif defined(DO_PHYSICS_NGGPS)
       type (mpas_pool_type), pointer :: nggps_atm_inputs
       type (mpas_pool_type), pointer :: nggps_diagnostics
+      type (mpas_pool_type), pointer :: nggps_dynamic_parameters
       type (mpas_pool_type), pointer :: nggps_sfc_properties
 #endif
 
@@ -316,12 +317,14 @@ module atm_core
 
      if (moist_physics) then
         call mpas_pool_get_subpool(block % structs, 'nggps_atm_inputs', nggps_atm_inputs)
+        call mpas_pool_get_subpool(block % structs, 'nggps_dynamic_parameters', nggps_dynamic_parameters)
         call mpas_pool_get_subpool(block % structs, 'nggps_sfc_properties', nggps_sfc_properties)
 
         call physics_run_init(block % configs, mesh, state, clock, stream_manager)
 
         !initialization of all physics:
-        call physics_init(dminfo, clock, block % configs, mesh, nggps_atm_inputs, nggps_sfc_properties)
+        call physics_init(dminfo, clock, block % configs, mesh, nggps_atm_inputs, &
+                          nggps_dynamic_parameters, nggps_sfc_properties)
      endif
 #endif
    
