@@ -348,6 +348,10 @@
 			<var name="surface_pressure"/>
 			<var name="tend_sfc_pressure"/>
 			<var name="initial_date"/>
+			<var name="forecast_hour"/>
+			<var name="nlonsCell"/>
+			<var name="coslatCell"/>
+			<var name="sinlatCell"/>
 			<var name="ter"/>
 			<var name="oro_uf"/>
 			<var name="orogwd"/>
@@ -611,8 +615,6 @@
                 <var name="meshDensity"               type="real"     dimensions="nCells"/>
                 <var name="meshScalingDel2"           type="real"     dimensions="nEdges"/>
                 <var name="meshScalingDel4"           type="real"     dimensions="nEdges"/>
-
-                <var name="initial_date"              type="text"     dimensions=""/>
 
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1"                       type="real"     dimensions=""/>

@@ -44,3 +44,28 @@
 
  </nml_record>
 
+ <var_struct name="mesh" time_levs="1">
+
+    <var name="initial_date" type="text" dimensions="" units="dimensionless"
+       description="initial starting date of the forecast"
+    />
+    <var name="nlonsCell" type="integer" dimensions="nCells" units="dimensionless"
+       description=" "
+    />
+    <var name="sinlatCell" type="real" dimensions="nCells" units="dimensionless"
+       description="sinus of latitude"
+    />
+    <var name="coslatCell" type="real" dimensions="nCells" units="dimensionless"
+       description="cosine of latitude"
+    />
+
+ </var_struct>
+
+ <var_struct name="nggps_dynamic_parameters" time_levs="1">
+
+    <var name="forecast_hour" type="real" dimensions="" units="dimensionless"
+       description="forecast hour since the initial starting date of the forecast"
+    />
+
+ </var_struct>
+
