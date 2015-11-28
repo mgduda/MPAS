@@ -22,11 +22,18 @@
  public:: physics_init
 
 
+!modifications to sourcecode:
+!----------------------------
+! * in the subroutine physics_init, added the initialization of the variables fhour, nlonsCell, coslatCell, and
+!   sinlatCell. removed write statements after call to the subroutine nuopc_phys_init.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
+
+
  contains
 
 
 !=================================================================================================================
- subroutine physics_init(dminfo,clock,configs,mesh,atm_input,nggps_sfc_properties)
+ subroutine physics_init(dminfo,clock,configs,mesh,nggps_atm_input,nggps_dynamic_parameters,nggps_sfc_properties)
 !=================================================================================================================
 
 !input arguments:
@@ -36,8 +43,9 @@
  type(MPAS_Clock_type),intent(in):: clock
 
 !inout arguments:
- type(mpas_pool_type),intent(inout):: atm_input
+ type(mpas_pool_type),intent(inout):: nggps_atm_input
  type(mpas_pool_type),intent(inout):: nggps_sfc_properties
+ type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters
 
 !local pointers:
  logical,pointer:: config_do_restart
@@ -49,11 +57,15 @@
  integer,pointer:: nMtgwd
  integer,pointer:: numP2d,numP3d
  integer,dimension(:),pointer:: isltyp,ivgtyp
+ integer,dimension(:),pointer:: nlonsCell
 
+ real(kind=RKIND),pointer:: fhour
  real(kind=RKIND),dimension(:),pointer:: rdzw
  real(kind=RKIND),dimension(:),pointer:: oro,oro_uf
  real(kind=RKIND),dimension(:),pointer:: tisfc,tsea
  real(kind=RKIND),dimension(:),pointer:: zorl
+
+ real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell 
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -94,6 +106,13 @@
  call mpas_pool_get_array(mesh,'initial_date',initial_date)
  call mpas_pool_get_array(mesh,'rdzw',rdzw)
  write(0,*) '--- initial_date = ', trim(initial_date)
+
+ call mpas_pool_get_array(mesh,'nlonsCell' ,nlonsCell )
+ call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
+ call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
+ call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
+
+ call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
 
  call mpas_pool_get_array(nggps_sfc_properties,'isltyp',isltyp)
  call mpas_pool_get_array(nggps_sfc_properties,'ivgtyp',ivgtyp)
@@ -294,9 +313,6 @@
  sas_shal = .false.
  sas_shal = sashal .and. (.not.ras)
 
-!--- initialization of ozone climatology:
- call init_o3climatology(dminfo,mesh,atm_input,ntoz)
-
 !--- initialization of the NGGPS physics:
  write(0,*) '--- enter subroutine nuopc_phys_init:'
  call nuopc_phys_init( &
@@ -314,94 +330,19 @@
              isol           , ico2         , iaer         , ialb        , iems             , iovr_sw      , &
              iovr_lw        , isubc_sw     , isubc_lw     , shoc_cld    , sas_shal         , crick_proof  , &
              ccnorm         , norad_precip , idate        , iflip       , nlunit)
- write(0,*)
- write(0,*) '--- end subroutine nuopc_phys_init: model_parameters.'
- write(0,*) '--- ntcw             = ', mdl_parameters%ntcw
- write(0,*) '--- ncld             = ', mdl_parameters%ncld
- write(0,*) '--- ntoz             = ', mdl_parameters%ntoz
- write(0,*) '--- ntrac            = ', mdl_parameters%ntrac
- write(0,*) '--- levs             = ', mdl_parameters%levs
- write(0,*) '--- me               = ', mdl_parameters%me
- write(0,*) '--- lsoil            = ', mdl_parameters%lsoil
- write(0,*) '--- lsm              = ', mdl_parameters%lsm
- write(0,*) '--- nmtvr            = ', mdl_parameters%nmtvr
- write(0,*) '--- nrcm             = ', mdl_parameters%nrcm
- write(0,*) '--- levozp           = ', mdl_parameters%levozp
- write(0,*) '--- lonr             = ', mdl_parameters%lonr
- write(0,*) '--- latr             = ', mdl_parameters%latr
- write(0,*) '--- jcap             = ', mdl_parameters%jcap
- write(0,*) '--- num_p3d          = ', mdl_parameters%num_p3d
- write(0,*) '--- num_p2d          = ', mdl_parameters%num_p2d
- write(0,*) '--- npdf3d           = ', mdl_parameters%npdf3d
- write(0,*) '--- pl_coeff         = ', mdl_parameters%pl_coeff
- write(0,*) '--- ncw              = ', mdl_parameters%ncw
- write(0,*) '--- crtrh            = ', mdl_parameters%crtrh
- write(0,*) '--- cdmbgwd          = ', mdl_parameters%cdmbgwd
- write(0,*) '--- ccwf             = ', mdl_parameters%ccwf
- write(0,*) '--- dlqf             = ', mdl_parameters%dlqf
- write(0,*) '--- ctei_rm          = ', mdl_parameters%ctei_rm
- write(0,*) '--- cgwf             = ', mdl_parameters%cgwf
- write(0,*) '--- prslrd0          = ', mdl_parameters%prslrd0
- write(0,*) '--- ras              = ', mdl_parameters%ras
- write(0,*) '--- pre_rad          = ', mdl_parameters%pre_rad
- write(0,*) '--- ldiag3d          = ', mdl_parameters%ldiag3d
- write(0,*) '--- lgocart          = ', mdl_parameters%lgocart
- write(0,*) '--- lssav_cpl        = ', mdl_parameters%lssav_cpl
- write(0,*) '--- flipv            = ', mdl_parameters%flipv
- write(0,*) '--- old_monin        = ', mdl_parameters%old_monin
- write(0,*) '--- cnvgwd           = ', mdl_parameters%cnvgwd
- write(0,*) '--- shal_cnv         = ', mdl_parameters%shal_cnv
- write(0,*) '--- sashal           = ', mdl_parameters%sashal
- write(0,*) '--- newsas           = ', mdl_parameters%newsas
- write(0,*) '--- cal_pre          = ', mdl_parameters%cal_pre
- write(0,*) '--- mom4ice          = ', mdl_parameters%mom4ice
- write(0,*) '--- mstrat           = ', mdl_parameters%mstrat
- write(0,*) '--- trans_trac       = ', mdl_parameters%trans_trac
- write(0,*) '--- nst_fcst         = ', mdl_parameters%nst_fcst
- write(0,*) '--- moist_adj        = ', mdl_parameters%moist_adj
- write(0,*) '--- thermodyn_id     = ', mdl_parameters%thermodyn_id
- write(0,*) '--- sfcpress_id      = ', mdl_parameters%sfcpress_id
- write(0,*) '--- gen_coord_hybrid = ', mdl_parameters%gen_coord_hybrid
- write(0,*) '--- levr             = ', mdl_parameters%levr
- write(0,*) '--- lsidea           = ', mdl_parameters%lsidea
- write(0,*) '--- pdfcld           = ', mdl_parameters%pdfcld
- write(0,*) '--- shcnvcw          = ', mdl_parameters%shcnvcw
- write(0,*) '--- redrag           = ', mdl_parameters%redrag
- write(0,*) '--- hybedmf          = ', mdl_parameters%hybedmf
- write(0,*) '--- dspheat          = ', mdl_parameters%dspheat
- write(0,*) '--- dxmax            = ', dxmax
- write(0,*) '--- dxmin            = ', dxmin
- write(0,*) '--- dxinv            = ', dxinv
- write(0,*) '--- cscnv            = ', mdl_parameters%cscnv
- write(0,*) '--- nctp             = ', mdl_parameters%nctp
- write(0,*) '--- ntke             = ', mdl_parameters%ntke
- write(0,*) '--- do_shoc          = ', mdl_parameters%do_shoc
- write(0,*) '--- shocaftcnv       = ', mdl_parameters%shocaftcnv
- write(0,*) '--- ntot3d           = ', mdl_parameters%ntot3d
- write(0,*) '--- ntot2d           = ', mdl_parameters%ntot2d
- write(0,*) '--- ictm             = ', ictm
- write(0,*) '--- isol             = ', isol
- write(0,*) '--- ico2             = ', ico2
- write(0,*) '--- iaer             = ', iaer
- write(0,*) '--- ialb             = ', ialb
- write(0,*) '--- iems             = ', iems
- write(0,*) '--- iovr_sw          = ', iovr_sw
- write(0,*) '--- iovr_lw          = ', iovr_lw
- write(0,*) '--- isubc_sw         = ', isubc_sw
- write(0,*) '--- isubc_lw         = ', isubc_lw
- write(0,*) '--- sas_shal         = ', sas_shal
- write(0,*) '--- crick_proof      = ', crick_proof
- write(0,*) '--- ccnorm           = ', ccnorm
- write(0,*) '--- norad_precip     = ', norad_precip
- write(0,*) '--- idate            = ', idate
- write(0,*) '--- iflip            = ', iflip
- write(0,*) '--- nlunit           = ', nlunit
- write(0,*) '--- si               = ', si
+
+!initialization of the forecast hour:
+ if(.not. config_do_restart) then
+    fhour = 0._RKIND
+ endif
+
+!initialization of ozone climatology:
+ call init_o3climatology(dminfo,mesh,nggps_atm_input,ntoz)
 
 !initialization of surface roughness. for now, we initialize and update the surface roughness
 !length using the monthly-mean climatological surface roughness length zorl12m (see call to
 !subroutine physics_gfs_update_surface):
- if(.not.config_do_restart) then
+ if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
        if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
           zorl(iCell) = z0_sib(ivgtyp(iCell))
@@ -411,12 +352,21 @@
     enddo
  endif
 
-!initialization of some additional surface variables (defined in nggps_sfc_properties):
+!initialization of some additional surface variables (needed in mpas_atmphys_nggps_sfc_properties):
  if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
        oro_uf(iCell) = oro(iCell)
 !      tisfc(iCell)  = tsea(iCell)
     enddo
+ endif
+
+!initialization of some additional mesh variables (needed in mpas_atmphys_nggps_dynamic_parameters):
+ if(.not. config_do_restart) then
+    do iCell = 1, nCellsSolve
+       sinlatCell(iCell) = sin(latCell(iCell))
+       coslatCell(iCell) = cos(latCell(iCell))
+       nlonsCell(iCell)  = nCellsSolve
+    enddo 
  endif
 
 !initialization of all physics function tables:
