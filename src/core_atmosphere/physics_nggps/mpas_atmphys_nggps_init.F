@@ -27,6 +27,8 @@
 ! * in the subroutine physics_init, added the initialization of the variables fhour, nlonsCell, coslatCell, and
 !   sinlatCell. removed write statements after call to the subroutine nuopc_phys_init.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
+! * in the subroutine physics_init, added deallocation of array si after call to subroutine nuopc_phys_init.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
 
 
  contains
@@ -330,6 +332,9 @@
              isol           , ico2         , iaer         , ialb        , iems             , iovr_sw      , &
              iovr_lw        , isubc_sw     , isubc_lw     , shoc_cld    , sas_shal         , crick_proof  , &
              ccnorm         , norad_precip , idate        , iflip       , nlunit)
+
+!deallocate the si array:
+ if(allocated(si)) deallocate(si)
 
 !initialization of the forecast hour:
  if(.not. config_do_restart) then
