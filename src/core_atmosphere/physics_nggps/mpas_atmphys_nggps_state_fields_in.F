@@ -30,6 +30,13 @@
  end type
 
 
+!modifications to sourcecode:
+!----------------------------
+! * in subroutine mpas_state_fld_in_set, corrected the calculation of vvel. vvel is defined at the interface
+!   between layers and is in Pa per second.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-12-01. 
+
+
  contains
 
 
@@ -82,6 +89,7 @@
  if(.not.allocated(fzm)      ) allocate(fzm(1:nCellsSolve,1:nVertLevels)         )
  if(.not.allocated(fzp)      ) allocate(fzp(1:nCellsSolve,1:nVertLevels)         )
  if(.not.allocated(tgrsi)    ) allocate(tgrsi(1:nCellsSolve,1:nVertLevels+1)     )
+ if(.not.allocated(rhosi)    ) allocate(rhosi(1:nCellsSolve,1:nVertLevels+1)     )
 
 !... hydrostatic pressure sounding:
  if(.not.allocated(pgr_hyd)  ) allocate(pgr_hyd(1:nCellsSolve)                   )
@@ -130,6 +138,7 @@
  if(allocated(fzm)     ) deallocate(fzm     )
  if(allocated(fzp)     ) deallocate(fzp     )
  if(allocated(tgrsi)   ) deallocate(tgrsi   )
+ if(allocated(rhosi)   ) deallocate(rhosi   )
 
 !... hydrostatic pressure sounding:
  if(allocated(pgr_hyd) ) deallocate(pgr_hyd )
@@ -174,7 +183,6 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
  
  real(kind=RKIND):: tem1,tem2,rho1,rho2,z0,z1,z2,w1,w2
- real(kind=RKIND),dimension(:,:),allocatable:: dpres
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine mpas_state_fld_setphys_in:'
@@ -207,24 +215,6 @@
  ntcw  = mdl_parameters%ntcw
  ntoz  = mdl_parameters%ntoz
  ntrac = mdl_parameters%ntrac
-
-!... zonal and meridional winds, and vertical velocities:
- do k = 1, nVertLevels
- do iCell = 1, nCellsSolve
-    ugrs(iCell,k) = uReconstructZonal(k,iCell)
-    vgrs(iCell,k) = uReconstructMeridional(k,iCell)
-    vvl(iCell,k) = 0.5_kind_phys * (w(k,iCell) + w(k+1,iCell))
-    vvl(iCell,k) = - gravity * rho(k,iCell) * zz(k,iCell) * vvl(iCell,k)
- enddo
- enddo
-!write(0,*) '--- end ugrs, vgrs, vvl:'
-!do iCell = 1, nCellsSolve
-!   do k = 1, nVertLevels
-!      write(0,201) iCell,k,ugrs(iCell,k),vgrs(iCell,k),vvl(iCell,k),rho(k,iCell)
-!   enddo
-!   write(0,*)
-!enddo
-!stop
 
 !... geopotential height and layer thickness:
  do k = 1, nVertLevels
@@ -279,6 +269,7 @@
     fzp(iCell,k) = (zgrid(k+1,iCell)-zgrid(k,iCell)) * tem1
 
     tgrsi(iCell,k) = fzm(iCell,k)*tgrs(iCell,k) + fzp(iCell,k)*tgrs(iCell,k-1)
+    rhosi(iCell,k) = fzm(iCell,k)*rhos(iCell,k) + fzp(iCell,k)*rhos(iCell,k-1)
     prsi(iCell,k)  = fzm(iCell,k)*prsl(iCell,k) + fzp(iCell,k)*prsl(iCell,k-1)
  enddo
  enddo
@@ -291,6 +282,7 @@
     w1 = (z0-z2)/(z1-z2)
     w2 = 1.-w1
     tgrsi(iCell,k) = w1*tgrs(iCell,k-1) + w2*tgrs(iCell,k-2)
+    rhosi(iCell,k) = w1*rhos(iCell,k-1) + w2*rhos(iCell,k-2)
     !use log of pressure to avoid occurrences of negative top-of-the-model pressure.
     prsi(iCell,k) = exp(w1*log(prsl(iCell,k-1)) + w2*log(prsl(iCell,k-2)))
  enddo
@@ -303,6 +295,7 @@
     w1 = (z0-z2)/(z1-z2)
     w2 = 1.-w1
     tgrsi(iCell,k) = w1*tgrs(iCell,k) + w2*tgrs(iCell,k+1)
+    rhosi(iCell,k) = w1*rhos(iCell,k) + w2*rhos(iCell,k+1)
 !   prsi(iCell,k)  = w1*prsl(iCell,k) + w2*prsl(iCell,k+1)
 
     tem1 = zgrid(2,iCell)-zgrid(1,iCell)
@@ -321,17 +314,8 @@
 !   enddo
 !   write(0,*)
 !enddo
- if(.not.allocated(dpres)) allocate(dpres(1:nCellsSolve,1:nVertLevels))
- do iCell = 1, nCellsSolve
-    do k = 1, nVertLevels
-       dpres(iCell,k) = prsi(iCell,k) - prsi(iCell,k+1)
-    enddo
- enddo
-!write(0,*) '--- max dpres 1 = ', maxval(dpres(1:nCellsSolve,1))
-!write(0,*) '--- min dpres 1 = ', minval(dpres(1:nCellsSolve,1))
- if(allocated(dpres)) deallocate(dpres)
 
-!... surface pressure, exner function, and "dynamic adjustment":
+!... surface pressure and exner function at interface between layers:
  do iCell = 1,nCellsSolve
     pgr(iCell)    = prsi(iCell,1)
     do k = 1,nVertLevels+1
@@ -350,8 +334,28 @@
     enddo
  enddo
 
+!... zonal and meridional winds, and vertical velocities:
+ do k = 1, nVertLevels
+ do iCell = 1, nCellsSolve
+    ugrs(iCell,k) = uReconstructZonal(k,iCell)
+    vgrs(iCell,k) = uReconstructMeridional(k,iCell)
+    vvl(iCell,k) = - gravity * rhosi(iCell,k) * w(k,iCell)
+ enddo
+ enddo
+!write(0,*) '--- end ugrs, vgrs, vvl:'
+!do iCell = 1, nCellsSolve
+!   do k = 1, nVertLevels
+!      write(0,201) iCell,k,w(k,iCell),rhosi(iCell,k),vvl(iCell,k),rhos(iCell,k), &
+!                   ugrs(iCell,k),vgrs(iCell,k)
+!   enddo
+!   k = nVertLevels+1
+!   write(0,201) iCell,k,w(k,iCell)
+!   write(0,*)
+!enddo
+!stop
+
 !... layer specific humidity and "tracer" mixing ratios used in radiation, and mixing ratios used in other
-!... physics parameterizations
+!... physics parameterizations:
  do k = 1, ntrac
     adjtrc(k) = 1._RKIND
  enddo

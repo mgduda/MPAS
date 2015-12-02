@@ -23,6 +23,14 @@
  public
  save
 
+
+!modifications to sourcecode:
+!----------------------------
+! * added the variable rhosi which is the air density at the interface between layers needed for the calculation
+!   of the vertical velocity in Pa per second.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
+
+
 !=================================================================================================================
 !... logicals defined in MPAS:
  logical:: l_radtlw                   !controls call to longwave radiation parameterization.
@@ -151,6 +159,7 @@
     fzp,              &!
     prsl_hyd,         &!    
     tgrsi,            &!
+    rhosi,            &!
     prsi_hyd           !
 
 
