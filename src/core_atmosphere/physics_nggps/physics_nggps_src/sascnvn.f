@@ -1,3 +1,10 @@
+!=================================================================================================================
+! Modifications made to the sourcecode for use in the MPAS framework:
+! * commented out the calculation of dellaq to avoid dividing by zero when xmb is equal to zero. xmb
+!   is equal to zero when the convective cloud fraction is equal to 1.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
+
+!=================================================================================================================
       subroutine sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,
      &     q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,islimsk,
      &     dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc)
@@ -1993,7 +2000,12 @@ c             if(islimsk(i) == 1) evef = 0.
                 delq(i) =  + qevap(i)/dt2
                 delqev(i) = delqev(i) + .001*dp*qevap(i)/g
               endif
-              dellaq(i,k) = dellaq(i,k) + delq(i) / xmb(i)
+!... commented out the calculation of dellaq to avoid dividing by zero
+!... when xmb is equal to zero. xmb is equal to zero when the convective 
+!... cloud fraction is equal to 1.
+!... Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
+!             dellaq(i,k) = dellaq(i,k) + delq(i) / xmb(i)
+!... end Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
               delqbar(i) = delqbar(i) + delq(i)*dp/g
               deltbar(i) = deltbar(i) + deltv(i)*dp/g
             endif
