@@ -373,7 +373,6 @@ module atm_core
       integer :: stream_dir
       character(len=StrKIND) :: input_stream, read_time
 
-!     type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
       type (mpas_pool_type), pointer :: state, diag, mesh
 
       ! For high-frequency diagnostics output
@@ -400,7 +399,6 @@ module atm_core
          do while (associated(block_ptr))
             call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
             call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
-!           call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             call atm_compute_output_diagnostics(state, 1, diag, mesh)
 
