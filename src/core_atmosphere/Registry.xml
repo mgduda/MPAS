@@ -217,7 +217,6 @@
 			<var name="initial_date"/>
 			<var name="sltype"/>
 			<var name="vgtype"/>
-			<var name="orogwd"/>
 			<var name="slope"/>
 			<var name="alnsf4s"/>
 			<var name="alnwf4s"/>
@@ -347,6 +346,16 @@
 			<var name="rho_p"/>
 			<var name="surface_pressure"/>
 			<var name="tend_sfc_pressure"/>
+			<var name="var2d"/>
+			<var name="con"/>
+			<var name="oa1"/>
+			<var name="oa2"/>
+			<var name="oa3"/>
+			<var name="oa4"/>
+			<var name="ol1"/>
+			<var name="ol2"/>
+			<var name="ol3"/>
+			<var name="ol4"/>
 			<var name="initial_date"/>
 			<var name="forecast_hour"/>
 			<var name="nlonsCell"/>
@@ -354,7 +363,10 @@
 			<var name="sinlatCell"/>
 			<var name="ter"/>
 			<var name="oro_uf"/>
-			<var name="orogwd"/>
+			<var name="theoro"/>
+			<var name="gamoro"/>
+			<var name="sigoro"/>
+			<var name="elvoro"/>
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
 			<var name="sltype"/>
@@ -864,32 +876,6 @@
                 <var name="sfc_albbck"  type="real"     dimensions="nCells Time"/>
                 <var name="seaice"      type="real"     dimensions="nCells Time"/>
                 <var name="xland"       type="real"     dimensions="nCells Time"/>
-
-                <!-- ================================================================================================== -->
-                <!-- ... PARAMETERIZATION OF GRAVITY WAVE DRAG OVER OROGRAPHY:                                          -->
-                <!-- ================================================================================================== -->
-
-                <!--  var2d      : orographic variance                                                             (m2) -->
-                <!--  con        : orographic convexity                                                            (m2) -->
-                <!--  oa1        : orographic direction asymmetry function                                          (-) -->
-                <!--  oa2        : orographic direction asymmetry function                                          (-) -->
-                <!--  oa3        : orographic direction asymmetry function                                          (-) -->
-                <!--  oa4        : orographic direction asymmetry function                                          (-) -->
-                <!--  ol1        : orographic direction asymmetry function                                          (-) -->
-                <!--  ol2        : orographic direction asymmetry function                                          (-) -->
-                <!--  ol3        : orographic direction asymmetry function                                          (-) -->
-                <!--  ol4        : orographic direction asymmetry function                                          (-) -->
-
-                <var name="var2d"       type="real"     dimensions="nCells"/>
-                <var name="con"         type="real"     dimensions="nCells"/>
-                <var name="oa1"         type="real"     dimensions="nCells"/>
-                <var name="oa2"         type="real"     dimensions="nCells"/>
-                <var name="oa3"         type="real"     dimensions="nCells"/>
-                <var name="oa4"         type="real"     dimensions="nCells"/>
-                <var name="ol1"         type="real"     dimensions="nCells"/>
-                <var name="ol2"         type="real"     dimensions="nCells"/>
-                <var name="ol3"         type="real"     dimensions="nCells"/>
-                <var name="ol4"         type="real"     dimensions="nCells"/>
 
         </var_struct>
 

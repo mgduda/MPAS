@@ -34,6 +34,11 @@
 
  end type
 
+!modifications to sourcecode:
+!----------------------------
+! * revised the input of the static fields for the parameterization of the gravity wave drag over orography.
+!   Laura D. Fowler (laura@ucar.edu) / 2015-12-09.
+
 
  contains
 
@@ -99,17 +104,18 @@
  integer,pointer:: nCellsSolve,nMtvr
  integer,dimension(:),pointer:: landmask,ivgtyp,isltyp
 
- real(kind=RKIND),dimension(:),pointer  :: slope,shdmin,shdmax,snoalb,tg3,slmsk,vfrac,uustar,oro,oro_uf,   &
-                                           hice,fice,tisfc,tsfc,snwdph,weasd,sncovr,zorl,canopy,ffmm,ffhh, &
-                                           f10m,t2m,q2m
- real(kind=RKIND),dimension(:,:),pointer:: orogwd
+ real(kind=RKIND),dimension(:),pointer:: slope,shdmin,shdmax,snoalb,tg3,slmsk,vfrac,uustar,oro,oro_uf,   &
+                                         hice,fice,tisfc,tsfc,snwdph,weasd,sncovr,zorl,canopy,ffmm,ffhh, &
+                                         f10m,t2m,q2m
+ real(kind=RKIND),dimension(:),pointer:: var2d,con,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,theoro, &
+                                         gamoro,sigoro,elvoro
 
 !local nggps pointers:
  real(kind=kind_phys),dimension(:),pointer  :: rsltyp,rvgtyp
  real(kind=kind_phys),dimension(:,:),pointer:: hprime
 
 !local variables:
- integer:: iCell,iMt
+ integer:: iCell,n
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -145,7 +151,21 @@
  call mpas_pool_get_array(nggps_sfc_properties,'f10m'    ,f10m    )
  call mpas_pool_get_array(nggps_sfc_properties,'t2m'     ,t2m     )
  call mpas_pool_get_array(nggps_sfc_properties,'q2m'     ,q2m     )
- call mpas_pool_get_array(nggps_sfc_properties,'orogwd'  ,orogwd  )
+
+ call mpas_pool_get_array(nggps_sfc_properties,'var2d'   ,var2d   )
+ call mpas_pool_get_array(nggps_sfc_properties,'con'     ,con     )
+ call mpas_pool_get_array(nggps_sfc_properties,'oa1'     ,oa1     )
+ call mpas_pool_get_array(nggps_sfc_properties,'oa2'     ,oa2     )
+ call mpas_pool_get_array(nggps_sfc_properties,'oa3'     ,oa3     )
+ call mpas_pool_get_array(nggps_sfc_properties,'oa4'     ,oa4     )
+ call mpas_pool_get_array(nggps_sfc_properties,'ol1'     ,ol1     )
+ call mpas_pool_get_array(nggps_sfc_properties,'ol2'     ,ol2     )
+ call mpas_pool_get_array(nggps_sfc_properties,'ol3'     ,ol3     )
+ call mpas_pool_get_array(nggps_sfc_properties,'ol4'     ,ol4     )
+ call mpas_pool_get_array(nggps_sfc_properties,'theoro'  ,theoro  )
+ call mpas_pool_get_array(nggps_sfc_properties,'gamoro'  ,gamoro  )
+ call mpas_pool_get_array(nggps_sfc_properties,'sigoro'  ,sigoro  )
+ call mpas_pool_get_array(nggps_sfc_properties,'elvoro'  ,elvoro  )
 
 !... nggps arrays:
  rsltyp => this%rsltyp
@@ -159,11 +179,46 @@
     slope(iCell)  = min(slope(iCell),9._RKIND)
     rsltyp(iCell) = real(isltyp(iCell),kind_phys)
     rvgtyp(iCell) = real(ivgtyp(iCell),kind_phys)
-
-    do iMt = 1, nMtvr
-       hprime(iCell,iMt) = orogwd(iMt,iCell)
-    enddo
  enddo
+
+!... fills the array hprime needed for the gravity wave drag over orography:
+ if(nMtvr .ge. 6) then
+    do iCell = 1, nCellsSolve
+       hprime(iCell,1)  = var2d(iCell)
+       hprime(iCell,2)  = con(iCell)
+       hprime(iCell,3)  = oa1(iCell)
+       hprime(iCell,4)  = oa2(iCell)
+       hprime(iCell,5)  = oa3(iCell)
+       hprime(iCell,6)  = oa4(iCell)
+
+       if(nMtvr .ge. 10) then
+          hprime(iCell,7)  = ol1(iCell)
+          hprime(iCell,8)  = ol2(iCell)
+          hprime(iCell,9)  = ol3(iCell)
+          hprime(iCell,10) = ol4(iCell)
+          if(nMtvr .eq. 14) then
+             hprime(iCell,11) = theoro(iCell)
+             hprime(iCell,12) = gamoro(iCell)
+             hprime(iCell,13) = sigoro(iCell)
+             hprime(iCell,14) = elvoro(iCell)
+          endif
+       endif
+    enddo
+ else
+    do iCell = 1, nCellsSolve
+       hprime(iCell,:) = 0._kind_phys
+    enddo
+ endif
+
+ write(0,*) '--- before call to subroutine setphys: nMtvr = ', nMtvr
+ do iCell = 1, 25
+    write(0,203) iCell,(hprime(iCell,n),n=1,10)
+ enddo
+!write(0,*)
+!do iCell = 1, nCellsSolve
+!   if(slmsk(iCell) .eq. 1._kind_phys) write(0,203) iCell,(hprime(iCell,n),n=11,14)
+!enddo
+!stop
 
  call this%setphys( &
            hprime , slope  , shdmin , shdmax , snoalb , tg3    , slmsk , vfrac ,  &
@@ -206,12 +261,12 @@
  integer,pointer:: nCellsSolve
  integer,dimension(:),pointer:: landmask
 
- real(kind=RKIND),dimension(:),pointer  :: snoalb,slmsk,fice,tisfc,tsfc,snwdph,sncovr,zorl,facsf,facwf, &
-                                           alnsf,alnwf,alvsf,alvwf
- real(kind=RKIND),dimension(:,:),pointer:: orogwd
+ real(kind=RKIND),dimension(:),pointer:: snoalb,slmsk,fice,tisfc,tsfc,snwdph,sncovr,zorl,facsf,facwf, &
+                                         alnsf,alnwf,alvsf,alvwf
+ real(kind=RKIND),dimension(:),pointer:: var2d
 
 !local nggps pointers:
- real(kind=kind_phys),dimension(:),pointer  :: hprim
+ real(kind=kind_phys),dimension(:),pointer:: hprim
 
 !local variables:
  integer:: iCell
@@ -237,7 +292,7 @@
  call mpas_pool_get_array(nggps_sfc_properties,'alvwf'   ,alvwf   )
  call mpas_pool_get_array(nggps_sfc_properties,'facsf'   ,facsf   )
  call mpas_pool_get_array(nggps_sfc_properties,'facwf '  ,facwf   )
- call mpas_pool_get_array(nggps_sfc_properties,'orogwd'  ,orogwd  )
+ call mpas_pool_get_array(nggps_sfc_properties,'var2d'  , var2d   )
 
  hprim => this%hprim
 
@@ -246,8 +301,9 @@
     if(slmsk(iCell) == 0._kind_phys .and. fice(iCell) .gt. 0.) slmsk(iCell) = 2._kind_phys
 
     !... standard deviation of orography:
-    hprim(icell) = orogwd(1,iCell)
+    hprim(iCell) = var2d(iCell)
  enddo
+ 203 format(i6,10(1x,e15.8))
 
  call this%setrad( &
            slmsk , tsfc  , snwdph , sncovr , snoalb , zorl  , hprim , fice , &

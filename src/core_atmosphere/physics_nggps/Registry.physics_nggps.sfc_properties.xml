@@ -30,8 +30,47 @@
     <var name="greenfrac" type="real" dimensions="nMonths nCells" units="-" 
          description="monthly-mean climatological greeness fraction"
     />
-    <var name="orogwd" name_in_code="orogwd" type="real" dimensions="nMtvr nCells" units="-" 
-         description="variables needed for gravity wave drag over orography"
+    <var name="var2d" type="real" dimensions="nCells" units="dimensionless"
+         description="orography standard deviation"
+    />
+    <var name="con" type="real" dimensions="nCells" units="dimensionless"
+         description="orography convexity"
+    />
+    <var name="oa1" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="oa2" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="oa3" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="oa4" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="ol1" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="ol2" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="ol3" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="ol4" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="theoro" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="gamoro" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="sigoro" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
+    />
+    <var name="elvoro" type="real" dimensions="nCells" units="dimensionless"
+         description=" orography direction asymmetry function"
     />
     <var name="shdmax" type="real" dimensions="nCells" units="-" 
          description="annual maximum vegetation fraction"
