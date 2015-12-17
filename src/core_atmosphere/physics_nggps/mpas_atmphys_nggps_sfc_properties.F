@@ -210,10 +210,10 @@
     enddo
  endif
 
- write(0,*) '--- before call to subroutine setphys: nMtvr = ', nMtvr
- do iCell = 1, 25
-    write(0,203) iCell,(hprime(iCell,n),n=1,10)
- enddo
+!write(0,*) '--- before call to subroutine setphys: nMtvr = ', nMtvr
+!do iCell = 1, 25
+!   write(0,203) iCell,(hprime(iCell,n),n=1,10)
+!enddo
 !write(0,*)
 !do iCell = 1, nCellsSolve
 !   if(slmsk(iCell) .eq. 1._kind_phys) write(0,203) iCell,(hprime(iCell,n),n=11,14)
