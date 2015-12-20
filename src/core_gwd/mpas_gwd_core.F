@@ -118,7 +118,7 @@ module gwd_core
       integer, dimension(:,:), pointer :: edgesOnCell
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, dcEdge
       real (kind=RKIND), dimension(:), pointer :: var2d, con, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4
-      real (kind=RKIND), dimension(:), pointer :: hmax, htheta, hgamma, hsigma
+      real (kind=RKIND), dimension(:), pointer :: elvmax, htheta, hgamma, hsigma
 
       do while (.not. mpas_is_clock_stop_time(clock))
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
@@ -153,7 +153,7 @@ module gwd_core
          call mpas_pool_get_array(mesh, 'oa2', oa2)
          call mpas_pool_get_array(mesh, 'oa3', oa3)
          call mpas_pool_get_array(mesh, 'oa4', oa4)
-         call mpas_pool_get_array(mesh, 'hmax', hmax)
+         call mpas_pool_get_array(mesh, 'elvmax', elvmax)
          call mpas_pool_get_array(mesh, 'theta', htheta)
          call mpas_pool_get_array(mesh, 'gamma', hgamma)
          call mpas_pool_get_array(mesh, 'sigma', hsigma)
@@ -210,7 +210,7 @@ module gwd_core
             ol2(iCell) = get_ol2()
             ol3(iCell) = get_ol3()
             ol4(iCell) = get_ol4()
-            hmax(iCell) = get_hmax()
+            elvmax(iCell) = get_elvmax()
             htheta(iCell) = get_htheta()
             hgamma(iCell) = get_hgamma()
             hsigma(iCell) = get_hsigma()
@@ -738,7 +738,7 @@ module gwd_core
 
    !***********************************************************************
    !
-   !  function get_hmax
+   !  function get_elvmax
    !
    !> \brief   Computes maximum subgrid orography height
    !> \author  Michael Duda
@@ -746,23 +746,23 @@ module gwd_core
    !> \details 
    !
    !-----------------------------------------------------------------------
-   real (kind=RKIND) function get_hmax()
+   real (kind=RKIND) function get_elvmax()
 
       implicit none
 
       integer :: i, j
 
-      get_hmax = box(1,1)
+      get_elvmax = box(1,1)
 
       do j=1,ny
          do i=1,nx
-            if (box(i,j) > get_hmax) then
-               get_hmax = box(i,j)
+            if (box(i,j) > get_elvmax) then
+               get_elvmax = box(i,j)
             end if
          end do
       end do
 
-   end function get_hmax
+   end function get_elvmax
 
 
    !***********************************************************************
