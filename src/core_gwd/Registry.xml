@@ -238,6 +238,10 @@
                         <var name="ol2"/>
                         <var name="ol3"/>
                         <var name="ol4"/>
+                        <var name="hmax"/>
+                        <var name="theta"/>
+                        <var name="gamma"/>
+                        <var name="sigma"/>
                         <var name="deriv_two"/>
                         <var name="advCells"/>
                         <var name="defc_a"/>
@@ -317,6 +321,10 @@
                 <var name="ol2"                                  type="real"     dimensions="nCells"/>
                 <var name="ol3"                                  type="real"     dimensions="nCells"/>
                 <var name="ol4"                                  type="real"     dimensions="nCells"/>
+                <var name="hmax"                                 type="real"     dimensions="nCells"/>
+                <var name="theta"                                type="real"     dimensions="nCells"/>
+                <var name="gamma"                                type="real"     dimensions="nCells"/>
+                <var name="sigma"                                type="real"     dimensions="nCells"/>
 
                 <!-- variables needed for advection -->
                 <var name="deriv_two"                  type="real"     dimensions="FIFTEEN TWO nEdges"/>

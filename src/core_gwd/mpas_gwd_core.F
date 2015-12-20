@@ -22,8 +22,12 @@ module gwd_core
    real (kind=RKIND), parameter :: start_lat = -90.0
    real (kind=RKIND), parameter :: start_lon = -180.0
 
+   ! Nominal delta-x (in meters) for sub-grid topography cells
+   real (kind=RKIND), parameter ::  sg_delta = 2.0 * Pi * Re / (360.0_RKIND * real(pts_per_degree,RKIND))
+
    real (kind=RKIND), dimension(:,:), pointer :: topo ! Global 30-arc-second topography
    real (kind=RKIND), dimension(:,:), pointer :: box  ! Subset of topography covering a grid cell
+   real (kind=RKIND), dimension(:,:), pointer :: dxm  ! Size (meters) in zonal direction of a grid cell
    real (kind=RKIND) :: box_mean                      ! Mean value of topography in box
    integer :: nx, ny                                  ! Dimensions of box covering grid cell
 
@@ -114,6 +118,7 @@ module gwd_core
       integer, dimension(:,:), pointer :: edgesOnCell
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, dcEdge
       real (kind=RKIND), dimension(:), pointer :: var2d, con, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4
+      real (kind=RKIND), dimension(:), pointer :: hmax, htheta, hgamma, hsigma
 
       do while (.not. mpas_is_clock_stop_time(clock))
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
@@ -148,6 +153,10 @@ module gwd_core
          call mpas_pool_get_array(mesh, 'oa2', oa2)
          call mpas_pool_get_array(mesh, 'oa3', oa3)
          call mpas_pool_get_array(mesh, 'oa4', oa4)
+         call mpas_pool_get_array(mesh, 'hmax', hmax)
+         call mpas_pool_get_array(mesh, 'theta', htheta)
+         call mpas_pool_get_array(mesh, 'gamma', hgamma)
+         call mpas_pool_get_array(mesh, 'sigma', hsigma)
          call mpas_pool_get_array(model, 'xtime', xtime)
 
 
@@ -201,6 +210,10 @@ module gwd_core
             ol2(iCell) = get_ol2()
             ol3(iCell) = get_ol3()
             ol4(iCell) = get_ol4()
+            hmax(iCell) = get_hmax()
+            htheta(iCell) = get_htheta()
+            hgamma(iCell) = get_hgamma()
+            hsigma(iCell) = get_hsigma()
          end do
 
          !
@@ -273,6 +286,7 @@ module gwd_core
       real (kind=RKIND), intent(in) :: lat, lon, dx
 
       integer :: i, j, ii, jj, ic, jc
+      real (kind=RKIND) :: sg_lat
 
       !
       ! Get number of points to extract in the zonal direction
@@ -301,6 +315,9 @@ module gwd_core
       if (associated(box)) deallocate(box)
       allocate(box(nx,ny))
 
+      if (associated(dxm)) deallocate(dxm)
+      allocate(dxm(nx,ny))
+
       !
       ! Extract sub-array (box) from global array; must properly account for 
       ! the periodicity in the longitude coordinate, as well as the poles
@@ -328,6 +345,8 @@ module gwd_core
          end do
  
          box(i,j) = topo(ii,jj)
+         sg_lat = (start_lat + (real(jj-1,RKIND) + 0.5) / pts_per_degree) / rad2deg  ! Add 0.5 for cell center
+         dxm(i,j) = sg_delta * cos(sg_lat)
          box_mean = box_mean + box(i,j)
 
       end do
@@ -715,5 +734,184 @@ module gwd_core
       get_ol4 = real(nw,RKIND) / real(nt,RKIND)
 
    end function get_ol4
+
+
+   !***********************************************************************
+   !
+   !  function get_hmax
+   !
+   !> \brief   Computes maximum subgrid orography height
+   !> \author  Michael Duda
+   !> \date    20 December 2015
+   !> \details 
+   !
+   !-----------------------------------------------------------------------
+   real (kind=RKIND) function get_hmax()
+
+      implicit none
+
+      integer :: i, j
+
+      get_hmax = box(1,1)
+
+      do j=1,ny
+         do i=1,nx
+            if (box(i,j) > get_hmax) then
+               get_hmax = box(i,j)
+            end if
+         end do
+      end do
+
+   end function get_hmax
+
+
+   !***********************************************************************
+   !
+   !  function get_htheta
+   !
+   !> \brief   Computes angle of principle axis of the gradient correlation tensor
+   !> \author  Michael Duda
+   !> \date    20 December 2015
+   !> \details Computation following Lott and Miller (QJRMS 1997)
+   !
+   !-----------------------------------------------------------------------
+   real (kind=RKIND) function get_htheta()
+
+      implicit none
+
+      integer :: i, j
+      real (kind=RKIND) :: dx, dy
+      real (kind=RKIND) :: xfp, yfp
+      real (kind=RKIND) :: hx2, hy2, hxy
+      real (kind=RKIND) :: hk, hl
+
+      hx2 = 0.0
+      hy2 = 0.0
+      hxy = 0.0
+
+      do j=2,ny-1
+      do i=2,nx-1
+         dx = dxm(i,j)
+         dy = sg_delta
+         xfp = (box(i+1,j) - box(i-1,j)) / (2.0 * dx)
+         yfp = (box(i,j+1) - box(i,j-1)) / (2.0 * dy)
+         hx2 = hx2 + xfp * xfp
+         hy2 = hy2 + yfp * yfp
+         hxy = hxy + xfp * yfp
+      end do
+      end do
+
+      hx2 = hx2 / real((nx-2)*(ny-2),RKIND)
+      hy2 = hy2 / real((nx-2)*(ny-2),RKIND)
+      hxy = hxy / real((nx-2)*(ny-2),RKIND)
+
+      hk = 0.5 * (hx2 + hy2)
+      hl = 0.5 * (hx2 - hy2)
+
+      get_htheta = 0.5 * atan2(hxy, hl)
+
+   end function get_htheta
+
+
+   !***********************************************************************
+   !
+   !  function get_hgamma
+   !
+   !> \brief   Computes anisotropy of subgrid orography
+   !> \author  Michael Duda
+   !> \date    20 December 2015
+   !> \details Computation following Lott and Miller (QJRMS 1997)
+   !
+   !-----------------------------------------------------------------------
+   real (kind=RKIND) function get_hgamma()
+
+      implicit none
+
+      integer :: i, j
+      real (kind=RKIND) :: dx, dy
+      real (kind=RKIND) :: xfp, yfp
+      real (kind=RKIND) :: hx2, hy2, hxy
+      real (kind=RKIND) :: hk, hl, hlp
+
+      hx2 = 0.0
+      hy2 = 0.0
+      hxy = 0.0
+
+      do j=2,ny-1
+      do i=2,nx-1
+         dx = dxm(i,j)
+         dy = sg_delta
+         xfp = (box(i+1,j) - box(i-1,j)) / (2.0 * dx)
+         yfp = (box(i,j+1) - box(i,j-1)) / (2.0 * dy)
+         hx2 = hx2 + xfp * xfp
+         hy2 = hy2 + yfp * yfp
+         hxy = hxy + xfp * yfp
+      end do
+      end do
+
+      hx2 = hx2 / real((nx-2)*(ny-2),RKIND)
+      hy2 = hy2 / real((nx-2)*(ny-2),RKIND)
+      hxy = hxy / real((nx-2)*(ny-2),RKIND)
+
+      hk = 0.5 * (hx2 + hy2)
+      hl = 0.5 * (hx2 - hy2)
+      hlp = sqrt(hl*hl + hxy*hxy)
+
+      if ((hk + hlp) > 0.0 .and. (hk - hlp) >= 0.0) then
+         get_hgamma = sqrt((hk - hlp) / (hk + hlp))
+      else
+         get_hgamma = 0.0
+      end if
+
+   end function get_hgamma
+
+
+   !***********************************************************************
+   !
+   !  function get_hsigma
+   !
+   !> \brief   Computes mean slope of subgrid orography
+   !> \author  Michael Duda
+   !> \date    20 December 2015
+   !> \details Computation following Lott and Miller (QJRMS 1997)
+   !
+   !-----------------------------------------------------------------------
+   real (kind=RKIND) function get_hsigma()
+
+      implicit none
+
+      integer :: i, j
+      real (kind=RKIND) :: dx, dy
+      real (kind=RKIND) :: xfp, yfp
+      real (kind=RKIND) :: hx2, hy2, hxy
+      real (kind=RKIND) :: hk, hl, hlp
+
+      hx2 = 0.0
+      hy2 = 0.0
+      hxy = 0.0
+
+      do j=2,ny-1
+      do i=2,nx-1
+         dx = dxm(i,j)
+         dy = sg_delta
+         xfp = (box(i+1,j) - box(i-1,j)) / (2.0 * dx)
+         yfp = (box(i,j+1) - box(i,j-1)) / (2.0 * dy)
+         hx2 = hx2 + xfp * xfp
+         hy2 = hy2 + yfp * yfp
+         hxy = hxy + xfp * yfp
+      end do
+      end do
+
+      hx2 = hx2 / real((nx-2)*(ny-2),RKIND)
+      hy2 = hy2 / real((nx-2)*(ny-2),RKIND)
+      hxy = hxy / real((nx-2)*(ny-2),RKIND)
+
+      hk = 0.5 * (hx2 + hy2)
+      hl = 0.5 * (hx2 - hy2)
+      hlp = sqrt(hl*hl + hxy*hxy)
+
+      get_hsigma = sqrt(hk + hlp)
+
+   end function get_hsigma
 
 end module gwd_core
