@@ -3804,7 +3804,7 @@ module mpas_io_streams
    end subroutine MPAS_writeStreamAtt_1dInteger
 
 
-   subroutine MPAS_writeStreamAtt_0dReal(stream, attName, attValue, syncVal, ierr)
+   subroutine MPAS_writeStreamAtt_0dReal(stream, attName, attValue, syncVal, precision, ierr)
 
       implicit none
 
@@ -3812,9 +3812,11 @@ module mpas_io_streams
       character (len=*), intent(in) :: attName
       real (kind=RKIND), intent(in) :: attValue
       logical, intent(in), optional :: syncVal
+      integer, intent(in), optional :: precision
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+      integer :: local_precision
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3826,14 +3828,20 @@ module mpas_io_streams
          return
       end if
 
-      call MPAS_io_put_att(stream % fileHandle, attName, attValue, syncVal=syncVal, ierr=io_err) 
+      if (present(precision)) then
+         local_precision = precision
+      else
+         local_precision = stream % defaultPrecision
+      end if
+
+      call MPAS_io_put_att(stream % fileHandle, attName, attValue, syncVal=syncVal, precision=local_precision, ierr=io_err)
       call MPAS_io_err_mesg(io_err, .false.)
       if (io_err /= MPAS_IO_NOERR .and. present(ierr)) ierr = MPAS_IO_ERR
 
    end subroutine MPAS_writeStreamAtt_0dReal
 
 
-   subroutine MPAS_writeStreamAtt_1dReal(stream, attName, attValue, syncVal, ierr)
+   subroutine MPAS_writeStreamAtt_1dReal(stream, attName, attValue, syncVal, precision, ierr)
 
       implicit none
 
@@ -3841,9 +3849,11 @@ module mpas_io_streams
       character (len=*), intent(in) :: attName
       real (kind=RKIND), dimension(:), intent(in) :: attValue
       logical, intent(in), optional :: syncVal
+      integer, intent(in), optional :: precision
       integer, intent(out), optional :: ierr
 
       integer :: io_err
+      integer :: local_precision
 
       if (present(ierr)) ierr = MPAS_STREAM_NOERR
 
@@ -3855,7 +3865,13 @@ module mpas_io_streams
          return
       end if
 
-      call MPAS_io_put_att(stream % fileHandle, attName, attValue, syncVal=syncVal, ierr=io_err) 
+      if (present(precision)) then
+         local_precision = precision
+      else
+         local_precision = stream % defaultPrecision
+      end if
+
+      call MPAS_io_put_att(stream % fileHandle, attName, attValue, syncVal=syncVal, precision=local_precision, ierr=io_err)
       call MPAS_io_err_mesg(io_err, .false.)
       if (io_err /= MPAS_IO_NOERR .and. present(ierr)) ierr = MPAS_IO_ERR
 
