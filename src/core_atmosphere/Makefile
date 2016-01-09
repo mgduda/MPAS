@@ -41,6 +41,7 @@ physcore:
 	( mkdir libphys; cd libphys; ar -x ../physics_nggps/libphys.a )
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/*.f77 .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/global_climaeropac_global.txt aerosol.dat)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/global_sfc_emissivity_idx.txt sfc_emissivity_idx.txt)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/global_solarconstant_noaa_an.txt solarconstant_noaa_an.txt)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2013.txt co2historicaldata_2013.txt)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2014.txt co2historicaldata_2014.txt)
