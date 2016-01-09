@@ -281,8 +281,11 @@
 
     do iTileStart=1,42001,nx-6
        iTileEnd = iTileStart + nx - 1 - 6
+!      write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
+!            'topo_30s/',iTileStart,'-',iTileEnd,'.',jTileStart,'-',jTileEnd
+!--- use the 30s USGS topography with the 30s RAMP topography over Antartica:
        write(fname,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(geog_data_path)// &
-             'topo_30s/',iTileStart,'-',iTileEnd,'.',jTileStart,'-',jTileEnd
+             'topo_ramp_30s/',iTileStart,'-',iTileEnd,'.',jTileStart,'-',jTileEnd
        write(0,*) trim(fname)
 
        call read_geogrid(fname,len_trim(fname),rarray,nx,ny,nz,isigned,endian, &

@@ -178,6 +178,10 @@
                         <var name="ol2" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol3" packages="vertical_stage_in;met_stage_in"/>
                         <var name="ol4" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="theoro" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="gamoro" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="sigoro" packages="vertical_stage_in;met_stage_in"/>
+                        <var name="elvoro" packages="vertical_stage_in;met_stage_in"/>
                         <var name="facsf" packages="vertical_stage_in;met_stage_in"/>
                         <var name="facwf" packages="vertical_stage_in;met_stage_in"/>
                         <var name="alnsf4s" packages="vertical_stage_in;met_stage_in"/>
@@ -369,6 +373,10 @@
                         <var name="uustar" packages="met_stage_out"/>
                         <var name="hice" packages="met_stage_out"/>
                         <var name="tisfc" packages="met_stage_out"/>
+                        <var name="theoro"/>
+                        <var name="gamoro"/>
+                        <var name="sigoro"/>
+                        <var name="elvoro"/>
                         <var name="facsf"/>
                         <var name="facwf"/>
                         <var name="alnsf4s"/>
@@ -494,6 +502,11 @@
                 <var name="slope"                                type="real"     dimensions="nCells"/>
                 <var name="zorl12m"                              type="real"     dimensions="nMonths nCells"/>
                 <var name="orogwd"                               type="real"     dimensions="nMtvr nCells"/>
+
+                <var name="theoro"                               type="real"     dimensions="nCells"/>
+                <var name="gamoro"                               type="real"     dimensions="nCells"/>
+                <var name="sigoro"                               type="real"     dimensions="nCells"/>
+                <var name="elvoro"                               type="real"     dimensions="nCells"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="hx"                         type="real"     dimensions="nVertLevelsP1 nCells"/>
