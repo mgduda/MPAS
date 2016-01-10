@@ -341,13 +341,21 @@
        !conversion from specific humidity to water vapor mixing ratio:
        tend_qvphysics(k,iCell) = gq0(iCell,k,1)/(1._RKIND-gq0(iCell,k,1))
        tend_qvphysics(k,iCell) = (tend_qvphysics(k,iCell)-qgrs(iCell,k,1)/(1._RKIND-qgrs(iCell,k,1)))*dti
-!      write(0,202) iCell,k,tend_thphysics(k,iCell),tend_qvphysics(k,iCell),tend_qo3physics(k,iCell), &
-!                   tend_qcphysics(k,iCell),tend_uphysics(k,iCell),tend_vphysics(k,iCell)
     enddo
-!   write(0,*)
  enddo
 
- 202 format(2i7,12(1x,e15.8))
+!write(0,*) 'max tend_uphysics   = ',maxval(tend_uphysics(:,1:nCellsSolve)  )
+!write(0,*) 'min tend_uphysics   = ',minval(tend_uphysics(:,1:nCellsSolve)  )
+!write(0,*) 'max tend_vphysics   = ',maxval(tend_vphysics(:,1:nCellsSolve)  )
+!write(0,*) 'min tend_vphysics   = ',minval(tend_vphysics(:,1:nCellsSolve)  )
+!write(0,*) 'max tend_thphysics  = ',maxval(tend_thphysics(:,1:nCellsSolve) )
+!write(0,*) 'min tend_thphysics  = ',minval(tend_thphysics(:,1:nCellsSolve) )
+!write(0,*) 'max tend_qvphysics  = ',maxval(tend_qvphysics(:,1:nCellsSolve) )
+!write(0,*) 'min tend_qvphysics  = ',minval(tend_qvphysics(:,1:nCellsSolve) )
+!write(0,*) 'max tend_qcphysics  = ',maxval(tend_qcphysics(:,1:nCellsSolve) )
+!write(0,*) 'min tend_qcphysics  = ',minval(tend_qcphysics(:,1:nCellsSolve) )
+!write(0,*) 'max tend_qo3physics = ',maxval(tend_qo3physics(:,1:nCellsSolve))
+!write(0,*) 'min tend_qo3physics = ',minval(tend_qo3physics(:,1:nCellsSolve))
 
  write(0,*) '--- end subroutine nuopc_nggps_physics_write:'
 
