@@ -3,6 +3,8 @@
 ! * in description of all types, commented out "private" and all "print" procedures.
 ! * replaced "procedure" statements with "procedure::".
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-10.
+! * added the variable mpas_area in the call to gbphys.f. mpas_area is the area of individual MPAS cells.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-10. 
 
 !=================================================================================================================
 ! Module: nuopc_physics
@@ -655,6 +657,11 @@
        type dynamic_parameters
 
 !        private
+
+!--- additional variables and arrays from MPAS needed in the call to gbphys:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+         real(kind=kind_phys),pointer:: mpas_area(:) => null() ! area of individual mpas cells.
+!--- end Laura D. Fowler.
 
          real (kind=kind_phys), pointer :: xlon  (:) => null()  ! grid longitude in radians, ok for both 0->2pi  !
                                                                 ! or -pi -> +pi ranges                           !
@@ -1890,12 +1897,17 @@
        end subroutine
 
 
-       subroutine dyn_param_setphys (this, xlon, xlat, sinlat, coslat, solhr, &
-                                     IX, IM, kdt, lssav, lat, dtp, dtf, clstp,       &
+       subroutine dyn_param_setphys (this, mpas_area, xlon, xlat, sinlat, coslat, &
+                                     solhr, IX, IM, kdt, lssav, lat, dtp, dtf, clstp, &
                                      nnp, nlons, fhour, slag, sdec, cdec )
          implicit none
 
          class(dynamic_parameters) :: this
+
+!--- additional variables and arrays from MPAS needed in the call to gbphys:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+         real(kind=kind_phys),target :: mpas_area(:)
+!--- end Laura D. Fowler.
 
          real (kind=kind_phys), target :: xlon(:)
          real (kind=kind_phys), target :: xlat(:)
@@ -1927,6 +1939,10 @@
 
          select type (this)
            class is (dynamic_parameters)
+!--- additional variables and arrays from MPAS needed in the call to gbphys:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+             this%mpas_area     => mpas_area
+!--- end Laura D. Fowler.
              this%xlon             => xlon
              this%xlat             => xlat
              this%sinlat           => sinlat
@@ -2856,6 +2872,10 @@
                  mdl%levr, statein%adjtrc, dyn%nnp,    &
 ! Add new nems_slg_shoc arguments
                  mdl%cscnv, mdl%nctp, mdl%do_shoc, mdl%shocaftcnv, mdl%ntot3d, mdl%ntot2d,  &
+!--- additional variables and arrays from MPAS needed in the call to gbphys:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+                 dyn%mpas_area, &
+!--- end Laura D. Fowler.
 ! In/Out
                  sfc%hice, sfc%fice, sfc%tisfc, sfc%tsfc, tbd%tprcp, cld%cv,  &
                  cld%cvb, cld%cvt, tbd%srflag, sfc%snowd, sfc%weasd, sfc%sncovr,  &
