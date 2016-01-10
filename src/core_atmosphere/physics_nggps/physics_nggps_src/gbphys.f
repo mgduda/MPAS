@@ -8,6 +8,8 @@
 ! * changed the declaration of the variable rqtk from intent(out) to intent(inout). added intent(inout) to the
 !   declaration of the variable dtdtr.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-13.
+! * added the variable mpas_area to the argument list. mpas_area is the area of individual MPAS cells.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
 
 !=================================================================================================================
 !  description:                                                         !
@@ -499,6 +501,10 @@
      &      mom4ice,mstrat,trans_trac,nst_fcst,moist_adj,               &
      &      thermodyn_id, sfcpress_id, gen_coord_hybrid,levr,adjtrc,nnp,&
      &      cscnv,nctp,do_shoc,shocaftcnv,ntot3d,ntot2d,                &
+!... additional variables and arrays from MPAS:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+            mpas_area,                                                  &
+!... end Laura D. Fowler.
 !  ---  input/outputs:
      &      hice,fice,tisfc,tsea,tprcp,cv,cvb,cvt,                      &
      &      srflag,snwdph,weasd,sncovr,zorl,canopy,                     &
@@ -610,6 +616,11 @@
      &      ccwf(2), crtrh(3), flgmin(2),  dlqf(2), cdmbgwd(2),         &
      &      xkzm_m,  xkzm_h, xkzm_s, psautco(2),   prautco(2), evpco,   &
      &      wminco(2), cgwf(2), prslrd0, sup
+
+!... additional variables and arrays from MPAS:
+!    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
+      real(kind=kind_phys),intent(in),dimension(im):: mpas_area
+!... end Laura D. Fowler.
 
 !  ---  input/output:
       real(kind=kind_phys), dimension(im),            intent(inout) ::  &
@@ -976,10 +987,12 @@
         work2(i)   = 1.0 - work1(i)
         psurf(i)   = pgr(i)
         work3(i)   = prsik(i,1) / prslk(i,1)
-        tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
-        tem2       = con_rerth * con_pi / latr
-        garea(i)   = tem1 * tem2
-        dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
+!       tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
+!       tem2       = con_rerth * con_pi / latr
+!       garea(i)   = tem1 * tem2
+!       dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
+        garea(i)   = mpas_area(i)
+        dlength(i) = sqrt(mpas_area(i))
         cldf(i)    = cgwf(1)*work1(i) + cgwf(2)*work2(i)
         wcbmax(i)  = wcbmax1*work1(i) + wcbmax2*work2(i)
       enddo
@@ -2411,7 +2424,7 @@
 !         endif
 !       endif   ! end if_lprnt
 
-!  --- ...  end check print ********************************************
+!  --- ...  end check print ******************************************** 
 
         call gwdc(im, ix, im, levs, lat, ugrs, vgrs, tgrs, qgrs,        &
      &            prsl, prsi, del, cumabs,       ktop, kbot, kcnv,cldf, &
