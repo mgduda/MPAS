@@ -43,9 +43,11 @@
 !----------------------------
 ! * in subroutine mpas_interface_fld_setphys, removed the variables sfcdsw, sfcnsw, and sfcdlw, which are not
 !   needed and not defined in Registry.physics_nggps.interface_fields.xml.
-!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19. 
+!   Laura D. Fowler (laura@ucar.edu) / 2015-11-19.
+! * in mpas_interface_fld_setrad, removed arrays htrlwb and htrswb declared in Registry.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-09.
 
- 
+
  contains
 
 
@@ -243,7 +245,6 @@
  real(kind=RKIND),dimension(:),pointer    :: sfclwup,sfclwdn,sfclwupc,sfclwdnc
  real(kind=RKIND),dimension(:),pointer    :: sfcswup,sfcswdn,sfcswupc,sfcswdnc
  real(kind=RKIND),dimension(:,:),pointer  :: htrlw0,htrsw0
- real(kind=RKIND),dimension(:,:,:),pointer:: htrlwb,htrswb
 
 !local nggps pointers:
  type(sfcflw_type),dimension(:),pointer:: sfcflw_l
@@ -272,8 +273,6 @@
  call mpas_pool_get_array(nggps_interface_fields,'sfcswdnc',sfcswdnc)
  call mpas_pool_get_array(nggps_interface_fields,'htrlw0'  ,htrlw0  )
  call mpas_pool_get_array(nggps_interface_fields,'htrsw0'  ,htrsw0  )
- call mpas_pool_get_array(nggps_interface_fields,'htrlwb'  ,htrlwb  )
- call mpas_pool_get_array(nggps_interface_fields,'htrswb'  ,htrswb  )
 
  sfcflw_l => this%sfcflw_l
  sfcfsw_l => this%sfcfsw_l
@@ -295,8 +294,8 @@
        htrlw0_l(iCell,k) = htrlw0(k,iCell)
        htrsw0_l(iCell,k) = htrsw0(k,iCell)
        do n = 1, nBands
-          htrlwb_l(iCell,k,n) = htrlwb(n,k,iCell)
-          htrswb_l(iCell,k,n) = htrswb(n,k,iCell)
+          htrlwb_l(iCell,k,n) = 0._kind_phys
+          htrswb_l(iCell,k,n) = 0._kind_phys
        enddo
     enddo
  enddo
@@ -332,11 +331,9 @@
  real(kind=RKIND),dimension(:),pointer:: xt,xs,xu,xv,xz,zm,xtts,xzts,d_conv,ifd,dt_cool,qrain
 
  real(kind=RKIND),dimension(:,:),pointer  :: htrlw0,htrsw0
- real(kind=RKIND),dimension(:,:,:),pointer:: htrlwb,htrswb
 
 !local nggps pointers:
  real(kind=kind_phys),dimension(:,:),pointer  :: htrlw0_l,htrsw0_l
- real(kind=kind_phys),dimension(:,:,:),pointer:: htrlwb_l,htrswb_l
 
 !local variables:
  integer:: iCell,k,n
@@ -406,8 +403,6 @@
 !... from radiation:
  call mpas_pool_get_array(nggps_interface_fields,'htrlw0'  ,htrlw0  )
  call mpas_pool_get_array(nggps_interface_fields,'htrsw0'  ,htrsw0  )
- call mpas_pool_get_array(nggps_interface_fields,'htrlwb'  ,htrlwb  )
- call mpas_pool_get_array(nggps_interface_fields,'htrswb'  ,htrswb  )
 
 !... back to Registry:
  dusfc_cpl  => this%dusfc_cpl
@@ -466,17 +461,11 @@
 
  htrlw0_l   => this%htrlw0
  htrsw0_l   => this%htrsw0
- htrlwb_l   => this%htrlwb
- htrswb_l   => this%htrswb
 
  do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
        htrlw0(k,iCell) = htrlw0_l(iCell,k) 
        htrsw0(k,iCell) = htrsw0_l(iCell,k)
-       do n = 1, nBands
-          htrlwb(n,k,iCell) = htrlwb_l(iCell,k,n) 
-          htrswb(n,k,iCell) = htrswb_l(iCell,k,n)
-       enddo
     enddo
  enddo
 

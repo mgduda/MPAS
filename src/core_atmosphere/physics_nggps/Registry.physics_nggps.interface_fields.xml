@@ -48,12 +48,6 @@
    <var name="sfclwdnc" type="real" dimensions="nCells Time" units="W m^{-2}"
         description="clear sky downward lw flux at sfc"
    />
-   <var name="htrswb" type="real" dimensions="nBands nVertLevels nCells Time" units="?"
-        description="spectral heating rate"
-   />
-   <var name="htrlwb" type="real" dimensions="nBands nVertLevels nCells Time" units="?"
-        description="spectral heating rate"
-   />
    <var name="htrlw0" type="real" dimensions="nVertLevels nCells Time" units="?"
         description="new ?"
    />
