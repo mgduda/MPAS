@@ -1,5 +1,3 @@
-! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS) (LA-CC-13-047)
-! and the University Corporation for Atmospheric Research (UCAR).
 !
 ! Unless noted otherwise source code is licensed under the BSD license.
 ! Additional copyright and license information can be found in the LICENSE file
@@ -29,6 +27,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
 ! * in the subroutine physics_init, added deallocation of array si after call to subroutine nuopc_phys_init.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
+! * in the subroutine physics_init, added the calculation of the total number of cells (nCellsTotal).
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
 
 
  contains
@@ -67,13 +67,14 @@
  real(kind=RKIND),dimension(:),pointer:: tisfc,tsea
  real(kind=RKIND),dimension(:),pointer:: zorl
 
- real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell 
+ real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
 
  logical:: hybrid
 
+ integer:: nCellsTotal
  integer:: iCell,ierr,n
  integer:: hour,day,month,year
  integer:: nshoc_2d,nshoc_3d
@@ -366,11 +367,13 @@
  endif
 
 !initialization of some additional mesh variables (needed in mpas_atmphys_nggps_dynamic_parameters):
+ call mpas_dmpar_sum_int(dminfo,nCellsSolve,nCellsTotal)
+ 
  if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
        sinlatCell(iCell) = sin(latCell(iCell))
        coslatCell(iCell) = cos(latCell(iCell))
-       nlonsCell(iCell)  = nCellsSolve
+       nlonsCell(iCell)  = nCellsTotal
     enddo 
  endif
 
