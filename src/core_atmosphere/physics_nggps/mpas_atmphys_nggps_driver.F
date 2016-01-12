@@ -105,18 +105,13 @@
 
     call mpas_cld_props%allocate_mem(mesh)
     call mpas_diags%allocate_mem(mesh)
-    call mpas_dyn_parameters%allocate_mem(mesh)
     call mpas_intrfc_flds%allocate_mem(mesh)
     call mpas_rad_tendencies%allocate_mem(mesh)
     call mpas_sfc_prop%allocate_mem(mesh)
 
     !... call to the NGGPS interface between MPAS and the GFS radiation:
-    write(0,*)
-    write(0,*) '--- l_radtlw = ', l_radtlw
-
     call mpas_cld_props%mpas_setrad(mesh,nggps_cloud_properties)
     call mpas_diags%mpas_setrad(mesh,nggps_diagnostics)
-!   call mpas_dyn_parameters%mpas_setrad(block%configs,mesh,itimestep,xtime_s)
     call mpas_intrfc_flds%mpas_setrad(mesh,nggps_interface_fields)
     call mpas_rad_tendencies%mpas_setrad(mesh,nggps_radiation_tendencies)
     call mpas_sfc_prop%mpas_setrad(mesh,nggps_sfc_properties)
@@ -125,6 +120,7 @@
 
 !      call mpas_cld_props%mpas_setrad(mesh,nggps_cloud_properties)
 !      call mpas_diags%mpas_setrad(mesh,nggps_diagnostics)
+       call mpas_dyn_parameters%setrad_allocate_mem(mesh)
        call mpas_dyn_parameters%mpas_setrad(block%configs,mesh,nggps_dynamic_parameters,itimestep,xtime_s)
 !      call mpas_intrfc_flds%mpas_setrad(mesh,nggps_interface_fields)
 !      call mpas_rad_tendencies%mpas_setrad(mesh,nggps_radiation_tendencies)
@@ -152,6 +148,8 @@
                       nggps_interface_fields,                   &
                       nggps_radiation_tendencies                &
                            )
+
+       call mpas_dyn_parameters%setrad_deallocate_mem
 
     endif
 
