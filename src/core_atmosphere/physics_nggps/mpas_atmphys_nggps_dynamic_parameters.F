@@ -11,7 +11,8 @@
  use mpas_derived_types
  use mpas_pool_routines
 
- use mpas_atmphys_manager,only: gmt,year,month,day,hour,minute,second,msecond,utc_h,julday,curr_julday
+ use mpas_atmphys_manager,only: physics_timeStamp,gmt,year,month,day,hour,minute,second,msecond,utc_h, &
+                                julday,curr_julday
  use mpas_atmphys_utilities
  use mpas_atmphys_nggps_vars
 
@@ -25,22 +26,16 @@
 
  type,extends(dynamic_parameters):: mpas_dynamic_parameters
 
-       integer,dimension(:),pointer:: nlons_l  => null()
        integer,dimension(:),pointer:: icsdsw_l => null()!auxiliary cloud control arrays passed to main radiation.
        integer,dimension(:),pointer:: icsdlw_l => null()!if isubcsw/isubclw (input to init) are set to 2, these
                                                         !arrays contain provided random seeds for sub-column
                                                         !clouds generators.
 
-       real(kind=kind_phys),dimension(:),pointer:: xlon_l   => null()!grid longitude in radians.
-       real(kind=kind_phys),dimension(:),pointer:: xlat_l   => null()!grid latitude in radians.
-       real(kind=kind_phys),dimension(:),pointer:: sinlat_l => null()!sine of the grids corresponding latitudes.
-       real(kind=kind_phys),dimension(:),pointer:: coslat_l => null()!cosine of the grids corresponding latitudes.
-
     contains
-       procedure:: mpas_setrad    => mpas_dyn_param_setrad
-       procedure:: mpas_setphys   => mpas_dyn_param_setphys
-       procedure:: allocate_mem   => mpas_dyn_param_allocate
-       procedure:: deallocate_mem => mpas_dyn_param_deallocate
+       procedure:: mpas_setrad            => mpas_dyn_param_setrad
+       procedure:: mpas_setphys           => mpas_dyn_param_setphys
+       procedure:: setrad_allocate_mem    => mpas_dyn_param_setrad_allocate
+       procedure:: setrad_deallocate_mem  => mpas_dyn_param_setrad_deallocate
 
  end type
 
@@ -53,7 +48,7 @@
 
 
 !=================================================================================================================
- subroutine mpas_dyn_param_allocate(this,mesh)
+ subroutine mpas_dyn_param_setrad_allocate(this,mesh)
 !=================================================================================================================
 
  type(mpas_pool_type),intent(in):: mesh
@@ -64,46 +59,36 @@
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
- write(0,*) '--- enter subroutine mpas_dyn_param_allocate:'
+ write(0,*) '--- enter subroutine mpas_dyn_param_setrad_allocate:'
 
  call mpas_pool_get_dimension(mesh,"nCellsSolve",nCellsSolve)
 
- if(.not.associated(this%nlons_l) ) allocate(this%nlons_l(1:nCellsSolve) )
- if(.not.associated(this%xlon_l)  ) allocate(this%xlon_l(1:nCellsSolve)  )
- if(.not.associated(this%xlat_l)  ) allocate(this%xlat_l(1:nCellsSolve)  )
- if(.not.associated(this%sinlat_l)) allocate(this%sinlat_l(1:nCellsSolve))
- if(.not.associated(this%coslat_l)) allocate(this%coslat_l(1:nCellsSolve))
  if(.not.associated(this%icsdsw_l)) allocate(this%icsdsw_l(1:nCellsSolve))
  if(.not.associated(this%icsdlw_l)) allocate(this%icsdlw_l(1:nCellsSolve))
 
- write(0,*) '--- end subroutine mpas_dyn_param_allocate'
+ write(0,*) '--- end subroutine mpas_dyn_param_setrad_allocate'
 
- end subroutine mpas_dyn_param_allocate
+ end subroutine mpas_dyn_param_setrad_allocate
 
 !=================================================================================================================
- subroutine mpas_dyn_param_deallocate(this)
+ subroutine mpas_dyn_param_setrad_deallocate(this)
 !=================================================================================================================
 
  class(mpas_dynamic_parameters),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
- write(0,*) '--- enter subroutine mpas_dyn_param_deallocate:'
+ write(0,*) '--- enter subroutine mpas_dyn_param_setrad_deallocate:'
 
- if(associated(this%nlons_l) ) deallocate(this%nlons_l )
- if(associated(this%xlon_l)  ) deallocate(this%xlon_l  )
- if(associated(this%xlat_l)  ) deallocate(this%xlat_l  )
- if(associated(this%sinlat_l)) deallocate(this%sinlat_l)
- if(associated(this%coslat_l)) deallocate(this%coslat_l)
  if(associated(this%icsdsw_l)) deallocate(this%icsdsw_l)
  if(associated(this%icsdlw_l)) deallocate(this%icsdlw_l)
 
- write(0,*) '--- end subroutine mpas_dyn_param_deallocate'
+ write(0,*) '--- end subroutine mpas_dyn_param_setrad_deallocate'
 
- end subroutine mpas_dyn_param_deallocate
+ end subroutine mpas_dyn_param_setrad_deallocate
 
 !=================================================================================================================
- subroutine mpas_dyn_param_setrad(this,configs,mesh,itimestep,xtime_s)
+ subroutine mpas_dyn_param_setrad(this,configs,mesh,nggps_dynamic_parameters,itimestep,xtime_s)
 !=================================================================================================================
 
 !input arguments:
@@ -114,99 +99,90 @@
  real(kind=RKIND),intent(in):: xtime_s
 
 !inout arguments:
+ type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters 
  class(mpas_dynamic_parameters),intent(inout):: this
 
 !local pointers:
+ character(len=StrKIND),pointer:: initial_timeStamp
  integer,pointer:: nCellsSolve
 
+ real(kind=RKIND),pointer:: fhour
  real(kind=RKIND),pointer:: config_dt
- real(kind=RKIND),dimension(:),pointer:: lonCell,latCell
+ real(kind=RKIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
 
  integer,dimension(:),pointer:: icsdlw_l,icsdsw_l
- real(kind=kind_phys),dimension(:),pointer:: xlon_l,xlat_l,sinlat_l,coslat_l
 
 !local variables:
  logical:: lprnt,lssav,lslwr,lsswr
  integer:: iCell,ipt,im,ix,kdt,n
  integer:: me,latr,lonr
 
- real(kind=RKIND):: deltim,dtlw,dtsw,fhour,xtime_h
+ real(kind=RKIND):: deltim,dtlw,dtsw,xtime_h
  real(kind=RKIND):: solcon,solhr
-!real(kind=RKIND):: slag,sdec,cdec,solcon,solhr
 
 !variables used for random number generator:
  type(random_stat):: stat
 
  integer,parameter:: ipsdlim = 1.0e8 !upper limit for random seeds.
  integer:: ipseed
- integer,dimension(:),allocatable  :: numrdm
+ integer,dimension(:),allocatable:: numrdm
  integer,dimension(:,:,:),allocatable:: ixseed
 
 !-----------------------------------------------------------------------------------------------------------------
+ write(0,*)
+ write(0,*) '--- enter subroutine mpas_dyn_param_setrad:' 
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_dt',config_dt)
 
- call mpas_pool_get_array(mesh,'lonCell',lonCell)
- call mpas_pool_get_array(mesh,'latCell',latCell)
+ call mpas_pool_get_array(mesh,'lonCell'   ,lonCell   )
+ call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
+ call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
+ call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
+ call mpas_pool_get_array(mesh,'initial_date',initial_timeStamp)
+
+ call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
+
+ write(0,*) 'Initial timeStamp ',trim(initial_timeStamp)
+ write(0,*) 'Current timeStamp ',trim(physics_timeStamp)
 
  icsdlw_l => this%icsdlw_l
  icsdsw_l => this%icsdsw_l
- xlon_l   => this%xlon_l
- xlat_l   => this%xlat_l
- sinlat_l => this%sinlat_l
- coslat_l => this%coslat_l
 
 !... pointers to model_parameters:
- me       = mdl_parameters%me
- lonr     = mdl_parameters%lonr
- latr     = mdl_parameters%latr
- idat(:)  = mdl_parameters%idat(:)
+ me      = mdl_parameters%me
+ lonr    = mdl_parameters%lonr
+ latr    = mdl_parameters%latr
+ idat(:) = mdl_parameters%idat(:)
 
 !... date conversion:
  xtime_h = xtime_s/3600._RKIND
  write(0,100) itimestep
  write(0,101) itimestep,year,month,day,hour,julday,curr_julday,utc_h,xtime_h
- write(0,*) '--- idat(1) = ', idat(1)
- write(0,*) '--- idat(2) = ', idat(2)
- write(0,*) '--- idat(3) = ', idat(3)
- write(0,*) '--- idat(4) = ', idat(4)
- write(0,*) '--- idat(5) = ', idat(5)
- write(0,*) '--- idat(6) = ', idat(6)
- write(0,*) '--- idat(7) = ', idat(7)
- write(0,*) '--- idat(8) = ', idat(8)
+
+ if(trim(physics_timeStamp) /= trim(initial_timeStamp)) &
+    fhour = fhour + config_dt / 3600._RKIND
+
+ solhr = mod(utc_h,cons_24)
+ lslwr  = l_radtlw
+ lsswr  = l_radtsw
+ write(0,*)
+ write(0,*) '--- radiation fhour = ', fhour
+ write(0,*) '--- radiation solhr = ', solhr
  write(0,*)
 
  jdate(:) = 0
  jdate(1) = year
  jdate(2) = month
  jdate(3) = day
- jdate(4) = utc_h
  jdate(5) = hour
- jdate(6) = minute
- jdate(7) = second
- jdate(8) = msecond
-
- fhour = utc_h
- solhr = mod(fhour+jdate(5),cons_24)
-
  write(0,*) '--- jdate(1) = ', jdate(1)
  write(0,*) '--- jdate(2) = ', jdate(2)
  write(0,*) '--- jdate(3) = ', jdate(3)
- write(0,*) '--- jdate(4) = ', jdate(4)
  write(0,*) '--- jdate(5) = ', jdate(5)
- write(0,*) '--- jdate(6) = ', jdate(6)
- write(0,*) '--- jdate(7) = ', jdate(7)
- write(0,*) '--- jdate(8) = ', jdate(8)
- write(0,*)
- write(0,*) '--- fhour    = ', fhour
- write(0,*) '--- solhr    = ', solhr
- write(0,*)
 
  lssav  = .true.
  lprnt  = .false.
- lslwr  = l_radtlw
- lsswr  = l_radtsw
 
  im     = nCellsSolve
  ix     = nCellsSolve
@@ -217,13 +193,6 @@
  dtlw   = dt_radtlw
  dtsw   = dt_radtsw
 
- do iCell = 1, nCellsSolve
-    xlon_l(iCell)   = lonCell(iCell)
-    xlat_l(iCell)   = latCell(iCell)
-    sinlat_l(iCell) = sin(latCell(iCell))
-    coslat_l(iCell) = cos(latCell(iCell))
- enddo
-
 !... for now:
  write(0,*) '--- isubc_lw  = ', isubc_lw
  write(0,*) '--- isubc_sw  = ', isubc_sw
@@ -232,7 +201,7 @@
  if(.not.allocated(numrdm)) allocate(numrdm(2*nCellsSolve))
  if(.not.allocated(ixseed)) allocate(ixseed(1:nCellsSolve,1,2))
 
- ipseed = mod(nint(100.0*sqrt(fhour*3600)),ipsdlim) + 1 + ipsd0
+ ipseed = mod(nint(100.0*sqrt(fhour*3600._RKIND)),ipsdlim) + 1 + ipsd0
  write(0,*) '--- ipseed    = ', ipseed
  call random_setseed(ipseed,stat)
  write(0,*) '--- end random_setseed:'
@@ -272,9 +241,9 @@
 !... fills variables and arrays contains in dynamic_parameters:
  write(0,*) '--- enter subroutine dyn_param_setrad:'
  call this%setrad( &
-           xlon_l , xlat_l   , sinlat_l , coslat_l , solhr , ix    , im    , kdt   , jdate , &
-           solcon , icsdsw_l , icsdlw_l , dtlw     , dtsw  , lsswr , lslwr , lssav , ipt   , &
-           lprnt  , deltim   ,  slag    , sdec     , cdec)
+           lonCell , latCell  , sinlatCell , coslatCell , solhr , ix    , im    , kdt   , jdate , &
+           solcon  , icsdsw_l , icsdlw_l   , dtlw       , dtsw  , lsswr , lslwr , lssav , ipt   , &
+           lprnt   , deltim   ,  slag      , sdec       , cdec)
  write(0,*) '--- end subroutine dyn_param_setrad' 
 
 !... formats:
@@ -295,7 +264,7 @@
  end subroutine mpas_dyn_param_setrad
 
 !=================================================================================================================
- subroutine mpas_dyn_param_setphys(this,configs,mesh,itimestep,xtime_s)
+ subroutine mpas_dyn_param_setphys(this,configs,mesh,nggps_dynamic_parameters,itimestep,xtime_s)
 !=================================================================================================================
 
 !input arguments:
@@ -305,50 +274,63 @@
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: xtime_s
 
-!inout argumentsL
+!inout arguments:
+ type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters
  class(mpas_dynamic_parameters),intent(inout):: this
 
 !local pointers:
+ character(len=StrKIND),pointer:: initial_timeStamp
  integer,pointer:: nCellsSolve
+ integer,dimension(:),pointer:: nlonsCell
 
+ real(kind=RKIND),pointer:: fhour
  real(kind=RKIND),pointer:: config_dt
- real(kind=RKIND),dimension(:),pointer:: lonCell,latCell
-
- integer,dimension(:),pointer:: nlons_l
- real(kind=RKIND),dimension(:),pointer:: xlon_l,xlat_l,sinlat_l,coslat_l
+ real(kind=RKIND),dimension(:),pointer:: areaCell
+ real(kind=RKIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
 
 !local variables:
- logical:: lscca,lssav,lsswr
+ logical:: lscca,lssav,lslwr,lsswr
 
  integer:: iCell,im,ix,kdt,lat,nnp,nsswr
 
  real(kind=RKIND),parameter:: tol = 0.01
- real(kind=RKIND):: clstp,dtf,dtp,fhour,fhswr,xtime_h
+ real(kind=RKIND):: clstp,dtf,dtp,fhswr,xtime_h
  real(kind=RKIND):: solhr
-!real(kind=RKIND):: slag,sdec,cdec,solhr
 
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_dt'  ,config_dt  )
 
- call mpas_pool_get_array(mesh,'lonCell',lonCell)
- call mpas_pool_get_array(mesh,'latCell',latCell)
+ call mpas_pool_get_array(mesh,'areaCell'    ,areaCell   )
+ call mpas_pool_get_array(mesh,'nlonsCell'   ,nlonsCell  )
+ call mpas_pool_get_array(mesh,'lonCell'     ,lonCell    )
+ call mpas_pool_get_array(mesh,'latCell'     ,latCell    )
+ call mpas_pool_get_array(mesh,'coslatCell'  ,coslatCell )
+ call mpas_pool_get_array(mesh,'sinlatCell'  ,sinlatCell )
+ call mpas_pool_get_array(mesh,'initial_date',initial_timeStamp)
 
- xlon_l   => this%xlon_l
- xlat_l   => this%xlat_l
- sinlat_l => this%sinlat_l
- coslat_l => this%coslat_l
- nlons_l  => this%nlons_l
+ call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
+
+ lslwr = l_radtlw
+ lsswr = l_radtsw
 
 !... date conversion:
  xtime_h = xtime_s/3600._RKIND
  write(0,100) itimestep
  write(0,101) itimestep,year,month,day,hour,julday,curr_julday,utc_h,xtime_h
+ write(0,*)
+ write(0,*) 'Initial timeStamp ', trim(initial_timeStamp)
+ write(0,*) 'Current timeStamp ', trim(physics_timeStamp)
+ write(0,*) 'lslwr = ', lslwr
+ write(0,*) 'lsswr = ', lsswr
 
- fhour = utc_h
- solhr = mod(fhour+hour,cons_24)
- lsswr = l_radtsw
+ if(trim(physics_timeStamp) /= trim(initial_timeStamp)) then
+    if(.not. lslwr .and. .not.lslwr) &
+    fhour = fhour + config_dt / 3600._RKIND
+ endif
+
+ solhr = mod(utc_h,cons_24)
 
 !... initialization of variable clstp needed in the calculation of bottom and top pressures for
 !... convective clouds (Ken Campana diagnostics). set switch for saving convective clouds:
@@ -367,18 +349,6 @@
  else
     clstp = 0100.                           !accumulate
  endif
-!write(0,*) '--- fhswr = ', fhswr
-!write(0,*) '--- nsswr = ', nsswr
-!write(0,*) '--- lscca = ', lscca
-!write(0,*) '--- clstp = ', clstp
-
- do iCell = 1, nCellsSolve
-    xlon_l(iCell)   = lonCell(iCell)
-    xlat_l(iCell)   = latCell(iCell)
-    sinlat_l(iCell) = sin(latCell(iCell))
-    coslat_l(iCell) = cos(latCell(iCell))
-    nlons_l(iCell)  = nCellsSolve
- enddo
 
  im    = nCellsSolve
  ix    = nCellsSolve
@@ -389,13 +359,9 @@
  dtp   = config_dt
  lssav = .true.
 
-!cdec = this%cdec
-!sdec = this%sdec
-!slag = this%slag
-
  write(0,*)
- write(0,*) '--- fhour  = ', fhour
- write(0,*) '--- solhr  = ', solhr
+ write(0,*) '--- physics fhour   = ', fhour
+ write(0,*) '--- physics solhr   = ', solhr
  write(0,*) '--- slag   = ', slag
  write(0,*) '--- sdec   = ', sdec
  write(0,*) '--- cdec   = ', cdec
@@ -403,9 +369,10 @@
 !... fills variables and arrays contains in dynamic_parameters:
  write(0,*) '--- enter subroutine dyn_param_setphys:'
  call this%setphys (&
-           xlon_l , xlat_l , sinlat_l , coslat_l , solhr , ix      , im    , kdt  , lssav , &
-           lat    , dtp    , dtf      , clstp    , nnp   , nlons_l , fhour , slag , sdec  , &
-           cdec)
+           areaCell , lonCell , latCell , sinlatCell , coslatCell , solhr , & 
+           ix       , im      , kdt     , lssav      , lat        , dtp   , & 
+           dtf      , clstp   , nnp     , nlonsCell  , fhour      , slag  , &
+          sdec      , cdec)
  write(0,*) '--- end subroutine dyn_param_setphys'
 
 !... formats:
