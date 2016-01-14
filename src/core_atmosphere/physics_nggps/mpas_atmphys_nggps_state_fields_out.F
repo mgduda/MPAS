@@ -28,8 +28,13 @@
 
  end type
 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
+
 
 !=================================================================================================================
  subroutine mpas_state_fld_out_allocate(this,mesh)
@@ -44,8 +49,8 @@
  integer:: ntrac
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_state_fld_out_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_state_fld_out_allocate:'
 
  call mpas_pool_get_dimension(mesh,"nCellsSolve",nCellsSolve)
  call mpas_pool_get_dimension(mesh,"nVertLevels",nVertLevels)
@@ -58,7 +63,7 @@
 
  if(.not.allocated(gq0)) allocate(gq0(1:nCellsSolve,1:nVertLevels,ntrac))
 
- write(0,*) '--- end subroutine mpas_state_fld_out_allocate'
+!write(0,*) '--- end subroutine mpas_state_fld_out_allocate'
 
  end subroutine mpas_state_fld_out_allocate
 
@@ -69,15 +74,15 @@
  class(mpas_state_fields_out),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_state_fld_out_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_state_fld_out_deallocate:'
 
  if(allocated(gt0)) deallocate(gt0)
  if(allocated(gu0)) deallocate(gu0)
  if(allocated(gv0)) deallocate(gv0)
  if(allocated(gq0)) deallocate(gq0)
 
- write(0,*) '--- end subroutine mpas_state_fld_out_allocate'
+!write(0,*) '--- end subroutine mpas_state_fld_out_allocate'
 
  end subroutine mpas_state_fld_out_deallocate
 
@@ -96,8 +101,8 @@
  integer:: iCell,k,n,ntrac
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_state_fld_setphys_out:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_state_fld_setphys_out:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -117,7 +122,7 @@
 
  call this%setphys(gt0,gq0,gu0,gv0)
 
- write(0,*) '--- end subroutine mpas_state_fld_setphys_out'
+!write(0,*) '--- end subroutine mpas_state_fld_setphys_out'
 
  end subroutine mpas_state_fld_out_setphys
 

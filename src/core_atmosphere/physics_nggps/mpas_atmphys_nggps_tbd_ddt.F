@@ -55,7 +55,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-19.
 ! * added deallocation of local array ozmix_l.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-27.
-
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -72,8 +73,8 @@
  integer:: ncld,nrcm,ntrac,nctp,num_p2d,num_p3d
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_tbd_ddt_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_tbd_ddt_allocate:'
 
  ncld    = mdl_parameters%ncld
  nrcm    = mdl_parameters%nrcm
@@ -107,7 +108,7 @@
  if(.not.associated(this%fswtr_l)  ) allocate(this%fswtr_l(ntrac-ncld+2)        )
  if(.not.associated(this%phyfctd_l)) allocate(this%phyfctd_l(1:nCellsSolve,nctp))
 
- write(0,*) '--- end subroutine mpas_tbd_ddt_allocate'
+!write(0,*) '--- end subroutine mpas_tbd_ddt_allocate'
 
  end subroutine mpas_tbd_ddt_allocate
 
@@ -118,8 +119,8 @@
  class(mpas_tbd_ddt),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_tbd_ddt_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_tbd_ddt_deallocate:'
 
  if(associated(this%dpshc_l)  ) deallocate(this%dpshc_l  )
  if(associated(this%slc_l)    ) deallocate(this%slc_l    )
@@ -139,7 +140,7 @@
  if(associated(this%fswtr_l)  ) deallocate(this%fswtr_l  )
  if(associated(this%phyfctd_l)) deallocate(this%phyfctd_l)
 
- write(0,*) '--- end subroutine mpas_tbd_ddt_deallocate'
+!write(0,*) '--- end subroutine mpas_tbd_ddt_deallocate'
 
  end subroutine mpas_tbd_ddt_deallocate
 
@@ -179,8 +180,8 @@
  integer:: ncld,ntrac,nctp,nrcm
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_tbd_set:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_tbd_set:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -272,23 +273,6 @@
     enddo
  enddo
 
-!...
-!test = .false.
-!if(.not. mdl_parameters%newsas .or. mdl_parameters%cal_pre) then
-!   write(0,*) '--- 111111:'
-!   test = .not. mdl_parameters%newsas .or. mdl_parameters%cal_pre
-!   write(0,*) '--- test    =', test
-!   write(0,*) '--- newsas  = ', mdl_parameters%newsas
-!   write(0,*) '--- cal_pre = ', mdl_parameters%cal_pre
-!else
-!   write(0,*) '--- 222222:'
-!   test = .not. mdl_parameters%newsas .or. mdl_parameters%cal_pre
-!   write(0,*) '--- test    =', test
-!   write(0,*) '--- newsas  = ', mdl_parameters%newsas
-!   write(0,*) '--- cal_pre = ', mdl_parameters%cal_pre
-!endif
-!stop
-
 !... new pointers added in nuopc_physics.F90 version 2: the options to use fscav_l and fwstr_l (tracer scavenging)
 !... phyfctd_l (Chikira-Sugiyama) are not used in the current testing of the nggps driver and not linked to the
 !... MPAS registry:
@@ -310,7 +294,7 @@
            tref    , z_c     , c_0       , c_d      , w_0    , w_d     , &
            fscav_l , fswtr_l , phyfctd_l) 
 
- write(0,*) '--- end subroutine mpas_tbd_set'
+!write(0,*) '--- end subroutine mpas_tbd_set'
 
  end subroutine mpas_tbd_set
 
@@ -336,8 +320,8 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_tbd_write:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_tbd_write:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -394,7 +378,7 @@
     enddo
  enddo
 
- write(0,*) '--- end subroutine mpas_tbd_write'
+!write(0,*) '--- end subroutine mpas_tbd_write'
 
  end subroutine mpas_tbd_write
  

@@ -20,14 +20,13 @@
  public:: init_o3climatology, &
           o3climatology_from_MPAS
 
-!>\brief
-!> mpas_atmphys_nggps_o3climatology contains the subroutines needed to initialize, interpolate, and
-!> update the input coefficients needed in the parameterization of prognostic ozone. 
-!>\author Laura D. Fowler (send comments to laura@ucar.edu).
-!>\date 2015-08-01.
-
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
+
  
 !=================================================================================================================
  subroutine init_o3climatology(dminfo,mesh,atm_input,ntoz)
@@ -64,8 +63,8 @@
  real(kind=RKIND),dimension(:,:,:,:),allocatable:: ozplin
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine init_o3climatology: ntoz =', ntoz
+!write(0,*)
+!write(0,*) '--- enter subroutine init_o3climatology: ntoz =', ntoz
 
  call mpas_pool_get_dimension(mesh,'nCells'     ,nCells     )
  call mpas_pool_get_dimension(mesh,'nMonths'    ,nMonths    )
@@ -205,7 +204,7 @@
  if(allocated(tempin)  ) deallocate(tempin  )
  if(allocated(ozplin)  ) deallocate(ozplin  )
 
- write(0,*) '--- end subroutine init_o3climatology'
+!write(0,*) '--- end subroutine init_o3climatology'
 
 !formats:
  102 format(i3,10(1x,e15.8))
@@ -233,8 +232,8 @@
  integer:: iCell,iM,k,nc
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine o3climatology_from_MPAS:'
+!write(0,*)
+!write(0,*) '--- enter subroutine o3climatology_from_MPAS:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nOznLevels' ,nOznLevels )
@@ -253,7 +252,7 @@
     enddo
  enddo
 
- write(0,*) '--- end subroutine o3climatology_from_MPAS'
+!write(0,*) '--- end subroutine o3climatology_from_MPAS'
 
 !format:
  201 format(3i9,10(1x,e15.8))

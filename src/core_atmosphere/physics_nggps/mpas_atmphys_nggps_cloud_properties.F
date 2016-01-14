@@ -39,7 +39,11 @@
 
  end type
 
- 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
+
  contains
 
 
@@ -54,8 +58,8 @@
  integer,pointer:: nCellsSolve,nVertLevels
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_cld_prop_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_cld_prop_allocate:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -69,7 +73,7 @@
  if(.not.associated(this%cnvw_l)  ) allocate(this%cnvw_l(1:nCellsSolve,1:nVertLevels)  )
  if(.not.associated(this%cnvc_l)  ) allocate(this%cnvc_l(1:nCellsSolve,1:nVertLevels)  )
 
- write(0,*) '--- end subroutine mpas_cld_prop_allocate'
+!write(0,*) '--- end subroutine mpas_cld_prop_allocate'
 
  end subroutine mpas_cld_prop_allocate
 
@@ -80,8 +84,8 @@
  class(mpas_cloud_properties),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_cld_prop_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_cld_prop_deallocate:'
 
  if(associated(this%cnvqc_l) ) deallocate(this%cnvqc_l )
  if(associated(this%fcice_l) ) deallocate(this%fcice_l )
@@ -92,7 +96,7 @@
  if(associated(this%cnvw_l)  ) deallocate(this%cnvw_l  )
  if(associated(this%cnvc_l)  ) deallocate(this%cnvc_l  )
 
- write(0,*) '--- end subroutine mpas_cld_prop_deallocate'
+!write(0,*) '--- end subroutine mpas_cld_prop_deallocate'
 
  end subroutine mpas_cld_prop_deallocate
 
@@ -119,8 +123,8 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_cld_prop_setphys:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_cld_prop_setphys:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -140,7 +144,7 @@
 
  call this%setphys(flgmin, cv , cvt , cvb , cnvqc_l , sup)
 
- write(0,*) '--- end subroutine mpas_cld_prop_setphys'
+!write(0,*) '--- end subroutine mpas_cld_prop_setphys'
 
  end subroutine mpas_cld_prop_setphys
 
@@ -168,7 +172,7 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*) '--- enter subroutine mpas_cld_prop_setrad:'
+!write(0,*) '--- enter subroutine mpas_cld_prop_setrad:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -208,7 +212,7 @@
            cv       , cvt , cvb    , fcice_l , frain_l , rrime_l , flgmin, cldcov_l, &
            deltaq_l , sup , cnvw_l , cnvc_l)
 
- write(0,*) '--- end subroutine mpas_cld_prop_setrad'
+!write(0,*) '--- end subroutine mpas_cld_prop_setrad'
 
  end subroutine mpas_cld_prop_setrad
 
@@ -235,8 +239,8 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_cld_prop_write:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_cld_prop_write:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -277,7 +281,7 @@
     enddo
  enddo
 
- write(0,*) '--- end subroutine mpas_cld_prop_write'
+!write(0,*) '--- end subroutine mpas_cld_prop_write'
 
  end subroutine mpas_cld_prop_write
 

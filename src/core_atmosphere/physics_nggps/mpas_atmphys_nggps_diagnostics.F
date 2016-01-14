@@ -38,6 +38,10 @@
 
  end type
 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
  
  contains
 
@@ -53,8 +57,8 @@
  integer,pointer:: nCellsSolve,nVertLevels,nOznPlCoeff,nFxr
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_diagnostics_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_diagnostics_allocate:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -73,7 +77,7 @@
  if(.not.allocated(dv3dt)         ) allocate(dv3dt(1:nCellsSolve,1:nVertLevels,4)            )
  if(.not.allocated(dqdt_v)        ) allocate(dqdt_v(1:nCellsSolve,1:nVertLevels)             )
 
- write(0,*) '--- end subroutine mpas_diagnostics_allocate'
+!write(0,*) '--- end subroutine mpas_diagnostics_allocate'
 
  end subroutine mpas_diagnostics_allocate
 
@@ -84,8 +88,8 @@
  class(mpas_diagnostics),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_diagnostics_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_diagnostics_deallocate:'
 
  if(associated(this%topflw_l)) deallocate(this%topflw_l)
  if(associated(this%topfsw_l)) deallocate(this%topfsw_l)
@@ -99,7 +103,7 @@
  if(allocated(dv3dt)         ) deallocate(dv3dt        )
  if(allocated(dqdt_v)        ) deallocate(dqdt_v       )
 
- write(0,*) '--- end subroutine mpas_diagnostics_deallocate'
+!write(0,*) '--- end subroutine mpas_diagnostics_deallocate'
 
  end subroutine mpas_diagnostics_deallocate
 
@@ -126,8 +130,8 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_diagnostics_setphys:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_diagnostics_setphys:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -213,7 +217,7 @@
            dqsfci  , gfluxi  , epi     , smcwlt2 , smcref2 , wet1    , &
            sr)
 
- write(0,*) '--- end subroutine mpas_diagnostics_setphys'
+!write(0,*) '--- end subroutine mpas_diagnostics_setphys'
 
  end subroutine mpas_diagnostics_setphys
 
@@ -241,8 +245,8 @@
  integer:: iCell,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_diagnostics_setrad:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_diagnostics_setrad:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nFxr'       ,nFxr       )
@@ -279,8 +283,8 @@
 
  call this%setrad(nFxr,fluxr_l,topfsw_l,topflw_l,dswcmp_l,uswcmp_l)
        
- write(0,*) '--- end subroutine mpas_diagnostics_setrad'
- write(0,*)
+!write(0,*) '--- end subroutine mpas_diagnostics_setrad'
+!write(0,*)
 
  end subroutine mpas_diagnostics_setrad
 
@@ -307,8 +311,8 @@
  integer:: iCell,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_diagnostics_write:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_diagnostics_write:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
@@ -427,7 +431,7 @@
  wet1    => this%wet1
  sr      => this%sr
 
- write(0,*) '--- end subroutine mpas_diagnostics_write'
+!write(0,*) '--- end subroutine mpas_diagnostics_write'
 
  end subroutine mpas_diagnostics_write
 

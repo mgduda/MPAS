@@ -17,14 +17,13 @@
 
  logical,public:: moist_physics
 
-
-!>\brief MPAS control and initialization routines.
-!>\author Laura D. Fowler (send comments to laura@ucar.edu).
-!>\date 2015-08-01.
-!>
-
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
+
 
 !==================================================================================================
  subroutine physics_namelist_check(mesh,configs)
@@ -36,10 +35,10 @@
 
 !--------------------------------------------------------------------------------------------------
 
- write(0,*)
- write(0,*) '--- enter subroutine physics_namelist_check NGGPS:'
+!write(0,*)
+!write(0,*) '--- enter subroutine physics_namelist_check NGGPS:'
  moist_physics = .true.
- write(0,*) '--- end subroutine physics_namelist_check NGGPS.'
+!write(0,*) '--- end subroutine physics_namelist_check NGGPS.'
 
  end subroutine physics_namelist_check
 
@@ -54,9 +53,9 @@
  
 !--------------------------------------------------------------------------------------------------
 
- write(0,*)
- write(0,*) '--- enter subroutine physics_registry_init NGGPS:'
- write(0,*) '--- end subroutine physics_registry_init NGGPS.'
+!write(0,*)
+!write(0,*) '--- enter subroutine physics_registry_init NGGPS:'
+!write(0,*) '--- end subroutine physics_registry_init NGGPS.'
 
  end subroutine physics_registry_init
 

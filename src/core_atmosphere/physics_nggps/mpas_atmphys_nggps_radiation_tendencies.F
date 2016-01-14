@@ -38,8 +38,9 @@
 !----------------------------
 ! * in subroutine mpas_rad_tend_set, initialized the variables rqtk and dtdtr_l to zero.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-15. 
+! * commented out some print statements.
+!   laura D. Fowler (laura@ucar.edu) / 2016-01.14.
 
- 
  contains
 
 
@@ -55,8 +56,8 @@
  integer,pointer:: nVertLevels
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_rad_tend_set_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_rad_tend_set_allocate:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -68,7 +69,7 @@
  if(.not.associated(this%hlwc_l)  ) allocate(this%hlwc_l(1:nCellsSolve,1:nVertLevels)  )
  if(.not.associated(this%hlwd_l)  ) allocate(this%hlwd_l(1:nCellsSolve,1:nVertLevels,6))
 
- write(0,*) '--- end subroutine mpas_rad_tend_set_allocate'
+!write(0,*) '--- end subroutine mpas_rad_tend_set_allocate'
 
  end subroutine mpas_rad_tend_set_allocate
 
@@ -79,8 +80,8 @@
  class(mpas_radiation_tendencies),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_rad_tend_set_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_rad_tend_set_deallocate:'
 
  if(associated(this%htrsw_l)) deallocate(this%htrsw_l)
  if(associated(this%htrlw_l)) deallocate(this%htrlw_l)
@@ -89,8 +90,8 @@
  if(associated(this%hlwc_l) ) deallocate(this%hlwc_l )
  if(associated(this%hlwd_l) ) deallocate(this%hlwd_l )
 
- write(0,*) '--- end subroutine mpas_rad_tend_set_deallocate'
- write(0,*)
+!write(0,*) '--- end subroutine mpas_rad_tend_set_deallocate'
+!write(0,*)
 
  end subroutine mpas_rad_tend_set_deallocate
 
@@ -118,8 +119,8 @@
  integer:: iCell,k,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_rad_tend_set:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_rad_tend_set:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -168,7 +169,7 @@
 
  call this%set(htrsw_l,sfalb,coszen,htrlw_l,tsflw,semis,coszdg,rqtk,hlwd_l,dtdtr_l,swhc_l,hlwc_l)
 
- write(0,*) '--- end subroutine mpas_rad_tend_set'
+!write(0,*) '--- end subroutine mpas_rad_tend_set'
 
  end subroutine mpas_rad_tend_set
 
@@ -196,8 +197,8 @@
  integer:: iCell,k,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_rad_tend_write:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_rad_tend_write:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -227,7 +228,7 @@
     enddo
  enddo
 
- write(0,*) '--- end subroutine mpas_rad_tend_write'
+!write(0,*) '--- end subroutine mpas_rad_tend_write'
 
  end subroutine mpas_rad_tend_write
 

@@ -16,6 +16,10 @@
  public:: physics_update, &
           physics_nggps_update_diagnostics
 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
  
@@ -34,9 +38,9 @@
 
 !-----------------------------------------------------------------------------------------------------------------
 
- write(0,*)
- write(0,*) '--- begin physics_update NGGPS:'
- write(0,*) '--- end physics_update NGGPS.'
+!write(0,*)
+!write(0,*) '--- begin physics_update NGGPS:'
+!write(0,*) '--- end physics_update NGGPS.'
 
  end subroutine physics_update
 
@@ -62,7 +66,7 @@
  integer:: iCell,k
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*) '--- enter subroutine physics_nggps_update_diagnostics:'
+!write(0,*) '--- enter subroutine physics_nggps_update_diagnostics:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -125,8 +129,8 @@
     spfhmin(iCell) = 0._RKIND
  enddo
 
- write(0,*) '--- end subroutine physics_nggps_update_diagnostics'
- write(0,*)
+!write(0,*) '--- end subroutine physics_nggps_update_diagnostics'
+!write(0,*)
 
  end subroutine physics_nggps_update_diagnostics
 

@@ -44,6 +44,11 @@
  real(kind=RKIND),parameter:: cons_24 = 24._RKIND
  real(kind=RKIND),parameter:: cons_99 = 99._RKIND
 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
+
  contains
 
 
@@ -58,15 +63,15 @@
  integer,pointer:: nCellsSolve
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_dyn_param_setrad_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_dyn_param_setrad_allocate:'
 
  call mpas_pool_get_dimension(mesh,"nCellsSolve",nCellsSolve)
 
  if(.not.associated(this%icsdsw_l)) allocate(this%icsdsw_l(1:nCellsSolve))
  if(.not.associated(this%icsdlw_l)) allocate(this%icsdlw_l(1:nCellsSolve))
 
- write(0,*) '--- end subroutine mpas_dyn_param_setrad_allocate'
+!write(0,*) '--- end subroutine mpas_dyn_param_setrad_allocate'
 
  end subroutine mpas_dyn_param_setrad_allocate
 
@@ -77,13 +82,13 @@
  class(mpas_dynamic_parameters),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_dyn_param_setrad_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_dyn_param_setrad_deallocate:'
 
  if(associated(this%icsdsw_l)) deallocate(this%icsdsw_l)
  if(associated(this%icsdlw_l)) deallocate(this%icsdlw_l)
 
- write(0,*) '--- end subroutine mpas_dyn_param_setrad_deallocate'
+!write(0,*) '--- end subroutine mpas_dyn_param_setrad_deallocate'
 
  end subroutine mpas_dyn_param_setrad_deallocate
 
@@ -129,8 +134,8 @@
  integer,dimension(:,:,:),allocatable:: ixseed
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_dyn_param_setrad:' 
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_dyn_param_setrad:' 
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_dt',config_dt)
@@ -142,9 +147,6 @@
  call mpas_pool_get_array(mesh,'initial_date',initial_timeStamp)
 
  call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
-
- write(0,*) 'Initial timeStamp ',trim(initial_timeStamp)
- write(0,*) 'Current timeStamp ',trim(physics_timeStamp)
 
  icsdlw_l => this%icsdlw_l
  icsdsw_l => this%icsdsw_l
@@ -159,6 +161,8 @@
  xtime_h = xtime_s/3600._RKIND
  write(0,100) itimestep
  write(0,101) itimestep,year,month,day,hour,julday,curr_julday,utc_h,xtime_h
+ write(0,*) 'Initial timeStamp ',trim(initial_timeStamp)
+ write(0,*) 'Current timeStamp ',trim(physics_timeStamp)
 
  if(trim(physics_timeStamp) /= trim(initial_timeStamp)) &
     fhour = fhour + config_dt / 3600._RKIND

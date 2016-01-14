@@ -46,7 +46,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-19.
 ! * in mpas_interface_fld_setrad, removed arrays htrlwb and htrswb declared in Registry.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-09.
-
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -62,8 +63,8 @@
  integer,pointer:: nCellsSolve,nVertLevels,nBands
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_interface_fld_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_interface_fld_allocate:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -77,7 +78,7 @@
  if(.not.associated(this%htrlwb_l) ) allocate(this%htrlwb_l(1:nCellsSolve,1:nVertLevels,1:nBands))
  if(.not.associated(this%htrswb_l) ) allocate(this%htrswb_l(1:nCellsSolve,1:nVertLevels,1:nBands))
 
- write(0,*) '--- end subroutine mpas_interface_fld_allocate'
+!write(0,*) '--- end subroutine mpas_interface_fld_allocate'
 
  end subroutine mpas_interface_fld_allocate
 
@@ -88,8 +89,8 @@
  class(mpas_interface_fields),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_interface_fld_deallocate'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_interface_fld_deallocate'
 
  if(associated(this%sfcnsw_l) ) deallocate(this%sfcnsw_l)
  if(associated(this%sfcflw_l) ) deallocate(this%sfcflw_l)
@@ -99,7 +100,7 @@
  if(associated(this%htrlwb_l) ) deallocate(this%htrlwb_l)
  if(associated(this%htrswb_l) ) deallocate(this%htrswb_l)
 
- write(0,*) '--- end subroutine mpas_interface_fld_deallocate'
+!write(0,*) '--- end subroutine mpas_interface_fld_deallocate'
 
  end subroutine mpas_interface_fld_deallocate
 
@@ -135,8 +136,8 @@
  integer:: iCell
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_interface_fld_setphys:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_interface_fld_setphys:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
@@ -225,7 +226,7 @@
            nvisbmi_cpl , nvisdfi_cpl , t2mi_cpl    , q2mi_cpl    , u10mi_cpl   , v10mi_cpl   , &
            tseai_cpl   , psurfi_cpl  , oro_cpl     , slmsk_cpl)
 
- write(0,*) '--- end subroutine mpas_interface_fld_setphys'
+!write(0,*) '--- end subroutine mpas_interface_fld_setphys'
 
  end subroutine mpas_interface_fld_setphys
 
@@ -257,7 +258,7 @@
  integer:: iCell,k,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*) '--- enter subroutine mpas_interface_fld_setrad'
+!write(0,*) '--- enter subroutine mpas_interface_fld_setrad'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -302,7 +303,7 @@
 
  call this%setrad(sfcfsw_l,sfcflw_l,htrlw0_l,htrsw0_l,htrswb_l,htrlwb_l)
 
- write(0,*) '--- end subroutine mpas_interface_fld_setrad'
+!write(0,*) '--- end subroutine mpas_interface_fld_setrad'
 
  end subroutine mpas_interface_fld_setrad
 
@@ -339,7 +340,7 @@
  integer:: iCell,k,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*) '--- enter subroutine mpas_interface_fld_write:'
+!write(0,*) '--- enter subroutine mpas_interface_fld_write:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -469,7 +470,7 @@
     enddo
  enddo
 
- write(0,*) '--- end subroutine mpas_interface_fld_write'
+!write(0,*) '--- end subroutine mpas_interface_fld_write'
 
  end subroutine mpas_interface_fld_write
 

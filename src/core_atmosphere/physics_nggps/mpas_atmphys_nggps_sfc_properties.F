@@ -38,7 +38,8 @@
 !----------------------------
 ! * revised the input of the static fields for the parameterization of the gravity wave drag over orography.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-09.
-
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -55,8 +56,8 @@
  integer,pointer:: nMtvr
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_sfc_prop_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_sfc_prop_allocate:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nMtvr'      ,nMtvr)
@@ -66,7 +67,7 @@
  if(.not.associated(this%hprim) ) allocate(this%hprim(1:nCellsSolve)         )
  if(.not.associated(this%hprime)) allocate(this%hprime(1:nCellsSolve,1:nMtvr))
 
- write(0,*) '--- end subroutine mpas_sfc_prop_allocate'
+!write(0,*) '--- end subroutine mpas_sfc_prop_allocate'
 
  end subroutine mpas_sfc_prop_allocate
 
@@ -77,15 +78,15 @@
  class(mpas_sfc_properties),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_sfc_prop_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_sfc_prop_deallocate:'
 
  if(associated(this%rvgtyp)) deallocate(this%rvgtyp)
  if(associated(this%rsltyp)) deallocate(this%rsltyp)
  if(associated(this%hprim) ) deallocate(this%hprim )
  if(associated(this%hprime)) deallocate(this%hprime)
 
- write(0,*) '--- end subroutine mpas_surface_deallocate'
+!write(0,*) '--- end subroutine mpas_surface_deallocate'
 
  end subroutine mpas_sfc_prop_deallocate
 
@@ -118,8 +119,8 @@
  integer:: iCell,n
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_sfc_prop_setphys:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_sfc_prop_setphys:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nMtvr'      ,nMtvr      )
@@ -242,7 +243,7 @@
 !formats:
  203 format(i6,10(1x,e15.8))
 
- write(0,*) '--- end subroutine mpas_sfc_prop_setphys'
+!write(0,*) '--- end subroutine mpas_sfc_prop_setphys'
 
  end subroutine mpas_sfc_prop_setphys
 
@@ -272,8 +273,8 @@
  integer:: iCell
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_sfc_prop_setrad:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_sfc_prop_setrad:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
@@ -309,7 +310,7 @@
            slmsk , tsfc  , snwdph , sncovr , snoalb , zorl  , hprim , fice , &
            tisfc , alvsf , alnsf  , alvwf  , alnwf  , facsf , facwf )
 
- write(0,*) '--- end subroutine mpas_sfc_prop_setrad'
+!write(0,*) '--- end subroutine mpas_sfc_prop_setrad'
 
  end subroutine mpas_sfc_prop_setrad
 
@@ -328,8 +329,8 @@
                                            snwdph,weasd,sncovr,zorl,canopy,ffmm,ffhh,f10m,t2m,q2m
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_sfc_prop_write:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_sfc_prop_write:'
 
  call mpas_pool_get_array(nggps_sfc_properties,'slmsk'   ,slmsk   )
  call mpas_pool_get_array(nggps_sfc_properties,'vfrac'   ,vfrac   )
@@ -376,7 +377,7 @@
  alnwf  => this%alnwf
  alvwf  => this%alvwf
 
- write(0,*) '--- end subroutine mpas_sfc_prop_write'
+!write(0,*) '--- end subroutine mpas_sfc_prop_write'
 
  end subroutine mpas_sfc_prop_write
 

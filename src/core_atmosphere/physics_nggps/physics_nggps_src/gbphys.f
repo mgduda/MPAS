@@ -10,6 +10,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-13.
 ! * added the variable mpas_area to the argument list. mpas_area is the area of individual MPAS cells.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
+! * commented out some print statements.
+!   laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
 !=================================================================================================================
 !  description:                                                         !
@@ -861,13 +863,13 @@
 !
 !  --- ...                       figure out number of extra tracers
 !
-      write(0,*)
-      write(0,*) '--- enter subroutine gbphys:'
-      write(0,*) '--- trans_trac = ', trans_trac
-      write(0,*) '--- ntrac = ', ntrac
-      write(0,*) '--- ntcw  = ', ntcw
-      write(0,*) '--- ntoz  = ', ntoz
-      write(0,*) '--- ncld  = ', ncld     
+!     write(0,*)
+!     write(0,*) '--- enter subroutine gbphys:'
+!     write(0,*) '--- trans_trac = ', trans_trac
+!     write(0,*) '--- ntrac = ', ntrac
+!     write(0,*) '--- ntcw  = ', ntcw
+!     write(0,*) '--- ntoz  = ', ntoz
+!     write(0,*) '--- ncld  = ', ncld     
 
       tottracer = 0            ! no convective transport of tracers
       if (trans_trac) then
@@ -887,11 +889,11 @@
         tottracer = tracers
         if (ntoz > 0) tottracer = tottracer + 1  ! ozone is added separately
       endif
-      write(0,*) 
-      write(0,*) '--- trc_shft  = ', trc_shft
-      write(0,*) '--- tracers   = ', tracers     
-      write(0,*) '--- tottracer = ', tottracer
-      write(0,*) 
+!     write(0,*) 
+!     write(0,*) '--- trc_shft  = ', trc_shft
+!     write(0,*) '--- tracers   = ', tracers     
+!     write(0,*) '--- tottracer = ', tottracer
+!     write(0,*) 
 
       if (ntke > 0) ntk = ntke - trc_shft + 3
 

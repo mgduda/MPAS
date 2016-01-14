@@ -33,7 +33,8 @@
 ! * added the mpas_pool_type nggps_dynamic_parameters to the argument list of subroutines mpas_dyn_param_setrad
 !   and mpas_dyn_param_setphys.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
-
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -79,8 +80,8 @@
  type(mpas_tbd_ddt)             :: mpas_tbds
 
 !=================================================================================================================
- write(0,*)
- write(0,*) '--- enter subroutine physics_ngpps_driver:'
+!write(0,*)
+!write(0,*) '--- enter subroutine physics_ngpps_driver:'
 
  block => domain % blocklist
  do while(associated(block))
@@ -204,9 +205,9 @@
 
  end do
 
- write(0,*)
- write(0,*) '--- end subroutine physics_nggps_driver'
- write(0,*)
+!write(0,*)
+!write(0,*) '--- end subroutine physics_nggps_driver'
+!write(0,*)
 
  end subroutine physics_driver
 

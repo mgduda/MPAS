@@ -18,6 +18,10 @@
  private
  public:: physics_addtend
 
+!modifications to sourcecode:
+!----------------------------
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
  
@@ -75,8 +79,8 @@
  integer:: iCell,iEdge,k
 
 !--------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine physics_addtend:'
+!write(0,*)
+!write(0,*) '--- enter subroutine physics_addtend:'
  
  call mpas_pool_get_dimension(mesh,'nCells'     ,nCells)
  call mpas_pool_get_dimension(mesh,'nEdges'     ,nEdges)
@@ -200,8 +204,8 @@
 !   stop
 !endif
 
- write(0,*) '--- end subroutine physics_addtend'
- write(0,*)
+!write(0,*) '--- end subroutine physics_addtend'
+!write(0,*)
 
  end subroutine  physics_addtend
 

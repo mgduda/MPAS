@@ -28,7 +28,8 @@
 ! * in subroutine nuopc_phys_write, corrected the physics tendency for water vapor so that it is expressed in term
 !   of a mixing ratio instead of in term of a specific humidity.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-19. 
-
+! * commented out somw print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -80,8 +81,8 @@
 
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine nuopc_rad_out:'
+!write(0,*)
+!write(0,*) '--- enter subroutine nuopc_rad_out:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -194,7 +195,7 @@
 !enddo
  201 format(i7,12(1x,e15.8))
 
- write(0,*) '--- end subroutine nuopc_nggps_rad_out:'
+!write(0,*) '--- end subroutine nuopc_nggps_rad_out:'
 
  end subroutine nuopc_rad_write
 
@@ -234,8 +235,8 @@
  real(kind=RKIND):: dti
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine nuopc_write_out:'
+!write(0,*)
+!write(0,*) '--- enter subroutine nuopc_write_out:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -357,7 +358,7 @@
 !write(0,*) 'max tend_qo3physics = ',maxval(tend_qo3physics(:,1:nCellsSolve))
 !write(0,*) 'min tend_qo3physics = ',minval(tend_qo3physics(:,1:nCellsSolve))
 
- write(0,*) '--- end subroutine nuopc_nggps_physics_write:'
+!write(0,*) '--- end subroutine nuopc_nggps_physics_write:'
 
  end subroutine nuopc_phys_write
 

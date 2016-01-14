@@ -35,7 +35,8 @@
 ! * in subroutine mpas_state_fld_in_set, corrected the calculation of vvel. vvel is defined at the interface
 !   between layers and is in Pa per second.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01. 
-
+! * commented out some print statements.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
 
  contains
 
@@ -54,8 +55,8 @@
  integer:: ntrac
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_state_fld_allocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_state_fld_allocate:'
 
  call mpas_pool_get_dimension(mesh,"nCellsSolve",nCellsSolve)
  call mpas_pool_get_dimension(mesh,"nVertLevels",nVertLevels)
@@ -96,7 +97,7 @@
  if(.not.allocated(prsl_hyd) ) allocate(prsl_hyd(1:nCellsSolve,1:nVertLevels)    )
  if(.not.allocated(prsi_hyd) ) allocate(prsi_hyd(1:nCellsSolve,1:nVertLevels+1)  )
 
- write(0,*) '--- end subroutine mpas_state_fld_allocate'
+!write(0,*) '--- end subroutine mpas_state_fld_allocate'
 
  end subroutine mpas_state_fld_in_allocate
 
@@ -107,8 +108,8 @@
  class(mpas_state_fields_in),intent(inout):: this
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*)
- write(0,*) '--- enter subroutine mpas_state_fld_in_deallocate:'
+!write(0,*)
+!write(0,*) '--- enter subroutine mpas_state_fld_in_deallocate:'
 
 !... FOR PHYSICS AND RADIATION:
  if(allocated(prsi)    ) deallocate(prsi    )
@@ -153,7 +154,7 @@
 !if(.not.allocated(qtrcs)    ) allocate(qtrcs(1:nCellsSolve,1:nVertLevels,ntrac-1))
 !if(.not.allocated(qg0)      ) allocate(qg0(1:nCellsSolve,1:nVertLevels,ntrac)    )
 
- write(0,*) '--- end subroutine mpas_state_fld_in_deallocate'
+!write(0,*) '--- end subroutine mpas_state_fld_in_deallocate'
 
  end subroutine mpas_state_fld_in_deallocate
 
@@ -185,7 +186,7 @@
  real(kind=RKIND):: tem1,tem2,rho1,rho2,z0,z1,z2,w1,w2
 
 !-----------------------------------------------------------------------------------------------------------------
- write(0,*) '--- enter subroutine mpas_state_fld_setphys_in:'
+!write(0,*) '--- enter subroutine mpas_state_fld_setphys_in:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
@@ -397,7 +398,7 @@
 
  call this%setrad(prsi,prsl,prslk,tgrs,qgrs_rad,tracer,vvl)
 
- write(0,*) '--- end subroutine mpas_state_fld_setphys_in'
+!write(0,*) '--- end subroutine mpas_state_fld_setphys_in'
 
 !formats:
  201 format(2i5,10(1x,e15.8))
