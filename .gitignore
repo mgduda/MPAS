@@ -31,7 +31,7 @@ src/operators/*.f90
 *.err
 
 # Text files (For statistical output from ocean model)
-*.txt
+#*.txt
 
 # Directories with individual .gitignore files are:
 # src/external (Externals might have a different compilation method)
