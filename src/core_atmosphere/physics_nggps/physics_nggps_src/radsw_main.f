@@ -1,3 +1,12 @@
+!=================================================================================================================
+! Modifications made to the sourcecode for use in the MPAS framework:
+! * modified the sourcecode so that it can be run with single precision within the MPAS framework.
+!   . added the "kind_dbl_prec" kind option so that the array exp_tbl in subroutine rswinit is always
+!     calculated with double precision. 
+!   . modified the declaration of local arrays to double precision in subroutine spcvrtm.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-15.
+
+
 !!!!!  ==============================================================  !!!!!
 !!!!!              sw-rrtm3 radiation package description              !!!!!
 !!!!!  ==============================================================  !!!!!
@@ -261,7 +270,7 @@
 !
       use physparam,        only : iswrate, iswrgas, iswcliq, iswcice,  &
      &                             isubcsw, icldflg, iovrsw,  ivflip,   &
-     &                             iswmode, kind_phys
+     &                             iswmode, kind_phys, kind_dbl_prec
       use physcons,         only : con_g, con_cp, con_avgd, con_amd,    &
      &                             con_amw, con_amo3
 
@@ -290,13 +299,15 @@
 !  ---  constant values
       real (kind=kind_phys), parameter :: eps     = 1.0e-6
       real (kind=kind_phys), parameter :: oneminus= 1.0 - eps
-      real (kind=kind_phys), parameter :: bpade   = 1.0/0.278  ! pade approx constant
+!     real (kind=kind_phys), parameter :: bpade   = 1.0/0.278  ! pade approx constant
       real (kind=kind_phys), parameter :: stpfac  = 296.0/1013.0
       real (kind=kind_phys), parameter :: ftiny   = 1.0e-12
       real (kind=kind_phys), parameter :: s0      = 1368.22    ! internal solar const
                                                                ! adj through input
       real (kind=kind_phys), parameter :: f_zero  = 0.0
       real (kind=kind_phys), parameter :: f_one   = 1.0
+
+      real (kind=kind_dbl_prec), parameter :: bpade = 1.0_kind_dbl_prec/0.278_kind_dbl_prec ! pade approx constant
 
 !  ---  atomic weights for conversion from mass to volume mixing ratios
       real (kind=kind_phys), parameter :: amdw    = con_amd/con_amw
@@ -336,7 +347,8 @@
 
 !  ---  those data will be set up only once by "rswinit"
 
-      real (kind=kind_phys) :: exp_tbl(0:NTBMX)
+!     real (kind=kind_phys) :: exp_tbl(0:NTBMX)
+      real (kind=kind_dbl_prec) :: exp_tbl(0:NTBMX)
 
 !  ...  heatfac is the factor for heating rates
 !       (in k/day, or k/sec set by subroutine 'rswinit')
@@ -1196,11 +1208,13 @@
 !  ---  outputs: none
 
 !  ---  locals:
-      real (kind=kind_phys), parameter :: expeps = 1.e-20
+!     real (kind=kind_phys), parameter :: expeps = 1.e-20
+      real (kind=kind_dbl_prec), parameter :: expeps = 1.e-20
 
       integer :: i
 
-      real (kind=kind_phys) :: tfn, tau
+!     real (kind=kind_phys) :: tfn, tau
+      real (kind=kind_dbl_prec) :: tfn, tau
 
 !
 !===> ... begin here
@@ -1272,11 +1286,20 @@
 !           constant used in the Pade approximation to the tau transition
 !           function is set to bpade.
 
-      exp_tbl(0) = 1.0
+!     exp_tbl(0) = 1.0
+!     exp_tbl(NTBMX) = expeps
+
+!     do i = 1, NTBMX-1
+!       tfn = float(i) / float(NTBMX-i)
+!       tau = bpade * tfn
+!       exp_tbl(i) = exp( -tau )
+!     enddo
+
+      exp_tbl(0) = real(1.0,kind=kind_dbl_prec)
       exp_tbl(NTBMX) = expeps
 
       do i = 1, NTBMX-1
-        tfn = float(i) / float(NTBMX-i)
+        tfn = real(i,kind=kind_dbl_prec) / real((ntbmx-i),kind=kind_dbl_prec)
         tau = bpade * tfn
         exp_tbl(i) = exp( -tau )
       enddo
@@ -2792,13 +2815,26 @@
      &       ftoauc, ftoau0, fsfcuc, fsfcu0, fsfcdc, fsfcd0
 
 !  ---  locals:
-      real (kind=kind_phys), dimension(nlay) :: ztaus, zssas, zasys,    &
+!     real (kind=kind_phys), dimension(nlay) :: ztaus, zssas, zasys,    &
+!    &       zldbt0
+
+!     real (kind=kind_phys), dimension(nlp1) :: zrefb, zrefd, ztrab,    &
+!    &       ztrad, ztdbt, zldbt, zfu, zfd
+
+!     real (kind=kind_phys) :: ztau1, zssa1, zasy1, ztau0, zssa0,       &
+!    &       zasy0, zasy3, zssaw, zasyw, zgam1, zgam2, zgam3, zgam4,    &
+!    &       za1, za2, zb1, zb2, zrk, zrk2, zrp, zrp1, zrm1, zrpp,      &
+!    &       zrkg1, zrkg3, zrkg4, zexp1, zexm1, zexp2, zexm2, zden1,    &
+!    &       zexp3, zexp4, ze1r45, ftind, zsolar, ztdbt0, zr1, zr2,     &
+!    &       zr3, zr4, zr5, zt1, zt2, zt3, zf1, zf2
+
+      real (kind=kind_dbl_prec), dimension(nlay) :: ztaus, zssas, zasys, &
      &       zldbt0
 
-      real (kind=kind_phys), dimension(nlp1) :: zrefb, zrefd, ztrab,    &
+      real (kind=kind_phys), dimension(nlp1) :: zrefb, zrefd, ztrab, &
      &       ztrad, ztdbt, zldbt, zfu, zfd
 
-      real (kind=kind_phys) :: ztau1, zssa1, zasy1, ztau0, zssa0,       &
+      real (kind=kind_dbl_prec) :: ztau1, zssa1, zasy1, ztau0, zssa0,   &
      &       zasy0, zasy3, zssaw, zasyw, zgam1, zgam2, zgam3, zgam4,    &
      &       za1, za2, zb1, zb2, zrk, zrk2, zrp, zrp1, zrm1, zrpp,      &
      &       zrkg1, zrkg3, zrkg4, zexp1, zexm1, zexp2, zexm2, zden1,    &
@@ -2973,6 +3009,7 @@
               zexm1 = exp_tbl(itind)
             endif
             zexp1 = f_one / zexm1
+!           zexp1 = f_one / max(zexm1,tiny(zexm1))
 
             zb2 = min ( sntz*ztau1, 500.0 )
             if ( zb2 <= od_lo ) then
@@ -2983,6 +3020,7 @@
               zexm2 = exp_tbl(itind)
             endif
             zexp2 = f_one / zexm2
+!           zexp2 = f_one / max(zexm2,tiny(zexm2))
             ze1r45 = zr4*zexp1 + zr5*zexm1
 
 !      ...  collimated beam
