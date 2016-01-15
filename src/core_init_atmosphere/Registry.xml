@@ -386,12 +386,12 @@
                         <var name="slope"/>
                         <var name="zorl12m"/>
                         <var name="orogwd"/>
-                        <var name="alnsf"/>
-                        <var name="alnwf"/>
-                        <var name="alvsf"/>
-                        <var name="alvwf"/>
-                        <var name="zorl"/>
-                        <var name="initial_date"/>
+                        <var name="alnsf" packages="met_stage_out"/>
+                        <var name="alnwf" packages="met_stage_out"/>
+                        <var name="alvsf" packages="met_stage_out"/>
+                        <var name="alvwf" packages="met_stage_out"/>
+                        <var name="zorl" packages="met_stage_out"/>
+                        <var name="initial_date" packages="met_stage_out"/>
 		</stream>
 
 		<stream name="surface" 
