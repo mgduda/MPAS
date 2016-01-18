@@ -145,7 +145,6 @@ ifort:
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = icc" \
 	"CXX_SERIAL = icpc" \
-	"FFLAGS_OPT = -O3 -convert big_endian -FR" \
 	"FFLAGS_OPT = -xHost -align array64byte -O3 -convert big_endian -FR" \
 	"FFLAGS77_OPT = -O3 -convert big_endian -fpp -FI" \
 	"CFLAGS_OPT = -O3" \
