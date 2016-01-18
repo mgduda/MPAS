@@ -395,7 +395,6 @@ MPAS_GPTL_STOP('dyn_tend')
             call mpas_timer_stop('atm_compute_dyn_tend')
 
 #if defined(DO_PHYSICS)
-            if (debug) write(0,*) ' add physics tendencies '
             block => domain % blocklist
             do while (associated(block))
                call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -413,9 +412,7 @@ MPAS_GPTL_STOP('dyn_tend')
                                    rk_step )
                block => block % next
             end do
-            if (debug) write(0,*) ' finished add physics tendencies '
 #elif defined(DO_PHYSICS_NGGPS)
-            if (debug) write(0,*) ' add nggps physics tendencies '
             block => domain % blocklist
             do while (associated(block))
                call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
@@ -432,7 +429,6 @@ MPAS_GPTL_STOP('dyn_tend')
                                    rk_step )
                block => block % next
             end do
-            if (debug) write(0,*) ' finished add nggps physics tendencies '
 #endif
 
             !***********************************
