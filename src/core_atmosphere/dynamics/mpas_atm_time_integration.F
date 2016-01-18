@@ -259,8 +259,8 @@ module atm_time_integration
       rk_timestep(2) = dt_dynamics/2.
       rk_timestep(3) = dt_dynamics
 
-!      rk_sub_timestep(1) = dt_dynamics/3.
-      rk_sub_timestep(1) = dt_dynamics/2.  !  this is to test the second-order variant of RK3 for dynamics
+      rk_sub_timestep(1) = dt_dynamics/3.
+!      rk_sub_timestep(1) = dt_dynamics/2.  !  this is to test the second-order variant of RK3 for dynamics
       rk_sub_timestep(2) = dt_dynamics/real(number_of_sub_steps)
       rk_sub_timestep(3) = dt_dynamics/real(number_of_sub_steps)
 
