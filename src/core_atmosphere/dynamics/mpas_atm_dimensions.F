@@ -32,6 +32,8 @@ module mpas_atm_dimensions
 
     subroutine mpas_atm_set_dims(nVertLevels_val, maxEdges_val, maxEdges2_val, num_scalars_val)
 
+        use mpas_dmpar, only : mpas_dmpar_global_abort
+
         implicit none
 
         integer, intent(in) :: nVertLevels_val
