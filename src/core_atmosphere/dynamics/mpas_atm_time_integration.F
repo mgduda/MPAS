@@ -104,7 +104,9 @@ module atm_time_integration
 
       if (trim(config_time_integration) == 'SRK3') then
          MPAS_GPTL_START('atm_srk3')
+         call mpas_timer_start('atm_srk3')
          call atm_srk3(domain, dt, itimestep)
+         call mpas_timer_stop('atm_srk3')
          MPAS_GPTL_STOP('atm_srk3')
       else
          write(0,*) 'Unknown time integration option '//trim(config_time_integration)
