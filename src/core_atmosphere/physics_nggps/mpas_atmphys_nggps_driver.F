@@ -22,6 +22,7 @@
  use mpas_atmphys_nggps_state_fields_out
  use mpas_atmphys_nggps_tbd_ddt
  use mpas_atmphys_nggps_vars
+ use mpas_timer
  use nuopc_physics
 
  implicit none
@@ -127,6 +128,7 @@
 !      call mpas_rad_tendencies%mpas_setrad(mesh,nggps_radiation_tendencies)
 !      call mpas_sfc_prop%mpas_setrad(mesh,nggps_sfc_properties)
 
+       call mpas_timer_start('nuopc_rad_run')
        call nuopc_rad_run( &
                       mpas_statein%state_fields_in,             &
                       mpas_sfc_prop%sfc_properties,             &
@@ -137,7 +139,9 @@
                       mdl_parameters,                           &
                       mpas_dyn_parameters%dynamic_parameters    &
                          )
+       call mpas_timer_stop('nuopc_rad_run')
 
+       call mpas_timer_start('nuopc_rad_write')
        call nuopc_rad_write( &
                       mpas_cld_props%cloud_properties,          &
                       mpas_diags%diagnostics,                   &
@@ -149,6 +153,7 @@
                       nggps_interface_fields,                   &
                       nggps_radiation_tendencies                &
                            )
+       call mpas_timer_stop('nuopc_rad_write')
 
        call mpas_dyn_parameters%setrad_deallocate_mem
 
@@ -165,6 +170,7 @@
     call mpas_tbds%mpas_set(mesh,nggps_atm_inputs,nggps_tbd_ddt,mpas_statein%state_fields_in)
 
     !... call to the NGGPS interface between MPAS and the GFS physics:
+    call mpas_timer_start('nuopc_phys_run')
     call nuopc_phys_run( &
                     mpas_statein%state_fields_in,             &
                     mpas_stateout%state_fields_out,           & 
@@ -176,13 +182,16 @@
                     mdl_parameters,                           &
                     mpas_tbds%tbd_ddt,                        & 
                     mpas_dyn_parameters%dynamic_parameters)
+    call mpas_timer_stop('nuopc_phys_run')
 
+    call mpas_timer_start('nuopc_phys_write')
     call nuopc_phys_write( &
                     mpas_statein%state_fields_in,   &
                     mpas_stateout%state_fields_out, &
                     mpas_diags%diagnostics,         &
                     mesh,                           &
                     nggps_physics_tendencies)
+    call mpas_timer_stop('nuopc_phys_write')
 
     !... back to Registry (to be moved below nuopc_phys_run:
     call mpas_cld_props%mpas_write(mesh,nggps_cloud_properties)
