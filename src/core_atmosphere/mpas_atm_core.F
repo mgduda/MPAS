@@ -709,6 +709,7 @@ module atm_core
       use mpas_timekeeping
       use mpas_kind_types
       use atm_time_integration
+      use mpas_timer
 #if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       use mpas_atmphys_control
       use mpas_atmphys_driver
@@ -741,8 +742,10 @@ module atm_core
 #if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
+         call mpas_timer_start('physics_driver')
          call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
          call physics_driver(domain,itimestep,xtime_s)
+         call mpas_timer_stop('physics_driver')
       endif
 #endif
 
