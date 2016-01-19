@@ -41,7 +41,7 @@
  integer:: iCell
 
  character(len=StrKIND),pointer:: config_start_time
- integer,pointer:: nCellsSolve
+ integer,pointer:: nCellsSolve,nCells
 
  integer,dimension(:),pointer:: landmask
  real(kind=RKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,snow,snowc,vegfra
@@ -61,6 +61,7 @@
 
  call mpas_pool_get_config(configs,'config_start_time',config_start_time)
  call mpas_pool_get_dimension(dims,'nCellsSolve',nCellsSolve)
+ call mpas_pool_get_dimension(dims,'nCells',nCells)
 
  call mpas_pool_get_array(mesh,'landmask',landmask)
 
@@ -175,7 +176,7 @@
     endif
  enddo
 
- allocate(sfc(1:nCellsSolve))
+ allocate(sfc(1:nCells+1))
  sfc_max = 0._RKIND
  sfc_min = 0._RKIND
  where(landmask == 0) sfc = alnsf
