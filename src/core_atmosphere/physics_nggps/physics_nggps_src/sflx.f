@@ -1653,7 +1653,7 @@
 
 !  --- ...  set-up slope parameter
 
-      slope = slope_data(slopetyp)
+!MGD      slope = slope_data(slopetyp)
 !
       return
 !...................................
