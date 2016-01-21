@@ -471,6 +471,12 @@
 			<var name="tprcp"/>
 			<var name="totprcp"/>
 			<var name="psmean"/>
+			<var name="gscond_psp"/>
+			<var name="gscond_psp1"/>
+			<var name="gscond_tp"/>
+			<var name="gscond_tp1"/>
+			<var name="gscond_qp"/>
+			<var name="gscond_qp1"/>
 		</stream>
 
 		<stream name="output" 

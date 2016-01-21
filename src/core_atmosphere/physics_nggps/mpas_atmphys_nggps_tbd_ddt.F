@@ -57,6 +57,12 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-27.
 ! * commented out some print statements.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
+! * in subroutine mpas_tbd_set, now fills the local arrays phyf2d_l and phyf3d_l with the one-dimensional arrays
+!   gscond_psp, gscond_psp1, gscond_tp, gscond_qp, gscond_tp1, and gscond_qp1 so that they can be saved in the
+!   restart stream for high-resolution meshes. in subroutine mpas_tbd_write, now saves the arrays phy_f2d and
+!   phy_f3d between time-steps.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
+
 
  contains
 
@@ -169,6 +175,10 @@
  real(kind=kind_phys),dimension(:),pointer    :: pgr,dpshc_l
  real(kind=kind_phys),dimension(:,:),pointer  :: slc_l,smc_l,stc_l,updmf_l,dwnmf_l, detmf_l,rann_l,phyf2d_l
  real(kind=kind_phys),dimension(:,:,:),pointer:: phyf3d_l,ozmix_l
+
+ real(kind=kind_phys),dimension(:),pointer    :: gscond_psp,gscond_psp1
+ real(kind=kind_phys),dimension(:,:),pointer  :: gscond_tp,gscond_tp1,gscond_qp,gscond_qp1
+
 !... new pointers added in nuopc_physics.F90 version 2:
  real(kind=kind_phys),dimension(:),pointer    :: fscav_l,fswtr_l
  real(kind=kind_phys),dimension(:,:),pointer  :: phyfctd_l
@@ -208,6 +218,14 @@
  call mpas_pool_get_array(nggps_tbd_ddt,'upd_mf'  ,upd_mf  )
  call mpas_pool_get_array(nggps_tbd_ddt,'dwn_mf'  ,dwn_mf  )
  call mpas_pool_get_array(nggps_tbd_ddt,'det_mf'  ,det_mf  )
+
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_psp' ,gscond_psp )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_psp1',gscond_psp1)
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_tp'  ,gscond_tp  )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_tp1' ,gscond_tp1 )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_qp'  ,gscond_qp  )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_qp1' ,gscond_qp1 )
+
  call mpas_pool_get_array(nggps_tbd_ddt,'phy_f2d' ,phy_f2d )
  call mpas_pool_get_array(nggps_tbd_ddt,'phy_f3d' ,phy_f3d )
 
@@ -251,13 +269,16 @@
     enddo
  enddo
  do iCell = 1, nCellsSolve
-    do n = 1, numP2d
-       phyf2d_l(iCell,n) = phy_f2d(n,iCell)
-    enddo
+    phyf2d_l(iCell,1) = gscond_psp(iCell)
+    phyf2d_l(iCell,2) = gscond_psp1(iCell)
+    phyf2d_l(iCell,3) = 0._kind_phys
+ enddo
+ do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
-       do n = 1, numP3d
-          phyf3d_l(iCell,k,n) = phy_f3d(n,k,iCell)
-       enddo
+       phyf3d_l(iCell,k,1) = gscond_tp(k,iCell)
+       phyf3d_l(iCell,k,2) = gscond_qp(k,iCell)
+       phyf3d_l(iCell,k,3) = gscond_tp1(k,iCell)
+       phyf3d_l(iCell,k,4) = gscond_qp1(k,iCell)
     enddo
  enddo
  do iCell = 1, nCellsSolve
@@ -311,10 +332,15 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nSoilLevels
- real(kind=RKIND),dimension(:),pointer    :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
- real(kind=RKIND),dimension(:,:),pointer  :: slc,smc,stc,upd_mf,dwn_mf,det_mf
+ real(kind=RKIND),dimension(:),pointer  :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
+ real(kind=RKIND),dimension(:,:),pointer:: slc,smc,stc,upd_mf,dwn_mf,det_mf
 
- real(kind=kind_phys),dimension(:,:),pointer:: slc_l,smc_l,stc_l,updmf_l,dwnmf_l, detmf_l
+ real(kind=RKIND),dimension(:),pointer  :: gscond_psp,gscond_psp1
+ real(kind=RKIND),dimension(:,:),pointer:: gscond_tp,gscond_tp1,gscond_qp,gscond_qp1  
+
+ real(kind=kind_phys),dimension(:,:),pointer  :: slc_l,smc_l,stc_l,updmf_l,dwnmf_l, detmf_l
+ real(kind=kind_phys),dimension(:,:),pointer  :: phyf2d_l
+ real(kind=kind_phys),dimension(:,:,:),pointer:: phyf3d_l
 
 !local variables:
  integer:: iCell,k
@@ -345,6 +371,13 @@
  call mpas_pool_get_array(nggps_tbd_ddt,'dwn_mf',dwn_mf)
  call mpas_pool_get_array(nggps_tbd_ddt,'det_mf',det_mf)
 
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_psp' ,gscond_psp )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_psp1',gscond_psp1)
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_tp'  ,gscond_tp  )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_tp1' ,gscond_tp1 )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_qp'  ,gscond_qp  )
+ call mpas_pool_get_array(nggps_tbd_ddt,'gscond_qp1' ,gscond_qp1 )
+
 !... back to Registry:
  acv     => this%acv
  acvb    => this%acvb
@@ -365,6 +398,9 @@
  dwnmf_l => this%dwn_mf
  detmf_l => this%det_mf
 
+ phyf2d_l => this%phyf2d_l
+ phyf3d_l => this%phyf3d_l
+
  do iCell = 1, nCellsSolve
     do k = 1, nSoilLevels
        slc(k,iCell) = slc_l(iCell,k)
@@ -375,6 +411,19 @@
        upd_mf(k,iCell) = updmf_l(iCell,k)
        dwn_mf(k,iCell) = dwnmf_l(iCell,k)
        det_mf(k,iCell) = detmf_l(iCell,k)
+    enddo
+ enddo
+
+ do iCell = 1, nCellsSolve
+    gscond_psp(iCell)  = phyf2d_l(iCell,1)
+    gscond_psp1(iCell) = phyf2d_l(iCell,2)
+ enddo
+ do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       gscond_tp(k,iCell)  = phyf3d_l(iCell,k,1)
+       gscond_qp(k,iCell)  = phyf3d_l(iCell,k,2)
+       gscond_tp1(k,iCell) = phyf3d_l(iCell,k,3)
+       gscond_qp1(k,iCell) = phyf3d_l(iCell,k,4)
     enddo
  enddo
 
