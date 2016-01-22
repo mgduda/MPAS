@@ -29,6 +29,8 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
 ! * in the subroutine physics_init, added the calculation of the total number of cells (nCellsTotal).
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
+! * in the subroutine physics_init, changed the definition of oro.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
 
 
  contains
@@ -66,8 +68,9 @@
  real(kind=RKIND),dimension(:),pointer:: oro,oro_uf
  real(kind=RKIND),dimension(:),pointer:: tisfc,tsea
  real(kind=RKIND),dimension(:),pointer:: zorl
-
  real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
+
+ real(kind=RKIND),dimension(:,:),pointer:: zgrid
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -114,6 +117,7 @@
  call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
  call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
  call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
+ call mpas_pool_get_array(mesh,'zgrid'     ,zgrid     )
 
  call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
 
@@ -121,9 +125,9 @@
  call mpas_pool_get_array(nggps_sfc_properties,'ivgtyp',ivgtyp)
  call mpas_pool_get_array(nggps_sfc_properties,'oro'   ,oro   )
  call mpas_pool_get_array(nggps_sfc_properties,'oro_uf',oro_uf)
- call mpas_pool_get_array(nggps_sfc_properties,'tisfc',tisfc  )
- call mpas_pool_get_array(nggps_sfc_properties,'tsea' ,tsea   )
- call mpas_pool_get_array(nggps_sfc_properties,'zorl',zorl    )
+ call mpas_pool_get_array(nggps_sfc_properties,'tisfc' ,tisfc )
+ call mpas_pool_get_array(nggps_sfc_properties,'tsea'  ,tsea  )
+ call mpas_pool_get_array(nggps_sfc_properties,'zorl'  ,zorl  )
 
 !--- initialization of east-north directions to convert u-tendencies from cell centers to cell edges:
  call init_dirs_forphys(mesh)
@@ -361,6 +365,7 @@
 !initialization of some additional surface variables (needed in mpas_atmphys_nggps_sfc_properties):
  if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
+       oro(iCell)    = zgrid(1,iCell)
        oro_uf(iCell) = oro(iCell)
 !      tisfc(iCell)  = tsea(iCell)
     enddo
