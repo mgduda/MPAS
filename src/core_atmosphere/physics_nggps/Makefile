@@ -118,6 +118,7 @@ mpas_nggps_model_parameters.o: \
 	./physics_nggps_src/ozne_def.o
 
 mpas_atmphys_nggps_o3climatology.o: \
+	mpas_atmphys_date_time.o \
 	mpas_atmphys_nggps_constants.o \
 	mpas_atmphys_nggps_vars.o
 
