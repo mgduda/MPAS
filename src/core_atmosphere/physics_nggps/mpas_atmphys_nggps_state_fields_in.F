@@ -37,6 +37,9 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01. 
 ! * commented out some print statements.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
+! * in the GFS physics, total cloud condensate and ozone are "specific" mixing ratios and not "strict" mixing
+!   ratios. the arrays qgrs and tracers are corrected accordingly.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-24.
 
  contains
 
@@ -184,6 +187,7 @@
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
  
  real(kind=RKIND):: tem1,tem2,rho1,rho2,z0,z1,z2,w1,w2
+ real(kind=RKIND):: sph
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*) '--- enter subroutine mpas_state_fld_setphys_in:'
@@ -370,17 +374,18 @@
 
  do k = 1, nVertLevels
     do iCell = 1, nCellsSolve
+       sph = 1._RKIND/(1._RKIND + qv(k,iCell))
+
        !... for radiation:
-       tem1 = qv(k,iCell) / (1._RKIND + qv(k,iCell))
-       qgrs_rad(iCell,k) = max(qmin,qv(k,iCell))
-       tracer(iCell,k,1) = qo3(k,iCell)
-       tracer(iCell,k,2) = qc(k,iCell)
+       qgrs_rad(iCell,k) = qv(k,iCell)  * sph
+       tracer(iCell,k,1) = qo3(k,iCell) * sph
+       tracer(iCell,k,2) = qc(k,iCell)  * sph
+       qgrs_rad(iCell,k) = max(qmin,qgrs_rad(iCell,k))
 
        !... for other physics:
-       qgrs(iCell,k,1)    = tem1
-       qgrs(iCell,k,ntoz) = qo3(k,iCell)
-       qgrs(iCell,k,ntcw) = qc(k,iCell) 
-
+       qgrs(iCell,k,1)    = qv(k,iCell)  * sph
+       qgrs(iCell,k,ntoz) = qo3(k,iCell) * sph
+       qgrs(iCell,k,ntcw) = qc(k,iCell)  * sph
     enddo
  enddo
 !write(0,*) '--- end qgrs_rad, qgrs, and tracers:'
