@@ -31,7 +31,10 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
 ! * in the subroutine physics_init, changed the definition of oro.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
-
+! * in the subroutine physics_init, commented out the initialization of zorl since it is initialized when we
+!   build the initial conditions for the NGGPS project. we may have to correct this if zorl is not available
+!   in the intermediate files. also, multiply zorl by 0.01 for conversion to cm.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-25.
 
  contains
 
@@ -352,15 +355,15 @@
 !initialization of surface roughness. for now, we initialize and update the surface roughness
 !length using the monthly-mean climatological surface roughness length zorl12m (see call to
 !subroutine physics_gfs_update_surface):
- if(.not. config_do_restart) then
-    do iCell = 1, nCellsSolve
-       if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
-          zorl(iCell) = z0_sib(ivgtyp(iCell))
-       elseif(ivgtyp(iCell) == 0) then
-          zorl(iCell) = 0.01
-       endif
-    enddo
- endif
+!if(.not. config_do_restart) then
+!   do iCell = 1, nCellsSolve
+!      if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
+!         zorl(iCell) = z0_sib(ivgtyp(iCell)) * 0.01
+!      elseif(ivgtyp(iCell) == 0) then
+!         zorl(iCell) = 0.01
+!      endif
+!   enddo
+!endif
 
 !initialization of some additional surface variables (needed in mpas_atmphys_nggps_sfc_properties):
  if(.not. config_do_restart) then
