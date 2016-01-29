@@ -35,12 +35,16 @@
 !   build the initial conditions for the NGGPS project. we may have to correct this if zorl is not available
 !   in the intermediate files. also, multiply zorl by 0.01 for conversion to cm.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-25.
+! * in the subroutine physics_init, modified the initialization of the "tank" of random numbers rannum_tank so
+!   that random numbers can be updated in the physics driver.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-29.
 
  contains
 
 
 !=================================================================================================================
- subroutine physics_init(dminfo,clock,configs,mesh,nggps_atm_input,nggps_dynamic_parameters,nggps_sfc_properties)
+ subroutine physics_init(dminfo,clock,configs,mesh,nggps_atm_input,nggps_dynamic_parameters,nggps_sfc_properties,&
+                         nggps_tbd_ddt)
 !=================================================================================================================
 
 !input arguments:
@@ -53,6 +57,7 @@
  type(mpas_pool_type),intent(inout):: nggps_atm_input
  type(mpas_pool_type),intent(inout):: nggps_sfc_properties
  type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters
+ type(mpas_pool_type),intent(inout):: nggps_tbd_ddt
 
 !local pointers:
  logical,pointer:: config_do_restart
@@ -63,6 +68,7 @@
  integer,pointer:: nVertLevels,nSoilLevels
  integer,pointer:: nMtgwd
  integer,pointer:: numP2d,numP3d
+ integer,pointer:: maxran,maxsub
  integer,dimension(:),pointer:: isltyp,ivgtyp
  integer,dimension(:),pointer:: nlonsCell
 
@@ -74,6 +80,7 @@
  real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
 
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
+ real(kind=RKIND),dimension(:,:),pointer:: rannum_tank
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -88,16 +95,13 @@
 !local variables for calculation of random numbers:
  logical:: random_clds
 
- integer,parameter:: maxran=3000,maxsub=10,maxrs=maxran/maxsub
  integer:: iiCell,nn,nrc,k,kk
- integer:: lonrbm,iseedl,seed0
+ integer:: lonrbm,iseedl,maxrs
  integer,dimension(:), allocatable:: indxr
 
  real(kind=RKIND),parameter:: thousnd = 1000._RKIND
  real(kind=RKIND):: wrk(1)
-
  real(kind=RKIND),dimension(:), allocatable   :: rannum
- real(kind=RKIND),dimension(:,:,:),allocatable:: rannum_tank
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -265,9 +269,13 @@
  if(.not. newsas .or. cal_pre) then
     if(random_clds) then
 
-       if(.not.allocated(rannum_tank)) allocate(rannum_tank(1:nCellsSolve,maxran,1))
-       if(.not.allocated(rannum)     ) allocate(rannum(nCellsSolve*maxrs)          )
+       call mpas_pool_get_dimension(mesh,'maxran',maxran)
+       call mpas_pool_get_dimension(mesh,'maxsub',maxsub)
+       call mpas_pool_get_array(nggps_tbd_ddt,'rannum_tank',rannum_tank)
+
+       maxrs  = maxran/maxsub
        lonrbm = nCellsSolve / maxsub
+       if(.not.allocated(rannum)) allocate(rannum(nCellsSolve*maxrs))
 
        seed0 = idate(1) + idate(2) + idate(3) + idate(4)
        call random_setseed(seed0)
@@ -278,6 +286,8 @@
        write(0,*) '--- maxran = ', maxran
        write(0,*) '--- maxrs  = ', maxrs
        write(0,*) '--- maxsub = ', maxsub
+       write(0,*) '--- lonrbm = ', lonrbm
+       write(0,*) '--- nCellsSolve = ',nCellsSolve
 
        iseedl = seed0 + 1
        call random_setseed(iseedl)
@@ -290,13 +300,18 @@
              do iCell = 1, nCellsSolve
                 iiCell = kk*lonrbm + iCell
                 if (iiCell > nCellsSolve) iiCell = iiCell - nCellsSolve
-                rannum_tank(iCell,nrc+kk*maxrs,1) = rannum(iiCell+nn)
+                rannum_tank(nrc+kk*maxrs,iCell) = rannum(iiCell+nn)
+!               if(nrc+kk*maxrs == maxran) &
+!                  write(0,301) nrc+kk*maxrs,iCell,iiCell,iiCell+nn
              enddo
           enddo
        enddo
        if(allocated(rannum)) deallocate(rannum)
     endif
+    write(0,*) '--- max rannum_tank = ',maxval(rannum_tank(1:maxran,1:nCellsSolve))
+    write(0,*) '--- min rannum_tank = ',minval(rannum_tank(1:maxran,1:nCellsSolve))
  endif
+ 301 format(4(1x,i9))
 
 !--- initialization of nrcm:
  if(ras) then

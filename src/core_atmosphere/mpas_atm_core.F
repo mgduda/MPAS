@@ -228,6 +228,7 @@ module atm_core
       type (mpas_pool_type), pointer :: nggps_diagnostics
       type (mpas_pool_type), pointer :: nggps_dynamic_parameters
       type (mpas_pool_type), pointer :: nggps_sfc_properties
+      type (mpas_pool_type), pointer :: nggps_tbd_ddt
 #endif
 
       integer :: iCell
@@ -319,12 +320,14 @@ module atm_core
         call mpas_pool_get_subpool(block % structs, 'nggps_atm_inputs', nggps_atm_inputs)
         call mpas_pool_get_subpool(block % structs, 'nggps_dynamic_parameters', nggps_dynamic_parameters)
         call mpas_pool_get_subpool(block % structs, 'nggps_sfc_properties', nggps_sfc_properties)
+        call mpas_pool_get_subpool(block % structs, 'nggps_tbd_ddt', nggps_tbd_ddt)
 
         call physics_run_init(block % configs, mesh, state, clock, stream_manager)
 
         !initialization of all physics:
         call physics_init(dminfo, clock, block % configs, mesh, nggps_atm_inputs, &
-                          nggps_dynamic_parameters, nggps_sfc_properties)
+                          nggps_dynamic_parameters, nggps_sfc_properties,         &
+                          nggps_tbd_ddt)
      endif
 #endif
    
