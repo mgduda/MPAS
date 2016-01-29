@@ -29,7 +29,12 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
 ! * in the subroutine physics_init, added the calculation of the total number of cells (nCellsTotal).
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-10.
-
+! * in the subroutine physics_init, changed the definition of oro.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
+! * in the subroutine physics_init, commented out the initialization of zorl since it is initialized when we
+!   build the initial conditions for the NGGPS project. we may have to correct this if zorl is not available
+!   in the intermediate files. also, multiply zorl by 0.01 for conversion to cm.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-25.
 
  contains
 
@@ -66,8 +71,9 @@
  real(kind=RKIND),dimension(:),pointer:: oro,oro_uf
  real(kind=RKIND),dimension(:),pointer:: tisfc,tsea
  real(kind=RKIND),dimension(:),pointer:: zorl
-
  real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
+
+ real(kind=RKIND),dimension(:,:),pointer:: zgrid
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -114,6 +120,7 @@
  call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
  call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
  call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
+ call mpas_pool_get_array(mesh,'zgrid'     ,zgrid     )
 
  call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
 
@@ -121,9 +128,9 @@
  call mpas_pool_get_array(nggps_sfc_properties,'ivgtyp',ivgtyp)
  call mpas_pool_get_array(nggps_sfc_properties,'oro'   ,oro   )
  call mpas_pool_get_array(nggps_sfc_properties,'oro_uf',oro_uf)
- call mpas_pool_get_array(nggps_sfc_properties,'tisfc',tisfc  )
- call mpas_pool_get_array(nggps_sfc_properties,'tsea' ,tsea   )
- call mpas_pool_get_array(nggps_sfc_properties,'zorl',zorl    )
+ call mpas_pool_get_array(nggps_sfc_properties,'tisfc' ,tisfc )
+ call mpas_pool_get_array(nggps_sfc_properties,'tsea'  ,tsea  )
+ call mpas_pool_get_array(nggps_sfc_properties,'zorl'  ,zorl  )
 
 !--- initialization of east-north directions to convert u-tendencies from cell centers to cell edges:
  call init_dirs_forphys(mesh)
@@ -348,19 +355,20 @@
 !initialization of surface roughness. for now, we initialize and update the surface roughness
 !length using the monthly-mean climatological surface roughness length zorl12m (see call to
 !subroutine physics_gfs_update_surface):
- if(.not. config_do_restart) then
-    do iCell = 1, nCellsSolve
-       if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
-          zorl(iCell) = z0_sib(ivgtyp(iCell))
-       elseif(ivgtyp(iCell) == 0) then
-          zorl(iCell) = 0.01
-       endif
-    enddo
- endif
+!if(.not. config_do_restart) then
+!   do iCell = 1, nCellsSolve
+!      if(ivgtyp(iCell) >= 1 .and. ivgtyp(iCell) <= 13) then
+!         zorl(iCell) = z0_sib(ivgtyp(iCell)) * 0.01
+!      elseif(ivgtyp(iCell) == 0) then
+!         zorl(iCell) = 0.01
+!      endif
+!   enddo
+!endif
 
 !initialization of some additional surface variables (needed in mpas_atmphys_nggps_sfc_properties):
  if(.not. config_do_restart) then
     do iCell = 1, nCellsSolve
+       oro(iCell)    = zgrid(1,iCell)
        oro_uf(iCell) = oro(iCell)
 !      tisfc(iCell)  = tsea(iCell)
     enddo

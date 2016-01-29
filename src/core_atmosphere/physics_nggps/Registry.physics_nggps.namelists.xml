@@ -37,6 +37,7 @@
     <!-- NAMELIST VARIABLES ADDED FOR PHYSICS CONFIGURATION: -->
     <nml_option name="config_microp_scheme"        type="character"   default_value="off"/>
 
+    <nml_option name="config_ozone_update"         type="character"   default_value="24:00:00" in_defaults="false"/>  
     <nml_option name="config_radtlw_interval"      type="character"   default_value="00:30:00"/>
     <nml_option name="config_radtsw_interval"      type="character"   default_value="00:30:00"/>
     <nml_option name="config_greeness_update"      type="character"   default_value="24:00:00" in_defaults="false"/>

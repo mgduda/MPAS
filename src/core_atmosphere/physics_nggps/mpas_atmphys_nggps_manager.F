@@ -46,14 +46,20 @@
 !gbphys. By default, these fields are initialized every 6 hours, as with the GFS.
  character(len=*), parameter:: acfieldsAlarmID = 'acfields'
 
+!defines ozone:
+ character(len=*), parameter:: ozoneAlarmID = 'ozone'
+
  integer:: h, d, dd, m, mm, s, s_n, s_d, DoY, yr
 
 
 !modifications to sourcecode:
 !----------------------------
-! * In subroutine physics_timetracker, renamed and made public the variable timeStamp to physics_timeStamp.
+! * in subroutine physics_timetracker, renamed and made public the variable timeStamp to physics_timeStamp.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-11-28.
-
+! * added the alarm ozoneAlarmID to update the input ozone data on fixed pressure levels needed for the
+!   parameterization of prognostic ozone. ozoneAlarmID is initialized in subroutine physics_run_init. ozone
+!   coefficients are updated in the call to subroutine o3climatology_from_MPAS. 
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
 
  contains
 
@@ -179,18 +185,23 @@
  write(0,*) '--- time to run the SW radiation scheme L_RADSW =',l_radtsw
 
 !update ozone to the current julian day for use in the parameterization of !progsnotic ozone:
- 
  block => domain % blocklist
  do while(associated(block))
+
     call mpas_pool_get_subpool(block%structs,'mesh'            ,mesh            )
     call mpas_pool_get_subpool(block%structs,'nggps_atm_inputs',nggps_atm_inputs)
 
-    call o3climatology_from_MPAS(mesh,nggps_atm_inputs)
+    if(mpas_is_alarm_ringing(clock,ozoneAlarmID,ierr=ierr)) then
+       call mpas_reset_clock_alarm(clock,ozoneAlarmID,ierr=ierr)
+       write(0,*) '--- time to update input ozone on fixed pressure levels.'
+       call o3climatology_from_MPAS(physics_timeStamp,mesh,nggps_atm_inputs)
+    endif
 
     block => block % next
  end do
 
  write(0,*) '--- end subroutine physics_timetracker.'
+ write(0,*)
 
  end subroutine physics_timetracker
 
@@ -209,7 +220,8 @@
  character(len=StrKIND),pointer:: config_radtlw_interval, &
                                   config_radtsw_interval, &
                                   config_bucket_update,   &
-                                  config_greeness_update
+                                  config_greeness_update, &
+                                  config_ozone_update
 
  real(kind=RKIND),pointer:: config_dt
 
@@ -226,6 +238,7 @@
  call mpas_pool_get_config(configs,'config_radtsw_interval',config_radtsw_interval)
  call mpas_pool_get_config(configs,'config_bucket_update'  ,config_bucket_update  )
  call mpas_pool_get_config(configs,'config_greeness_update',config_greeness_update)
+ call mpas_pool_get_config(configs,'config_ozone_update'   ,config_ozone_update   )
 
  call mpas_pool_get_config(configs,'config_dt',config_dt)
 
@@ -294,16 +307,23 @@
  call mpas_set_timeInterval(alarmTimeStep,timeString=config_greeness_update,ierr=ierr)
  alarmStartTime = startTime
  call mpas_add_clock_alarm(clock,greenAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
-    if(ierr /= 0) &
-       call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
+ if(ierr /= 0) &
+    call physics_error_fatal('subroutine physics_init: error creating alarm greeness')
+
+!set alarm for updating the input ozone on fixed pressure levels:
+ call mpas_set_timeInterval(alarmTimeStep,timeString=config_ozone_update,ierr=ierr)
+ alarmStartTime = startTime
+ call mpas_add_clock_alarm(clock,ozoneAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+ if(ierr /= 0) &
+    call physics_error_fatal('subroutine physics_init: error creating alarm ozone')
 
 !set alarm to reset to zero the radiation and other physics fields accumulated in subroutine
 !gbphys.
  call mpas_set_timeInterval(alarmTimeStep,timeString=config_bucket_update,ierr=ierr)
  alarmStartTime = startTime
  call mpas_add_clock_alarm(clock,acfieldsAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
-    if(ierr /= 0) &
-       call physics_error_fatal('subroutine physics_init: error creating alarm acfields')
+ if(ierr /= 0) &
+    call physics_error_fatal('subroutine physics_init: error creating alarm acfields')
 
 !initialization of local physics time-steps:
 !... dynamics:

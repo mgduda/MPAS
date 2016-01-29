@@ -12,6 +12,7 @@
  use mpas_derived_types
  use mpas_pool_routines
 
+ use mpas_atmphys_date_time
  use mpas_atmphys_nggps_constants, only: degrad
  use mpas_atmphys_nggps_vars, only: blatc,dphiozc,latsozp,levozp,kozpl,latsozc,pl_coeff,timeoz
 
@@ -24,6 +25,9 @@
 !----------------------------
 ! * commented out some print statements.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-14.
+! * relaxed hard-wiring of the array ozmix in subroutine o3climatology_from_MPAS. ozmix is now interpolated to the
+!   current date with a call to subroutine monthly_interp_to_date.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-22. 
 
  contains
 
@@ -212,11 +216,12 @@
  end subroutine init_o3climatology
 
 !=================================================================================================================
- subroutine o3climatology_from_MPAS(mesh,nggps_atm_inputs)
+ subroutine o3climatology_from_MPAS(current_date,mesh,nggps_atm_inputs)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in):: mesh
+ character(len=*),intent(in):: current_date
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: nggps_atm_inputs
@@ -230,10 +235,12 @@
 
 !local variables:
  integer:: iCell,iM,k,nc
+ real(kind=RKIND),dimension(:),allocatable  :: datout
+ real(kind=RKIND),dimension(:,:),allocatable:: datin
 
 !-----------------------------------------------------------------------------------------------------------------
-!write(0,*)
-!write(0,*) '--- enter subroutine o3climatology_from_MPAS:'
+ write(0,*)
+ write(0,*) '--- enter subroutine o3climatology_from_MPAS:'
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nOznLevels' ,nOznLevels )
@@ -243,16 +250,33 @@
  call mpas_pool_get_array(nggps_atm_inputs,'ozmixm',ozmixm)
  call mpas_pool_get_array(nggps_atm_inputs,'ozmix' ,ozmix )
 
-!for now, hard wire ozmix to ozmixm for August:
+ write(0,*) '--- nOznLevels  = ', nOznLevels
+ write(0,*) '--- nOznPlCoeff = ', nOznPlCoeff
+
+ if(.not.allocated(datout)) allocate(datout(1:nCellsSolve))
+ if(.not.allocated(datin) ) allocate(datin(1:nMonths,1:nCellsSolve))
+
  do k = 1, nOznLevels
     do nc = 1, nOznPlCoeff
-       do iCell = 1, nCellsSolve
-          ozmix(k,nc,iCell) = ozmixm(10,k,nc,iCell)
-       enddo
+       datin(1:nMonths,1:nCellsSolve) = ozmixm(1:nMonths,k,nc,1:nCellsSolve)
+       call monthly_interp_to_date(nCellsSolve,current_date,datin,datout)
+       ozmix(k,nc,1:nCellsSolve) = datout(1:nCellsSolve)
     enddo
  enddo
 
-!write(0,*) '--- end subroutine o3climatology_from_MPAS'
+ if(allocated(datin) ) deallocate(datin)
+ if(allocated(datout)) deallocate(datout)
+
+!for now, hard wire ozmix to ozmixm for August:
+!do k = 1, nOznLevels
+!   do nc = 1, nOznPlCoeff
+!      do iCell = 1, nCellsSolve
+!         ozmix(k,nc,iCell) = ozmixm(10,k,nc,iCell)
+!      enddo
+!   enddo
+!enddo
+
+ write(0,*) '--- end subroutine o3climatology_from_MPAS'
 
 !format:
  201 format(3i9,10(1x,e15.8))

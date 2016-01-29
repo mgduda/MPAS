@@ -359,7 +359,7 @@
 			<var name="nlonsCell"/>
 			<var name="coslatCell"/>
 			<var name="sinlatCell"/>
-			<var name="ter"/>
+			<var name="oro"/>
 			<var name="oro_uf"/>
 			<var name="theoro"/>
 			<var name="gamoro"/>
@@ -469,6 +469,12 @@
 			<var name="tprcp"/>
 			<var name="totprcp"/>
 			<var name="psmean"/>
+			<var name="gscond_psp"/>
+			<var name="gscond_psp1"/>
+			<var name="gscond_tp"/>
+			<var name="gscond_tp1"/>
+			<var name="gscond_qp"/>
+			<var name="gscond_qp1"/>
 		</stream>
 
 		<stream name="output" 
@@ -874,6 +880,7 @@
                 <!--  dzs            :thickness of soil layers                                                      [m] -->
 
                 <var name="mminlu"      type="text"     dimensions=""/>
+                <var name="ter"         type="real"     dimensions="nCells"/>
                 <var name="albedo12m"   type="real"     dimensions="nMonths nCells"/>
                 <var name="dzs"         type="real"     dimensions="nSoilLevels nCells"/> 
                 <var name="sfc_albbck"  type="real"     dimensions="nCells Time"/>

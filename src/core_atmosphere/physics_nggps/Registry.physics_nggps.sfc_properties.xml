@@ -84,7 +84,7 @@
     <var name="snoalb" type="real" dimensions="nCells" units="dimensionless"
          description="maximum snow albedo"
     />
-    <var name="ter" name_in_code="oro" type="real" dimensions="nCells" units="m"
+    <var name="oro" type="real" dimensions="nCells" units="m"
          description="terrain height (orography)"
     />
     <var name="oro_uf" type="real" dimensions="nCells" units="m" 

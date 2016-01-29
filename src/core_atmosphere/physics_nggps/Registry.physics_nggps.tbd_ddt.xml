@@ -57,5 +57,25 @@
     <var name="phy_f3d" type="real" dimensions="numP3d nVertLevels nCells Time" units="-"
          description="3-dimensional restart arrays"
     />
+
+    <var name="gscond_psp" type="real" dimensions="nCells Time" units="Pa"
+         description="same as phy_f2d(:,1)"
+    />
+    <var name="gscond_psp1" type="real" dimensions="nCells Time" units="Pa"
+         description="same as phy_f2d(:,2)"
+    />
+    <var name="gscond_tp" type="real" dimensions="nVertLevels nCells Time" units="K"
+         description="same as phy_f3d(:,:,1)"
+    />
+    <var name="gscond_qp" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="same as phy_f3d(:,:,2)"
+    />
+    <var name="gscond_tp1" type="real" dimensions="nVertLevels nCells Time" units="K"
+         description="same as phy_f3d(:,:,3)"
+    />
+    <var name="gscond_qp1" type="real" dimensions="nVertLevels nCells Time", units="kg kg^{-1}"
+         description="same as phy_f3d(:,:,4)"
+    />
+
  </var_struct>
 

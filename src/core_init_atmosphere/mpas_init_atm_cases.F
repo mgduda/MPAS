@@ -2633,6 +2633,8 @@ module init_atm_cases
       integer, pointer:: index_qo3
       integer:: kk
 
+      real(kind=RKIND):: sph
+
       !static fields already interpolated to the MPAS mesh in subroutine init_atm_static_fields_forGFS
       !and overwritten when reading the intermediate high-resolution latitude-longitude surface file: 
       real(kind=RKIND),dimension(:),pointer:: shdmax,shdmin,slope,snoalb,soiltemp
@@ -4551,13 +4553,13 @@ write(0,*) 'PROCESSING SEAICE'
             sorted_arr(2,k) = rh_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
-         do k=1,nVertLevels
+         do k=nVertLevels,1,-1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
             scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, &
                                            sorted_arr, order=1, extrap=0)
 !           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
 !                                          sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
-            if (target_z < z_fg(1,iCell)) &
+            if (target_z < z_fg(1,iCell) .and. k < nVertLevels) &
                 scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
             relhum(k,iCell) = scalars(index_qv,k,iCell)
          end do
@@ -4572,16 +4574,17 @@ write(0,*) 'PROCESSING SEAICE'
             sorted_arr(2,k) = sh_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
-         do k=1,nVertLevels
+         do k=nVertLevels,1,-1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
             scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual, &
                                            sorted_arr(:,1:nfglevels_actual), order=1, extrap=1)
 !           scalars(index_qv,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
 !                                       sorted_arr(:,1:nfglevels_actual-1), order=1, extrap=1)
-            if (target_z < z_fg(1,iCell) ) &
+            if (target_z < z_fg(1,iCell) .and. k < nVertLevels) &
                 scalars(index_qv,k,iCell) = scalars(index_qv,k+1,iCell)
             spechum(k,iCell) = scalars(index_qv,k,iCell)
          end do
+
 
          ! OZONE
          sorted_arr(:,:) = -999.0
@@ -4591,16 +4594,17 @@ write(0,*) 'PROCESSING SEAICE'
             sorted_arr(2,k) = o3_fg(k,iCell)
          end do
          call mpas_quicksort(nfglevels_actual, sorted_arr)
-         do k=1,nVertLevels
+         do k=nVertLevels,1,-1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
             o3mmr(k,iCell) = vertical_interp(target_z,nfglevels_actual, &
                              sorted_arr(:,1:nfglevels_actual),order=1,extrap=1)
 !           o3mmr(k,iCell) = vertical_interp(target_z,nfglevels_actual-1, &
 !                               sorted_arr(:,1:nfglevels_actual-1),order=1,extrap=1)
-            if (target_z < z_fg(1,iCell)) &
+            if (target_z < z_fg(1,iCell) .and. k < nVertLevels) &
                 o3mmr(k,iCell) = o3mmr(k+1,iCell)
             scalars(index_qo3,k,iCell) = o3mmr(k,iCell)
          end do
+
 
          ! GHT
          sorted_arr(:,:) = -999.0
@@ -4680,21 +4684,6 @@ write(0,*) 'PROCESSING SEAICE'
 
       end do
 
-      write(0,*)
-      write(0,*) '--- max sh_fg   = ', maxval(sh_fg(1:nfglevels_actual,1:nCells))
-      write(0,*) '--- min sh_fg   = ', minval(sh_fg(1:nfglevels_actual,1:nCells))
-      write(0,*)
-      write(0,*) '--- max spechum = ', maxval(spechum(1:nVertLevels,1:nCells))
-      write(0,*) '--- min spechum = ', minval(spechum(1:nVertLevels,1:nCells))
-      write(0,*)
-      write(0,*) '--- max qv      = ', maxval(scalars(index_qv,1:nVertLevels,1:nCells))
-      write(0,*) '--- min qv      = ', minval(scalars(index_qv,1:nVertLevels,1:nCells))
-      write(0,*)
-      write(0,*) '--- max o3_fg   = ', maxval(o3_fg(1:nfglevels_actual,1:nCells))
-      write(0,*) '--- min o3_fg   = ', minval(o3_fg(1:nfglevels_actual,1:nCells))
-      write(0,*)
-      write(0,*) '--- max o3mmr   = ', maxval(o3mmr(1:nVertLevels,1:nCells))
-      write(0,*) '--- min o3mmr   = ', minval(o3mmr(1:nVertLevels,1:nCells))
 
       !
       ! Reconstruct zonal and meridional winds for diagnostic puposes:
@@ -4737,14 +4726,12 @@ write(0,*) 'PROCESSING SEAICE'
       deallocate(sorted_arr)
 
 
-
       !
       ! Diagnose fields needed in initial conditions file (u, w, rho, theta, scalars)
       ! NB: At this point, "rho_zz" is simple dry density, and "theta_m" is regular potential temperature
       !
       do iCell=1,nCells
          do k=1,nVertLevels
-
             ! QV
             es = 6.112 * exp((17.27*(t(k,iCell) - 273.16))/(t(k,iCell) - 35.86))
             es = min(es,0.99*0.01*pressure(k,iCell))             ! WCS 20141003, from LF; temporary fix 
@@ -4752,7 +4739,7 @@ write(0,*) 'PROCESSING SEAICE'
             !scalars(index_qv,k,iCell) = 0.01 * rs * scalars(index_qv,k,iCell)
 
             ! QV computed from specific humidity
-            scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell)/(1._RKIND - scalars(index_qv,k,iCell) )
+            !scalars(index_qv,k,iCell) = scalars(index_qv,k,iCell)/(1._RKIND - scalars(index_qv,k,iCell) )
 
             ! PI
             p(k,iCell) = (pressure(k,iCell) / p0) ** (rgas / cp)
@@ -4767,10 +4754,18 @@ write(0,*) 'PROCESSING SEAICE'
          end do
       end do
 
-      write(0,*)
-      write(0,*) '--- mixing ratio:'
-      write(0,*) '--- max qv      = ', maxval(scalars(index_qv,1:nVertLevels,1:nCells))
-      write(0,*) '--- min qv      = ', minval(scalars(index_qv,1:nVertLevels,1:nCells))
+
+      !
+      ! Convert the specific humidity and ozone to mixing ratios:
+      !
+      do iCell=1,nCells
+         do k=1,nVertLevels
+            sph = scalars(index_qv,k,iCell)
+            scalars(index_qv,k,iCell)  = scalars(index_qv,k,iCell)/(1._RKIND-scalars(index_qv,k,iCell) )
+            scalars(index_qo3,k,iCell) = scalars(index_qo3,k,iCell)*scalars(index_qv,k,iCell)/sph 
+         enddo   
+      enddo
+
 
       !
       ! Calculation of the initial precipitable water:
