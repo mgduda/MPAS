@@ -11,6 +11,7 @@
  use mpas_derived_types
  use mpas_pool_routines
 
+ use mpas_atmphys_nggps_model_parameters
  use mpas_atmphys_nggps_vars
  use machine
  use nuopc_physics
@@ -62,7 +63,9 @@
 !   restart stream for high-resolution meshes. in subroutine mpas_tbd_write, now saves the arrays phy_f2d and
 !   phy_f3d between time-steps.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-21.
-
+! * in subroutine mpas_tbd-set, now updates the local arrays rann_l as a function of time using the tank of
+!   random numbers initialized in physics_init.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-29.
 
  contains
 
@@ -151,12 +154,13 @@
  end subroutine mpas_tbd_ddt_deallocate
 
 !=================================================================================================================
- subroutine mpas_tbd_set(this,mesh,nggps_atm_inputs,nggps_tbd_ddt,statein)
+ subroutine mpas_tbd_set(this,mesh,nggps_atm_inputs,nggps_dynamic_parameters,nggps_tbd_ddt,statein)
 !=================================================================================================================
 
 !input arguments:
  type(mpas_pool_type),intent(in) :: mesh
  type(mpas_pool_type),intent(in) :: nggps_atm_inputs
+ type(mpas_pool_type),intent(in) :: nggps_dynamic_parameters
  type(mpas_pool_type),intent(in) :: nggps_tbd_ddt
  type(state_fields_in),intent(in):: statein
 
@@ -166,6 +170,8 @@
 !local pointers:
  integer,pointer:: numP2d,numP3d
  integer,pointer:: nCellsSolve,nVertLevels,nSoilLevels,nOznLevels,nOznPlCoeff
+ integer,pointer:: maxran
+ real(kind=RKIND),pointer:: fhour
  real(kind=RKIND),dimension(:),pointer    :: poz
  real(kind=RKIND),dimension(:),pointer    :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
  real(kind=RKIND),dimension(:,:),pointer  :: slc,smc,stc,upd_mf,dwn_mf,det_mf,phy_f2d
@@ -178,16 +184,21 @@
 
  real(kind=kind_phys),dimension(:),pointer    :: gscond_psp,gscond_psp1
  real(kind=kind_phys),dimension(:,:),pointer  :: gscond_tp,gscond_tp1,gscond_qp,gscond_qp1
+ real(kind=kind_phys),dimension(:,:),pointer  :: rannum_tank
 
 !... new pointers added in nuopc_physics.F90 version 2:
  real(kind=kind_phys),dimension(:),pointer    :: fscav_l,fswtr_l
  real(kind=kind_phys),dimension(:,:),pointer  :: phyfctd_l
 
 !local variables:
- logical:: test
+ logical:: random_clds
 
- integer:: iCell,k,n
+ integer:: iCell,iseed,k,n
  integer:: ncld,ntrac,nctp,nrcm
+ integer,dimension(:),allocatable:: indxr
+
+ real(kind=kind_phys),parameter:: cons_1p0d9=1.0E9
+ real(kind=kind_phys),dimension(:),allocatable:: wrkn
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*)
@@ -200,6 +211,8 @@
  call mpas_pool_get_dimension(mesh,'nOznPlCoeff',nOznPlCoeff)
  call mpas_pool_get_dimension(mesh,'numP2d'     ,numP2d     )
  call mpas_pool_get_dimension(mesh,'numP3d'     ,numP3d     )
+
+ call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
 
  call mpas_pool_get_array(nggps_tbd_ddt,'acv'     ,acv     )
  call mpas_pool_get_array(nggps_tbd_ddt,'acvt'    ,acvt    )
@@ -282,17 +295,61 @@
     enddo
  enddo
  do iCell = 1, nCellsSolve
-    do n = 1, nrcm
-       rann_l(iCell,n) = 0.6_RKIND
-    enddo
- enddo
- do iCell = 1, nCellsSolve
     do k = 1, nOznLevels
        do n = 1, nOznPlCoeff
           ozmix_l(iCell,k,n) = ozmix(k,n,iCell)
        enddo
     enddo
  enddo
+
+!... update the random number rann:
+ random_clds = .false.
+ if(ras .or. cal_pre) then
+    random_clds = .true.
+ elseif(newsas) then
+    random_clds = .false.
+ endif
+
+ if(.not.newsas .or. cal_pre) then
+   if(random_clds) then
+
+      call mpas_pool_get_dimension(mesh,'maxran',maxran)
+      call mpas_pool_get_array(nggps_tbd_ddt,'rannum_tank',rannum_tank)
+
+      if(.not.allocated(wrkn) ) allocate(wrkn(1:nrcm) )
+      if(.not.allocated(indxr)) allocate(indxr(1:nrcm))
+
+      iseed = mod(100.*sqrt(fhour*3600),cons_1p0d9) + 1 + seed0
+      call random_setseed(iseed)
+      call random_number(wrkn)
+
+      do n = 1, nrcm
+         indxr(n) = max(1,min(nint(wrkn(n)*maxran)+1,maxran))
+      enddo
+
+!     write(0,*)
+!     write(0,*) '--- before calculating rann_l:'
+!     write(0,*) '--- seed0 = ', seed0
+!     write(0,*) '--- iseed = ', iseed
+!     do n = 1, nrcm
+!        write(0,*) '--- indxr: ',n,indxr(n),wrkn(n)
+!     enddo
+!     write(0,*)
+      do iCell = 1, nCellsSolve
+         do n = 1, nrcm
+            rann_l(iCell,n) = rannum_tank(indxr(n),iCell)
+         enddo
+      enddo
+      if(allocated(wrkn) ) deallocate (wrkn)
+      if(allocated(indxr)) deallocate(indxr)
+   else
+      do iCell = 1, nCellsSolve
+         do n = 1, nrcm
+            rann_l(iCell,n) = 0.6_RKIND
+         enddo
+      enddo
+   endif
+ endif
 
 !... new pointers added in nuopc_physics.F90 version 2: the options to use fscav_l and fwstr_l (tracer scavenging)
 !... phyfctd_l (Chikira-Sugiyama) are not used in the current testing of the nggps driver and not linked to the

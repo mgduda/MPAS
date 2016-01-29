@@ -141,6 +141,7 @@ mpas_atmphys_nggps_state_fields_out.o: \
 	nuopc_physics.o
 
 mpas_atmphys_nggps_tbd_ddt.o: \
+	mpas_atmphys_nggps_model_parameters.o \
 	mpas_atmphys_nggps_vars.o \
 	nuopc_physics.o \
 	./physics_nggps_src/machine.o
