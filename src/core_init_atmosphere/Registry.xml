@@ -43,7 +43,7 @@
         </nml_record>
 
         <nml_record name="dimensions" in_defaults="true">
-                <nml_option name="config_nvertlevels"           type="integer"       default_value="41"/>
+                <nml_option name="config_nvertlevels"           type="integer"       default_value="63"/>
                 <nml_option name="config_nsoillevels"           type="integer"       default_value="4"/>
                 <nml_option name="config_nfglevels"             type="integer"       default_value="38"/>
                 <nml_option name="config_nfgsoillevels"         type="integer"       default_value="4"/>
