@@ -15,6 +15,8 @@
     <dim name="nOznPlCoeff"    definition="namelist:nozcoef"/>
     <dim name="nFxr"           definition="namelist:nflxr"/>
     <dim name="nBands"         definition="namelist:nbands_spectral"/>
+    <dim name="maxran"         definition="3000"/>
+    <dim name="maxsub"         definition="10"/>
 
  </dims>
 

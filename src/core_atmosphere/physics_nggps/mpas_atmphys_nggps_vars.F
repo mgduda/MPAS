@@ -29,6 +29,8 @@
 ! * added the variable rhosi which is the air density at the interface between layers needed for the calculation
 !   of the vertical velocity in Pa per second.
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
+! * added the variable seed0 needed to update the variable rann in the subroutine mpas_tbd_set.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-01-29.
 
 
 !=================================================================================================================
@@ -39,6 +41,9 @@
  real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
  real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]
  real(kind=RKIND),public:: dt_radtsw  !time-step for shortwave radiation parameterization [mns]
+
+!... parameters needed for the calculation of random numbers:
+integer:: seed0
 
 !... initial values for the surface roughness length as a function of the vegetation type:
  real(kind=RKIND),dimension(13):: z0_sib

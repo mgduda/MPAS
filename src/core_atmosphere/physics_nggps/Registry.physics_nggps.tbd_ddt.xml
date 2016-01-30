@@ -73,8 +73,12 @@
     <var name="gscond_tp1" type="real" dimensions="nVertLevels nCells Time" units="K"
          description="same as phy_f3d(:,:,3)"
     />
-    <var name="gscond_qp1" type="real" dimensions="nVertLevels nCells Time", units="kg kg^{-1}"
+    <var name="gscond_qp1" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="same as phy_f3d(:,:,4)"
+    />
+
+    <var name="rannum_tank" type="real" dimensions="maxran nCells Time" units="-"
+         description="tank of random numbers"
     />
 
  </var_struct>

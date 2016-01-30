@@ -167,7 +167,8 @@
     call mpas_intrfc_flds%mpas_setphys(mesh,nggps_interface_fields)
     call mpas_sfc_prop%mpas_setphys(mesh,nggps_sfc_properties)
     call mpas_tbds%allocate_mem(mesh)
-    call mpas_tbds%mpas_set(mesh,nggps_atm_inputs,nggps_tbd_ddt,mpas_statein%state_fields_in)
+    call mpas_tbds%mpas_set(mesh,nggps_atm_inputs,nggps_dynamic_parameters,nggps_tbd_ddt, &
+                            mpas_statein%state_fields_in)
 
     !... call to the NGGPS interface between MPAS and the GFS physics:
     call mpas_timer_start('nuopc_phys_run')
