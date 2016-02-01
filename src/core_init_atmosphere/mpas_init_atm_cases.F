@@ -2979,6 +2979,8 @@ module init_atm_cases
 
       else if (config_gfs_vertical_grid) then
 
+         zt = config_ztop
+
          if (nz /= 64) then
             write(0,*) '********************************************************************************'
             write(0,*) 'When config_gfs_vertical_grid = .true., 63 vertical layers must be selected'
