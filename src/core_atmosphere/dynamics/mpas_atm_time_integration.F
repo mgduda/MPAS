@@ -342,29 +342,6 @@ module atm_time_integration
 
       DYNAMICS_SUBSTEPS : do dynamics_substep = 1, dynamics_split
 
-            block => domain % blocklist
-            do while (associated(block))
-               call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
-               call mpas_pool_get_subpool(block % structs, 'state', state)
-               call mpas_pool_get_subpool(block % structs, 'diag', diag)
-               call mpas_pool_get_subpool(block % structs, 'tend', tend)
-   
-               call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-
-               rk_step = 1
-!$OMP PARALLEL DO
-               do thread=1,block % nThreads
-                  call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
-                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-               end do
-!$OMP END PARALLEL DO
-               block => block % next
-            end do
-
-
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
          ! BEGIN Runge-Kutta loop 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -482,6 +459,11 @@ MPAS_GPTL_STOP('dyn_tend')
 !$OMP PARALLEL DO
                do thread=1,block % nThreads
                   call atm_set_smlstep_pert_variables( tend, diag, mesh, block % configs, &
+                                             block % cellThreadStart(thread), block % cellThreadEnd(thread), &
+                                             block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
+                                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
+                                             block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
+                  call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
                                              block % cellThreadStart(thread), block % cellThreadEnd(thread), &
                                              block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
                                              block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
@@ -1349,7 +1331,6 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
 
             cofwt(k,iCell) = .5*dtseps*rcv*zz(k,iCell)*gravity*rb(k,iCell)/(1.+qtotal)  &
                                 *p(k,iCell)/((rtb(k,iCell)+rt(k,iCell))*pb(k,iCell))
-!            cofwt(k,iCell) = 0.
          end do
 
          a_tri(1,iCell) = 0.  ! note, this value is never used
@@ -3437,8 +3418,6 @@ MPAS_GPTL_STOP('mono_exch_2')
                                                     rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
                                                     h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save
 
-      real (kind=RKIND), dimension(:,:), pointer :: theta_m_save
-
       real (kind=RKIND), dimension(:,:), pointer :: exner
       real (kind=RKIND), dimension(:,:), pointer :: pp_fwd
 
@@ -3497,7 +3476,6 @@ MPAS_GPTL_STOP('mono_exch_2')
       call mpas_pool_get_array(state, 'u', u, 2)
       call mpas_pool_get_array(state, 'w', w, 2)
       call mpas_pool_get_array(state, 'theta_m', theta_m, 2)
-      call mpas_pool_get_array(state, 'theta_m', theta_m_save, 1)
       call mpas_pool_get_array(state, 'scalars', scalars, 2)
 
       call mpas_pool_get_array(diag, 'uReconstructZonal', ur_cell)
@@ -3606,7 +3584,7 @@ MPAS_GPTL_STOP('mono_exch_2')
          divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
          rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
          h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
-         theta_m_save, exner, pp_fwd, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
+         exner, pp_fwd, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
          cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
          latCell, latEdge, angleEdge, u_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
          rdzu, rdzw, fzm, fzp, qv_init, t_init , pzp, pzm, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
@@ -3626,7 +3604,7 @@ MPAS_GPTL_STOP('mono_exch_2')
       divergence, vorticity, ke, pv_edge, theta_m, rw, tend_rho, &
       rt_diabatic_tend, tend_theta, tend_w, w, cqw, rb, rr, pp, pressure_b, zz, zxu, cqu, & 
       h_divergence, kdiff, edgesOnCell_sign, edgesOnVertex_sign, rw_save, ru_save, &
-      theta_m_save, exner, pp_fwd, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
+      exner, pp_fwd, rr_save, scalars, tend_u_euler, tend_w_euler, tend_theta_euler, deriv_two, &
       cellsOnEdge, verticesOnEdge, edgesOnCell, edgesOnEdge, cellsOnCell, edgesOnVertex, nEdgesOnCell, nEdgesOnEdge, &
       latCell, latEdge, angleEdge, u_init, advCellsForEdge, nAdvCellsForEdge, adv_coefs, adv_coefs_3rd, &
       rdzu, rdzw, fzm, fzp, qv_init, t_init , pzp, pzm, cf1, cf2, cf3, r_earth, ur_cell, vr_cell, defc_a, defc_b, &
@@ -3691,7 +3669,6 @@ MPAS_GPTL_STOP('mono_exch_2')
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: rw_save
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: ru_save
 
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: theta_m_save
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: exner
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: pp_fwd
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rr_save
@@ -4381,8 +4358,8 @@ MPAS_GPTL_STOP('mono_exch_2')
             cell2 = cellsOnEdge(2,iEdge)
 !DIR$ IVDEP
             do k=1,nVertLevels
-               flux = edgesOnCell_sign(i,iCell)*dvEdge(iEdge)*(ru_save(k,iEdge)-ru(k,iEdge))*0.5*(theta_m_save(k,cell2)+theta_m_save(k,cell1))
-!               flux = flux*0.5*(theta_m_save(k,cell2)+theta_m_save(k,cell1))
+               flux = edgesOnCell_sign(i,iCell)*dvEdge(iEdge)*(ru_save(k,iEdge)-ru(k,iEdge))*0.5*(theta_m(k,cell2)+theta_m(k,cell1))
+!               flux = flux*0.5*(theta_m(k,cell2)+theta_m(k,cell1))
 !               tend_theta(k,iCell) = tend_theta(k,iCell)-flux/areaCell(iCell)
                tend_theta(k,iCell) = tend_theta(k,iCell)-flux  ! division by areaCell picked up down below
             end do
@@ -4482,12 +4459,11 @@ MPAS_GPTL_STOP('mono_exch_2')
          wdtz(1) = 0.0
 
          k = 2
-!!         wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  ! rtheta_pp redefinition
-         wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  
-         wdtz(k) =  wdtz(k)+(rw_save(k,icell)-rw(k,icell))*(fzm(k)*theta_m_save(k,iCell)+fzp(k)*theta_m_save(k-1,iCell))
+         wdtz(k) = rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  
+         wdtz(k) = wdtz(k)+(rw_save(k,icell)-rw(k,icell))*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))
          do k=3,nVertLevels-1
             wdtz(k) = flux3( theta_m(k-2,iCell),theta_m(k-1,iCell),theta_m(k,iCell),theta_m(k+1,iCell), rw(k,iCell), coef_3rd_order )
-            wdtz(k) =  wdtz(k) + (rw_save(k,icell)-rw(k,iCell))*(fzm(k)*theta_m_save(k,iCell)+fzp(k)*theta_m_save(k-1,iCell))  ! rtheta_pp redefinition
+            wdtz(k) =  wdtz(k) + (rw_save(k,icell)-rw(k,iCell))*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  ! rtheta_pp redefinition
          end do
          k = nVertLevels
 !!         wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))
