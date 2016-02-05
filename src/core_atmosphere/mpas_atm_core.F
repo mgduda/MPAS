@@ -448,6 +448,7 @@ module atm_core
       type (MPAS_Time_Type) :: currTime
       character(len=StrKIND) :: timeStamp
       character (len=StrKIND), pointer :: config_restart_timestamp_name
+      integer, pointer :: config_dynamics_subcycles
       integer :: itimestep
 
       integer :: stream_dir
@@ -462,6 +463,7 @@ module atm_core
 
       ! Eventually, dt should be domain specific
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_dynamics_subcycles', config_dynamics_subcycles)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
 
@@ -535,12 +537,8 @@ module atm_core
          end do
 
          call mpas_timer_start("time integration")
-         call atm_do_timestep(domain, dt, itimestep)
+         call atm_do_timestep(domain, dt, config_dynamics_subcycles, itimestep)
          call mpas_timer_stop("time integration")   
-
-         ! Move time level 2 fields back into time level 1 for next time step
-         call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
-         call mpas_pool_shift_time_levels(state)
          
          ! Advance clock before writing output
          itimestep = itimestep + 1
@@ -707,7 +705,7 @@ module atm_core
    end subroutine atm_compute_restart_diagnostics
 
 
-   subroutine atm_do_timestep(domain, dt, itimestep)
+   subroutine atm_do_timestep(domain, dt, dynamics_subcycles, itimestep)
    
       use mpas_timekeeping
       use mpas_kind_types
@@ -724,12 +722,15 @@ module atm_core
    
       type (domain_type), intent(inout) :: domain 
       real (kind=RKIND), intent(in) :: dt
+      integer, intent(in) :: dynamics_subcycles
       integer, intent(in) :: itimestep
       
       type (MPAS_Time_Type) :: startTime, currTime
       type (MPAS_TimeInterval_Type) :: xtimeTime
+      type (mpas_pool_type), pointer :: state
       character(len=StrKIND) :: timeStamp
       integer :: s, s_n, s_d
+      integer :: icycle
       real (kind=RKIND) :: xtime_s
       integer :: ierr
 
@@ -752,7 +753,13 @@ module atm_core
       endif
 #endif
 
-      call atm_timestep(domain, dt, timeStamp, itimestep)
+      do icycle=1,dynamics_subcycles
+         call atm_timestep(domain, (dt / real(dynamics_subcycles, kind=RKIND)), timeStamp, itimestep)
+
+         ! Move time level 2 fields back into time level 1 for next time step
+         call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
+         call mpas_pool_shift_time_levels(state)
+      end do
 
    end subroutine atm_do_timestep
    

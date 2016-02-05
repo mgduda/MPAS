@@ -177,7 +177,6 @@ module atm_time_integration
       logical, pointer :: config_monotonic
       logical, pointer :: config_print_global_minmax_vel
       logical, pointer :: config_print_global_minmax_sca
-      real (kind=RKIND), pointer :: config_dt
       character (len=StrKIND), pointer :: config_microp_scheme
 
       integer, pointer :: num_scalars, index_qv, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertices, nVerticesSolve, nVertLevels
@@ -217,7 +216,6 @@ module atm_time_integration
       call mpas_pool_get_config(domain % blocklist % configs, 'config_scalar_advection', config_scalar_advection)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_positive_definite', config_positive_definite)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_monotonic', config_monotonic)
-      call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', config_dt)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_microp_scheme', config_microp_scheme)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_print_global_minmax_vel', config_print_global_minmax_vel)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_print_global_minmax_sca', config_print_global_minmax_sca)
@@ -933,7 +931,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
          !requires that the subroutine atm_advance_scalars_mono was called on the third Runge Kutta step, so that a halo
          !update for the scalars at time_levs(1) is applied. A halo update for the scalars at time_levs(2) is done above. 
          if (config_monotonic) then
-            rqvdynten(:,:) = ( scalars_2(index_qv,:,:) - scalars_1(index_qv,:,:) ) / config_dt
+            rqvdynten(:,:) = ( scalars_2(index_qv,:,:) - scalars_1(index_qv,:,:) ) / dt
          else
             rqvdynten(:,:) = 0._RKIND
          end if
