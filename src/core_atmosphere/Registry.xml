@@ -214,6 +214,10 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+			<var name="theoro"/>
+			<var name="gamoro"/>
+			<var name="sigoro"/>
+			<var name="elvoro"/>
 			<var name="initial_date"/>
 			<var name="sltype"/>
 			<var name="vgtype"/>
