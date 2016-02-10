@@ -40,6 +40,8 @@
 ! * in the GFS physics, total cloud condensate and ozone are "specific" mixing ratios and not "strict" mixing
 !   ratios. the arrays qgrs and tracers are corrected accordingly.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-24.
+! * corrected the calculation of the exner function at interface between model layers.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-02-10.
 
  contains
 
@@ -322,9 +324,9 @@
 
 !... surface pressure and exner function at interface between layers:
  do iCell = 1,nCellsSolve
-    pgr(iCell)    = prsi(iCell,1)
+    pgr(iCell) = prsi(iCell,1)
     do k = 1,nVertLevels+1
-       prsik(iCell,k) = (prsi(iCell,k)/pgr(iCell))**rcp
+       prsik(iCell,k) = (prsi(iCell,k)/P0)**rcp
     enddo
  enddo
 
