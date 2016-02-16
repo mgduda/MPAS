@@ -144,6 +144,8 @@ module atm_time_integration
    !                  and some diagnostics in diag 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
+      use, intrinsic :: ieee_arithmetic
+
       implicit none
 
       type (domain_type), intent(inout) :: domain
@@ -168,6 +170,7 @@ module atm_time_integration
       integer :: dynamics_substep, dynamics_split
       real (kind=RKIND) :: dt_dynamics
 
+      real (kind=RKIND) :: pi_const
       real (kind=RKIND) :: scalar_min, scalar_max
       real (kind=RKIND) :: global_scalar_min, global_scalar_max
 
@@ -202,12 +205,24 @@ module atm_time_integration
       type (field2DReal), pointer :: pv_edge_field
       type (field2DReal), pointer :: rho_edge_field
 
+      real (kind=RKIND), dimension(:), pointer :: latCell
+      real (kind=RKIND), dimension(:), pointer :: lonCell
+      real (kind=RKIND), dimension(:), pointer :: latEdge
+      real (kind=RKIND), dimension(:), pointer :: lonEdge
+      integer, dimension(:), pointer :: indexToCellID
+      integer :: indexMax, indexMax_global
+      integer :: kMax, kMax_global
+      real (kind=RKIND) :: latMax, latMax_global
+      real (kind=RKIND) :: lonMax, lonMax_global
+
+      real (kind=RKIND) :: spd
       real (kind=RKIND), dimension(:,:), pointer :: w
-      real (kind=RKIND), dimension(:,:), pointer :: u, uReconstructZonal, uReconstructMeridional, uReconstructX, uReconstructY, uReconstructZ
+      real (kind=RKIND), dimension(:,:), pointer :: u, v, uReconstructZonal, uReconstructMeridional, uReconstructX, uReconstructY, uReconstructZ
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars, scalars_1, scalars_2
 
       real (kind=RKIND), dimension(:,:), pointer :: rqvdynten
 
+      pi_const = 2.0_RKIND*asin(1.0_RKIND)
 
       !
       ! Retrieve configuration options
@@ -254,19 +269,33 @@ module atm_time_integration
       end if
       if (.not. config_scalar_advection )  write(0,*) ' scalar advection turned off '
 
+#ifdef SECOND_ORDER
+      number_of_sub_steps = config_number_of_sub_steps
+      rk_timestep(1) = dt_dynamics/2.
+      rk_timestep(2) = dt_dynamics/2.
+      rk_timestep(3) = dt_dynamics
+
+      rk_sub_timestep(1) = dt_dynamics/real(number_of_sub_steps)
+      rk_sub_timestep(2) = dt_dynamics/real(number_of_sub_steps)
+      rk_sub_timestep(3) = dt_dynamics/real(number_of_sub_steps)
+
+      number_sub_steps(1) = max(1,number_of_sub_steps/2)
+      number_sub_steps(2) = max(1,number_of_sub_steps/2)
+      number_sub_steps(3) = number_of_sub_steps
+#else
       number_of_sub_steps = config_number_of_sub_steps
       rk_timestep(1) = dt_dynamics/3.
       rk_timestep(2) = dt_dynamics/2.
       rk_timestep(3) = dt_dynamics
-
+ 
       rk_sub_timestep(1) = dt_dynamics/3.
-!      rk_sub_timestep(1) = dt_dynamics/2.  !  this is to test the second-order variant of RK3 for dynamics
       rk_sub_timestep(2) = dt_dynamics/real(number_of_sub_steps)
       rk_sub_timestep(3) = dt_dynamics/real(number_of_sub_steps)
-
+ 
       number_sub_steps(1) = 1
       number_sub_steps(2) = max(1,number_of_sub_steps/2)
       number_sub_steps(3) = number_of_sub_steps
+#endif
 
 
 ! theta_m
@@ -772,9 +801,15 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
 
       if (config_scalar_advection .and. config_split_dynamics_transport) then
 
+#ifdef SECOND_ORDER
+         rk_timestep(1) = dt/2.
+         rk_timestep(2) = dt/2.
+         rk_timestep(3) = dt
+#else
          rk_timestep(1) = dt/3.
          rk_timestep(2) = dt/2.
          rk_timestep(3) = dt
+#endif
 
          RK3_SPLIT_TRANSPORT : do rk_step = 1, 3  ! Runge-Kutta loop
 
@@ -961,12 +996,180 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
          block => domain % blocklist
          do while (associated(block))
             call mpas_pool_get_subpool(block % structs, 'state', state)
+            call mpas_pool_get_subpool(block % structs, 'diag', diag)
+            call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
 
             call mpas_pool_get_array(state, 'w', w, 2)
             call mpas_pool_get_array(state, 'u', u, 2)
+            call mpas_pool_get_array(diag, 'v', v)
+            call mpas_pool_get_array(mesh, 'indexToCellID', indexToCellID)
+            call mpas_pool_get_array(mesh, 'latCell', latCell)
+            call mpas_pool_get_array(mesh, 'lonCell', lonCell)
+            call mpas_pool_get_array(mesh, 'latEdge', latEdge)
+            call mpas_pool_get_array(mesh, 'lonEdge', lonEdge)
             call mpas_pool_get_dimension(state, 'nCellsSolve', nCellsSolve)
             call mpas_pool_get_dimension(state, 'nEdgesSolve', nEdgesSolve)
             call mpas_pool_get_dimension(state, 'nVertLevels', nVertLevels)
+
+            scalar_min = 1.0e20
+            indexMax = -1
+            kMax = -1
+            latMax = 0.0
+            lonMax = 0.0
+            do iCell = 1, nCellsSolve
+            do k = 1, nVertLevels
+               if (w(k,iCell) < scalar_min) then
+                  scalar_min = w(k,iCell)
+                  indexMax = iCell
+                  kMax = k
+                  latMax = latCell(iCell)
+                  lonMax = lonCell(iCell)
+               end if
+            end do
+            end do
+            scalar_min = -1.0 * scalar_min
+            call mpas_dmpar_maxind_real(domain % dminfo, &
+                                        scalar_min, indexMax, kMax, latMax, lonMax, &
+                                        global_scalar_min, indexMax_global, kMax_global, latMax_global, lonMax_global)
+            latMax_global = latMax_global * 180.0_RKIND / pi_const
+            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            if (lonMax_global > 180.0) then
+               lonMax_global = lonMax_global - 360.0
+            end if
+            write(0,'(a,f9.4,a,i4,a,f7.3,a,f8.3,a)') ' global min w: ', -1.0*global_scalar_min, &
+                                                   ' k=', kMax_global, ', ', latMax_global, ' lat ', lonMax_global, ' lon'
+
+            scalar_max = -1.0e20
+            indexMax = -1
+            kMax = -1
+            latMax = 0.0
+            lonMax = 0.0
+            do iCell = 1, nCellsSolve
+            do k = 1, nVertLevels
+               if (w(k,iCell) > scalar_max) then
+                  scalar_max = w(k,iCell)
+                  indexMax = iCell
+                  kMax = k
+                  latMax = latCell(iCell)
+                  lonMax = lonCell(iCell)
+               end if
+            end do
+            end do
+            call mpas_dmpar_maxind_real(domain % dminfo, &
+                                        scalar_max, indexMax, kMax, latMax, lonMax, &
+                                        global_scalar_max, indexMax_global, kMax_global, latMax_global, lonMax_global)
+            latMax_global = latMax_global * 180.0_RKIND / pi_const
+            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            if (lonMax_global > 180.0) then
+               lonMax_global = lonMax_global - 360.0
+            end if
+            write(0,'(a,f9.4,a,i4,a,f7.3,a,f8.3,a)') ' global max w: ', global_scalar_max, &
+                                                   ' k=', kMax_global, ', ', latMax_global, ' lat ', lonMax_global, ' lon'
+
+            scalar_min = 1.0e20
+            indexMax = -1
+            kMax = -1
+            latMax = 0.0
+            lonMax = 0.0
+            do iEdge = 1, nEdgesSolve
+            do k = 1, nVertLevels
+               if (u(k,iEdge) < scalar_min) then
+                  scalar_min = u(k,iEdge)
+                  indexMax = iEdge
+                  kMax = k
+                  latMax = latEdge(iEdge)
+                  lonMax = lonEdge(iEdge)
+               end if
+            end do
+            end do
+            scalar_min = -1.0 * scalar_min
+            call mpas_dmpar_maxind_real(domain % dminfo, &
+                                        scalar_min, indexMax, kMax, latMax, lonMax, &
+                                        global_scalar_min, indexMax_global, kMax_global, latMax_global, lonMax_global)
+            latMax_global = latMax_global * 180.0_RKIND / pi_const
+            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            if (lonMax_global > 180.0) then
+               lonMax_global = lonMax_global - 360.0
+            end if
+            write(0,'(a,f9.4,a,i4,a,f7.3,a,f8.3,a)') ' global min u: ', -1.0*global_scalar_min, &
+                                                   ' k=', kMax_global, ', ', latMax_global, ' lat ', lonMax_global, ' lon'
+
+            scalar_max = -1.0e20
+            indexMax = -1
+            kMax = -1
+            latMax = 0.0
+            lonMax = 0.0
+            do iEdge = 1, nEdgesSolve
+            do k = 1, nVertLevels
+               if (u(k,iEdge) > scalar_max) then
+                  scalar_max = u(k,iEdge)
+                  indexMax = iEdge
+                  kMax = k
+                  latMax = latEdge(iEdge)
+                  lonMax = lonEdge(iEdge)
+               end if
+            end do
+            end do
+            call mpas_dmpar_maxind_real(domain % dminfo, &
+                                        scalar_max, indexMax, kMax, latMax, lonMax, &
+                                        global_scalar_max, indexMax_global, kMax_global, latMax_global, lonMax_global)
+            latMax_global = latMax_global * 180.0_RKIND / pi_const
+            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            if (lonMax_global > 180.0) then
+               lonMax_global = lonMax_global - 360.0
+            end if
+            write(0,'(a,f9.4,a,i4,a,f7.3,a,f8.3,a)') ' global max u: ', global_scalar_max, &
+                                                   ' k=', kMax_global, ', ', latMax_global, ' lat ', lonMax_global, ' lon'
+
+            scalar_max = -1.0e20
+            indexMax = -1
+            kMax = -1
+            latMax = 0.0
+            lonMax = 0.0
+            do iEdge = 1, nEdgesSolve
+            do k = 1, nVertLevels
+               spd = sqrt(u(k,iEdge)*u(k,iEdge) + v(k,iEdge)*v(k,iEdge))
+               if (spd > scalar_max) then
+                  scalar_max = spd
+                  indexMax = iEdge
+                  kMax = k
+                  latMax = latEdge(iEdge)
+                  lonMax = lonEdge(iEdge)
+               end if
+            end do
+            end do
+            call mpas_dmpar_maxind_real(domain % dminfo, &
+                                        scalar_max, indexMax, kMax, latMax, lonMax, &
+                                        global_scalar_max, indexMax_global, kMax_global, latMax_global, lonMax_global)
+            latMax_global = latMax_global * 180.0_RKIND / pi_const
+            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            if (lonMax_global > 180.0) then
+               lonMax_global = lonMax_global - 360.0
+            end if
+            write(0,'(a,f9.4,a,i4,a,f7.3,a,f8.3,a)') ' global max wsp: ', global_scalar_max, &
+                                                   ' k=', kMax_global, ', ', latMax_global, ' lat ', lonMax_global, ' lon'
+
+            !
+            ! Check for NaNs
+            !
+            do iCell = 1, nCellsSolve
+            do k = 1, nVertLevels
+               if (ieee_is_nan(w(k,iCell))) then
+                  call mpas_dmpar_global_abort('NaN detected in ''w'' field.')
+               end if
+            end do
+            end do
+
+            do iEdge = 1, nEdgesSolve
+            do k = 1, nVertLevels
+               if (ieee_is_nan(u(k,iEdge))) then
+                  call mpas_dmpar_global_abort('NaN detected in ''u'' field.')
+               end if
+            end do
+            end do
+
+#if 0
+            write(0,*) '----------------------------------------'
 
             scalar_min = 0.0
             scalar_max = 0.0
@@ -991,6 +1194,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
             call mpas_dmpar_min_real(domain % dminfo, scalar_min, global_scalar_min)
             call mpas_dmpar_max_real(domain % dminfo, scalar_max, global_scalar_max)
             write(0,*) 'global min, max u ', global_scalar_min, global_scalar_max
+#endif
 
             block => block % next
          end do
@@ -3790,6 +3994,8 @@ MPAS_GPTL_STOP('mono_exch_2')
                ! followed by imposition of an upper bound on the eddy viscosity
                kdiff(k,iCell) = min((c_s * config_len_disp)**2 * sqrt(d_diag(k)**2 + d_off_diag(k)**2),(0.01*config_len_disp**2) * invDt)
 !               kdiff(k,iCell) = min(kdiff(k,iCell),(0.01*config_len_disp**2) * invDt)
+!  ****  constant second order filter in the last 8 levels
+!               if (k .gt. nVertLevels-9) kdiff(k,iCell) = 5.*config_len_disp
             end do
          end do
 
