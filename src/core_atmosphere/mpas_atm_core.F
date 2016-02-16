@@ -82,9 +82,9 @@ module atm_core
       ! input streams.
       !
       if (config_do_restart) then
-         call MPAS_stream_mgr_read(domain % streamManager, streamID='restart', ierr=ierr)
+         call MPAS_stream_mgr_read(domain % streamManager, streamID='restart', whence=MPAS_STREAM_NEAREST, ierr=ierr)
       else
-         call MPAS_stream_mgr_read(domain % streamManager, streamID='input', ierr=ierr)
+         call MPAS_stream_mgr_read(domain % streamManager, streamID='input', whence=MPAS_STREAM_NEAREST, ierr=ierr)
       end if
       if (ierr /= MPAS_STREAM_MGR_NOERR) then
          write(0,*) ' '
