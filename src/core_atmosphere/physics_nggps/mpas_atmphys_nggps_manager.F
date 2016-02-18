@@ -11,10 +11,11 @@
  use mpas_derived_types
  use mpas_pool_routines
  use mpas_timekeeping
+ use mpas_stream_manager
 
  use mpas_atmphys_utilities
+ use mpas_atmphys_nggps_compute_diagnostics
  use mpas_atmphys_nggps_o3climatology
- use mpas_atmphys_update
  use mpas_atmphys_nggps_update_surface
  use mpas_atmphys_nggps_vars
 
@@ -48,6 +49,9 @@
 
 !defines ozone:
  character(len=*), parameter:: ozoneAlarmID = 'ozone'
+
+!defines alarm to compute some physics diagnostics, such as radar reflectivity:
+ character(len=*), parameter:: diagAlarmID = 'diag'
 
  integer:: h, d, dd, m, mm, s, s_n, s_d, DoY, yr
 
@@ -84,11 +88,14 @@
  type(block_type),pointer    :: block
  type(mpas_pool_type),pointer:: mesh
  type(mpas_pool_type),pointer:: nggps_diagnostics
+ type(mpas_pool_type),pointer:: nggps_diagnostics_physics
+ type(mpas_pool_type),pointer:: nggps_diagnostics_radiation
  type(mpas_pool_type),pointer:: nggps_sfc_properties
  type(mpas_pool_type),pointer:: nggps_atm_inputs
 
 !local variables:
  type(MPAS_Time_Type):: currTime
+ type(MPAS_TimeInterval_type):: dtInterval
 
  logical:: LeapYear
  integer:: ierr
@@ -139,15 +146,18 @@
  block => domain % blocklist
  do while(associated(block))
 
-    call mpas_pool_get_subpool(block%structs,'mesh'                ,mesh                )
-    call mpas_pool_get_subpool(block%structs,'nggps_sfc_properties',nggps_sfc_properties)
-    call mpas_pool_get_subpool(block%structs,'nggps_diagnostics'   ,nggps_diagnostics   )
+    call mpas_pool_get_subpool(block%structs,'mesh'                       ,mesh                       )
+    call mpas_pool_get_subpool(block%structs,'nggps_sfc_properties'       ,nggps_sfc_properties       )
+    call mpas_pool_get_subpool(block%structs,'nggps_diagnostics'          ,nggps_diagnostics          )
+    call mpas_pool_get_subpool(block%structs,'nggps_diagnostics_physics'  ,nggps_diagnostics_physics  )
+    call mpas_pool_get_subpool(block%structs,'nggps_diagnostics_radiation',nggps_diagnostics_radiation)
 
     !initialize diagnostics accumulated in subroutine gbphys back to zero:
     if(mpas_is_alarm_ringing(clock,acfieldsAlarmID,ierr=ierr)) then
        call mpas_reset_clock_alarm(clock,acfieldsAlarmID,ierr=ierr)
        write(0,*) '--- time to initialize diagnostics accumulated in gbphys.'
-       call physics_nggps_update_diagnostics(mesh,nggps_diagnostics)
+       call physics_nggps_zero_diagnostics(mesh,nggps_diagnostics,nggps_diagnostics_physics, &
+                                           nggps_diagnostics_radiation)
     endif
 
     !update the background surface albedo and greeness of vegetation: interpolation of input
@@ -200,6 +210,18 @@
     block => block % next
  end do
 
+!check to see if it is time to calculate additional physics diagnostics:
+ l_diags = .false.
+ if (mpas_is_alarm_ringing(clock,diagAlarmID,ierr=ierr)) then
+    call mpas_reset_clock_alarm(clock,diagAlarmID,ierr=ierr)
+ end if
+ call mpas_set_timeInterval(dtInterval,dt=dt,ierr=ierr)
+ if (mpas_is_alarm_ringing(clock,diagAlarmID,interval=dtInterval,ierr=ierr)) then
+    l_diags = .true.
+ end if
+ write(0,*)
+ write(0,*) '--- time to calculate additional physics_diagnostics =',l_diags
+
  write(0,*) '--- end subroutine physics_timetracker.'
  write(0,*)
 
@@ -219,7 +241,6 @@
 !local pointers:
  character(len=StrKIND),pointer:: config_radtlw_interval, &
                                   config_radtsw_interval, &
-                                  config_bucket_update,   &
                                   config_greeness_update, &
                                   config_ozone_update
 
@@ -228,6 +249,7 @@
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime
  type(MPAS_TimeInterval_Type):: alarmTimeStep, alarmTimeStepHi
+ character(len=StrKIND):: stream_interval
  integer:: ierr
 
 !-----------------------------------------------------------------------------------------------------------------
@@ -236,7 +258,6 @@
 
  call mpas_pool_get_config(configs,'config_radtlw_interval',config_radtlw_interval)
  call mpas_pool_get_config(configs,'config_radtsw_interval',config_radtsw_interval)
- call mpas_pool_get_config(configs,'config_bucket_update'  ,config_bucket_update  )
  call mpas_pool_get_config(configs,'config_greeness_update',config_greeness_update)
  call mpas_pool_get_config(configs,'config_ozone_update'   ,config_ozone_update   )
 
@@ -317,13 +338,47 @@
  if(ierr /= 0) &
     call physics_error_fatal('subroutine physics_init: error creating alarm ozone')
 
-!set alarm to reset to zero the radiation and other physics fields accumulated in subroutine
-!gbphys.
- call mpas_set_timeInterval(alarmTimeStep,timeString=config_bucket_update,ierr=ierr)
- alarmStartTime = startTime
- call mpas_add_clock_alarm(clock,acfieldsAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
- if(ierr /= 0) &
-    call physics_error_fatal('subroutine physics_init: error creating alarm acfields')
+!set alarm to reset to zero radiation and physics variables accumulated in subroutines grrad and gbphys, and
+!time-averaged in subroutine physics_nggps_compute_diagnostics on IO output for the "nggps_tavg" stream:
+ call MPAS_stream_mgr_get_property(stream_manager,'nggps_tavg', MPAS_STREAM_PROPERTY_RECORD_INTV, &
+                          stream_interval,direction=MPAS_STREAM_OUTPUT,ierr=ierr)
+ if(trim(stream_interval) /= 'none') then
+    call mpas_set_timeInterval(alarmTimeStep,timeString=stream_interval,ierr=ierr)
+    alarmStartTime = startTime
+
+    call mpas_add_clock_alarm(clock,acfieldsAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+    if(ierr /= 0) call physics_error_fatal('subroutine physics_init: error creating alarm acfields')
+ end if
+
+!set alarm to calculate physics diagnostics on IO output only:
+ call MPAS_stream_mgr_get_property(stream_manager,'output',MPAS_STREAM_PROPERTY_RECORD_INTV, &
+                          stream_interval,direction=MPAS_STREAM_OUTPUT,ierr=ierr)
+
+ if(trim(stream_interval) /= 'none') then
+    call mpas_set_timeInterval(alarmTimeStep,timeString=stream_interval,ierr=ierr)
+
+    !If the diagnostic interval is higher in resolution,use it instead:
+    call MPAS_stream_mgr_get_property(stream_manager,'diagnostics',MPAS_STREAM_PROPERTY_RECORD_INTV, & 
+                             stream_interval,direction=MPAS_STREAM_OUTPUT,ierr=ierr)
+    if(trim(stream_interval) /= 'none') then
+       call mpas_set_timeInterval(alarmTimeStepHi,timeString=stream_interval,ierr=ierr)
+       if(alarmTimeStepHi < alarmTimeStep) then
+          alarmTimeStep = alarmTimeStepHi
+       endif
+    endif
+    alarmStartTime = startTime
+    call mpas_add_clock_alarm(clock,diagAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+    if(ierr /= 0) call physics_error_fatal('subroutine physics_init: error creating alarm diag')
+ else
+    call MPAS_stream_mgr_get_property(stream_manager,'diagnostics',MPAS_STREAM_PROPERTY_RECORD_INTV, &
+                             stream_interval,direction=MPAS_STREAM_OUTPUT,ierr=ierr)
+    if(trim(stream_interval) /= 'none') then
+       call mpas_set_timeInterval(alarmTimeStep,timeString=stream_interval,ierr=ierr)
+       alarmStartTime = startTime
+       call mpas_add_clock_alarm(clock,diagAlarmID,alarmStartTime,alarmTimeStep,ierr=ierr)
+       if(ierr /= 0) call physics_error_fatal('subroutine physics_init: error creating alarm diag')
+    endif
+ endif
 
 !initialization of local physics time-steps:
 !... dynamics:
