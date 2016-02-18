@@ -453,7 +453,7 @@
 			<var name="sbsnoa"/>
 			<var name="snohfa"/>
 			<var name="snowca"/>
-			<var name="soilm"/>
+			<var name="SOILM"/>
 			<var name="transa"/>
 			<var name="runoff"/>
 			<var name="srunoff"/>
