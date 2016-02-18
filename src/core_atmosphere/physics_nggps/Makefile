@@ -9,6 +9,7 @@ dummy:
 
 OBJS = \
 	mpas_atmphys_nggps_cloud_properties.o \
+	mpas_atmphys_nggps_compute_diagnostics.o \
 	mpas_atmphys_nggps_constants.o \
 	mpas_atmphys_nggps_control.o \
 	mpas_atmphys_nggps_date_time.o \
@@ -27,7 +28,6 @@ OBJS = \
 	mpas_atmphys_nggps_state_fields_out.o \
 	mpas_atmphys_nggps_tbd_ddt.o \
 	mpas_atmphys_nggps_todynamics.o \
-	mpas_atmphys_nggps_update.o \
         mpas_atmphys_nggps_update_surface.o \
 	mpas_atmphys_nggps_vars.o \
 	mpas_atmphys_date_time.o \
@@ -49,6 +49,11 @@ core_physics_nggps: $(OBJS)
 mpas_atmphys_nggps_cloud_properties.o: \
 	mpas_atmphys_nggps_vars.o \
 	nuopc_physics.o
+
+mpas_atmphys_nggps_compute_diagnostics.o: \
+	mpas_atmphys_nggps_constants.o \
+	./physics_nggps_src/funcphys.o \
+	./physics_nggps_src/physcons.o
 
 mpas_atmphys_nggps_date_time.o: \
 	mpas_atmphys_date_time.o
@@ -107,8 +112,8 @@ mpas_atmphys_interface_fields.o: \
 	./physics_nggps_src/radsw_param.o
 
 mpas_atmphys_nggps_manager.o : \
+	mpas_atmphys_nggps_compute_diagnostics.o \
 	mpas_atmphys_nggps_o3climatology.o \
-	mpas_atmphys_nggps_update.o \
 	mpas_atmphys_nggps_update_surface.o \
 	mpas_atmphys_nggps_vars.o \
 	mpas_atmphys_utilities.o
