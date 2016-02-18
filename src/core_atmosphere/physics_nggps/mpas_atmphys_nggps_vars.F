@@ -31,12 +31,14 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2015-12-01.
 ! * added the variable seed0 needed to update the variable rann in the subroutine mpas_tbd_set.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-01-29.
-
+! * added the variable l_diags which controls the calculation of physics diagnostics (like the relative humidity).
+!   Laura D. Fowler (laura@ucar.edu) / 2016-02-11.
 
 !=================================================================================================================
 !... logicals defined in MPAS:
  logical:: l_radtlw                   !controls call to longwave radiation parameterization.
  logical:: l_radtsw                   !controls call to shortwave radiation parameterization.
+ logical:: l_diags                    !controls when to calculate physics diagnostics.
 
  real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
  real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]

@@ -22,6 +22,7 @@ module atm_time_integration
    use mpas_atmphys_todynamics
    use mpas_atmphys_utilities
 #elif defined(DO_PHYSICS_NGGPS)
+   use mpas_atmphys_nggps_compute_diagnostics
    use mpas_atmphys_todynamics
 #endif
 
@@ -615,6 +616,18 @@ module atm_time_integration
          !call microphysics schemes:
          if (config_microp_scheme .ne. 'off')  &
             call microphysics_driver ( block % configs, mesh, state, 2, diag, diag_physics, tend, itimestep )
+
+         block => block % next
+      end do
+#elif DO_PHYSICS_NGGPS
+      block => domain % blocklist
+      do while(associated(block))
+
+         call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+         call mpas_pool_get_subpool(block % structs, 'state', state)
+         call mpas_pool_get_subpool(block % structs, 'diag', diag)
+
+         call physics_nggps_compute_relhum(mesh,state,diag,2)
 
          block => block % next
       end do
