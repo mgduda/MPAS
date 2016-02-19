@@ -66,23 +66,31 @@ module mpas_io
       module procedure MPAS_io_put_att_text
    end interface MPAS_io_put_att
 
-   type (iosystem_desc_t), pointer, private, save :: pio_iosystem
-   type (decomplist_type), pointer, private :: decomp_list => null()
    type (dm_info), private :: local_dminfo
+   type (decomplist_type), pointer, private :: decomp_list => null()
+#ifdef PIO
+   type (iosystem_desc_t), pointer, private, save :: pio_iosystem
    integer, private:: master_pio_iotype = -999
+#endif
    
 
    contains
 
 
-   subroutine MPAS_io_init(dminfo, io_task_count, io_task_stride, io_system, ierr)
+   subroutine MPAS_io_init(dminfo, io_task_count, io_task_stride, &
+#ifdef PIO
+                           io_system, &
+#endif
+                           ierr)
 
       implicit none
 
       type (dm_info), intent(in) :: dminfo
       integer, intent(in) :: io_task_count
       integer, intent(in) :: io_task_stride
+#ifdef PIO
       type (iosystem_desc_t), pointer :: io_system
+#endif
       integer, intent(out), optional :: ierr
 
 !      write(stderrUnit,*) 'Called MPAS_io_init()'
@@ -146,6 +154,7 @@ module mpas_io
       MPAS_io_open % iomode   = mode
       MPAS_io_open % ioformat = ioformat
 
+#ifdef PIO
       if (master_pio_iotype /= -999) then
          pio_iotype = master_pio_iotype
          pio_mode = PIO_64BIT_OFFSET
@@ -164,8 +173,9 @@ module mpas_io
             pio_mode = PIO_64BIT_OFFSET
          end if
       end if
-
+#else
       nf_iotype = ior(NF90_NETCDF4, NF90_MPIIO)
+#endif
 
       if (mode == MPAS_IO_WRITE) then
 !write(stderrUnit,*) 'MGD PIO_createfile'
@@ -4298,11 +4308,17 @@ module mpas_io
    end subroutine MPAS_io_close
 
 
-   subroutine MPAS_io_finalize(io_system, ierr)
+   subroutine MPAS_io_finalize( &
+#ifdef PIO
+                               io_system, &
+#endif
+                               ierr)
 
       implicit none
 
+#ifdef PIO
       type (iosystem_desc_t), pointer :: io_system
+#endif
       integer, intent(out), optional :: ierr
 
       integer :: nf_ierr

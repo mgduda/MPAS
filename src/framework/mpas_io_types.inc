@@ -55,15 +55,21 @@
       logical :: initialized = .false.
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
+#if PIO
       type (file_desc_t) :: pio_file
+      integer :: pio_unlimited_dimid
+#endif
       integer :: ncid
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
-      integer :: pio_unlimited_dimid
       integer :: nc_unlimited_dimid
       integer :: preexisting_records = 0
+#if PIO
       integer (kind=PIO_offset) :: frame_number = 1
+#else
+      integer :: frame_number = 1
+#endif
       type (dimlist_type), pointer :: dimlist_head => null()
       type (dimlist_type), pointer :: dimlist_tail => null()
       type (fieldlist_type), pointer :: fieldlist_head => null()
@@ -78,7 +84,9 @@
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
       integer, dimension(:), pointer :: start, count
+#if PIO
       type (io_desc_t) :: pio_iodesc
+#endif
    end type decomphandle_type
 
    type atthandle_type
@@ -101,7 +109,9 @@
    type fieldhandle_type
       character (len=StrKIND) :: fieldname
       integer :: fieldid
+#if PIO
       type (Var_desc_t) :: field_desc
+#endif
       integer :: field_type
       logical :: has_unlimited_dim = .false.
       integer :: ndims

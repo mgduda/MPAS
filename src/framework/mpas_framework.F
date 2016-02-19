@@ -71,13 +71,19 @@ module mpas_framework
 !>  the time keeper, and the IO infrastructure.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_framework_init_phase2(domain, io_system, calendar)!{{{
+   subroutine mpas_framework_init_phase2(domain, &
+#ifdef PIO
+                                         io_system, &
+#endif
+                                         calendar)!{{{
 
       implicit none
 
       type (domain_type), pointer :: domain
 
+#ifdef PIO
       type (iosystem_desc_t), optional, pointer :: io_system
+#endif
       character(len=*), intent(in), optional :: calendar
 
       character(len=StrKIND), pointer :: config_calendar_type
@@ -106,7 +112,11 @@ module mpas_framework
       if (pio_num_iotasks == 0) then
          pio_num_iotasks = domain % dminfo % nprocs
       end if
-      call MPAS_io_init(domain % dminfo, pio_num_iotasks, pio_stride, io_system)
+      call MPAS_io_init(domain % dminfo, pio_num_iotasks, pio_stride &
+#ifdef PIO
+                        , io_system &
+#endif
+                        )
 
    end subroutine mpas_framework_init_phase2!}}}
 
@@ -121,15 +131,23 @@ module mpas_framework
 !>  This routine finalizes the MPAS framework. It calls routines related to finalizing different parts of MPAS, that are housed within the framework.
 !
 !-----------------------------------------------------------------------  
-   subroutine mpas_framework_finalize(dminfo, domain, io_system)!{{{
+   subroutine mpas_framework_finalize(dminfo, domain &
+#ifdef PIO
+                                      , io_system &
+#endif
+                                     )!{{{
   
       implicit none
 
       type (dm_info), pointer :: dminfo
       type (domain_type), pointer :: domain
+#ifdef PIO
       type (iosystem_desc_t), optional, pointer :: io_system
 
       call MPAS_io_finalize(io_system)
+#else
+      call MPAS_io_finalize()
+#endif
 
       call mpas_deallocate_domain(domain)
 
