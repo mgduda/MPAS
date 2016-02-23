@@ -45,9 +45,10 @@
  
  real (kind=RKIND), dimension(:,:), pointer :: exner, height
  real (kind=RKIND), dimension(:,:), pointer :: pressure_b, pressure_p 
- real (kind=RKIND), dimension(:,:), pointer :: qvapor, relhum, theta_m, vorticity
+ real (kind=RKIND), dimension(:,:), pointer :: relhum, theta_m, vorticity
  real (kind=RKIND), dimension(:,:), pointer :: umeridional, uzonal, vvel
- real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+ real (kind=R8KIND), dimension(:,:), pointer :: qvapor
+ real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
 
  real (kind=RKIND), dimension(:), pointer :: temperature_200hPa
  real (kind=RKIND), dimension(:), pointer :: temperature_500hPa
@@ -516,7 +517,8 @@
    !t: in K
    !qv: in kg/kg
    !height: in m
-    real(kind=RKIND), intent(in), dimension(nlev_in,ncol) :: p,t,qv
+    real(kind=RKIND), intent(in), dimension(nlev_in,ncol) :: p,t
+    real(kind=R8KIND), intent(in), dimension(nlev_in,ncol) :: qv
     real(kind=RKIND), intent(in), dimension(nlev_in+1,ncol) :: height
    
    !output arguments:

@@ -64,7 +64,7 @@ module atm_time_integration
    real (kind=RKIND), dimension(:,:), allocatable :: flux_tmp_arr
    real (kind=RKIND), dimension(:,:), allocatable :: wdtn_arr
    real (kind=RKIND), dimension(:,:), allocatable :: rho_zz_int
-   real (kind=RKIND), dimension(:,:,:), allocatable :: scalar_tend_array
+   real (kind=R8KIND), dimension(:,:,:), allocatable :: scalar_tend_array
 
    ! Used in compute_solve_diagnostics
    real (kind=RKIND), allocatable, dimension(:,:) :: ke_vertex
@@ -219,7 +219,7 @@ module atm_time_integration
       real (kind=RKIND) :: spd
       real (kind=RKIND), dimension(:,:), pointer :: w
       real (kind=RKIND), dimension(:,:), pointer :: u, v, uReconstructZonal, uReconstructMeridional, uReconstructX, uReconstructY, uReconstructZ
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars, scalars_1, scalars_2
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars, scalars_1, scalars_2
 
       real (kind=RKIND), dimension(:,:), pointer :: rqvdynten
 
@@ -1259,7 +1259,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND), dimension(:,:), pointer :: w_1, w_2
       real (kind=RKIND), dimension(:,:), pointer :: theta_m_1, theta_m_2
       real (kind=RKIND), dimension(:,:), pointer :: rho_zz_1, rho_zz_2
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars_1, scalars_2
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars_1, scalars_2
 
       call mpas_pool_get_array(diag, 'ru', ru)
       call mpas_pool_get_array(diag, 'ru_save', ru_save)
@@ -1318,7 +1318,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND) :: qtotal
       integer, dimension(:,:), pointer :: cellsOnEdge
       integer, pointer :: moist_start, moist_end
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
       real (kind=RKIND), dimension(:,:), pointer :: cqw
       real (kind=RKIND), dimension(:,:), pointer :: cqu
 
@@ -1398,7 +1398,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND), dimension(:,:), pointer :: zz, cqw, p, t, rb, rtb, pb, rt
       real (kind=RKIND), dimension(:,:), pointer :: cofwr, cofwz, coftz, cofwt, a_tri, alpha_tri, gamma_tri
       real (kind=RKIND), dimension(:), pointer :: cofrz, rdzw, fzm, fzp, rdzu
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
 
       real (kind=RKIND), pointer :: epssm
 
@@ -1485,7 +1485,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND), dimension(nVertLevels) :: fzm
       real (kind=RKIND), dimension(nVertLevels) :: fzp
       real (kind=RKIND), dimension(nVertLevels) :: rdzu
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
 
       integer, intent(in) :: cellStart, cellEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd
@@ -2231,7 +2231,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
                                                     rho_pp, rho_zz, rho_base, ruAvg, ru_save, ru_p, u, ru, &
                                                     exner, exner_base, rtheta_base, pressure_p,         &
                                                     zz, theta_m, pressure_b
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
       real (kind=RKIND), dimension(:), pointer :: fzm, fzp
       real (kind=RKIND), dimension(:,:,:), pointer :: zb, zb3, zb_cell, zb3_cell
       real (kind=RKIND), dimension(:,:), pointer :: edgesOnCell_sign
@@ -2359,7 +2359,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: zz
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: theta_m
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: pressure_b
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
       real (kind=RKIND), dimension(nVertLevels) :: fzm
       real (kind=RKIND), dimension(nVertLevels) :: fzp
       real (kind=RKIND), dimension(nVertLevels+1,2,nEdges+1) :: zb
@@ -2522,7 +2522,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer, intent(in) :: cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
       logical, intent(in), optional :: advance_density
-      real (kind=RKIND), dimension(:,:,:), intent(inout), optional :: scalar_tend
+      real (kind=R8KIND), dimension(:,:,:), intent(inout), optional :: scalar_tend
       real (kind=RKIND), dimension(:,:), intent(inout), optional :: rho_zz_int
 
       integer :: i, j, iCell, iAdvCell, iEdge, k, iScalar, cell1, cell2
@@ -2531,7 +2531,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
 
       real (kind=RKIND) :: scalar_weight
 
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend_save
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalar_old, scalar_new, scalar_tend_save
       real (kind=RKIND), dimension(:,:,:), pointer :: deriv_two
       real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg, rho_edge, zgrid, kdiff
       real (kind=RKIND), dimension(:), pointer :: dvEdge, qv_init
@@ -2542,7 +2542,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer, dimension(:), pointer :: nAdvCellsForEdge, nEdgesOnCell
       real (kind=RKIND), dimension(:,:), pointer :: adv_coefs, adv_coefs_3rd, edgesOnCell_sign
 
-      real (kind=RKIND), dimension( num_scalars, nVertLevels + 1 ) :: wdtn
+      real (kind=R8KIND), dimension( num_scalars, nVertLevels + 1 ) :: wdtn
       integer, pointer :: nCellsSolve, nEdges
 
       real (kind=RKIND), dimension(:), pointer :: fnm, fnp, rdnw, meshScalingDel2, meshScalingDel4
@@ -2668,9 +2668,9 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer, intent(in) :: cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd
       integer, intent(in) :: cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd
       logical, intent(in) :: advance_density
-      real (kind=RKIND), dimension(:,:,:), intent(in) :: scalar_old
-      real (kind=RKIND), dimension(:,:,:), intent(inout) :: scalar_new
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend_save
+      real (kind=R8KIND), dimension(:,:,:), intent(in) :: scalar_old
+      real (kind=R8KIND), dimension(:,:,:), intent(inout) :: scalar_new
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend_save
       real (kind=RKIND), dimension(:,:,:), intent(in) :: deriv_two
       real (kind=RKIND), dimension(:,:), intent(in) :: rho_zz_old
       real (kind=RKIND), dimension(:,:), intent(in) :: uhAvg, wwAvg, rho_edge, zgrid, rho_zz_new, kdiff
@@ -2682,7 +2682,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       real (kind=RKIND), dimension(:), intent(in) :: fnm, fnp, rdnw, meshScalingDel2, meshScalingDel4
       real (kind=RKIND), intent(in) :: coef_3rd_order
       real (kind=RKIND), dimension(num_scalars,nVertLevels,nEdges+1), intent(inout) :: horiz_flux_arr
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout), optional :: scalar_tend
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout), optional :: scalar_tend
       real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(inout), optional :: rho_zz_int
       real (kind=RKIND), dimension(:), intent(in) :: invAreaCell
       integer, intent(in) :: nCellsSolve, nEdges
@@ -2857,8 +2857,8 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
          do k=3,nVertLevels-1
 !DIR$ IVDEP
             do iScalar=1,num_scalars
-               wdtn(iScalar,k) = flux3( scalar_new(iScalar,k-2,iCell),scalar_new(iScalar,k-1,iCell),  &
-                                        scalar_new(iScalar,k  ,iCell),scalar_new(iScalar,k+1,iCell),  &
+               wdtn(iScalar,k) = flux3( real(scalar_new(iScalar,k-2,iCell),RKIND),real(scalar_new(iScalar,k-1,iCell),RKIND),  &
+                                        real(scalar_new(iScalar,k  ,iCell),RKIND),real(scalar_new(iScalar,k+1,iCell),RKIND),  &
                                         wwAvg(k,iCell), coef_3rd_order )
             end do
          end do
@@ -2932,7 +2932,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       logical, intent(in), optional :: advance_density
       real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(inout), optional :: rho_zz_int
 
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalar_tend
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalar_tend
       real (kind=RKIND), dimension(:,:), pointer :: uhAvg, rho_zz_old, rho_zz_new, wwAvg
       real (kind=RKIND), dimension(:), pointer :: dvEdge, invAreaCell
       integer, dimension(:,:), pointer :: cellsOnEdge, cellsOnCell, edgesOnCell
@@ -2941,7 +2941,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer, dimension(:,:), pointer :: advCellsForEdge
       integer, dimension(:), pointer :: nAdvCellsForEdge
       real (kind=RKIND), dimension(:,:), pointer :: adv_coefs, adv_coefs_3rd
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars_old, scalars_new
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars_old, scalars_new
 
       integer, pointer :: nCellsSolve
 
@@ -3051,7 +3051,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer :: i, iCell, iEdge, k, iScalar, cell1, cell2
       real (kind=RKIND) :: flux, scalar_weight
 
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalar_tend
       real (kind=RKIND), dimension(nVertLevels,nEdges+1), intent(in) :: uhAvg
       real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: rho_zz_old, rho_zz_new
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1), intent(in) :: wwAvg
@@ -3062,7 +3062,7 @@ MPAS_GPTL_STOP('atm_advance_scalars_mono')
       integer, dimension(:,:), intent(in) :: advCellsForEdge
       integer, dimension(:), intent(in) :: nAdvCellsForEdge
       real (kind=RKIND), dimension(:,:), intent(in) :: adv_coefs, adv_coefs_3rd
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalars_old, scalars_new
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1), intent(inout) :: scalars_old, scalars_new
       real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(inout) :: scalar_old, scalar_new
       real (kind=RKIND), dimension(nVertLevels,nCells+1), intent(inout) :: s_max, s_min
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1), intent(inout) :: wdtn
@@ -3626,7 +3626,7 @@ MPAS_GPTL_STOP('mono_exch_2')
 
       real (kind=RKIND), dimension(:,:), pointer :: rr_save
 
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
 
       real (kind=RKIND), dimension(:,:), pointer :: tend_u_euler, tend_w_euler, tend_theta_euler
 
@@ -3875,7 +3875,7 @@ MPAS_GPTL_STOP('mono_exch_2')
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: exner
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: pp_fwd
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: rr_save
-      real (kind=RKIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
+      real (kind=R8KIND), dimension(num_scalars,nVertLevels,nCells+1) :: scalars
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: tend_u_euler
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: tend_w_euler
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_theta_euler
@@ -5134,7 +5134,7 @@ MPAS_GPTL_STOP('mono_exch_2')
       real (kind=RKIND), dimension(:,:), pointer :: theta_base
       real (kind=RKIND), dimension(:,:), pointer :: rtheta_p
       real (kind=RKIND), dimension(:,:), pointer :: zz
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
       real (kind=RKIND), dimension(:,:), pointer :: ru
       real (kind=RKIND), dimension(:,:), pointer :: rw
       real (kind=RKIND), dimension(:,:), pointer :: u

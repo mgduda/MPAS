@@ -105,10 +105,10 @@
  integer,pointer:: nCellsSolve,nMtvr
  integer,dimension(:),pointer:: landmask,ivgtyp,isltyp
 
- real(kind=RKIND),dimension(:),pointer:: slope,shdmin,shdmax,snoalb,tg3,slmsk,vfrac,uustar,oro,oro_uf,   &
+ real(kind=R8KIND),dimension(:),pointer:: slope,shdmin,shdmax,snoalb,tg3,slmsk,vfrac,uustar,oro,oro_uf,   &
                                          hice,fice,tisfc,tsfc,snwdph,weasd,sncovr,zorl,canopy,ffmm,ffhh, &
                                          f10m,t2m,q2m
- real(kind=RKIND),dimension(:),pointer:: var2d,con,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,theoro, &
+ real(kind=R8KIND),dimension(:),pointer:: var2d,con,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,theoro, &
                                          gamoro,sigoro,elvoro
 
 !local nggps pointers:
@@ -177,7 +177,7 @@
     slmsk(iCell) = real(landmask(iCell),kind_phys)
     if(slmsk(iCell) == 0._kind_phys .and. fice(iCell) .gt. 0.) slmsk(iCell) = 2._kind_phys
 
-    slope(iCell)  = min(slope(iCell),9._RKIND)
+    slope(iCell)  = min(slope(iCell),9._R8KIND)
     rsltyp(iCell) = real(isltyp(iCell),kind_phys)
     rvgtyp(iCell) = real(ivgtyp(iCell),kind_phys)
  enddo
@@ -262,9 +262,9 @@
  integer,pointer:: nCellsSolve
  integer,dimension(:),pointer:: landmask
 
- real(kind=RKIND),dimension(:),pointer:: snoalb,slmsk,fice,tisfc,tsfc,snwdph,sncovr,zorl,facsf,facwf, &
+ real(kind=R8KIND),dimension(:),pointer:: snoalb,slmsk,fice,tisfc,tsfc,snwdph,sncovr,zorl,facsf,facwf, &
                                          alnsf,alnwf,alvsf,alvwf
- real(kind=RKIND),dimension(:),pointer:: var2d
+ real(kind=R8KIND),dimension(:),pointer:: var2d
 
 !local nggps pointers:
  real(kind=kind_phys),dimension(:),pointer:: hprim
@@ -325,7 +325,7 @@
  type(mpas_pool_type),intent(inout):: nggps_sfc_properties
 
 !local variables:
- real(kind=RKIND),dimension(:),pointer  :: alnsf,alvsf,alnwf,alvwf,slmsk,vfrac,uustar,hice,fice,tisfc,tsfc, &
+ real(kind=R8KIND),dimension(:),pointer  :: alnsf,alvsf,alnwf,alvwf,slmsk,vfrac,uustar,hice,fice,tisfc,tsfc, &
                                            snwdph,weasd,sncovr,zorl,canopy,ffmm,ffhh,f10m,t2m,q2m
 
 !-----------------------------------------------------------------------------------------------------------------

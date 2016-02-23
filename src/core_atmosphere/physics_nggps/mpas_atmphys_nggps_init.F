@@ -72,15 +72,15 @@
  integer,dimension(:),pointer:: isltyp,ivgtyp
  integer,dimension(:),pointer:: nlonsCell
 
- real(kind=RKIND),pointer:: fhour
- real(kind=RKIND),dimension(:),pointer:: rdzw
- real(kind=RKIND),dimension(:),pointer:: oro,oro_uf
- real(kind=RKIND),dimension(:),pointer:: tisfc,tsea
- real(kind=RKIND),dimension(:),pointer:: zorl
- real(kind=RKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
+ real(kind=R8KIND),pointer:: fhour
+ real(kind=R8KIND),dimension(:),pointer:: rdzw
+ real(kind=R8KIND),dimension(:),pointer:: oro,oro_uf
+ real(kind=R8KIND),dimension(:),pointer:: tisfc,tsea
+ real(kind=R8KIND),dimension(:),pointer:: zorl
+ real(kind=R8KIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
 
- real(kind=RKIND),dimension(:,:),pointer:: zgrid
- real(kind=RKIND),dimension(:,:),pointer:: rannum_tank
+ real(kind=R8KIND),dimension(:,:),pointer:: zgrid
+ real(kind=R8KIND),dimension(:,:),pointer:: rannum_tank
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -99,9 +99,9 @@
  integer:: lonrbm,iseedl,maxrs
  integer,dimension(:), allocatable:: indxr
 
- real(kind=RKIND),parameter:: thousnd = 1000._RKIND
- real(kind=RKIND):: wrk(1)
- real(kind=RKIND),dimension(:), allocatable   :: rannum
+ real(kind=R8KIND),parameter:: thousnd = 1000._R8KIND
+ real(kind=R8KIND):: wrk(1)
+ real(kind=R8KIND),dimension(:), allocatable   :: rannum
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -361,7 +361,7 @@
 
 !initialization of the forecast hour:
  if(.not. config_do_restart) then
-    fhour = 0._RKIND
+    fhour = 0._R8KIND
  endif
 
 !initialization of ozone climatology:
@@ -417,8 +417,8 @@
 
 !local pointers:
  integer,pointer:: nCells
- real(kind=RKIND),dimension(:),pointer:: latCell,lonCell
- real(kind=RKIND),dimension(:,:),pointer:: east,north
+ real(kind=R8KIND),dimension(:),pointer:: latCell,lonCell
+ real(kind=R8KIND),dimension(:,:),pointer:: east,north
 
 !local variables:
  integer:: iCell
@@ -454,8 +454,8 @@
 !=================================================================================================================
 !normalizes the vector (ax, ay, az)
 
- real (kind=RKIND), intent(inout) :: ax, ay, az
- real (kind=RKIND) :: mi
+ real (kind=R8KIND), intent(inout) :: ax, ay, az
+ real (kind=R8KIND) :: mi
 
 !-----------------------------------------------------------------------------------------------------------------
 

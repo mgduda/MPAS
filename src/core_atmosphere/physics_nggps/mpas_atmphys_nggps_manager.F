@@ -31,9 +31,9 @@
  integer,public:: second               !Current second.
  integer,public:: msecond              !Current milli-second.
  integer,public:: julday               !Initial Julian day.
- real(kind=RKIND),public:: curr_julday !Current Julian day (= 0.0 at 0Z on January 1st).
- real(kind=RKIND),public:: gmt         !Greenwich mean time hour of model start (hr)
- real(kind=RKIND),public:: utc_h       !UTC time in hours.
+ real(kind=R8KIND),public:: curr_julday !Current Julian day (= 0.0 at 0Z on January 1st).
+ real(kind=R8KIND),public:: gmt         !Greenwich mean time hour of model start (hr)
+ real(kind=R8KIND),public:: utc_h       !UTC time in hours.
 
 !defines alarms for calling the long- and short-wave radiation codes:
  character(len=*),parameter:: radtlwAlarmID = 'radtlw'
@@ -70,8 +70,8 @@
 
 !input arguments:
  integer,intent(in):: itimestep
- real(kind=RKIND),intent(in):: dt
- real(kind=RKIND),intent(in):: xtime_s
+ real(kind=R8KIND),intent(in):: dt
+ real(kind=R8KIND),intent(in):: xtime_s
 
 !inout arguments:
  type(MPAS_Clock_type),intent(inout):: clock
@@ -92,8 +92,8 @@
 
  logical:: LeapYear
  integer:: ierr
- real(kind=RKIND):: utc_s
- real(kind=RKIND):: xtime_m
+ real(kind=R8KIND):: utc_s
+ real(kind=R8KIND):: xtime_m
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -223,7 +223,7 @@
                                   config_greeness_update, &
                                   config_ozone_update
 
- real(kind=RKIND),pointer:: config_dt
+ real(kind=R8KIND),pointer:: config_dt
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime

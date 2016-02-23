@@ -1,83 +1,83 @@
  <var_struct name="nggps_tbd_ddt" time_levs="1">
 
-    <var name="acv" type="real" dimensions="nCells Time" units="dimensionless"
+    <var name="acv" type="real" precision="8" dimensions="nCells Time" units="dimensionless"
          description="array containing accumulated convective clouds"
     />
-    <var name="acvb" type="real" dimensions="nCells Time" units="dimensionless"
+    <var name="acvb" type="real" precision="8" dimensions="nCells Time" units="dimensionless"
          description="arrays used by cnvc90 bottom"
     />
-    <var name="acvt" type="real" dimensions="nCells Time" units="dimensionless"
+    <var name="acvt" type="real" precision="8" dimensions="nCells Time" units="dimensionless"
          description="arrays used by cnvc90 top"
     />
-    <var name="sh2o" name_in_code="slc" type="real" dimensions="nSoilLevels nCells Time" units="?"
+    <var name="sh2o" name_in_code="slc" type="real" precision="8" dimensions="nSoilLevels nCells Time" units="?"
          description="liquid soil temperature"
     />
-    <var name="smois" name_in_code="smc" type="real" dimensions="nSoilLevels nCells Time" units="?"
+    <var name="smois" name_in_code="smc" type="real" precision="8" dimensions="nSoilLevels nCells Time" units="?"
          description="total soil moisture"
     />
-    <var name="tslb" name_in_code="stc" type="real" dimensions="nSoilLevels nCells Time" units="K"
+    <var name="tslb" name_in_code="stc" type="real" precision="8" dimensions="nSoilLevels nCells Time" units="K"
          description="soil temperature"
     />
-    <var name="upd_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+    <var name="upd_mf" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
          description="convective updraft mass flux"
     />
-    <var name="dwn_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+    <var name="dwn_mf" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
          description="convective downdraft mass flux"
     />
-    <var name="det_mf" type="real" dimensions="nVertLevels nCells Time" units="?"
+    <var name="det_mf" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
          description="convective detrainment mass flux"
     />
-    <var name="tprcp" type="real" dimensions="nCells Time" units="?"
+    <var name="tprcp" type="real" precision="8" dimensions="nCells Time" units="?"
          description="total precipitation"
     />
-    <var name="srflag" type="real" dimensions="nCells Time" units="?"
+    <var name="srflag" type="real" precision="8" dimensions="nCells Time" units="?"
          description="snow/rain flag for precipitation"
     />
-        <var name="tref" type="real" dimensions="nCells Time" units="K"
+        <var name="tref" type="real" precision="8" dimensions="nCells Time" units="K"
          description="reference Temperature"
     />
-    <var name="z_c" type="real" dimensions="nCells Time" units="?"
+    <var name="z_c" type="real" precision="8" dimensions="nCells Time" units="?"
          description="sub-layer cooling thickness"
     />
-    <var name="c_0" type="real" dimensions="nCells Time" units="?"
+    <var name="c_0" type="real" precision="8" dimensions="nCells Time" units="?"
          description="coefficient1 to calculate d(Tz)/d(Ts)"
     />
-    <var name="c_d" type="real" dimensions="nCells Time" units="?"
+    <var name="c_d" type="real" precision="8" dimensions="nCells Time" units="?"
          description="coefficient2 to calculate d(Tz)/d(Ts)"
     />
-    <var name="w_0" type="real" dimensions="nCells Time" units="?"
+    <var name="w_0" type="real" precision="8" dimensions="nCells Time" units="?"
          description="coefficient3 to calculate d(Tz)/d(Ts)"
     />
-    <var name="w_d" type="real" dimensions="nCells Time" units="?"
+    <var name="w_d" type="real" precision="8" dimensions="nCells Time" units="?"
          description="coefficient3 to calculate d(Tz)/d(Ts)"
     />
-    <var name="phy_f2d" type="real" dimensions="numP2d nCells Time" units="-"
+    <var name="phy_f2d" type="real" precision="8" dimensions="numP2d nCells Time" units="-"
          description="2-dimensional restart arrays"
     />
-    <var name="phy_f3d" type="real" dimensions="numP3d nVertLevels nCells Time" units="-"
+    <var name="phy_f3d" type="real" precision="8" dimensions="numP3d nVertLevels nCells Time" units="-"
          description="3-dimensional restart arrays"
     />
 
-    <var name="gscond_psp" type="real" dimensions="nCells Time" units="Pa"
+    <var name="gscond_psp" type="real" precision="8" dimensions="nCells Time" units="Pa"
          description="same as phy_f2d(:,1)"
     />
-    <var name="gscond_psp1" type="real" dimensions="nCells Time" units="Pa"
+    <var name="gscond_psp1" type="real" precision="8" dimensions="nCells Time" units="Pa"
          description="same as phy_f2d(:,2)"
     />
-    <var name="gscond_tp" type="real" dimensions="nVertLevels nCells Time" units="K"
+    <var name="gscond_tp" type="real" precision="8" dimensions="nVertLevels nCells Time" units="K"
          description="same as phy_f3d(:,:,1)"
     />
-    <var name="gscond_qp" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+    <var name="gscond_qp" type="real" precision="8" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="same as phy_f3d(:,:,2)"
     />
-    <var name="gscond_tp1" type="real" dimensions="nVertLevels nCells Time" units="K"
+    <var name="gscond_tp1" type="real" precision="8" dimensions="nVertLevels nCells Time" units="K"
          description="same as phy_f3d(:,:,3)"
     />
-    <var name="gscond_qp1" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+    <var name="gscond_qp1" type="real" precision="8" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="same as phy_f3d(:,:,4)"
     />
 
-    <var name="rannum_tank" type="real" dimensions="maxran nCells Time" units="-"
+    <var name="rannum_tank" type="real" precision="8" dimensions="maxran nCells Time" units="-"
          description="tank of random numbers"
     />
 

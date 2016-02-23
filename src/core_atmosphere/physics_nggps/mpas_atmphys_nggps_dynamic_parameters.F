@@ -39,10 +39,10 @@
 
  end type
 
- real(kind=RKIND):: cdec,sdec,slag
+ real(kind=R8KIND):: cdec,sdec,slag
 
- real(kind=RKIND),parameter:: cons_24 = 24._RKIND
- real(kind=RKIND),parameter:: cons_99 = 99._RKIND
+ real(kind=R8KIND),parameter:: cons_24 = 24._R8KIND
+ real(kind=R8KIND),parameter:: cons_99 = 99._R8KIND
 
 !modifications to sourcecode:
 !----------------------------
@@ -101,7 +101,7 @@
  type(mpas_pool_type),intent(in):: configs
 
  integer,intent(in):: itimestep
- real(kind=RKIND),intent(in):: xtime_s
+ real(kind=R8KIND),intent(in):: xtime_s
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters 
@@ -111,9 +111,9 @@
  character(len=StrKIND),pointer:: initial_timeStamp
  integer,pointer:: nCellsSolve
 
- real(kind=RKIND),pointer:: fhour
- real(kind=RKIND),pointer:: config_dt
- real(kind=RKIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
+ real(kind=R8KIND),pointer:: fhour
+ real(kind=R8KIND),pointer:: config_dt
+ real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
 
  integer,dimension(:),pointer:: icsdlw_l,icsdsw_l
 
@@ -122,8 +122,8 @@
  integer:: iCell,ipt,im,ix,kdt,n
  integer:: me,latr,lonr
 
- real(kind=RKIND):: deltim,dtlw,dtsw,xtime_h
- real(kind=RKIND):: solcon,solhr
+ real(kind=R8KIND):: deltim,dtlw,dtsw,xtime_h
+ real(kind=R8KIND):: solcon,solhr
 
 !variables used for random number generator:
  type(random_stat):: stat
@@ -158,14 +158,14 @@
  idat(:) = mdl_parameters%idat(:)
 
 !... date conversion:
- xtime_h = xtime_s/3600._RKIND
+ xtime_h = xtime_s/3600._R8KIND
  write(0,100) itimestep
  write(0,101) itimestep,year,month,day,hour,julday,curr_julday,utc_h,xtime_h
  write(0,*) 'Initial timeStamp ',trim(initial_timeStamp)
  write(0,*) 'Current timeStamp ',trim(physics_timeStamp)
 
  if(trim(physics_timeStamp) /= trim(initial_timeStamp)) &
-    fhour = fhour + config_dt / 3600._RKIND
+    fhour = fhour + config_dt / 3600._R8KIND
 
  solhr = mod(utc_h,cons_24)
  lslwr  = l_radtlw
@@ -205,7 +205,7 @@
  if(.not.allocated(numrdm)) allocate(numrdm(2*nCellsSolve))
  if(.not.allocated(ixseed)) allocate(ixseed(1:nCellsSolve,1,2))
 
- ipseed = mod(nint(100.0*sqrt(fhour*3600._RKIND)),ipsdlim) + 1 + ipsd0
+ ipseed = mod(nint(100.0*sqrt(fhour*3600._R8KIND)),ipsdlim) + 1 + ipsd0
  write(0,*) '--- ipseed    = ', ipseed
  call random_setseed(ipseed,stat)
  write(0,*) '--- end random_setseed:'
@@ -276,7 +276,7 @@
  type(mpas_pool_type),intent(in):: configs
 
  integer,intent(in):: itimestep
- real(kind=RKIND),intent(in):: xtime_s
+ real(kind=R8KIND),intent(in):: xtime_s
 
 !inout arguments:
  type(mpas_pool_type),intent(inout):: nggps_dynamic_parameters
@@ -287,19 +287,19 @@
  integer,pointer:: nCellsSolve
  integer,dimension(:),pointer:: nlonsCell
 
- real(kind=RKIND),pointer:: fhour
- real(kind=RKIND),pointer:: config_dt
- real(kind=RKIND),dimension(:),pointer:: areaCell
- real(kind=RKIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
+ real(kind=R8KIND),pointer:: fhour
+ real(kind=R8KIND),pointer:: config_dt
+ real(kind=R8KIND),dimension(:),pointer:: areaCell
+ real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
 
 !local variables:
  logical:: lscca,lssav,lslwr,lsswr
 
  integer:: iCell,im,ix,kdt,lat,nnp,nsswr
 
- real(kind=RKIND),parameter:: tol = 0.01
- real(kind=RKIND):: clstp,dtf,dtp,fhswr,xtime_h
- real(kind=RKIND):: solhr
+ real(kind=R8KIND),parameter:: tol = 0.01
+ real(kind=R8KIND):: clstp,dtf,dtp,fhswr,xtime_h
+ real(kind=R8KIND):: solhr
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -320,7 +320,7 @@
  lsswr = l_radtsw
 
 !... date conversion:
- xtime_h = xtime_s/3600._RKIND
+ xtime_h = xtime_s/3600._R8KIND
  write(0,100) itimestep
  write(0,101) itimestep,year,month,day,hour,julday,curr_julday,utc_h,xtime_h
  write(0,*)
@@ -331,16 +331,16 @@
 
  if(trim(physics_timeStamp) /= trim(initial_timeStamp)) then
     if(.not. lslwr .and. .not.lslwr) &
-    fhour = fhour + config_dt / 3600._RKIND
+    fhour = fhour + config_dt / 3600._R8KIND
  endif
 
  solhr = mod(utc_h,cons_24)
 
 !... initialization of variable clstp needed in the calculation of bottom and top pressures for
 !... convective clouds (Ken Campana diagnostics). set switch for saving convective clouds:
- fhswr = dt_radtsw / 3600._RKIND !frequency of shortwave radiation calls per hour.
- nsswr=nint(fhswr*3600._RKIND/config_dt)
- if(nsswr.le.0.or.abs(nsswr-fhswr*3600._RKIND/config_dt).gt.tol) &
+ fhswr = dt_radtsw / 3600._R8KIND !frequency of shortwave radiation calls per hour.
+ nsswr=nint(fhswr*3600._R8KIND/config_dt)
+ if(nsswr.le.0.or.abs(nsswr-fhswr*3600._R8KIND/config_dt).gt.tol) &
     call physics_error_fatal('--- Error in mpas_dyn_param_setphys: nsswr < 0')
 
  lscca = mod(itimestep,nsswr) == 0

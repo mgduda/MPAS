@@ -49,9 +49,9 @@
  integer,pointer:: nCells
  integer,pointer:: nOznLevels,nOznPlCoeff,nMonths
 
- real(kind=RKIND),dimension(:),pointer:: latCell
- real(kind=RKIND),dimension(:),pointer:: pl_pres,pl_time
- real(kind=RKIND),dimension(:,:,:,:),pointer:: ozmixm
+ real(kind=R8KIND),dimension(:),pointer:: latCell
+ real(kind=R8KIND),dimension(:),pointer:: pl_pres,pl_time
+ real(kind=R8KIND),dimension(:,:,:,:),pointer:: ozmixm
 
 !local variables:
  integer,parameter:: open_ok  = 0
@@ -61,10 +61,10 @@
  integer:: ilat,ilev,itime,istat
  integer:: jo,j1,j2
 
- real(kind=RKIND):: dy2y1,ry2y1,ry2y,ryy1,ylat
+ real(kind=R8KIND):: dy2y1,ry2y1,ry2y,ryy1,ylat
  real(kind=4),dimension(:),allocatable:: pl_lat4,pl_pres4,pl_time4,tempin
- real(kind=RKIND),dimension(:),allocatable:: pl_lat
- real(kind=RKIND),dimension(:,:,:,:),allocatable:: ozplin
+ real(kind=R8KIND),dimension(:),allocatable:: pl_lat
+ real(kind=R8KIND),dimension(:,:,:,:),allocatable:: ozplin
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*)
@@ -124,7 +124,7 @@
     blatc   = 0.0
  endif
  dphiozc    = -(blatc+blatc)/(latsozc-1)
- pl_pres(:) = log(100._RKIND*pl_pres(:))
+ pl_pres(:) = log(100._R8KIND*pl_pres(:))
 
  write(0,*) '... latsozp  = ',latsozp
  write(0,*) '... levozp   = ',levozp
@@ -230,13 +230,13 @@
  integer,pointer:: nOznLevels,nOznPlCoeff,nMonths
  integer,pointer:: nCellsSolve
 
- real(kind=RKIND),dimension(:,:,:),pointer:: ozmix
- real(kind=RKIND),dimension(:,:,:,:),pointer:: ozmixm
+ real(kind=R8KIND),dimension(:,:,:),pointer:: ozmix
+ real(kind=R8KIND),dimension(:,:,:,:),pointer:: ozmixm
 
 !local variables:
  integer:: iCell,iM,k,nc
- real(kind=RKIND),dimension(:),allocatable  :: datout
- real(kind=RKIND),dimension(:,:),allocatable:: datin
+ real(kind=R8KIND),dimension(:),allocatable  :: datout
+ real(kind=R8KIND),dimension(:,:),allocatable:: datin
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)

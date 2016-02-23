@@ -38,15 +38,15 @@
  logical:: l_radtlw                   !controls call to longwave radiation parameterization.
  logical:: l_radtsw                   !controls call to shortwave radiation parameterization.
 
- real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
- real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]
- real(kind=RKIND),public:: dt_radtsw  !time-step for shortwave radiation parameterization [mns]
+ real(kind=R8KIND),public:: dt_dyn     !time-step for dynamics
+ real(kind=R8KIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]
+ real(kind=R8KIND),public:: dt_radtsw  !time-step for shortwave radiation parameterization [mns]
 
 !... parameters needed for the calculation of random numbers:
 integer:: seed0
 
 !... initial values for the surface roughness length as a function of the vegetation type:
- real(kind=RKIND),dimension(13):: z0_sib
+ real(kind=R8KIND),dimension(13):: z0_sib
  data z0_sib /2.653,0.826,0.563,1.089,0.854,0.856,0.035,0.238,0.065,0.076,0.011,0.035,0.011/
 
 !=================================================================================================================
@@ -154,7 +154,7 @@ integer:: seed0
     qgrs               !
 
 !... ADDITIONAL MPAS ARRAYS NEEDED FOR THE INITIALIZATION OF "STATE_FIELDS_IN" ARRAYS:
- real(kind=RKIND),dimension(:),allocatable:: &
+ real(kind=R8KIND),dimension(:),allocatable:: &
     pgr_hyd            !
 
  real(kind=kind_phys),dimension(:,:),allocatable:: &

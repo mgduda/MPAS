@@ -627,7 +627,7 @@ module atm_core
       integer, pointer :: nCells, nVertLevels, index_qv
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
       real (kind=RKIND), dimension(:,:), pointer :: pressure_base, pressure_p, pressure
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
@@ -680,7 +680,7 @@ module atm_core
       integer :: iCell, k
       integer, pointer :: nCells, nVertLevels, index_qv
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
-      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)

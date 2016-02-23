@@ -1,216 +1,216 @@
  <var_struct name="nggps_interface_fields" time_levs="1">
 
-   <var name="sfcnirbmd" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcnirbmd" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcnirdfd" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcnirdfd" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcnirbmu" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcnirbmu" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcnirdfu" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcnirdfu" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcvisbmd" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcvisbmd" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcvisdfd" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcvisdfd" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcvisbmu" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcvisbmu" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcvisdfu" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcvisdfu" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="  "
    />
-   <var name="sfcswup" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcswup" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="total sky upward sw flux at sfc"
    />
-   <var name="sfcswdn" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcswdn" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="total sky downward sw flux at sfc"
    />
-   <var name="sfcswupc" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcswupc" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="clear sky upward sw flux at sfc"
    />
-   <var name="sfcswdnc" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfcswdnc" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="clear sky downward sw flux at sfc"
    />
-   <var name="sfclwup" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfclwup" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="total sky upward lw flux at sfc"
    />
-    <var name="sfclwdn" type="real" dimensions="nCells Time" units="W m^{-2}"
+    <var name="sfclwdn" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="total sky downward lw flux at sfc"
    />
-   <var name="sfclwupc" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfclwupc" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="clear sky upward lw flux at sfc"
    />
-   <var name="sfclwdnc" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="sfclwdnc" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="clear sky downward lw flux at sfc"
    />
-   <var name="htrlw0" type="real" dimensions="nVertLevels nCells Time" units="?"
+   <var name="htrlw0" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
         description="new ?"
    />
-   <var name="htrsw0" type="real" dimensions="nVertLevels nCells Time" units="?"
+   <var name="htrsw0" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
         description="new ?"
    />
-   <var name="dusfc_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dusfc_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc u momentum flux for A/O/I coupling"
    />
-   <var name="dvsfc_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dvsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc v momentum flux for A/O/I coupling"
    />
-   <var name="dtsfc_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dtsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc sensible heat flux for A/O/I coupling"
    />
-   <var name="dqsfc_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dqsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc latent heat flux for A/O/I coupling"
    />
-   <var name="dlwsfc_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dlwsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc dnwd lw flux for A/O/I coupling"
    />
-   <var name="dswsfc_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dswsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc dnwd sw flux for A/O/I coupling"
    />
-   <var name="dnirbm_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dnirbm_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc nir beam dnwd sw rad flux"
    />
-   <var name="dnirdf_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dnirdf_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc nir diff dnwd sw rad flux"
    />
-   <var name="dvisbm_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dvisbm_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc uv+vis beam dnwd sw rad flux"
    />
-   <var name="dvisdf_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="dvisdf_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="sfc uv+vis diff dnwd sw rad flux"
    />
-   <var name="rain_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="rain_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="total precipitation for A/O/I coupling"
    />
-   <var name="nlwsfc_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nlwsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net dnwd lw flux for A/O/I coupling"
    />
-   <var name="nswsfc_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nswsfc_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net dnwd sw flux for A/O/I coupling"
    />
-   <var name="nnirbm_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nnirbm_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net nir beam dnwd sw rad flux"
    />
-   <var name="nnirdf_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nnirdf_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net nir diff dnwd sw rad flux"
    />
-   <var name="nvisbm_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nvisbm_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net uv+vis beam dnwd sw rad flux"
    />
-   <var name="nvisdf_cpl" type="real" dimensions="nCells Time" units="W m^{-2}"
+   <var name="nvisdf_cpl" type="real" precision="8" dimensions="nCells Time" units="W m^{-2}"
         description="net uv+vis diff dnwd sw rad flux"
    />
-   <var name="xt" type="real" dimensions="nCells Time" units="?"
+   <var name="xt" type="real" precision="8" dimensions="nCells Time" units="?"
         description="heat content in DTL"
    />
-   <var name="xs" type="real" dimensions="nCells Time" units="?"
+   <var name="xs" type="real" precision="8" dimensions="nCells Time" units="?"
         description="salinity  content in DTL"
    />
-   <var name="xu" type="real" dimensions="nCells Time" units="?"
+   <var name="xu" type="real" precision="8" dimensions="nCells Time" units="?"
         description="u current content in DTL"
    />
-   <var name="xv" type="real" dimensions="nCells Time" units="?"
+   <var name="xv" type="real" precision="8" dimensions="nCells Time" units="?"
         description="v current content in DTL"
    />
-   <var name="xz" type="real" dimensions="nCells Time" units="?"
+   <var name="xz" type="real" precision="8" dimensions="nCells Time" units="?"
         description="DTL thickness"
    />
-   <var name="zm" type="real" dimensions="nCells Time" units="?"
+   <var name="zm" type="real" precision="8" dimensions="nCells Time" units="?"
         description="MXL thickness"
    />
-   <var name="xtts" type="real" dimensions="nCells Time" units="?"
+   <var name="xtts" type="real" precision="8" dimensions="nCells Time" units="?"
         description="d(xt)/d(ts)"
    />
-   <var name="xzts" type="real" dimensions="nCells Time" units="?"
+   <var name="xzts" type="real" precision="8" dimensions="nCells Time" units="?"
         description="d(xz)/d(ts)"
    />
-   <var name="d_conv" type="real" dimensions="nCells Time" units="?"
+   <var name="d_conv" type="real" precision="8" dimensions="nCells Time" units="?"
         description="thickness of Free Convection Layer (FCL)"
    />
-   <var name="ifd" type="real" dimensions="nCells Time" units="?"
+   <var name="ifd" type="real" precision="8" dimensions="nCells Time" units="?"
         description="index to start DTM run or not"
    />
-   <var name="dt_cool" type="real" dimensions="nCells Time" units="?"
+   <var name="dt_cool" type="real" precision="8" dimensions="nCells Time" units="?"
         description="Sub layer cooling amount"
    />
-   <var name="qrain" type="real" dimensions="nCells Time" units="Watts"
+   <var name="qrain" type="real" precision="8" dimensions="nCells Time" units="Watts"
         description="sensible heat flux due to rainfall"
    />
-   <var name="dusfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dusfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc u momentum flux at time step AOI cpl"
    />
-   <var name="dvsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dvsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc v momentum flux at time step AOI cpl"
    />
-   <var name="dtsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dtsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc sensible heat flux at time step AOI cpl"
    />
-   <var name="dqsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dqsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc latent heat flux at time step AOI cpl"
    />
-   <var name="dlwsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dlwsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc dnwd lw flux at time step AOI cpl"
    />
-   <var name="dswsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dswsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc dnwd sw flux at time step AOI cpl"
    />
-   <var name="dnirbmi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dnirbmi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc nir beam dnwd sw flx rad at time step"
    />
-   <var name="dnirdfi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dnirdfi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc nir diff dnwd sw flx rad at time step"
    />
-   <var name="dvisbmi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dvisbmi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc uv+vis beam dnwd sw flx at time step"
    />
-   <var name="dvisdfi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="dvisdfi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc uv+vis diff dnwd sw flx at time step"
    />
-   <var name="nlwsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nlwsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net sfc dnwd lw flux at time step AOI cpl"
    />
-   <var name="nswsfci_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nswsfci_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net sfc dnwd sw flux at time step AOI cpl"
    />
-   <var name="nnirbmi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nnirbmi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net nir beam dnwd sw flx rad at time step"
    />
-   <var name="nnirdfi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nnirdfi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net nir diff dnwd sw flx rad at time step"
    />
-   <var name="nvisbmi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nvisbmi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net uv+vis beam dnwd sw flx at time step"
    />
-   <var name="nvisdfi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="nvisdfi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="net uv+vis diff dnwd sw flx at time step"
    />
-   <var name="t2mi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="t2mi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="T2m at time step AOI cpl"
    />
-   <var name="q2mi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="q2mi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="Q2m at time step AOI cpl"
    />
-   <var name="u10mi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="u10mi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="U10m at time step AOI cpl"
    />
-   <var name="v10mi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="v10mi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="V10m at time step AOI cpl"
    />
-   <var name="tseai_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="tseai_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc temp at time step AOI cpl"
    />
-   <var name="psurfi_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="psurfi_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="sfc pressure at time step AOI cpl"
    />
-   <var name="oro_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="oro_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="orography AOI cpl"
    />
-   <var name="slmsk_cpl" type="real" dimensions="nCells Time" units="?"
+   <var name="slmsk_cpl" type="real" precision="8" dimensions="nCells Time" units="?"
         description="land/Sea/Ice AOI cpl"
    />
 

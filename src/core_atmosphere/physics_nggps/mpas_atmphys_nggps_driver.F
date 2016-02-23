@@ -46,7 +46,7 @@
 
 !input arguments:
  integer,intent(in):: itimestep
- real(kind=RKIND),intent(in):: xtime_s
+ real(kind=R8KIND),intent(in):: xtime_s
 
 !inout arguments:
  type(domain_type),intent(inout):: domain

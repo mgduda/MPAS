@@ -1,37 +1,48 @@
  <var_struct name="nggps_cloud_properties" time_levs="1">
 
-    <var name="cv" type="real" dimensions="nCells Time" units="dimensionless" 
+    <var name="cv" type="real" precision="8" dimensions="nCells Time" units="dimensionless" 
          description="convective cloud amount"
+         precision="8"
     />
-    <var name="cvb" type="real" dimensions="nCells Time" units="Pa" 
+    <var name="cvb" type="real" precision="8" dimensions="nCells Time" units="Pa" 
          description="convective cloud base pressure"
+         precision="8"
     />
-    <var name="cvt" type="real" dimensions="nCells Time" units="Pa" 
+    <var name="cvt" type="real" precision="8" dimensions="nCells Time" units="Pa" 
          description="convective cloud top pressure"
+         precision="8"
     />
-    <var name="cnvw" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+    <var name="cnvw" type="real" precision="8" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="layer convective cloud water"
+         precision="8"
     />
-    <var name="cnvc" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+    <var name="cnvc" type="real" precision="8" dimensions="nVertLevels nCells Time" units="dimensionless"
          description="layer convective cloud fraction"
+         precision="8"
     />
-    <var name="cnvqc_v" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+    <var name="cnvqc_v" type="real" precision="8" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="total convective condensate"
+         precision="8"
     />
-    <var name="cldcov" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+    <var name="cldcov" type="real" precision="8" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
          description="total convective condensate"
+         precision="8"
     />
-    <var name="deltaq" type="real" dimensions="nVertLevels nCells Time" units="?"
+    <var name="deltaq" type="real" precision="8" dimensions="nVertLevels nCells Time" units="?"
          description="half-width of uniform total water distribution"
+         precision="8"
     />
-    <var name="fcice" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+    <var name="fcice" type="real" precision="8" dimensions="nVertLevels nCells Time" units="dimensionless"
          description="fraction of ice clouds (Ferrier scheme)"
+         precision="8"
     />
-    <var name="frain" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+    <var name="frain" type="real" precision="8" dimensions="nVertLevels nCells Time" units="dimensionless"
          description="fraction of rain water (Ferrier scheme)"
+         precision="8"
     />
-    <var name="rrime" type="real" dimensions="nVertLevels nCells Time" units="dimensionless"
+    <var name="rrime" type="real" precision="8" dimensions="nVertLevels nCells Time" units="dimensionless"
          description="mass ratio of total to unrimed ice (Ferrier scheme)"
+         precision="8"
     />
 
  </var_struct>

@@ -120,7 +120,7 @@
 
 !local pointers:
  integer, pointer:: nCellsSolve,nVertLevels
- real(kind=RKIND),dimension(:),pointer:: srunoff,evbsa,evcwa,snohfa,transa,sbsnoa,snowca,soilm,tmpmin,tmpmax,   &
+ real(kind=R8KIND),dimension(:),pointer:: srunoff,evbsa,evcwa,snohfa,transa,sbsnoa,snowca,soilm,tmpmin,tmpmax,   &
                                          dusfc,dvsfc,dtsfc,dqsfc,totprcp,gflux,dlwsfc,ulwsfc,suntim,runoff,ep,  &
                                          cldwrk,dugwd,dvgwd,psmean,cnvprcp,spfhmin,spfhmax,rain,rainc,u10m,     &
                                          v10m,zlvl,psurf,hpbl,pwat,t1,q1,u1,v1,chh,cmm,dlwsfci,ulwsfci,dswsfci, &
@@ -234,8 +234,8 @@
 
 !local pointers:
  integer,pointer:: nFxr,nCellsSolve
- real(kind=RKIND),dimension(:),pointer  :: toplwup,toplwupc,topswup,topswupc,topswdn
- real(kind=RKIND),dimension(:,:),pointer:: fluxr,dswcmp,uswcmp
+ real(kind=R8KIND),dimension(:),pointer  :: toplwup,toplwupc,topswup,topswupc,topswdn
+ real(kind=R8KIND),dimension(:,:),pointer:: fluxr,dswcmp,uswcmp
 
  type(topflw_type),dimension(:),pointer:: topflw_l
  type(topfsw_type),dimension(:),pointer:: topfsw_l
@@ -301,7 +301,7 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve
- real(kind=RKIND),dimension(:),pointer:: srunoff,evbsa,evcwa,snohfa,transa,sbsnoa,snowca,soilm,tmpmin,tmpmax,   &
+ real(kind=R8KIND),dimension(:),pointer:: srunoff,evbsa,evcwa,snohfa,transa,sbsnoa,snowca,soilm,tmpmin,tmpmax,   &
                                          dusfc,dvsfc,dtsfc,dqsfc,totprcp,gflux,dlwsfc,ulwsfc,suntim,runoff,ep,  &
                                          cldwrk,dugwd,dvgwd,psmean,cnvprcp,spfhmin,spfhmax,rain,rainc,u10m,     &
                                          v10m,zlvl,psurf,hpbl,pwat,t1,q1,u1,v1,chh,cmm,dlwsfci,ulwsfci,dswsfci, &

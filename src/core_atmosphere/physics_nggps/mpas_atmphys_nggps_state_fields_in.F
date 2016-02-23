@@ -182,14 +182,14 @@
  integer,pointer:: nCellsSolve,nVertLevels
  integer,pointer:: index_qv,index_qc,index_qo3
 
- real(kind=RKIND),dimension(:,:),pointer  :: uReconstructZonal,uReconstructMeridional
- real(kind=RKIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
- real(kind=RKIND),dimension(:,:),pointer  :: rho,theta_m,w
- real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qo3
- real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=R8KIND),dimension(:,:),pointer  :: uReconstructZonal,uReconstructMeridional
+ real(kind=R8KIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
+ real(kind=R8KIND),dimension(:,:),pointer  :: rho,theta_m,w
+ real(kind=R8KIND),dimension(:,:),pointer  :: qv,qc,qo3
+ real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
  
- real(kind=RKIND):: tem1,tem2,rho1,rho2,z0,z1,z2,w1,w2
- real(kind=RKIND):: sph
+ real(kind=R8KIND):: tem1,tem2,rho1,rho2,z0,z1,z2,w1,w2
+ real(kind=R8KIND):: sph
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*) '--- enter subroutine mpas_state_fld_setphys_in:'
@@ -307,8 +307,8 @@
 
     tem1 = zgrid(2,iCell)-zgrid(1,iCell)
     tem2 = zgrid(3,iCell)-zgrid(2,iCell)
-    rho1 = rho(1,iCell)*zz(1,iCell)*(1._RKIND + qv(1,iCell))
-    rho2 = rho(2,iCell)*zz(2,iCell)*(1._RKIND + qv(2,iCell))
+    rho1 = rho(1,iCell)*zz(1,iCell)*(1._R8KIND + qv(1,iCell))
+    rho2 = rho(2,iCell)*zz(2,iCell)*(1._R8KIND + qv(2,iCell))
     prsi(iCell,k) = 0.5*gravity*(zgrid(2,iCell)-zgrid(1,iCell)) &
                   * (rho1 - 0.5*(rho2-rho1)*tem1/(tem1+tem2))
     prsi(iCell,k) = prsi(iCell,k) + prsl(iCell,k)
@@ -333,7 +333,7 @@
 !... check that the pressure at the surface and layer adjacent next to the surface are not negative:
  do k = 1,nVertLevels
     do iCell = 1,nCellsSolve
-       if(prsl(iCell,k) .le. 0._RKIND .or. prsi(iCell,k) .le. 0._RKIND) then
+       if(prsl(iCell,k) .le. 0._R8KIND .or. prsi(iCell,k) .le. 0._R8KIND) then
           do kk = 1, nVertLevels
              write(0,202) iCell,k,kk,prsl(iCell,kk),prsi(iCell,kk)
           enddo
@@ -364,19 +364,19 @@
 !... layer specific humidity and "tracer" mixing ratios used in radiation, and mixing ratios used in other
 !... physics parameterizations:
  do k = 1, ntrac
-    adjtrc(k) = 1._RKIND
+    adjtrc(k) = 1._R8KIND
  enddo
 
  do k = 1, nVertLevels
  do iCell = 1,nCellsSolve
-    tracer(iCell,k,:) = 0._RKIND
-    qgrs(iCell,k,:)   = 0._RKIND
+    tracer(iCell,k,:) = 0._R8KIND
+    qgrs(iCell,k,:)   = 0._R8KIND
  enddo
  enddo
 
  do k = 1, nVertLevels
     do iCell = 1, nCellsSolve
-       sph = 1._RKIND/(1._RKIND + qv(k,iCell))
+       sph = 1._R8KIND/(1._R8KIND + qv(k,iCell))
 
        !... for radiation:
        qgrs_rad(iCell,k) = qv(k,iCell)  * sph

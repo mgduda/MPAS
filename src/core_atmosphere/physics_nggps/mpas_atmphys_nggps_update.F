@@ -30,7 +30,7 @@
 
 !input arguments:
  type(domain_type),intent(in):: domain
- real(kind=RKIND),intent(in) :: dt 
+ real(kind=R8KIND),intent(in) :: dt 
 
 !local variables:
  type(block_type),pointer:: block
@@ -57,7 +57,7 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
 
- real(kind=RKIND),dimension(:),pointer:: psmean,suntim,dlwsfc,ulwsfc,gflux,evbsa,evcwa,transa, &
+ real(kind=R8KIND),dimension(:),pointer:: psmean,suntim,dlwsfc,ulwsfc,gflux,evbsa,evcwa,transa, &
                                         sbsnoa,snowca,snohfa,ep,dusfc,dvsfc,dtsfc,dqsfc,dugwd, &  
                                         dvgwd,cldwrk,cnvprcp,totprcp,runoff,srunoff,tmpmax,    &
                                         tmpmin,spfhmax,spfhmin
@@ -100,33 +100,33 @@
  call mpas_pool_get_array(nggps_diagnostics,'spfhmin',spfhmin)
 
  do iCell = 1, nCellsSolve
-    psmean(iCell)  = 0._RKIND
-    suntim(iCell)  = 0._RKIND
-    dlwsfc(iCell)  = 0._RKIND
-    ulwsfc(iCell)  = 0._RKIND
-    gflux(iCell)   = 0._RKIND
-    evbsa(iCell)   = 0._RKIND
-    evcwa(iCell)   = 0._RKIND
-    transa(iCell)  = 0._RKIND
-    sbsnoa(iCell)  = 0._RKIND
-    snowca(iCell)  = 0._RKIND
-    snohfa(iCell)  = 0._RKIND
-    ep(iCell)      = 0._RKIND
-    dusfc(iCell)   = 0._RKIND
-    dvsfc(iCell)   = 0._RKIND
-    dtsfc(iCell)   = 0._RKIND
-    dqsfc(iCell)   = 0._RKIND
-    dugwd(iCell)   = 0._RKIND
-    dvgwd(iCell)   = 0._RKIND
-    cldwrk(iCell)  = 0._RKIND
-    cnvprcp(iCell) = 0._RKIND
-    totprcp(iCell) = 0._RKIND
-    runoff(iCell)  = 0._RKIND
-    srunoff(iCell) = 0._RKIND
-    tmpmax(iCell)  = 0._RKIND
-    tmpmin(iCell)  = 0._RKIND
-    spfhmax(iCell) = 0._RKIND
-    spfhmin(iCell) = 0._RKIND
+    psmean(iCell)  = 0._R8KIND
+    suntim(iCell)  = 0._R8KIND
+    dlwsfc(iCell)  = 0._R8KIND
+    ulwsfc(iCell)  = 0._R8KIND
+    gflux(iCell)   = 0._R8KIND
+    evbsa(iCell)   = 0._R8KIND
+    evcwa(iCell)   = 0._R8KIND
+    transa(iCell)  = 0._R8KIND
+    sbsnoa(iCell)  = 0._R8KIND
+    snowca(iCell)  = 0._R8KIND
+    snohfa(iCell)  = 0._R8KIND
+    ep(iCell)      = 0._R8KIND
+    dusfc(iCell)   = 0._R8KIND
+    dvsfc(iCell)   = 0._R8KIND
+    dtsfc(iCell)   = 0._R8KIND
+    dqsfc(iCell)   = 0._R8KIND
+    dugwd(iCell)   = 0._R8KIND
+    dvgwd(iCell)   = 0._R8KIND
+    cldwrk(iCell)  = 0._R8KIND
+    cnvprcp(iCell) = 0._R8KIND
+    totprcp(iCell) = 0._R8KIND
+    runoff(iCell)  = 0._R8KIND
+    srunoff(iCell) = 0._R8KIND
+    tmpmax(iCell)  = 0._R8KIND
+    tmpmin(iCell)  = 0._R8KIND
+    spfhmax(iCell) = 0._R8KIND
+    spfhmin(iCell) = 0._R8KIND
  enddo
 
 !write(0,*) '--- end subroutine physics_nggps_update_diagnostics'
