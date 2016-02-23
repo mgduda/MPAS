@@ -1541,8 +1541,16 @@ module mpas_block_creator
                         end do
 
                         if ( real1DField % isPersistent ) then
-                           allocate(real1DField % array(real1DField % dimSizes(1)))
-                           real1DField % array(:) = real1DField % defaultValue
+                           if (real1DField % array_kind == 0) then
+                              allocate(real1DField % array(real1DField % dimSizes(1)))
+                              real1DField % array(:) = real1DField % defaultValue
+                           else if (real1DField % array_kind == 4) then
+                              allocate(real1DField % array4(real1DField % dimSizes(1)))
+                              real1DField % array4(:) = real1DField % defaultValue
+                           else if (real1DField % array_kind == 8) then
+                              allocate(real1DField % array8(real1DField % dimSizes(1)))
+                              real1DField % array8(:) = real1DField % defaultValue
+                           end if
                         end if
                      end if
                   end do
@@ -1561,8 +1569,16 @@ module mpas_block_creator
                         end do
 
                         if ( real2DField % isPersistent ) then
-                           allocate(real2DField % array(real2DField % dimSizes(1), real2DField % dimSizes(2)))
-                           real2DField % array(:,:) = real2DField % defaultValue
+                           if (real2DField % array_kind == 0) then
+                              allocate(real2DField % array(real2DField % dimSizes(1), real2DField % dimSizes(2)))
+                              real2DField % array(:,:) = real2DField % defaultValue
+                           else if (real2DField % array_kind == 4) then
+                              allocate(real2DField % array4(real2DField % dimSizes(1), real2DField % dimSizes(2)))
+                              real2DField % array4(:,:) = real2DField % defaultValue
+                           else if (real2DField % array_kind == 8) then
+                              allocate(real2DField % array8(real2DField % dimSizes(1), real2DField % dimSizes(2)))
+                              real2DField % array8(:,:) = real2DField % defaultValue
+                           end if
                         end if
                      end if
                   end do
@@ -1581,8 +1597,16 @@ module mpas_block_creator
                         end do
 
                         if ( real3DField % isPersistent ) then
-                           allocate(real3DField % array(real3DField % dimSizes(1), real3DField % dimSizes(2), real3DField % dimSizes(3)))
-                           real3DField % array(:,:,:) = real3DField % defaultValue
+                           if (real3DField % array_kind == 0) then
+                              allocate(real3DField % array(real3DField % dimSizes(1), real3DField % dimSizes(2), real3DField % dimSizes(3)))
+                              real3DField % array(:,:,:) = real3DField % defaultValue
+                           else if (real3DField % array_kind == 4) then
+                              allocate(real3DField % array4(real3DField % dimSizes(1), real3DField % dimSizes(2), real3DField % dimSizes(3)))
+                              real3DField % array4(:,:,:) = real3DField % defaultValue
+                           else if (real3DField % array_kind == 8) then
+                              allocate(real3DField % array8(real3DField % dimSizes(1), real3DField % dimSizes(2), real3DField % dimSizes(3)))
+                              real3DField % array8(:,:,:) = real3DField % defaultValue
+                           end if
                         end if
                      end if
                   end do
@@ -1601,9 +1625,19 @@ module mpas_block_creator
                         end do
 
                         if ( real4DField % isPersistent ) then
-                           allocate(real4DField % array(real4DField % dimSizes(1), real4DField % dimSizes(2), &
-                                                        real4DField % dimSizes(3), real4DField % dimSizes(4)))
-                           real4DField % array(:,:,:,:) = real4DField % defaultValue
+                           if (real4DField % array_kind == 0) then
+                              allocate(real4DField % array(real4DField % dimSizes(1), real4DField % dimSizes(2), &
+                                                           real4DField % dimSizes(3), real4DField % dimSizes(4)))
+                              real4DField % array(:,:,:,:) = real4DField % defaultValue
+                           else if (real4DField % array_kind == 4) then
+                              allocate(real4DField % array4(real4DField % dimSizes(1), real4DField % dimSizes(2), &
+                                                           real4DField % dimSizes(3), real4DField % dimSizes(4)))
+                              real4DField % array4(:,:,:,:) = real4DField % defaultValue
+                           else if (real4DField % array_kind == 8) then
+                              allocate(real4DField % array8(real4DField % dimSizes(1), real4DField % dimSizes(2), &
+                                                           real4DField % dimSizes(3), real4DField % dimSizes(4)))
+                              real4DField % array8(:,:,:,:) = real4DField % defaultValue
+                           end if
                         end if
                      end if
                   end do
@@ -1622,10 +1656,22 @@ module mpas_block_creator
                         end do
 
                         if ( real5DField % isPersistent ) then
-                           allocate(real5DField % array(real5DField % dimSizes(1), real5DField % dimSizes(2), &
-                                                        real5DField % dimSizes(3), real5DField % dimSizes(4), &
-                                                        real5DField % dimSizes(5)))
-                           real5DField % array(:,:,:,:,:) = real5DField % defaultValue
+                           if (real5DField % array_kind == 0) then
+                              allocate(real5DField % array(real5DField % dimSizes(1), real5DField % dimSizes(2), &
+                                                           real5DField % dimSizes(3), real5DField % dimSizes(4), &
+                                                           real5DField % dimSizes(5)))
+                              real5DField % array(:,:,:,:,:) = real5DField % defaultValue
+                           else if (real5DField % array_kind == 4) then
+                              allocate(real5DField % array4(real5DField % dimSizes(1), real5DField % dimSizes(2), &
+                                                           real5DField % dimSizes(3), real5DField % dimSizes(4), &
+                                                           real5DField % dimSizes(5)))
+                              real5DField % array4(:,:,:,:,:) = real5DField % defaultValue
+                           else if (real5DField % array_kind == 8) then
+                              allocate(real5DField % array8(real5DField % dimSizes(1), real5DField % dimSizes(2), &
+                                                           real5DField % dimSizes(3), real5DField % dimSizes(4), &
+                                                           real5DField % dimSizes(5)))
+                              real5DField % array8(:,:,:,:,:) = real5DField % defaultValue
+                           end if
                         end if
                      end if
                   end do

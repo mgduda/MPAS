@@ -22,11 +22,16 @@ module mpas_field_routines
    use mpas_derived_types
 
    interface mpas_allocate_mold
-      module procedure mpas_allocate_mold_1dreal
-      module procedure mpas_allocate_mold_2dreal
-      module procedure mpas_allocate_mold_3dreal
-      module procedure mpas_allocate_mold_4dreal
-      module procedure mpas_allocate_mold_5dreal
+      module procedure mpas_allocate_mold_1dreal4
+      module procedure mpas_allocate_mold_2dreal4
+      module procedure mpas_allocate_mold_3dreal4
+      module procedure mpas_allocate_mold_4dreal4
+      module procedure mpas_allocate_mold_5dreal4
+      module procedure mpas_allocate_mold_1dreal8
+      module procedure mpas_allocate_mold_2dreal8
+      module procedure mpas_allocate_mold_3dreal8
+      module procedure mpas_allocate_mold_4dreal8
+      module procedure mpas_allocate_mold_5dreal8
       module procedure mpas_allocate_mold_1dinteger
       module procedure mpas_allocate_mold_2dinteger
       module procedure mpas_allocate_mold_3dinteger
@@ -1130,8 +1135,18 @@ module mpas_field_routines
            nullify(f)
          end if
 
-         if(associated(f_cursor % array)) then
-           deallocate(f_cursor % array)
+         if (f_cursor % array_kind == 0) then
+            if(associated(f_cursor % array)) then
+              deallocate(f_cursor % array)
+            end if
+         else if (f_cursor % array_kind == 4) then
+            if(associated(f_cursor % array4)) then
+              deallocate(f_cursor % array4)
+            end if
+         else if (f_cursor % array_kind == 8) then
+            if(associated(f_cursor % array8)) then
+              deallocate(f_cursor % array8)
+            end if
          end if
 
          deallocate(f_cursor)
@@ -1165,8 +1180,18 @@ module mpas_field_routines
            nullify(f)
          end if
 
-         if(associated(f_cursor % array)) then
-           deallocate(f_cursor % array)
+         if (f_cursor % array_kind == 0) then
+            if(associated(f_cursor % array)) then
+              deallocate(f_cursor % array)
+            end if
+         else if (f_cursor % array_kind == 4) then
+            if(associated(f_cursor % array4)) then
+              deallocate(f_cursor % array4)
+            end if
+         else if (f_cursor % array_kind == 8) then
+            if(associated(f_cursor % array8)) then
+              deallocate(f_cursor % array8)
+            end if
          end if
 
          deallocate(f_cursor)
@@ -1200,8 +1225,18 @@ module mpas_field_routines
            nullify(f)
          end if
 
-         if(associated(f_cursor % array)) then
-           deallocate(f_cursor % array)
+         if (f_cursor % array_kind == 0) then
+            if(associated(f_cursor % array)) then
+              deallocate(f_cursor % array)
+            end if
+         else if (f_cursor % array_kind == 4) then
+            if(associated(f_cursor % array4)) then
+              deallocate(f_cursor % array4)
+            end if
+         else if (f_cursor % array_kind == 8) then
+            if(associated(f_cursor % array8)) then
+              deallocate(f_cursor % array8)
+            end if
          end if
 
          deallocate(f_cursor)
@@ -1235,8 +1270,18 @@ module mpas_field_routines
            nullify(f)
          end if
 
-         if(associated(f_cursor % array)) then
-           deallocate(f_cursor % array)
+         if (f_cursor % array_kind == 0) then
+            if(associated(f_cursor % array)) then
+              deallocate(f_cursor % array)
+            end if
+         else if (f_cursor % array_kind == 4) then
+            if(associated(f_cursor % array4)) then
+              deallocate(f_cursor % array4)
+            end if
+         else if (f_cursor % array_kind == 8) then
+            if(associated(f_cursor % array8)) then
+              deallocate(f_cursor % array8)
+            end if
          end if
 
          deallocate(f_cursor)
@@ -1270,8 +1315,18 @@ module mpas_field_routines
            nullify(f)
          end if
 
-         if(associated(f_cursor % array)) then
-           deallocate(f_cursor % array)
+         if (f_cursor % array_kind == 0) then
+            if(associated(f_cursor % array)) then
+              deallocate(f_cursor % array)
+            end if
+         else if (f_cursor % array_kind == 4) then
+            if(associated(f_cursor % array4)) then
+              deallocate(f_cursor % array4)
+            end if
+         else if (f_cursor % array_kind == 8) then
+            if(associated(f_cursor % array8)) then
+              deallocate(f_cursor % array8)
+            end if
          end if
 
          deallocate(f_cursor)
@@ -1350,7 +1405,7 @@ module mpas_field_routines
 
 !***********************************************************************
 !
-!  routine mpas_allocate_mold_1dreal
+!  routine mpas_allocate_mold_1dreal4
 !
 !> \brief   Allocates a 1-d real array using the dimensions of another array
 !> \author  Michael Duda
@@ -1362,21 +1417,21 @@ module mpas_field_routines
 !> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_allocate_mold_1dreal(dst, src)!{{{
+   subroutine mpas_allocate_mold_1dreal4(dst, src)!{{{
 
       implicit none
 
-      real(kind=RKIND), dimension(:), pointer :: dst
-      real(kind=RKIND), dimension(:), intent(in) :: src
+      real(kind=R4KIND), dimension(:), pointer :: dst
+      real(kind=R4KIND), dimension(:), intent(in) :: src
   
       allocate(dst(size(src)))
 
-   end subroutine mpas_allocate_mold_1dreal!}}}
+   end subroutine mpas_allocate_mold_1dreal4!}}}
 
 
 !***********************************************************************
 !
-!  routine mpas_allocate_mold_2dreal
+!  routine mpas_allocate_mold_2dreal4
 !
 !> \brief   Allocates a 2-d real array using the dimensions of another array
 !> \author  Michael Duda
@@ -1388,12 +1443,12 @@ module mpas_field_routines
 !> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_allocate_mold_2dreal(dst, src)!{{{
+   subroutine mpas_allocate_mold_2dreal4(dst, src)!{{{
 
       implicit none
 
-      real(kind=RKIND), dimension(:,:), pointer :: dst
-      real(kind=RKIND), dimension(:,:), intent(in) :: src
+      real(kind=R4KIND), dimension(:,:), pointer :: dst
+      real(kind=R4KIND), dimension(:,:), intent(in) :: src
   
       integer, dimension(2) :: dims
 
@@ -1401,12 +1456,12 @@ module mpas_field_routines
 
       allocate(dst(dims(1),dims(2)))
 
-   end subroutine mpas_allocate_mold_2dreal!}}}
+   end subroutine mpas_allocate_mold_2dreal4!}}}
 
 
 !***********************************************************************
 !
-!  routine mpas_allocate_mold_3dreal
+!  routine mpas_allocate_mold_3dreal4
 !
 !> \brief   Allocates a 3-d real array using the dimensions of another array
 !> \author  Michael Duda
@@ -1418,12 +1473,12 @@ module mpas_field_routines
 !> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_allocate_mold_3dreal(dst, src)!{{{
+   subroutine mpas_allocate_mold_3dreal4(dst, src)!{{{
 
       implicit none
 
-      real(kind=RKIND), dimension(:,:,:), pointer :: dst
-      real(kind=RKIND), dimension(:,:,:), intent(in) :: src
+      real(kind=R4KIND), dimension(:,:,:), pointer :: dst
+      real(kind=R4KIND), dimension(:,:,:), intent(in) :: src
   
       integer, dimension(3) :: dims
 
@@ -1431,12 +1486,12 @@ module mpas_field_routines
 
       allocate(dst(dims(1),dims(2),dims(3)))
 
-   end subroutine mpas_allocate_mold_3dreal!}}}
+   end subroutine mpas_allocate_mold_3dreal4!}}}
 
 
 !***********************************************************************
 !
-!  routine mpas_allocate_mold_4dreal
+!  routine mpas_allocate_mold_4dreal4
 !
 !> \brief   Allocates a 4-d real array using the dimensions of another array
 !> \author  Michael Duda
@@ -1448,12 +1503,12 @@ module mpas_field_routines
 !> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_allocate_mold_4dreal(dst, src)!{{{
+   subroutine mpas_allocate_mold_4dreal4(dst, src)!{{{
 
       implicit none
 
-      real(kind=RKIND), dimension(:,:,:,:), pointer :: dst
-      real(kind=RKIND), dimension(:,:,:,:), intent(in) :: src
+      real(kind=R4KIND), dimension(:,:,:,:), pointer :: dst
+      real(kind=R4KIND), dimension(:,:,:,:), intent(in) :: src
   
       integer, dimension(4) :: dims
 
@@ -1461,12 +1516,12 @@ module mpas_field_routines
 
       allocate(dst(dims(1),dims(2),dims(3),dims(4)))
 
-   end subroutine mpas_allocate_mold_4dreal!}}}
+   end subroutine mpas_allocate_mold_4dreal4!}}}
 
 
 !***********************************************************************
 !
-!  routine mpas_allocate_mold_5dreal
+!  routine mpas_allocate_mold_5dreal4
 !
 !> \brief   Allocates a 5-d real array using the dimensions of another array
 !> \author  Michael Duda
@@ -1478,12 +1533,12 @@ module mpas_field_routines
 !> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_allocate_mold_5dreal(dst, src)!{{{
+   subroutine mpas_allocate_mold_5dreal4(dst, src)!{{{
 
       implicit none
 
-      real(kind=RKIND), dimension(:,:,:,:,:), pointer :: dst
-      real(kind=RKIND), dimension(:,:,:,:,:), intent(in) :: src
+      real(kind=R4KIND), dimension(:,:,:,:,:), pointer :: dst
+      real(kind=R4KIND), dimension(:,:,:,:,:), intent(in) :: src
   
       integer, dimension(5) :: dims
 
@@ -1491,7 +1546,154 @@ module mpas_field_routines
 
       allocate(dst(dims(1),dims(2),dims(3),dims(4),dims(5)))
 
-   end subroutine mpas_allocate_mold_5dreal!}}}
+   end subroutine mpas_allocate_mold_5dreal4!}}}
+
+
+!***********************************************************************
+!
+!  routine mpas_allocate_mold_1dreal8
+!
+!> \brief   Allocates a 1-d real array using the dimensions of another array
+!> \author  Michael Duda
+!> \date    04/12/14
+!> \details 
+!> Allocates the array dst to have the same dimensions as the array src.
+!> This routine exists to provide the same functionality as F2008's 
+!> ALLOCATE(A,MOLD=B) functionality, or a similar functionality to F2003's
+!> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_allocate_mold_1dreal8(dst, src)!{{{
+
+      implicit none
+
+      real(kind=R8KIND), dimension(:), pointer :: dst
+      real(kind=R8KIND), dimension(:), intent(in) :: src
+  
+      allocate(dst(size(src)))
+
+   end subroutine mpas_allocate_mold_1dreal8!}}}
+
+
+!***********************************************************************
+!
+!  routine mpas_allocate_mold_2dreal8
+!
+!> \brief   Allocates a 2-d real array using the dimensions of another array
+!> \author  Michael Duda
+!> \date    04/12/14
+!> \details 
+!> Allocates the array dst to have the same dimensions as the array src.
+!> This routine exists to provide the same functionality as F2008's 
+!> ALLOCATE(A,MOLD=B) functionality, or a similar functionality to F2003's
+!> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_allocate_mold_2dreal8(dst, src)!{{{
+
+      implicit none
+
+      real(kind=R8KIND), dimension(:,:), pointer :: dst
+      real(kind=R8KIND), dimension(:,:), intent(in) :: src
+  
+      integer, dimension(2) :: dims
+
+      dims = shape(src)
+
+      allocate(dst(dims(1),dims(2)))
+
+   end subroutine mpas_allocate_mold_2dreal8!}}}
+
+
+!***********************************************************************
+!
+!  routine mpas_allocate_mold_3dreal8
+!
+!> \brief   Allocates a 3-d real array using the dimensions of another array
+!> \author  Michael Duda
+!> \date    04/12/14
+!> \details 
+!> Allocates the array dst to have the same dimensions as the array src.
+!> This routine exists to provide the same functionality as F2008's 
+!> ALLOCATE(A,MOLD=B) functionality, or a similar functionality to F2003's
+!> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_allocate_mold_3dreal8(dst, src)!{{{
+
+      implicit none
+
+      real(kind=R8KIND), dimension(:,:,:), pointer :: dst
+      real(kind=R8KIND), dimension(:,:,:), intent(in) :: src
+  
+      integer, dimension(3) :: dims
+
+      dims = shape(src)
+
+      allocate(dst(dims(1),dims(2),dims(3)))
+
+   end subroutine mpas_allocate_mold_3dreal8!}}}
+
+
+!***********************************************************************
+!
+!  routine mpas_allocate_mold_4dreal8
+!
+!> \brief   Allocates a 4-d real array using the dimensions of another array
+!> \author  Michael Duda
+!> \date    04/12/14
+!> \details 
+!> Allocates the array dst to have the same dimensions as the array src.
+!> This routine exists to provide the same functionality as F2008's 
+!> ALLOCATE(A,MOLD=B) functionality, or a similar functionality to F2003's
+!> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_allocate_mold_4dreal8(dst, src)!{{{
+
+      implicit none
+
+      real(kind=R8KIND), dimension(:,:,:,:), pointer :: dst
+      real(kind=R8KIND), dimension(:,:,:,:), intent(in) :: src
+  
+      integer, dimension(4) :: dims
+
+      dims = shape(src)
+
+      allocate(dst(dims(1),dims(2),dims(3),dims(4)))
+
+   end subroutine mpas_allocate_mold_4dreal8!}}}
+
+
+!***********************************************************************
+!
+!  routine mpas_allocate_mold_5dreal8
+!
+!> \brief   Allocates a 5-d real array using the dimensions of another array
+!> \author  Michael Duda
+!> \date    04/12/14
+!> \details 
+!> Allocates the array dst to have the same dimensions as the array src.
+!> This routine exists to provide the same functionality as F2008's 
+!> ALLOCATE(A,MOLD=B) functionality, or a similar functionality to F2003's
+!> ALLOCATE(A,SOURCE=B) but without actually copying the source values.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_allocate_mold_5dreal8(dst, src)!{{{
+
+      implicit none
+
+      real(kind=R8KIND), dimension(:,:,:,:,:), pointer :: dst
+      real(kind=R8KIND), dimension(:,:,:,:,:), intent(in) :: src
+  
+      integer, dimension(5) :: dims
+
+      dims = shape(src)
+
+      allocate(dst(dims(1),dims(2),dims(3),dims(4),dims(5)))
+
+   end subroutine mpas_allocate_mold_5dreal8!}}}
+
 
 
 !***********************************************************************
@@ -1628,7 +1830,7 @@ module mpas_field_routines
       type (field0DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_scalar.inc"
+#include "duplicate_field_scalar_real.inc"
 
    end subroutine mpas_duplicate_field0d_real !}}}
 
@@ -1655,7 +1857,7 @@ module mpas_field_routines
       type (field1DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_array.inc"
+#include "duplicate_field_array_real.inc"
 
    end subroutine mpas_duplicate_field1d_real !}}}
 
@@ -1682,7 +1884,7 @@ module mpas_field_routines
       type (field2DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_array.inc"
+#include "duplicate_field_array_real.inc"
 
    end subroutine mpas_duplicate_field2d_real !}}}
 
@@ -1709,7 +1911,7 @@ module mpas_field_routines
       type (field3DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_array.inc"
+#include "duplicate_field_array_real.inc"
 
    end subroutine mpas_duplicate_field3d_real !}}}
 
@@ -1736,7 +1938,7 @@ module mpas_field_routines
       type (field4DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_array.inc"
+#include "duplicate_field_array_real.inc"
 
    end subroutine mpas_duplicate_field4d_real !}}}
 
@@ -1763,7 +1965,7 @@ module mpas_field_routines
       type (field5DReal), pointer :: src_cursor, dst_cursor
       logical :: local_copy_only
 
-#include "duplicate_field_array.inc"
+#include "duplicate_field_array_real.inc"
 
    end subroutine mpas_duplicate_field5d_real !}}}
 

@@ -13,7 +13,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
-      real (kind=RKIND), dimension(:,:,:,:,:), pointer :: array
+      integer :: array_kind = 0
+      real (kind=RKIND), dimension(:,:,:,:,:), pointer :: array => null()
+      real (kind=R4KIND), dimension(:,:,:,:,:), pointer :: array4 => null()
+      real (kind=R8KIND), dimension(:,:,:,:,:), pointer :: array8 => null()
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName
@@ -45,7 +48,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
-      real (kind=RKIND), dimension(:,:,:,:), pointer :: array
+      integer :: array_kind = 0
+      real (kind=RKIND), dimension(:,:,:,:), pointer :: array => null()
+      real (kind=R4KIND), dimension(:,:,:,:), pointer :: array4 => null()
+      real (kind=R8KIND), dimension(:,:,:,:), pointer :: array8 => null()
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName
@@ -78,7 +84,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
-      real (kind=RKIND), dimension(:,:,:), pointer :: array
+      integer :: array_kind = 0
+      real (kind=RKIND), dimension(:,:,:), pointer :: array => null()
+      real (kind=R4KIND), dimension(:,:,:), pointer :: array4 => null()
+      real (kind=R8KIND), dimension(:,:,:), pointer :: array8 => null()
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName
@@ -110,7 +119,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
-      real (kind=RKIND), dimension(:,:), pointer :: array
+      integer :: array_kind = 0
+      real (kind=RKIND), dimension(:,:), pointer :: array => null()
+      real (kind=R4KIND), dimension(:,:), pointer :: array4 => null()
+      real (kind=R8KIND), dimension(:,:), pointer :: array8 => null()
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName
@@ -142,7 +154,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
-      real (kind=RKIND), dimension(:), pointer :: array
+      integer :: array_kind = 0
+      real (kind=RKIND), dimension(:), pointer :: array => null()
+      real (kind=R4KIND), dimension(:), pointer :: array4 => null()
+      real (kind=R8KIND), dimension(:), pointer :: array8 => null()
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName
@@ -174,7 +189,10 @@
       type (block_type), pointer :: block
 
       ! Raw array holding field data on this block
+      integer :: array_kind = 0
       real (kind=RKIND) :: scalar
+      real (kind=R4KIND) :: scalar4
+      real (kind=R8KIND) :: scalar8
 
       ! Information used by the I/O layer
       character (len=StrKIND) :: fieldName

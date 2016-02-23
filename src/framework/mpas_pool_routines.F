@@ -67,12 +67,18 @@ module mpas_pool_routines
    end interface
 
    interface mpas_pool_get_array
-      module procedure mpas_pool_get_array_0d_real
-      module procedure mpas_pool_get_array_1d_real
-      module procedure mpas_pool_get_array_2d_real
-      module procedure mpas_pool_get_array_3d_real
-      module procedure mpas_pool_get_array_4d_real
-      module procedure mpas_pool_get_array_5d_real
+      module procedure mpas_pool_get_array_0d_real8
+      module procedure mpas_pool_get_array_1d_real8
+      module procedure mpas_pool_get_array_2d_real8
+      module procedure mpas_pool_get_array_3d_real8
+      module procedure mpas_pool_get_array_4d_real8
+      module procedure mpas_pool_get_array_5d_real8
+      module procedure mpas_pool_get_array_0d_real4
+      module procedure mpas_pool_get_array_1d_real4
+      module procedure mpas_pool_get_array_2d_real4
+      module procedure mpas_pool_get_array_3d_real4
+      module procedure mpas_pool_get_array_4d_real4
+      module procedure mpas_pool_get_array_5d_real4
       module procedure mpas_pool_get_array_0d_int
       module procedure mpas_pool_get_array_1d_int
       module procedure mpas_pool_get_array_2d_int
@@ -3990,7 +3996,7 @@ module mpas_pool_routines
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_0d_real
+!  subroutine mpas_pool_get_array_0d_real8
 !
 !> \brief MPAS Pool 0D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -3999,13 +4005,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_0d_real(inPool, key, scalar, timeLevel)!{{{
+   subroutine mpas_pool_get_array_0d_real8(inPool, key, scalar, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), pointer :: scalar
+      real (kind=R8KIND), pointer :: scalar
       integer, intent(in), optional :: timeLevel
 
       type (field0DReal), pointer :: field
@@ -4014,13 +4020,21 @@ module mpas_pool_routines
       call mpas_pool_get_field_0d_real(inPool, key, field, timeLevel)
 
       nullify(scalar)
-      if (associated(field)) scalar => field % scalar
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            scalar => field % scalar
+#endif
+         else
+            scalar => field % scalar8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_0d_real!}}}
+   end subroutine mpas_pool_get_array_0d_real8!}}}
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_1d_real
+!  subroutine mpas_pool_get_array_1d_real8
 !
 !> \brief MPAS Pool 1D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -4029,13 +4043,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_1d_real(inPool, key, array, timeLevel)!{{{
+   subroutine mpas_pool_get_array_1d_real8(inPool, key, array, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), dimension(:), pointer :: array
+      real (kind=R8KIND), dimension(:), pointer :: array
       integer, intent(in), optional :: timeLevel
 
       type (field1DReal), pointer :: field
@@ -4044,13 +4058,21 @@ module mpas_pool_routines
       call mpas_pool_get_field_1d_real(inPool, key, field, timeLevel)
 
       nullify(array)
-      if (associated(field)) array => field % array
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_1d_real!}}}
+   end subroutine mpas_pool_get_array_1d_real8!}}}
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_2d_real
+!  subroutine mpas_pool_get_array_2d_real8
 !
 !> \brief MPAS Pool 2D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -4059,13 +4081,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_2d_real(inPool, key, array, timeLevel)!{{{
+   subroutine mpas_pool_get_array_2d_real8(inPool, key, array, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), dimension(:,:), pointer :: array
+      real (kind=R8KIND), dimension(:,:), pointer :: array
       integer, intent(in), optional :: timeLevel
 
       type (field2DReal), pointer :: field
@@ -4074,13 +4096,21 @@ module mpas_pool_routines
       call mpas_pool_get_field_2d_real(inPool, key, field, timeLevel)
 
       nullify(array)
-      if (associated(field)) array => field % array
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_2d_real!}}}
+   end subroutine mpas_pool_get_array_2d_real8!}}}
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_3d_real
+!  subroutine mpas_pool_get_array_3d_real8
 !
 !> \brief MPAS Pool 3D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -4089,13 +4119,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_3d_real(inPool, key, array, timeLevel)!{{{
+   subroutine mpas_pool_get_array_3d_real8(inPool, key, array, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), dimension(:,:,:), pointer :: array
+      real (kind=R8KIND), dimension(:,:,:), pointer :: array
       integer, intent(in), optional :: timeLevel
 
       type (field3DReal), pointer :: field
@@ -4104,13 +4134,21 @@ module mpas_pool_routines
       call mpas_pool_get_field_3d_real(inPool, key, field, timeLevel)
 
       nullify(array)
-      if (associated(field)) array => field % array
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_3d_real!}}}
+   end subroutine mpas_pool_get_array_3d_real8!}}}
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_4d_real
+!  subroutine mpas_pool_get_array_4d_real8
 !
 !> \brief MPAS Pool 4D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -4119,13 +4157,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_4d_real(inPool, key, array, timeLevel)!{{{
+   subroutine mpas_pool_get_array_4d_real8(inPool, key, array, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), dimension(:,:,:,:), pointer :: array
+      real (kind=R8KIND), dimension(:,:,:,:), pointer :: array
       integer, intent(in), optional :: timeLevel
 
       type (field4DReal), pointer :: field
@@ -4134,13 +4172,21 @@ module mpas_pool_routines
       call mpas_pool_get_field_4d_real(inPool, key, field, timeLevel)
 
       nullify(array)
-      if (associated(field)) array => field % array
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_4d_real!}}}
+   end subroutine mpas_pool_get_array_4d_real8!}}}
 
 
 !-----------------------------------------------------------------------
-!  subroutine mpas_pool_get_array_5d_real
+!  subroutine mpas_pool_get_array_5d_real8
 !
 !> \brief MPAS Pool 5D Real field get subroutine
 !> \author Michael Duda, Doug Jacobsen
@@ -4149,13 +4195,13 @@ module mpas_pool_routines
 !> This subroutine returns a pointer to the array associated with key in inPool.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_pool_get_array_5d_real(inPool, key, array, timeLevel)!{{{
+   subroutine mpas_pool_get_array_5d_real8(inPool, key, array, timeLevel)!{{{
 
       implicit none
 
       type (mpas_pool_type), intent(in) :: inPool
       character (len=*), intent(in) :: key
-      real (kind=RKIND), dimension(:,:,:,:,:), pointer :: array
+      real (kind=R8KIND), dimension(:,:,:,:,:), pointer :: array
       integer, intent(in), optional :: timeLevel
 
       type (field5DReal), pointer :: field
@@ -4164,9 +4210,245 @@ module mpas_pool_routines
       call mpas_pool_get_field_5d_real(inPool, key, field, timeLevel)
 
       nullify(array)
-      if (associated(field)) array => field % array
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifndef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array8
+         end if
+      end if
 
-   end subroutine mpas_pool_get_array_5d_real!}}}
+   end subroutine mpas_pool_get_array_5d_real8!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_0d_real4
+!
+!> \brief MPAS Pool 0D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_0d_real4(inPool, key, scalar, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), pointer :: scalar
+      integer, intent(in), optional :: timeLevel
+
+      type (field0DReal), pointer :: field
+
+
+      call mpas_pool_get_field_0d_real(inPool, key, field, timeLevel)
+
+      nullify(scalar)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            scalar => field % scalar
+#endif
+         else
+            scalar => field % scalar4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_0d_real4!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_1d_real4
+!
+!> \brief MPAS Pool 1D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_1d_real4(inPool, key, array, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), dimension(:), pointer :: array
+      integer, intent(in), optional :: timeLevel
+
+      type (field1DReal), pointer :: field
+
+
+      call mpas_pool_get_field_1d_real(inPool, key, field, timeLevel)
+
+      nullify(array)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_1d_real4!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_2d_real4
+!
+!> \brief MPAS Pool 2D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_2d_real4(inPool, key, array, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), dimension(:,:), pointer :: array
+      integer, intent(in), optional :: timeLevel
+
+      type (field2DReal), pointer :: field
+
+
+      call mpas_pool_get_field_2d_real(inPool, key, field, timeLevel)
+
+      nullify(array)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_2d_real4!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_3d_real4
+!
+!> \brief MPAS Pool 3D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_3d_real4(inPool, key, array, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), dimension(:,:,:), pointer :: array
+      integer, intent(in), optional :: timeLevel
+
+      type (field3DReal), pointer :: field
+
+
+      call mpas_pool_get_field_3d_real(inPool, key, field, timeLevel)
+
+      nullify(array)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_3d_real4!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_4d_real4
+!
+!> \brief MPAS Pool 4D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_4d_real4(inPool, key, array, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), dimension(:,:,:,:), pointer :: array
+      integer, intent(in), optional :: timeLevel
+
+      type (field4DReal), pointer :: field
+
+
+      call mpas_pool_get_field_4d_real(inPool, key, field, timeLevel)
+
+      nullify(array)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_4d_real4!}}}
+
+
+!-----------------------------------------------------------------------
+!  subroutine mpas_pool_get_array_5d_real4
+!
+!> \brief MPAS Pool 5D Real field get subroutine
+!> \author Michael Duda, Doug Jacobsen
+!> \date   03/27/2014
+!> \details
+!> This subroutine returns a pointer to the array associated with key in inPool.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_pool_get_array_5d_real4(inPool, key, array, timeLevel)!{{{
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: inPool
+      character (len=*), intent(in) :: key
+      real (kind=R4KIND), dimension(:,:,:,:,:), pointer :: array
+      integer, intent(in), optional :: timeLevel
+
+      type (field5DReal), pointer :: field
+
+
+      call mpas_pool_get_field_5d_real(inPool, key, field, timeLevel)
+
+      nullify(array)
+      if (associated(field)) then
+         if (field % array_kind == 0) then
+#ifdef SINGLE_PRECISION
+            array => field % array
+#endif
+         else
+            array => field % array4
+         end if
+      end if
+
+   end subroutine mpas_pool_get_array_5d_real4!}}}
 
 
 !-----------------------------------------------------------------------

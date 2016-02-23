@@ -958,6 +958,7 @@ int parse_var_array(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t var
 	const char *streamname, *streamname2;
 	const char *packagename;
 	const char *vararrtimelevs;
+	const char *varprecision;
 
 	char package_list[2048];
 	int no_packages;
@@ -988,6 +989,7 @@ int parse_var_array(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t var
 	vararrpackages = ezxml_attr(var_arr_xml, "packages");
 	vararrtimelevs = ezxml_attr(var_arr_xml, "time_levs");
 	vararrname_in_code = ezxml_attr(var_arr_xml, "name_in_code");
+	varprecision = ezxml_attr(var_arr_xml, "precision");
 
 	package_list[0] = '\0';
 	no_packages = build_struct_package_lists(varArray, package_list);
@@ -1210,6 +1212,9 @@ int parse_var_array(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t var
 		} else {
 			fortprintf(fd, "      %s(%d) %% hasTimeDimension = .false.\n", pointer_name, time_lev);
 		}
+		if (varprecision) {
+			fortprintf(fd, "      %s(%d) %% array_kind = %s\n", pointer_name, time_lev, varprecision);
+		}
 		fortprintf(fd, "      %s(%d) %% isVarArray = .true.\n", pointer_name, time_lev);
 		if(ndims > 0){
 			if(persistence == SCRATCH){
@@ -1330,6 +1335,7 @@ int parse_var(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t currentVa
 	const char *varname_in_code;
 	const char *streamname, *streamname2;
 	const char *packagename;
+	const char *varprecision;
 
 	int err;
 
@@ -1357,6 +1363,7 @@ int parse_var(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t currentVa
 	vardefaultval = ezxml_attr(var_xml, "default_value");
 	vartimelevs = ezxml_attr(var_xml, "time_levs");
 	varname_in_code = ezxml_attr(var_xml, "name_in_code");
+	varprecision = ezxml_attr(var_xml, "precision");
 
 	if(!varname_in_code){
 		varname_in_code = ezxml_attr(var_xml, "name");
@@ -1406,6 +1413,10 @@ int parse_var(FILE *fd, ezxml_t registry, ezxml_t superStruct, ezxml_t currentVa
 			fortprintf(fd, "      %s(%d) %% hasTimeDimension = .true.\n", pointer_name, time_lev);
 		} else {
 			fortprintf(fd, "      %s(%d) %% hasTimeDimension = .false.\n", pointer_name, time_lev);
+		}
+
+		if (varprecision) {
+			fortprintf(fd, "      %s(%d) %% array_kind = %s\n", pointer_name, time_lev, varprecision);
 		}
 
 		if(ndims > 0){

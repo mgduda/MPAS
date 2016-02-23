@@ -2549,7 +2549,13 @@ module mpas_io_streams
             call mpas_dmpar_bcast_real(field_cursor % real0dField % block % domain % dminfo, real0d_temp)
             field_0dreal_ptr => field_cursor % real0dField
             do while (associated(field_0dreal_ptr))
-               field_0dreal_ptr % scalar = real0d_temp
+               if (field_0dreal_ptr % array_kind == 0) then
+                  field_0dreal_ptr % scalar = real0d_temp
+               else if (field_0dreal_ptr % array_kind == 4) then
+                  field_0dreal_ptr % scalar4 = real0d_temp
+               else if (field_0dreal_ptr % array_kind == 8) then
+                  field_0dreal_ptr % scalar8 = real0d_temp
+               end if
                field_0dreal_ptr => field_0dreal_ptr % next
             end do
 
@@ -2596,9 +2602,21 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real1dField % isVarArray) then
-                        field_1dreal_ptr % array(j) = real0d_temp
+                        if (field_1dreal_ptr % array_kind == 0) then
+                           field_1dreal_ptr % array(j) = real0d_temp
+                        else if (field_1dreal_ptr % array_kind == 4) then
+                           field_1dreal_ptr % array4(j) = real0d_temp
+                        else if (field_1dreal_ptr % array_kind == 8) then
+                           field_1dreal_ptr % array8(j) = real0d_temp
+                        end if
                      else
-                        field_1dreal_ptr % array(1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        if (field_1dreal_ptr % array_kind == 0) then
+                           field_1dreal_ptr % array(1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        else if (field_1dreal_ptr % array_kind == 4) then
+                           field_1dreal_ptr % array4(1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        else if (field_1dreal_ptr % array_kind == 8) then
+                           field_1dreal_ptr % array8(1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        end if
                      end if
                      i = i + ownedSize
                      field_1dreal_ptr => field_1dreal_ptr % next
@@ -2610,14 +2628,26 @@ module mpas_io_streams
                      call mpas_dmpar_bcast_real(field_cursor % real1dField % block % domain % dminfo, real0d_temp)
                      field_1dreal_ptr => field_cursor % real1dField
                      do while (associated(field_1dreal_ptr))
-                        field_1dreal_ptr % array(j) = real0d_temp
+                        if (field_1dreal_ptr % array_kind == 0) then
+                           field_1dreal_ptr % array(j) = real0d_temp
+                        else if (field_1dreal_ptr % array_kind == 4) then
+                           field_1dreal_ptr % array4(j) = real0d_temp
+                        else if (field_1dreal_ptr % array_kind == 8) then
+                           field_1dreal_ptr % array8(j) = real0d_temp
+                        end if
                         field_1dreal_ptr => field_1dreal_ptr % next
                      end do
                   else
                      call mpas_dmpar_bcast_reals(field_cursor % real1dField % block % domain % dminfo, size(real1d_temp), real1d_temp(:))
                      field_1dreal_ptr => field_cursor % real1dField
                      do while (associated(field_1dreal_ptr))
-                        field_1dreal_ptr % array(:) = real1d_temp(:)
+                        if (field_1dreal_ptr % array_kind == 0) then
+                           field_1dreal_ptr % array(:) = real1d_temp(:)
+                        else if (field_1dreal_ptr % array_kind == 4) then
+                           field_1dreal_ptr % array4(:) = real1d_temp(:)
+                        else if (field_1dreal_ptr % array_kind == 8) then
+                           field_1dreal_ptr % array8(:) = real1d_temp(:)
+                        end if
                         field_1dreal_ptr => field_1dreal_ptr % next
                      end do
                   end if
@@ -2674,9 +2704,21 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real2dField % isVarArray) then
-                        field_2dreal_ptr % array(j,1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        if (field_2dreal_ptr % array_kind == 0) then
+                           field_2dreal_ptr % array(j,1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        else if (field_2dreal_ptr % array_kind == 4) then
+                           field_2dreal_ptr % array4(j,1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        else if (field_2dreal_ptr % array_kind == 8) then
+                           field_2dreal_ptr % array8(j,1:ownedSize) = real1d_temp(i:i+ownedSize-1)
+                        end if
                      else
-                        field_2dreal_ptr % array(:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        if (field_2dreal_ptr % array_kind == 0) then
+                           field_2dreal_ptr % array(:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        else if (field_2dreal_ptr % array_kind == 4) then
+                           field_2dreal_ptr % array4(:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        else if (field_2dreal_ptr % array_kind == 8) then
+                           field_2dreal_ptr % array8(:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        end if
                      end if
                      i = i + ownedSize
                      field_2dreal_ptr => field_2dreal_ptr % next
@@ -2688,14 +2730,26 @@ module mpas_io_streams
                      call mpas_dmpar_bcast_reals(field_cursor % real2dField % block % domain % dminfo, size(real1d_temp), real1d_temp(:))
                      field_2dreal_ptr => field_cursor % real2dField
                      do while (associated(field_2dreal_ptr))
-                        field_2dreal_ptr % array(j,:) = real1d_temp(:)
+                        if (field_2dreal_ptr % array_kind == 0) then
+                           field_2dreal_ptr % array(j,:) = real1d_temp(:)
+                        else if (field_2dreal_ptr % array_kind == 4) then
+                           field_2dreal_ptr % array4(j,:) = real1d_temp(:)
+                        else if (field_2dreal_ptr % array_kind == 8) then
+                           field_2dreal_ptr % array8(j,:) = real1d_temp(:)
+                        end if
                         field_2dreal_ptr => field_2dreal_ptr % next
                      end do
                   else
                      call mpas_dmpar_bcast_reals(field_cursor % real2dField % block % domain % dminfo, size(real2d_temp), real2d_temp(:,1))
                      field_2dreal_ptr => field_cursor % real2dField
                      do while (associated(field_2dreal_ptr))
-                        field_2dreal_ptr % array(:,:) = real2d_temp(:,:)
+                        if (field_2dreal_ptr % array_kind == 0) then
+                           field_2dreal_ptr % array(:,:) = real2d_temp(:,:)
+                        else if (field_2dreal_ptr % array_kind == 4) then
+                           field_2dreal_ptr % array4(:,:) = real2d_temp(:,:)
+                        else if (field_2dreal_ptr % array_kind == 8) then
+                           field_2dreal_ptr % array8(:,:) = real2d_temp(:,:)
+                        end if
                         field_2dreal_ptr => field_2dreal_ptr % next
                      end do
                   end if
@@ -2760,9 +2814,21 @@ module mpas_io_streams
 
                      if (field_cursor % real3dField % isVarArray) then
 !write(stderrUnit,*) 'DEBUGGING : copying the temporary array'
-                        field_3dreal_ptr % array(j,:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        if (field_3dreal_ptr % array_kind == 0) then
+                           field_3dreal_ptr % array(j,:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        else if (field_3dreal_ptr % array_kind == 4) then
+                           field_3dreal_ptr % array4(j,:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        else if (field_3dreal_ptr % array_kind == 8) then
+                           field_3dreal_ptr % array8(j,:,1:ownedSize) = real2d_temp(:,i:i+ownedSize-1)
+                        end if
                      else
-                        field_3dreal_ptr % array(:,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        if (field_3dreal_ptr % array_kind == 0) then
+                           field_3dreal_ptr % array(:,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        else if (field_3dreal_ptr % array_kind == 4) then
+                           field_3dreal_ptr % array4(:,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        else if (field_3dreal_ptr % array_kind == 8) then
+                           field_3dreal_ptr % array8(:,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        end if
                      end if
                      i = i + ownedSize
                      field_3dreal_ptr => field_3dreal_ptr % next
@@ -2774,14 +2840,26 @@ module mpas_io_streams
                      call mpas_dmpar_bcast_reals(field_cursor % real3dField % block % domain % dminfo, size(real2d_temp), real2d_temp(:,1))
                      field_3dreal_ptr => field_cursor % real3dField
                      do while (associated(field_3dreal_ptr))
-                        field_3dreal_ptr % array(j,:,:) = real2d_temp(:,:)
+                        if (field_3dreal_ptr % array_kind == 0) then
+                           field_3dreal_ptr % array(j,:,:) = real2d_temp(:,:)
+                        else if (field_3dreal_ptr % array_kind == 4) then
+                           field_3dreal_ptr % array4(j,:,:) = real2d_temp(:,:)
+                        else if (field_3dreal_ptr % array_kind == 8) then
+                           field_3dreal_ptr % array8(j,:,:) = real2d_temp(:,:)
+                        end if
                         field_3dreal_ptr => field_3dreal_ptr % next
                      end do
                   else
                      call mpas_dmpar_bcast_reals(field_cursor % real3dField % block % domain % dminfo, size(real3d_temp), real3d_temp(:,1,1))
                      field_3dreal_ptr => field_cursor % real3dField
                      do while (associated(field_3dreal_ptr))
-                        field_3dreal_ptr % array(:,:,:) = real3d_temp(:,:,:)
+                        if (field_3dreal_ptr % array_kind == 0) then
+                           field_3dreal_ptr % array(:,:,:) = real3d_temp(:,:,:)
+                        else if (field_3dreal_ptr % array_kind == 4) then
+                           field_3dreal_ptr % array4(:,:,:) = real3d_temp(:,:,:)
+                        else if (field_3dreal_ptr % array_kind == 8) then
+                           field_3dreal_ptr % array8(:,:,:) = real3d_temp(:,:,:)
+                        end if
                         field_3dreal_ptr => field_3dreal_ptr % next
                      end do
                   end if
@@ -2847,9 +2925,21 @@ module mpas_io_streams
 
                      if (field_cursor % real4dField % isVarArray) then
 !write(stderrUnit,*) 'DEBUGGING : copying the temporary array'
-                        field_4dreal_ptr % array(j, :,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        if (field_4dreal_ptr % array_kind == 0) then
+                           field_4dreal_ptr % array(j, :,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        else if (field_4dreal_ptr % array_kind == 4) then
+                           field_4dreal_ptr % array4(j, :,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        else if (field_4dreal_ptr % array_kind == 8) then
+                           field_4dreal_ptr % array8(j, :,:,1:ownedSize) = real3d_temp(:,:,i:i+ownedSize-1)
+                        end if
                      else
-                        field_4dreal_ptr % array(:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        if (field_4dreal_ptr % array_kind == 0) then
+                           field_4dreal_ptr % array(:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        else if (field_4dreal_ptr % array_kind == 4) then
+                           field_4dreal_ptr % array4(:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        else if (field_4dreal_ptr % array_kind == 8) then
+                           field_4dreal_ptr % array8(:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        end if
                      end if
                      i = i + ownedSize
                      field_4dreal_ptr => field_4dreal_ptr % next
@@ -2861,14 +2951,26 @@ module mpas_io_streams
                      call mpas_dmpar_bcast_reals(field_cursor % real4dField % block % domain % dminfo, size(real3d_temp), real3d_temp(:,1,1))
                      field_4dreal_ptr => field_cursor % real4dField
                      do while (associated(field_4dreal_ptr))
-                        field_4dreal_ptr % array(j,:,:,:) = real3d_temp(:,:,:)
+                        if (field_4dreal_ptr % array_kind == 0) then
+                           field_4dreal_ptr % array(j,:,:,:) = real3d_temp(:,:,:)
+                        else if (field_4dreal_ptr % array_kind == 4) then
+                           field_4dreal_ptr % array4(j,:,:,:) = real3d_temp(:,:,:)
+                        else if (field_4dreal_ptr % array_kind == 8) then
+                           field_4dreal_ptr % array8(j,:,:,:) = real3d_temp(:,:,:)
+                        end if
                         field_4dreal_ptr => field_4dreal_ptr % next
                      end do
                   else
                      call mpas_dmpar_bcast_reals(field_cursor % real4dField % block % domain % dminfo, size(real4d_temp), real4d_temp(:,1,1,1))
                      field_4dreal_ptr => field_cursor % real4dField
                      do while (associated(field_4dreal_ptr))
-                        field_4dreal_ptr % array(:,:,:,:) = real4d_temp(:,:,:,:)
+                        if (field_4dreal_ptr % array_kind == 0) then
+                           field_4dreal_ptr % array(:,:,:,:) = real4d_temp(:,:,:,:)
+                        else if (field_4dreal_ptr % array_kind == 4) then
+                           field_4dreal_ptr % array4(:,:,:,:) = real4d_temp(:,:,:,:)
+                        else if (field_4dreal_ptr % array_kind == 8) then
+                           field_4dreal_ptr % array8(:,:,:,:) = real4d_temp(:,:,:,:)
+                        end if
                         field_4dreal_ptr => field_4dreal_ptr % next
                      end do
                   end if
@@ -2937,9 +3039,21 @@ module mpas_io_streams
 
                      if (field_cursor % real5dField % isVarArray) then
 !write(stderrUnit,*) 'DEBUGGING : copying the temporary array'
-                        field_5dreal_ptr % array(j,:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        if (field_5dreal_ptr % array_kind == 0) then
+                           field_5dreal_ptr % array(j,:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        else if (field_5dreal_ptr % array_kind == 4) then
+                           field_5dreal_ptr % array4(j,:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        else if (field_5dreal_ptr % array_kind == 8) then
+                           field_5dreal_ptr % array8(j,:,:,:,1:ownedSize) = real4d_temp(:,:,:,i:i+ownedSize-1)
+                        end if
                      else
-                        field_5dreal_ptr % array(:,:,:,:,1:ownedSize) = real5d_temp(:,:,:,:,i:i+ownedSize-1)
+                        if (field_5dreal_ptr % array_kind == 0) then
+                           field_5dreal_ptr % array(:,:,:,:,1:ownedSize) = real5d_temp(:,:,:,:,i:i+ownedSize-1)
+                        else if (field_5dreal_ptr % array_kind == 4) then
+                           field_5dreal_ptr % array4(:,:,:,:,1:ownedSize) = real5d_temp(:,:,:,:,i:i+ownedSize-1)
+                        else if (field_5dreal_ptr % array_kind == 8) then
+                           field_5dreal_ptr % array8(:,:,:,:,1:ownedSize) = real5d_temp(:,:,:,:,i:i+ownedSize-1)
+                        end if
                      end if
                      i = i + ownedSize
                      field_5dreal_ptr => field_5dreal_ptr % next
@@ -2951,14 +3065,26 @@ module mpas_io_streams
                      call mpas_dmpar_bcast_reals(field_cursor % real5dField % block % domain % dminfo, size(real4d_temp), real4d_temp(:,1,1,1))
                      field_5dreal_ptr => field_cursor % real5dField
                      do while (associated(field_5dreal_ptr))
-                        field_5dreal_ptr % array(j,:,:,:,:) = real4d_temp(:,:,:,:)
+                        if (field_5dreal_ptr % array_kind == 0) then
+                           field_5dreal_ptr % array(j,:,:,:,:) = real4d_temp(:,:,:,:)
+                        else if (field_5dreal_ptr % array_kind == 4) then
+                           field_5dreal_ptr % array4(j,:,:,:,:) = real4d_temp(:,:,:,:)
+                        else if (field_5dreal_ptr % array_kind == 8) then
+                           field_5dreal_ptr % array8(j,:,:,:,:) = real4d_temp(:,:,:,:)
+                        end if
                         field_5dreal_ptr => field_5dreal_ptr % next
                      end do
                   else
                      call mpas_dmpar_bcast_reals(field_cursor % real5dField % block % domain % dminfo, size(real5d_temp), real5d_temp(:,1,1,1,1))
                      field_5dreal_ptr => field_cursor % real5dField
                      do while (associated(field_5dreal_ptr))
-                        field_5dreal_ptr % array(:,:,:,:,:) = real5d_temp(:,:,:,:,:)
+                        if (field_5dreal_ptr % array_kind == 0) then
+                           field_5dreal_ptr % array(:,:,:,:,:) = real5d_temp(:,:,:,:,:)
+                        else if (field_5dreal_ptr % array_kind == 4) then
+                           field_5dreal_ptr % array4(:,:,:,:,:) = real5d_temp(:,:,:,:,:)
+                        else if (field_5dreal_ptr % array_kind == 8) then
+                           field_5dreal_ptr % array8(:,:,:,:,:) = real5d_temp(:,:,:,:,:)
+                        end if
                         field_5dreal_ptr => field_5dreal_ptr % next
                      end do
                   end if
@@ -3273,7 +3399,13 @@ module mpas_io_streams
 !write(stderrUnit,*) '   > outer dimension size ', field_cursor % totalDimSize
 
 !write(stderrUnit,*) 'Copying field from first block'
-            real0d_temp = field_cursor % real0dField % scalar
+            if (field_cursor % real0dField % array_kind == 0) then
+               real0d_temp = field_cursor % real0dField % scalar
+            else if (field_cursor % real0dField % array_kind == 4) then
+               real0d_temp = field_cursor % real0dField % scalar4
+            else if (field_cursor % real0dField % array_kind == 8) then
+               real0d_temp = field_cursor % real0dField % scalar8
+            end if
 
 !write(stderrUnit,*) 'MGD calling MPAS_io_put_var now...'
             call MPAS_io_put_var(stream % fileHandle, field_cursor % real0dField % fieldName, real0d_temp, io_err)
@@ -3307,18 +3439,42 @@ module mpas_io_streams
 
                      if (field_cursor % real1dField % isVarArray) then
 ! I suspect we will never hit this code, as it doesn't make sense, really
-                        real0d_temp = field_1dreal_ptr % array(j)
+                        if (field_cursor % real1dField % array_kind == 0) then
+                           real0d_temp = field_1dreal_ptr % array(j)
+                        else if (field_cursor % real1dField % array_kind == 4) then
+                           real0d_temp = field_1dreal_ptr % array4(j)
+                        else if (field_cursor % real1dField % array_kind == 8) then
+                           real0d_temp = field_1dreal_ptr % array8(j)
+                        end if
                      else
-                        real1d_temp(i:i+ownedSize-1) = field_1dreal_ptr % array(1:ownedSize)
+                        if (field_cursor % real1dField % array_kind == 0) then
+                           real1d_temp(i:i+ownedSize-1) = field_1dreal_ptr % array(1:ownedSize)
+                        else if (field_cursor % real1dField % array_kind == 4) then
+                           real1d_temp(i:i+ownedSize-1) = field_1dreal_ptr % array4(1:ownedSize)
+                        else if (field_cursor % real1dField % array_kind == 8) then
+                           real1d_temp(i:i+ownedSize-1) = field_1dreal_ptr % array8(1:ownedSize)
+                        end if
                      end if
                      i = i + ownedSize
                      field_1dreal_ptr => field_1dreal_ptr % next
                   end do
                else
                   if (field_cursor % real1dField % isVarArray) then
-                     real0d_temp = field_cursor % real1dField % array(j)
+                     if (field_cursor % real1dField % array_kind == 0) then
+                        real0d_temp = field_cursor % real1dField % array(j)
+                     else if (field_cursor % real1dField % array_kind == 4) then
+                        real0d_temp = field_cursor % real1dField % array4(j)
+                     else if (field_cursor % real1dField % array_kind == 8) then
+                        real0d_temp = field_cursor % real1dField % array8(j)
+                     end if
                   else
-                     real1d_temp(:) = field_cursor % real1dField % array(:)
+                     if (field_cursor % real1dField % array_kind == 0) then
+                        real1d_temp(:) = field_cursor % real1dField % array(:)
+                     else if (field_cursor % real1dField % array_kind == 4) then
+                        real1d_temp(:) = field_cursor % real1dField % array4(:)
+                     else if (field_cursor % real1dField % array_kind == 8) then
+                        real1d_temp(:) = field_cursor % real1dField % array8(:)
+                     end if
                   end if
                end if
 
@@ -3363,18 +3519,42 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real2dField % isVarArray) then
-                        real1d_temp(i:i+ownedSize-1) = field_2dreal_ptr % array(j,1:ownedSize)
+                        if (field_cursor % real2dField % array_kind == 0) then
+                           real1d_temp(i:i+ownedSize-1) = field_2dreal_ptr % array(j,1:ownedSize)
+                        else if (field_cursor % real2dField % array_kind == 4) then
+                           real1d_temp(i:i+ownedSize-1) = field_2dreal_ptr % array4(j,1:ownedSize)
+                        else if (field_cursor % real2dField % array_kind == 8) then
+                           real1d_temp(i:i+ownedSize-1) = field_2dreal_ptr % array8(j,1:ownedSize)
+                        end if
                      else
-                        real2d_temp(:,i:i+ownedSize-1) = field_2dreal_ptr % array(:,1:ownedSize)
+                        if (field_cursor % real2dField % array_kind == 0) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_2dreal_ptr % array(:,1:ownedSize)
+                        else if (field_cursor % real2dField % array_kind == 4) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_2dreal_ptr % array4(:,1:ownedSize)
+                        else if (field_cursor % real2dField % array_kind == 8) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_2dreal_ptr % array8(:,1:ownedSize)
+                        end if
                      end if
                      i = i + ownedSize
                      field_2dreal_ptr => field_2dreal_ptr % next
                   end do
                else
                   if (field_cursor % real2dField % isVarArray) then
-                     real1d_temp(:) = field_cursor % real2dField % array(j,:)
+                     if (field_cursor % real2dField % array_kind == 0) then
+                        real1d_temp(:) = field_cursor % real2dField % array(j,:)
+                     else if (field_cursor % real2dField % array_kind == 4) then
+                        real1d_temp(:) = field_cursor % real2dField % array4(j,:)
+                     else if (field_cursor % real2dField % array_kind == 8) then
+                        real1d_temp(:) = field_cursor % real2dField % array8(j,:)
+                     end if
                   else
-                     real2d_temp(:,:) = field_cursor % real2dField % array(:,:)
+                     if (field_cursor % real2dField % array_kind == 0) then
+                        real2d_temp(:,:) = field_cursor % real2dField % array(:,:)
+                     else if (field_cursor % real2dField % array_kind == 4) then
+                        real2d_temp(:,:) = field_cursor % real2dField % array4(:,:)
+                     else if (field_cursor % real2dField % array_kind == 8) then
+                        real2d_temp(:,:) = field_cursor % real2dField % array8(:,:)
+                     end if
                   end if
                end if
 
@@ -3423,18 +3603,42 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real3dField % isVarArray) then
-                        real2d_temp(:,i:i+ownedSize-1) = field_3dreal_ptr % array(j,:,1:ownedSize)
+                        if (field_cursor % real3dField % array_kind == 0) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_3dreal_ptr % array(j,:,1:ownedSize)
+                        else if (field_cursor % real3dField % array_kind == 4) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_3dreal_ptr % array4(j,:,1:ownedSize)
+                        else if (field_cursor % real3dField % array_kind == 8) then
+                           real2d_temp(:,i:i+ownedSize-1) = field_3dreal_ptr % array8(j,:,1:ownedSize)
+                        end if
                      else
-                        real3d_temp(:,:,i:i+ownedSize-1) = field_3dreal_ptr % array(:,:,1:ownedSize)
+                        if (field_cursor % real3dField % array_kind == 0) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_3dreal_ptr % array(:,:,1:ownedSize)
+                        else if (field_cursor % real3dField % array_kind == 4) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_3dreal_ptr % array4(:,:,1:ownedSize)
+                        else if (field_cursor % real3dField % array_kind == 8) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_3dreal_ptr % array8(:,:,1:ownedSize)
+                        end if
                      end if
                      i = i + ownedSize
                      field_3dreal_ptr => field_3dreal_ptr % next
                   end do
                else
                   if (field_cursor % real3dField % isVarArray) then
-                     real2d_temp(:,:) = field_cursor % real3dField % array(j,:,:)
+                     if (field_cursor % real3dField % array_kind == 0) then
+                        real2d_temp(:,:) = field_cursor % real3dField % array(j,:,:)
+                     else if (field_cursor % real3dField % array_kind == 4) then
+                        real2d_temp(:,:) = field_cursor % real3dField % array4(j,:,:)
+                     else if (field_cursor % real3dField % array_kind == 8) then
+                        real2d_temp(:,:) = field_cursor % real3dField % array8(j,:,:)
+                     end if
                   else
-                     real3d_temp(:,:,:) = field_cursor % real3dField % array(:,:,:)
+                     if (field_cursor % real3dField % array_kind == 0) then
+                        real3d_temp(:,:,:) = field_cursor % real3dField % array(:,:,:)
+                     else if (field_cursor % real3dField % array_kind == 4) then
+                        real3d_temp(:,:,:) = field_cursor % real3dField % array4(:,:,:)
+                     else if (field_cursor % real3dField % array_kind == 8) then
+                        real3d_temp(:,:,:) = field_cursor % real3dField % array8(:,:,:)
+                     end if
                   end if
                end if
 
@@ -3485,18 +3689,42 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real4dField % isVarArray) then
-                        real3d_temp(:,:,i:i+ownedSize-1) = field_4dreal_ptr % array(j,:,:,1:ownedSize)
+                        if (field_cursor % real4dField % array_kind == 0) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_4dreal_ptr % array(j,:,:,1:ownedSize)
+                        else if (field_cursor % real4dField % array_kind == 4) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_4dreal_ptr % array4(j,:,:,1:ownedSize)
+                        else if (field_cursor % real4dField % array_kind == 8) then
+                           real3d_temp(:,:,i:i+ownedSize-1) = field_4dreal_ptr % array8(j,:,:,1:ownedSize)
+                        end if
                      else
-                        real4d_temp(:,:,:,i:i+ownedSize-1) = field_4dreal_ptr % array(:,:,:,1:ownedSize)
+                        if (field_cursor % real4dField % array_kind == 0) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_4dreal_ptr % array(:,:,:,1:ownedSize)
+                        else if (field_cursor % real4dField % array_kind == 4) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_4dreal_ptr % array4(:,:,:,1:ownedSize)
+                        else if (field_cursor % real4dField % array_kind == 8) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_4dreal_ptr % array8(:,:,:,1:ownedSize)
+                        end if
                      end if
                      i = i + ownedSize
                      field_4dreal_ptr => field_4dreal_ptr % next
                   end do
                else
                   if (field_cursor % real4dField % isVarArray) then
-                     real3d_temp(:,:,:) = field_cursor % real4dField % array(j,:,:,:)
+                     if (field_cursor % real4dField % array_kind == 0) then
+                        real3d_temp(:,:,:) = field_cursor % real4dField % array(j,:,:,:)
+                     else if (field_cursor % real4dField % array_kind == 4) then
+                        real3d_temp(:,:,:) = field_cursor % real4dField % array4(j,:,:,:)
+                     else if (field_cursor % real4dField % array_kind == 8) then
+                        real3d_temp(:,:,:) = field_cursor % real4dField % array8(j,:,:,:)
+                     end if
                   else
-                     real4d_temp(:,:,:,:) = field_cursor % real4dField % array(:,:,:,:)
+                     if (field_cursor % real4dField % array_kind == 0) then
+                        real4d_temp(:,:,:,:) = field_cursor % real4dField % array(:,:,:,:)
+                     else if (field_cursor % real4dField % array_kind == 4) then
+                        real4d_temp(:,:,:,:) = field_cursor % real4dField % array4(:,:,:,:)
+                     else if (field_cursor % real4dField % array_kind == 8) then
+                        real4d_temp(:,:,:,:) = field_cursor % real4dField % array8(:,:,:,:)
+                     end if
                   end if
                end if
 
@@ -3549,18 +3777,42 @@ module mpas_io_streams
                      end if
 
                      if (field_cursor % real5dField % isVarArray) then
-                        real4d_temp(:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array(j,:,:,:,1:ownedSize)
+                        if (field_cursor % real5dField % array_kind == 0) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array(j,:,:,:,1:ownedSize)
+                        else if (field_cursor % real5dField % array_kind == 4) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array4(j,:,:,:,1:ownedSize)
+                        else if (field_cursor % real5dField % array_kind == 8) then
+                           real4d_temp(:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array8(j,:,:,:,1:ownedSize)
+                        end if
                      else
-                        real5d_temp(:,:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array(:,:,:,:,1:ownedSize)
+                        if (field_cursor % real5dField % array_kind == 0) then
+                           real5d_temp(:,:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array(:,:,:,:,1:ownedSize)
+                        else if (field_cursor % real5dField % array_kind == 4) then
+                           real5d_temp(:,:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array4(:,:,:,:,1:ownedSize)
+                        else if (field_cursor % real5dField % array_kind == 8) then
+                           real5d_temp(:,:,:,:,i:i+ownedSize-1) = field_5dreal_ptr % array8(:,:,:,:,1:ownedSize)
+                        end if
                      end if
                      i = i + ownedSize
                      field_5dreal_ptr => field_5dreal_ptr % next
                   end do
                else
                   if (field_cursor % real5dField % isVarArray) then
-                     real4d_temp(:,:,:,:) = field_cursor % real5dField % array(j,:,:,:,:)
+                     if (field_cursor % real5dField % array_kind == 0) then
+                        real4d_temp(:,:,:,:) = field_cursor % real5dField % array(j,:,:,:,:)
+                     else if (field_cursor % real5dField % array_kind == 4) then
+                        real4d_temp(:,:,:,:) = field_cursor % real5dField % array4(j,:,:,:,:)
+                     else if (field_cursor % real5dField % array_kind == 8) then
+                        real4d_temp(:,:,:,:) = field_cursor % real5dField % array8(j,:,:,:,:)
+                     end if
                   else
-                     real5d_temp(:,:,:,:,:) = field_cursor % real5dField % array(:,:,:,:,:)
+                     if (field_cursor % real5dField % array_kind == 0) then
+                        real5d_temp(:,:,:,:,:) = field_cursor % real5dField % array(:,:,:,:,:)
+                     else if (field_cursor % real5dField % array_kind == 4) then
+                        real5d_temp(:,:,:,:,:) = field_cursor % real5dField % array4(:,:,:,:,:)
+                     else if (field_cursor % real5dField % array_kind == 8) then
+                        real5d_temp(:,:,:,:,:) = field_cursor % real5dField % array8(:,:,:,:,:)
+                     end if
                   end if
                end if
 
