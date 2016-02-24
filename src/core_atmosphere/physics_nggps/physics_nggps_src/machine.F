@@ -23,7 +23,7 @@
                        kind_io8  = selected_real_kind(12),     &
                        kind_ior  = selected_real_kind(12)
 
-#ifdef SINGLE_PRECISION
+#ifdef SINGLE_PRECISION_BLAH
  integer, parameter :: kind_evod = selected_real_kind(6),      &
                        kind_dbl_prec = selected_real_kind(12), &
                        kind_rad  = selected_real_kind(6),      &

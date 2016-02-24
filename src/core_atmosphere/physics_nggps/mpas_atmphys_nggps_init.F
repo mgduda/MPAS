@@ -73,13 +73,13 @@
  integer,dimension(:),pointer:: nlonsCell
 
  real(kind=R8KIND),pointer:: fhour
- real(kind=R8KIND),dimension(:),pointer:: rdzw
+ real(kind=RKIND),dimension(:),pointer:: rdzw
  real(kind=R8KIND),dimension(:),pointer:: oro,oro_uf
  real(kind=R8KIND),dimension(:),pointer:: tisfc,tsea
  real(kind=R8KIND),dimension(:),pointer:: zorl
  real(kind=R8KIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
 
- real(kind=R8KIND),dimension(:,:),pointer:: zgrid
+ real(kind=RKIND),dimension(:,:),pointer:: zgrid
  real(kind=R8KIND),dimension(:,:),pointer:: rannum_tank
 
 !local variables:
@@ -120,11 +120,11 @@
  call mpas_pool_get_array(mesh,'rdzw',rdzw)
  write(0,*) '--- initial_date = ', trim(initial_date)
 
- call mpas_pool_get_array(mesh,'nlonsCell' ,nlonsCell )
- call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
- call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
- call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
- call mpas_pool_get_array(mesh,'zgrid'     ,zgrid     )
+ call mpas_pool_get_array(mesh,'nlonsCell'  ,nlonsCell )
+ call mpas_pool_get_array(mesh,'latCellPhys',latCell   )
+ call mpas_pool_get_array(mesh,'coslatCell' ,coslatCell)
+ call mpas_pool_get_array(mesh,'sinlatCell' ,sinlatCell)
+ call mpas_pool_get_array(mesh,'zgrid'      ,zgrid     )
 
  call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
 
@@ -417,8 +417,8 @@
 
 !local pointers:
  integer,pointer:: nCells
- real(kind=R8KIND),dimension(:),pointer:: latCell,lonCell
- real(kind=R8KIND),dimension(:,:),pointer:: east,north
+ real(kind=RKIND),dimension(:),pointer:: latCell,lonCell
+ real(kind=RKIND),dimension(:,:),pointer:: east,north
 
 !local variables:
  integer:: iCell
@@ -454,8 +454,8 @@
 !=================================================================================================================
 !normalizes the vector (ax, ay, az)
 
- real (kind=R8KIND), intent(inout) :: ax, ay, az
- real (kind=R8KIND) :: mi
+ real (kind=RKIND), intent(inout) :: ax, ay, az
+ real (kind=RKIND) :: mi
 
 !-----------------------------------------------------------------------------------------------------------------
 

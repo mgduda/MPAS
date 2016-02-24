@@ -38,9 +38,9 @@
  logical:: l_radtlw                   !controls call to longwave radiation parameterization.
  logical:: l_radtsw                   !controls call to shortwave radiation parameterization.
 
- real(kind=R8KIND),public:: dt_dyn     !time-step for dynamics
- real(kind=R8KIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]
- real(kind=R8KIND),public:: dt_radtsw  !time-step for shortwave radiation parameterization [mns]
+ real(kind=RKIND),public:: dt_dyn     !time-step for dynamics
+ real(kind=RKIND),public:: dt_radtlw  !time-step for longwave radiation parameterization  [mns]
+ real(kind=RKIND),public:: dt_radtsw  !time-step for shortwave radiation parameterization [mns]
 
 !... parameters needed for the calculation of random numbers:
 integer:: seed0

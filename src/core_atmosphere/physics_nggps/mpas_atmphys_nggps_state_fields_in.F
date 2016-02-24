@@ -182,9 +182,9 @@
  integer,pointer:: nCellsSolve,nVertLevels
  integer,pointer:: index_qv,index_qc,index_qo3
 
- real(kind=R8KIND),dimension(:,:),pointer  :: uReconstructZonal,uReconstructMeridional
- real(kind=R8KIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
- real(kind=R8KIND),dimension(:,:),pointer  :: rho,theta_m,w
+ real(kind=RKIND),dimension(:,:),pointer  :: uReconstructZonal,uReconstructMeridional
+ real(kind=RKIND),dimension(:,:),pointer  :: zz,zgrid,pressure_p,pressure_b,exner
+ real(kind=RKIND),dimension(:,:),pointer  :: rho,theta_m,w
  real(kind=R8KIND),dimension(:,:),pointer  :: qv,qc,qo3
  real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
  

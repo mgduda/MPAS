@@ -253,15 +253,21 @@ module atm_core
       
       real (kind=RKIND), dimension(:,:), pointer :: u, uReconstructX, uReconstructY, uReconstructZ, uReconstructZonal, uReconstructMeridional
       real (kind=RKIND), dimension(:), pointer :: meshScalingDel2, meshScalingDel4
-      real (kind=RKIND), dimension(:), pointer :: areaCell, invAreaCell
+      real (kind=RKIND), dimension(:), pointer :: areaCell
+      real (kind=RKIND), dimension(:), pointer :: invAreaCell
       real (kind=RKIND), dimension(:), pointer :: dvEdge, invDvEdge
       real (kind=RKIND), dimension(:), pointer :: dcEdge, invDcEdge
       real (kind=RKIND), dimension(:), pointer :: areaTriangle, invAreaTriangle
+      real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
+      real (kind=R8KIND), dimension(:), pointer :: latCellPhys, lonCellPhys, areaCellPhys
+      real (kind=R8KIND) :: piover2
       integer, pointer :: nCells, nEdges, nVertices, nVertLevels, nEdgesSolve
       integer :: thread
       character(len=StrKIND), pointer :: mminlu
 
       logical, pointer :: config_do_restart, config_do_DAcycling
+
+      piover2 = asin(1.0_R8KIND)
 
       call atm_compute_signs(mesh)
    
@@ -277,6 +283,8 @@ module atm_core
       !!!! Compute inverses to avoid divides later
       
       call mpas_pool_get_array(mesh, 'areaCell', areaCell)
+      call mpas_pool_get_array(mesh, 'latCell', latCell)
+      call mpas_pool_get_array(mesh, 'lonCell', lonCell)
       call mpas_pool_get_array(mesh, 'invAreaCell', invAreaCell)
       
       call mpas_pool_get_array(mesh, 'dvEdge', dvEdge)
@@ -286,6 +294,10 @@ module atm_core
       
       call mpas_pool_get_array(mesh, 'areaTriangle', areaTriangle)
       call mpas_pool_get_array(mesh, 'invAreaTriangle', invAreaTriangle)
+
+      call mpas_pool_get_array(mesh, 'latCellPhys', latCellPhys)
+      call mpas_pool_get_array(mesh, 'lonCellPhys', lonCellPhys)
+      call mpas_pool_get_array(mesh, 'areaCellPhys', areaCellPhys)
       
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)      
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
@@ -293,6 +305,18 @@ module atm_core
  
       do iCell=1,nCells 
          invAreaCell(iCell) = 1.0_RKIND / areaCell(iCell)
+         areaCellPhys(iCell) = real(areaCell(iCell),kind=R8KIND)
+         lonCellPhys(iCell) = real(lonCell(iCell),kind=R8KIND)
+         latCellPhys(iCell) = real(latCell(iCell),kind=R8KIND)
+
+         ! The following can happen if the nearest representable number to Pi/2
+         ! in single-precision is larger than Pi/2
+         if (latCellPhys(iCell) > piover2) then
+            latCellPhys(iCell) = piover2
+         end if
+         if (latCellPhys(iCell) < -piover2) then
+            latCellPhys(iCell) = -piover2
+         end if
       end do
         
       do iEdge=1,nEdges 
@@ -745,8 +769,8 @@ module atm_core
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call mpas_timer_start('physics_driver')
-         call physics_timetracker(domain,dt,clock,itimestep,xtime_s)
-         call physics_driver(domain,itimestep,xtime_s)
+         call physics_timetracker(domain,real(dt,kind=R8KIND),clock,itimestep,real(xtime_s,kind=R8KIND))
+         call physics_driver(domain,itimestep,real(xtime_s,kind=R8KIND))
          call mpas_timer_stop('physics_driver')
       endif
 #endif

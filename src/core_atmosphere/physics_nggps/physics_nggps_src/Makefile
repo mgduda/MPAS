@@ -204,25 +204,25 @@ tracer_const_h.o \
 tridi2t3.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $*.f > $*.f90
-	$(FC) $(FFLAGS77) -c $*.f90 $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(FFLAGS77_PHYS) -c $*.f90 $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS77) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS77_PHYS) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 endif
 
 .f.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
+	$(FC) $(FFLAGS_PHYS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS_PHYS) -c $*.f $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 endif
 
 .F.o:
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
+	$(FC) $(FFLAGS_PHYS) -c $*.f90 $(FCINCLUDES) -I../../../framework -I../../../operators -I..
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
+	$(FC) $(CPPFLAGS) $(COREDEF) $(FFLAGS_PHYS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I./../physics_nggps_lib -I../../../framework -I../../../operators -I..
 endif
 
 clean:

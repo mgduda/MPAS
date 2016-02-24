@@ -46,10 +46,10 @@
  integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
  integer,pointer:: index_qv,index_qc,index_qo3
 
- real(kind=R8KIND),dimension(:,:),pointer  :: mass
- real(kind=R8KIND),dimension(:,:),pointer  :: mass_edge
+ real(kind=RKIND),dimension(:,:),pointer  :: mass
+ real(kind=RKIND),dimension(:,:),pointer  :: mass_edge
  real(kind=R8KIND),dimension(:,:),pointer  :: qv
- real(kind=R8KIND),dimension(:,:),pointer  :: theta_m
+ real(kind=RKIND),dimension(:,:),pointer  :: theta_m
  real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
 
  real(kind=R8KIND),dimension(:,:),pointer  :: tend_thdiffusion,tend_qvdiffusion,  &
@@ -68,12 +68,12 @@
                                              tend_qcphysics,tend_qo3physics, &
                                              tend_uphysics ,tend_vphysics
 
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_theta,tend_u
+ real(kind=RKIND),dimension(:,:),pointer  :: tend_theta,tend_u
  real(kind=R8KIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
  real(kind=R8KIND),dimension(:,:,:),pointer:: tend_scalars
 
  real(kind=R8KIND),dimension(:,:),allocatable:: tend_uphysics_Edge
- real(kind=R8KIND),dimension(:,:),allocatable:: theta,tend_th
+ real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 
 !local variables:
  integer:: iCell,iEdge,k
@@ -232,8 +232,8 @@
  integer,dimension(:),pointer  :: nEdgesOnCell
  integer,dimension(:,:),pointer:: edgesOnCell
 
- real(kind=R8KIND),dimension(:,:),pointer:: east,north,edge_normal
- real(kind=R8KIND),dimension(:,:),allocatable,target:: Ux_tend_halo,Uy_tend_halo
+ real(kind=RKIND),dimension(:,:),pointer:: east,north,edge_normal
+ real(kind=RKIND),dimension(:,:),allocatable,target:: Ux_tend_halo,Uy_tend_halo
  
 !--------------------------------------------------------------------------------------------------
 

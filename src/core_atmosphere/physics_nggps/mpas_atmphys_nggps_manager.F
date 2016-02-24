@@ -223,7 +223,7 @@
                                   config_greeness_update, &
                                   config_ozone_update
 
- real(kind=R8KIND),pointer:: config_dt
+ real(kind=RKIND),pointer:: config_dt
 
 !local variables:
  type(MPAS_Time_Type):: startTime,alarmStartTime

@@ -55,10 +55,19 @@
     <var name="nlonsCell" type="integer" dimensions="nCells" units="dimensionless"
        description=" "
     />
-    <var name="sinlatCell" type="real" dimensions="nCells" units="dimensionless"
+    <var name="latCellPhys" type="real" precision="8" dimensions="nCells" units="rad"
+       description="cell latitude"
+    />
+    <var name="lonCellPhys" type="real" precision="8" dimensions="nCells" units="rad"
+       description="cell longitude"
+    />
+    <var name="areaCellPhys" type="real" precision="8" dimensions="nCells" units="m^2"
+       description="cell area"
+    />
+    <var name="sinlatCell" type="real" precision="8" dimensions="nCells" units="dimensionless"
        description="sinus of latitude"
     />
-    <var name="coslatCell" type="real" dimensions="nCells" units="dimensionless"
+    <var name="coslatCell" type="real" precision="8" dimensions="nCells" units="dimensionless"
        description="cosine of latitude"
     />
 
@@ -66,7 +75,7 @@
 
  <var_struct name="nggps_dynamic_parameters" time_levs="1">
 
-    <var name="forecast_hour" type="real" dimensions="" units="dimensionless"
+    <var name="forecast_hour" type="real" precision="8" dimensions="" units="dimensionless"
        description="forecast hour since the initial starting date of the forecast"
     />
 

@@ -702,7 +702,7 @@
                 <var name="rho_zz"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="theta_m"   type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="m_ps"      type="real"     dimensions="nCells Time"/>
-                <var_array name="scalars" type="real" dimensions="nVertLevels nCells Time" precision="8">
+                <var_array name="scalars" type="real" precision="8" dimensions="nVertLevels nCells Time">
                         <var name="qv"      array_group="moist"/>
                         <var name="qc"      array_group="moist"/>
                         <var name="qo3"     array_group="ozone"/>
@@ -855,7 +855,7 @@
                 <var name="tend_sfc_pressure"                             type="real"     dimensions="nCells Time"/>
 
                 <!-- scalar tendencies -->
-                <var_array name="scalars_tend" type="real" dimensions="nVertLevels nCells Time">
+                <var_array name="scalars_tend" type="real" precision="8" dimensions="nVertLevels nCells Time">
                         <var name="tend_qv"    name_in_code="qv"        array_group="moist"/>
                         <var name="tend_qc"    name_in_code="qc"        array_group="moist"/>
                         <var name="tend_qo3"   name_in_code="qo3"       array_group="ozone"/>

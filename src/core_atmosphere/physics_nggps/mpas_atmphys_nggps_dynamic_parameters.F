@@ -112,8 +112,9 @@
  integer,pointer:: nCellsSolve
 
  real(kind=R8KIND),pointer:: fhour
- real(kind=R8KIND),pointer:: config_dt
- real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
+ real(kind=RKIND),pointer:: config_dt
+ real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell
+ real(kind=R8KIND),dimension(:),pointer:: coslatCell,sinlatCell
 
  integer,dimension(:),pointer:: icsdlw_l,icsdsw_l
 
@@ -140,10 +141,10 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_dt',config_dt)
 
- call mpas_pool_get_array(mesh,'lonCell'   ,lonCell   )
- call mpas_pool_get_array(mesh,'latCell'   ,latCell   )
- call mpas_pool_get_array(mesh,'coslatCell',coslatCell)
- call mpas_pool_get_array(mesh,'sinlatCell',sinlatCell)
+ call mpas_pool_get_array(mesh,'lonCellPhys',lonCell   )
+ call mpas_pool_get_array(mesh,'latCellPhys',latCell   )
+ call mpas_pool_get_array(mesh,'coslatCell' ,coslatCell)
+ call mpas_pool_get_array(mesh,'sinlatCell' ,sinlatCell)
  call mpas_pool_get_array(mesh,'initial_date',initial_timeStamp)
 
  call mpas_pool_get_array(nggps_dynamic_parameters,'forecast_hour',fhour)
@@ -288,9 +289,10 @@
  integer,dimension(:),pointer:: nlonsCell
 
  real(kind=R8KIND),pointer:: fhour
- real(kind=R8KIND),pointer:: config_dt
+ real(kind=RKIND),pointer:: config_dt
  real(kind=R8KIND),dimension(:),pointer:: areaCell
- real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell,coslatCell,sinlatCell
+ real(kind=R8KIND),dimension(:),pointer:: lonCell,latCell
+ real(kind=R8KIND),dimension(:),pointer:: coslatCell,sinlatCell
 
 !local variables:
  logical:: lscca,lssav,lslwr,lsswr
@@ -306,10 +308,10 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_config(configs,'config_dt'  ,config_dt  )
 
- call mpas_pool_get_array(mesh,'areaCell'    ,areaCell   )
+ call mpas_pool_get_array(mesh,'areaCellPhys',areaCell   )
  call mpas_pool_get_array(mesh,'nlonsCell'   ,nlonsCell  )
- call mpas_pool_get_array(mesh,'lonCell'     ,lonCell    )
- call mpas_pool_get_array(mesh,'latCell'     ,latCell    )
+ call mpas_pool_get_array(mesh,'lonCellPhys' ,lonCell    )
+ call mpas_pool_get_array(mesh,'latCellPhys' ,latCell    )
  call mpas_pool_get_array(mesh,'coslatCell'  ,coslatCell )
  call mpas_pool_get_array(mesh,'sinlatCell'  ,sinlatCell )
  call mpas_pool_get_array(mesh,'initial_date',initial_timeStamp)

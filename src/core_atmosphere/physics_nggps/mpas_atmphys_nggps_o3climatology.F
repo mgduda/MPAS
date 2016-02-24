@@ -49,7 +49,7 @@
  integer,pointer:: nCells
  integer,pointer:: nOznLevels,nOznPlCoeff,nMonths
 
- real(kind=R8KIND),dimension(:),pointer:: latCell
+ real(kind=RKIND),dimension(:),pointer:: latCell
  real(kind=R8KIND),dimension(:),pointer:: pl_pres,pl_time
  real(kind=R8KIND),dimension(:,:,:,:),pointer:: ozmixm
 
