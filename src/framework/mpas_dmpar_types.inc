@@ -28,8 +28,10 @@
    type mpas_communication_list
      integer :: procID
      integer :: nlist
-     real (kind=RKIND), dimension(:), pointer :: rbuffer
-     integer, dimension(:), pointer :: ibuffer
+     real (kind=RKIND), dimension(:), pointer :: rbuffer => null()
+     real (kind=R4KIND), dimension(:), pointer :: r4buffer => null()
+     real (kind=R8KIND), dimension(:), pointer :: r8buffer => null()
+     integer, dimension(:), pointer :: ibuffer => null()
      integer :: reqID
      type (mpas_communication_list), pointer :: next
    end type mpas_communication_list
