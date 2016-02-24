@@ -148,6 +148,8 @@ ifort:
 	"CXX_SERIAL = icpc" \
 	"FFLAGS_OPT = -xHost -align array64byte -O3 -convert big_endian -FR" \
 	"FFLAGS77_OPT = -O3 -convert big_endian -fpp -FI" \
+	"FFLAGS_PHYS = -real-size 64 -xHost -align array64byte -O3 -convert big_endian -FR" \
+	"FFLAGS77_PHYS = -real-size 64 -O3 -convert big_endian -fpp -FI" \
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
@@ -200,6 +202,8 @@ gfortran:
 	"CXX_SERIAL = g++" \
 	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"FFLAGS77_OPT = -O3 -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form" \
+	"FFLAGS_PHYS = -fdefault-real-8 -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
+	"FFLAGS77_PHYS = -fdefault-real-8 -O3 -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form" \
 	"CFLAGS_OPT = -O3 -m64" \
 	"CXXFLAGS_OPT = -O3 -m64" \
 	"LDFLAGS_OPT = -O3 -m64" \
