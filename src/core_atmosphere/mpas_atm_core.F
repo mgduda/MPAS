@@ -727,8 +727,8 @@ module atm_core
       
       type (MPAS_Time_Type) :: startTime, currTime
       type (MPAS_TimeInterval_Type) :: xtimeTime
+      type (MPAS_TimeInterval_Type) :: dtDynamics
       type (mpas_pool_type), pointer :: state
-      character(len=StrKIND) :: timeStamp
       integer :: s, s_n, s_d
       integer :: icycle
       real (kind=RKIND) :: xtime_s
@@ -741,8 +741,6 @@ module atm_core
       call mpas_get_timeInterval(interval=xtimeTime, S=s, S_n=s_n, S_d=s_d, ierr=ierr)         
       xtime_s = (s + s_n / s_d)
 
-      call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
-
 #if defined(DO_PHYSICS) || defined(DO_PHYSICS_NGGPS)
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
@@ -753,12 +751,17 @@ module atm_core
       endif
 #endif
 
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
+      dtDynamics = mpas_get_clock_timestep(clock, ierr=ierr)
+      dtDynamics = dtDynamics / dynamics_subcycles
       do icycle=1,dynamics_subcycles
-         call atm_timestep(domain, (dt / real(dynamics_subcycles, kind=RKIND)), timeStamp, itimestep)
+
+         call atm_timestep(domain, dtDynamics, currTime, itimestep)
 
          ! Move time level 2 fields back into time level 1 for next time step
          call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
          call mpas_pool_shift_time_levels(state)
+
       end do
 
    end subroutine atm_do_timestep

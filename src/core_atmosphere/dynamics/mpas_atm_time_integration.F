@@ -26,7 +26,7 @@ module atm_time_integration
    use mpas_vector_reconstruction
    ! Added only clause to keep xlf90 from getting confused from the overloaded abs intrinsic in mpas_timekeeping
    use mpas_timekeeping, only: MPAS_Time_type, MPAS_TimeInterval_type, &
-                               mpas_set_time, mpas_set_timeInterval, mpas_get_time, operator(+), add_t_ti
+                               mpas_get_timeInterval, mpas_get_time, operator(+), add_t_ti
    use mpas_timer
    use mpas_performance
 
@@ -73,7 +73,7 @@ module atm_time_integration
    contains
 
 
-   subroutine atm_timestep(domain, dt, timeStamp, itimestep)
+   subroutine atm_timestep(domain, dtDynamics, currTime, itimestep)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Advance model state forward in time by the specified time step
    !
@@ -86,14 +86,14 @@ module atm_time_integration
       implicit none
 
       type (domain_type), intent(inout) :: domain
-      real (kind=RKIND), intent(in) :: dt
-      character(len=*), intent(in) :: timeStamp
+      type (MPAS_TimeInterval_type), intent(in) :: dtDynamics
+      type (MPAS_Time_type), intent(inout) :: currTime
       integer, intent(in) :: itimestep
 
 
       type (block_type), pointer :: block
-      type (MPAS_Time_type) :: currTime
-      type (MPAS_TimeInterval_type) :: dtInterval
+      integer :: s, s_n, s_d
+      real (kind=RKIND) :: dt
       character (len=StrKIND), pointer :: xtime
       character (len=StrKIND) :: xtime_new
       type (mpas_pool_type), pointer :: state
@@ -103,6 +103,9 @@ module atm_time_integration
       call mpas_pool_get_config(domain % blocklist % configs, 'config_time_integration', config_time_integration)
 
       if (trim(config_time_integration) == 'SRK3') then
+         call mpas_get_timeInterval(interval=dtDynamics, S=s, S_n=s_n, S_d=s_d)
+         dt = real(s, kind=RKIND) + real(s_n, kind=RKIND) / real(s_d, kind=RKIND)
+
          MPAS_GPTL_START('atm_srk3')
          call mpas_timer_start('atm_srk3')
          call atm_srk3(domain, dt, itimestep)
@@ -114,9 +117,7 @@ module atm_time_integration
          call mpas_dmpar_abort(domain % dminfo)
       end if
 
-      call mpas_set_time(currTime, dateTimeString=timeStamp)
-      call mpas_set_timeInterval(dtInterval, dt=dt)
-      currTime = currTime + dtInterval
+      currTime = currTime + dtDynamics
       call mpas_get_time(currTime, dateTimeString=xtime_new)
 
       block => domain % blocklist
