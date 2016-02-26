@@ -418,6 +418,7 @@ module atm_core
      call physics_namelist_check(mesh, block % configs)
 
      if (moist_physics) then
+
         call mpas_pool_get_subpool(block % structs, 'nggps_atm_inputs', nggps_atm_inputs)
         call mpas_pool_get_subpool(block % structs, 'nggps_dynamic_parameters', nggps_dynamic_parameters)
         call mpas_pool_get_subpool(block % structs, 'nggps_sfc_properties', nggps_sfc_properties)
@@ -459,7 +460,11 @@ module atm_core
       use mpas_stream_manager
       use mpas_derived_types, only : MPAS_STREAM_LATEST_BEFORE, MPAS_STREAM_INPUT, MPAS_STREAM_INPUT_OUTPUT
       use mpas_timer
-   
+
+#if defined(DO_PHYSICS_NGGPS)
+      use mpas_atmphys_nggps_compute_diagnostics
+#endif
+
       implicit none
    
       type (domain_type), intent(inout) :: domain
@@ -482,6 +487,17 @@ module atm_core
 
       ! For high-frequency diagnostics output
       character (len=StrKIND) :: tempfilename
+
+#if defined(DO_PHYSICS_NGGPS)
+      type (mpas_pool_type), pointer :: nggps_diagnostics
+      type (mpas_pool_type), pointer :: nggps_diagnostics_dynamics
+      type (mpas_pool_type), pointer :: nggps_diagnostics_physics
+      type (mpas_pool_type), pointer :: nggps_diagnostics_radiation
+      type (mpas_pool_type), pointer :: nggps_sfc_properties
+      type (mpas_pool_type), pointer :: nggps_tbd_ddt
+
+      character(len=StrKIND) :: nggps_interval
+#endif
 
       ierr = 0
 
@@ -507,6 +523,20 @@ module atm_core
             call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
             call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
             call atm_compute_output_diagnostics(state, 1, diag, mesh)
+
+#if defined(DO_PHYSICS_NGGPS)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics', nggps_diagnostics)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_dynamics', nggps_diagnostics_dynamics)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_physics', nggps_diagnostics_physics)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_radiation', nggps_diagnostics_radiation)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_sfc_properties', nggps_sfc_properties)
+            call mpas_pool_get_subpool(block_ptr % structs, 'nggps_tbd_ddt', nggps_tbd_ddt)
+
+            call dynamics_nggps_compute_diagnostics(mesh, state, 1, diag, nggps_diagnostics_dynamics)
+!           call physics_nggps_compute_diagnostics(block_ptr % configs, mesh, nggps_interval, nggps_diagnostics, &
+!                                                  nggps_diagnostics_radiation, nggps_diagnostics_physics)
+            call physics_nggps_fill_diagnostics(mesh,nggps_sfc_properties, nggps_tbd_ddt,nggps_diagnostics_physics)
+#endif
 
             block_ptr => block_ptr % next
          end do
@@ -586,6 +616,35 @@ module atm_core
                block_ptr => block_ptr % next
             end do
          end if
+         
+#if defined(DO_PHYSICS_NGGPS)
+         if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='nggps_tavg', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
+            block_ptr => domain % blocklist
+            do while (associated(block_ptr))
+
+               ierr = 0
+               call MPAS_stream_mgr_get_property( domain % streamManager, 'nggps_tavg', MPAS_STREAM_PROPERTY_RECORD_INTV, &
+                         nggps_interval,direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+
+               call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics', nggps_diagnostics)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_dynamics', nggps_diagnostics_dynamics)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_physics', nggps_diagnostics_physics)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_diagnostics_radiation', nggps_diagnostics_radiation)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_sfc_properties', nggps_sfc_properties)
+               call mpas_pool_get_subpool(block_ptr % structs, 'nggps_tbd_ddt', nggps_tbd_ddt)
+
+               call dynamics_nggps_compute_diagnostics(mesh, state, 1, diag, nggps_diagnostics_dynamics)
+               call physics_nggps_compute_diagnostics(block_ptr % configs, mesh, nggps_interval, nggps_diagnostics, &
+                                                      nggps_diagnostics_radiation, nggps_diagnostics_physics)
+               call physics_nggps_fill_diagnostics(mesh,nggps_sfc_properties, nggps_tbd_ddt,nggps_diagnostics_physics)
+
+               block_ptr => block_ptr % next
+
+            end do
+         end if
+#endif
+
          if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
             block_ptr => domain % blocklist
             do while (associated(block_ptr))
@@ -739,9 +798,9 @@ module atm_core
       use mpas_atmphys_control
       use mpas_atmphys_driver
       use mpas_atmphys_manager
-      use mpas_atmphys_update
+      use mpas_atmphys_nggps_compute_diagnostics
 #endif
-   
+
       implicit none
    
       type (domain_type), intent(inout) :: domain 
@@ -769,7 +828,7 @@ module atm_core
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call mpas_timer_start('physics_driver')
-         call physics_timetracker(domain,real(dt,kind=R8KIND),clock,itimestep,real(xtime_s,kind=R8KIND))
+         call physics_timetracker(domain,dt,clock,itimestep,real(xtime_s,kind=R8KIND))
          call physics_driver(domain,itimestep,real(xtime_s,kind=R8KIND))
          call mpas_timer_stop('physics_driver')
       endif

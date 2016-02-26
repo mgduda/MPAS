@@ -191,6 +191,228 @@
     <var name="sr" type="real" precision="8" dimensions="nCells Time" units="-" 
          description="ratio of snow to total precipitation"
     />
+    <var name="totcld" type="real" dimensions="nCells Time" units="-"
+         description="atmospheric column total cloud cover"
+    />
+    <var name="highcld" type="real" dimensions="nCells Time" units="-"
+         description="high-cloud level total cloud cover"
+    />
+    <var name="lowcld" type="real" dimensions="nCells Time" units="-"
+         description="low-cloud level total cloud cover"
+    />
+    <var name="midcld" type="real" dimensions="nCells Time" units="-"
+         description="mid-cloud level total cloud cover"
+    />
 
  </var_struct>
+
+
+ <var_struct name="nggps_diagnostics_radiation" time_levs="1">
+
+    <var name="ALBDOsfc" name_in_code="albdosfc" type="real" dimensions="nCells Time" units="-"
+         description="surface albedo averaged over the output interval"
+    />
+
+    <var name="DLWRFsfc" name_in_code="dlwrfsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface all-sky downward longwave radiation averaged over the output interval"
+    />
+    <var name="ULWRFsfc" name_in_code="ulwrfsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface all-sky upward longwave radiation averaged over the output interval"
+    />
+    <var name="DSWRFsfc" name_in_code="dswrfsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface all-sky downward shortwave radiation averaged over the output interval"
+    />
+    <var name="USWRFsfc" name_in_code="uswrfsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface all-sky upward shortwave radiation averaged over the output interval"
+    />
+    <var name="ULWRFtoa" name_in_code="ulwrftoa" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="top-of-atmosphere all-sky upward longwave radiation averaged over the output interval"
+    />
+    <var name="DSWRFtoa" name_in_code="dswrftoa" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="top-of-atmosphere all-sky downward shortwave radiation averaged over the output interval"
+    />
+    <var name="USWRFtoa" name_in_code="uswrftoa" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="top-of-atmosphere all-sky upward shortwave radiation averaged over the output interval"
+    />
+    <var name="TCDCclm" name_in_code="tcdcclm" type="real" dimensions="nCells Time" units="-"
+         description="atmospheric column total cloud cover averaged over the output interval"
+    />
+    <var name="TCDChcl" name_in_code="tcdchcl" type="real" dimensions="nCells Time" units="-"
+         description="high-cloud level total cloud cover averaged over the output interval"
+    />
+    <var name="TCDClcl" name_in_code="tcdclcl" type="real" dimensions="nCells Time" units="-"
+         description="low-cloud level total cloud cover averaged over the output interval"
+    />
+    <var name="TCDCmcl" name_in_code="tcdcmcl" type="real" dimensions="nCells Time" units="-"
+         description="mid-cloud level total cloud cover averaged over the output interval"
+    />
+
+ </var_struct>
+
+
+ <var_struct name="nggps_diagnostics_physics" time_levs="1">
+
+    <var name="CPRATsfc" name_in_code="cpratsfc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
+         description="accumulated surface convective precipitation rate over output interval"
+    />
+
+    <var name="PRATEsfc" name_in_code="pratesfc" type="real" dimensions="nCells Time" units="kg m^{-2} s^{-1}"
+         description="accumulated surface total precipitation rate over output interval"
+    />
+
+    <var name="GFLUXsfc" name_in_code="gfluxsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface ground heat flux averaged over the output interval"
+    />
+
+    <var name="LHTFLsfc" name_in_code="lhtflsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface latent heat flux averaged over the output interval"
+    />
+
+    <var name="SHTFLsfc" name_in_code="shtflsfc" type="real" dimensions="nCells Time" units="W m^{-2}"
+         description="surface sensible heat flux averaged over the output interval"
+    />
+
+    <var name="UGWDsfc" name_in_code="ugwdsfc" type="real" dimensions="nCells Time" units="N m^{-2}"
+         description="surface zonal gravity wave drag averaged over the output interval"
+    />
+
+    <var name="VGWDsfc" name_in_code="vgwdsfc" type="real" dimensions="nCells Time" units="N m^{-2}"
+         description="surface meridional gravity wave drag averaged over the output interval"
+    />
+
+    <var name="UFLXsfc" name_in_code="uflxsfc" type="real" dimensions="nCells Time" units="N m^{-2}"
+         description="surface zonal momentum flux averaged over the output interval"
+    />
+
+    <var name="VFLXsfc" name_in_code="vflxsfc" type="real" dimensions="nCells Time" units="N m^{-2}"
+         description="surface meridional momentum averaged over the output interval"
+    />
+
+    <var name="SOILW1" name_in_code="soilw1" type="real" dimensions="nCells Time" units="fraction"
+         description="volumetric soil moisture (0-10 cm)"
+    />
+
+    <var name="SOILW2" name_in_code="soilw2" type="real" dimensions="nCells Time" units="fraction"
+         description="volumetric soil moisture (10-40 cm)"
+    />
+
+    <var name="SOILW3" name_in_code="soilw3" type="real" dimensions="nCells Time" units="fraction"
+         description="volumetric soil moisture (40-100 cm)"
+    />
+
+    <var name="SOILW4" name_in_code="soilw4" type="real" dimensions="nCells Time" units="fraction"
+         description="volumetric soil moisture (100-200 cm)"
+    />
+
+    <var name="SOILT1" name_in_code="soilt1" type="real" dimensions="nCells Time" units="K"
+         description="soil temperature (0-10 cm)"
+    />
+
+    <var name="SOILT2" name_in_code="soilt2" type="real" dimensions="nCells Time" units="K"
+         description="soil temperature (10-40 cm)"
+    />
+
+    <var name="SOILT3" name_in_code="soilt3" type="real" dimensions="nCells Time" units="K"
+         description="soil temperature (40-100 cm)"
+    />
+
+    <var name="SOILT4" name_in_code="soilt4" type="real" dimensions="nCells Time" units="K"
+         description="soil temperature (100-200 cm)"
+    />
+    <var name="ICEsfc" name_in_code="icesfc" type="real" dimensions="nCells Time" units="fraction"
+         description="surface ice concentration (ice=1; no ice=0)"
+    />
+
+    <var name="SLMSKsfc" name_in_code="slmsksfc" type="real" dimensions="nCells Time" units="-"
+         descritpion="sea-land-ice mask (0=sea, 1=land, 2-seaice)"
+    />
+
+    <var name="SPFH2m" name_in_code="spfh2m" type="real" dimensions="nCells Time" units="kg kg^{-1}"
+         description="2-meter specific humidity"
+    />
+
+    <var name="TMP2m" name_in_code="tmp2m" type="real" dimensions="nCells Time" units="K"
+         description="2-meter temperature"
+    />
+
+    <var name="TMPsfc" name_in_code="tmpsfc" type="real" dimensions="nCells Time" units="K"
+         description="surface temperature"
+    />
+
+    <var name="WEASDsfc" name_in_code="weasdsfc" type="real" dimensions="nCells Time" units="kg m^{-2}"
+         description="surface snow water equivalent"
+    />
+
+    <var name="SNODsfc" name_in_code="snodsfc" type="real" dimensions="nCells Time" units="m"
+         description="surface snow depth"
+    />
+
+    <var name="ZORLsfc" name_in_code="zorlsfc" type="real" dimensions="nCells Time" units="m"
+         description="surface roughness"
+    />
+
+    <var name="VFRACsfc" name_in_code="vfracsfc" type="real" dimensions="nCells Time" units="-"
+         description="vegetation fraction"
+    />
+
+    <var name="F10Msfc" name_in_code="f10msfc" type="real" dimensions="nCells Time" units="-"
+         description="10-meter wind speed divided by lowest model wind speed"
+    />
+
+    <var name="VTYPEsfc" name_in_code="vtypesfc" type="integer" dimensions="nCells Time" units="-"
+         description="vegetation type in integer 1-13"
+    />
+
+    <var name="STYPEsfc" name_in_code="stypesfc" type="integer" dimensions="nCells Time" units="-"
+         description="soil type in integer 1-9"
+    />
+
+ </var_struct>
+
+
+ <var_struct name="nggps_diagnostics_dynamics" time_levs="1">
+
+    <var name="ugrd" name_in_code="ugrd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+         description="mid-layer zonal wind"
+    />
+ 
+    <var name="vgrd" name_in_code="vgrd" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
+         description="mid-layer meridional wind"
+    />
+
+    <var name="tmp" name_in_code="temperature" type="real" dimensions="nVertLevels nCells Time" units="K"
+         description="mid-layer temperature"
+    />     
+
+    <var name="pres" name_in_code="pres" type="real" dimensions="nVertLevels nCells Time" units="Pa"
+         description="mid-layer pressure"
+    />
+
+    <var name="dpres" name_in_code="dpres" type="real" dimensions="nVertLevels nCells Time" units="Pa"
+         description="mid-layer pressure difference"
+    />
+
+    <var name="spfh" name_in_code="spfh" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="mid-layer specific humidity"
+    />
+
+    <var name="o3mr" name_in_code="o3mr" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="mid-layer ozone mixing ratio"
+    />
+
+    <var name="clwmr" name_in_code="clwmr" type="real" dimensions="nVertLevels nCells Time" units="kg kg^{-1}"
+         description="mid-layer total cloud condensate"
+    />
+
+    <var name="HGTsfc" name_in_code="hgtsfc" type="real" dimensions="nCells Time" units="gpm"
+         description="surface geopotential height"
+    />
+
+    <var name="PRESsfc" name_in_code="pressfc" type="real" dimensions="nCells Time" units="Pa"
+         description="surface pressure"
+    />
+
+ </var_struct>
+
+
 
