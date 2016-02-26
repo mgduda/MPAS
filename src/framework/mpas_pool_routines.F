@@ -4024,6 +4024,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             scalar => field % scalar
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             scalar => field % scalar8
@@ -4062,6 +4065,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             array => field % array
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             array => field % array8
@@ -4100,6 +4106,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             array => field % array
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             array => field % array8
@@ -4138,6 +4147,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             array => field % array
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             array => field % array8
@@ -4176,6 +4188,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             array => field % array
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             array => field % array8
@@ -4214,6 +4229,9 @@ module mpas_pool_routines
          if (field % array_kind == 0) then
 #ifndef SINGLE_PRECISION
             array => field % array
+#else
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R8 pointer used for R4 array'
 #endif
          else
             array => field % array8
@@ -4253,6 +4271,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             scalar => field % scalar
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             scalar => field % scalar4
          end if
@@ -4291,6 +4312,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             array => field % array
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             array => field % array4
          end if
@@ -4329,6 +4353,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             array => field % array
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             array => field % array4
          end if
@@ -4367,6 +4394,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             array => field % array
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             array => field % array4
          end if
@@ -4405,6 +4435,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             array => field % array
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             array => field % array4
          end if
@@ -4443,6 +4476,9 @@ module mpas_pool_routines
 #ifdef SINGLE_PRECISION
             array => field % array
 #endif
+         else if (field % array_kind == 8) then
+            write(0,*) 'Error getting array for '//trim(key)
+            write(0,*) 'R4 pointer used for R8 array'
          else
             array => field % array4
          end if
