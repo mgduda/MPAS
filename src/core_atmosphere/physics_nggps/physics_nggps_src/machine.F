@@ -1,51 +1,3 @@
-!=================================================================================================================
-! Modifications made to the sourcecode for use in the MPAS framework:
-! added the SINGLE_PRECISION pre-processing option to run the GFS physics with single precision.
-! Laura D. Fowler (laura@ucar.edu) / 2016-01-15.
-
-!=================================================================================================================
-#if defined(mpas)
-
-! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS) (LA-CC-13-047)
-! and the University Corporation for Atmospheric Research (UCAR).
-!
-! Unless noted otherwise source code is licensed under the BSD license.
-! Additional copyright and license information can be found in the LICENSE file
-! distributed with this code, or at http://mpas-dev.github.com/license.html
-!
-!==================================================================================================
- module machine
-
- implicit none
- save
-
- integer, parameter :: kind_io4  = selected_real_kind(6),      &
-                       kind_io8  = selected_real_kind(12),     &
-                       kind_ior  = selected_real_kind(12)
-
-#ifdef SINGLE_PRECISION_BLAH
- integer, parameter :: kind_evod = selected_real_kind(6),      &
-                       kind_dbl_prec = selected_real_kind(12), &
-                       kind_rad  = selected_real_kind(6),      &
-                       kind_phys = selected_real_kind(6),      &
-                       kind_REAL = selected_real_kind(6),      &
-                       kind_INTEGER = selected_int_kind(9)
-#else
- integer, parameter :: kind_evod = selected_real_kind(12),     &
-                       kind_dbl_prec = selected_real_kind(12), &
-                       kind_rad  = selected_real_kind(12),     & ! maps to 64-bit real
-                       kind_phys = selected_real_kind(12),     & ! maps to 64-bit real
-                       kind_REAL = selected_real_kind(12),     & ! used in cmp_comm
-                       kind_INTEGER = selected_int_kind(9)
-#endif
-
-
-!==================================================================================================
- end module machine
-!==================================================================================================
-
-#else
-
       MODULE MACHINE
 
       IMPLICIT NONE
@@ -77,6 +29,4 @@
       real(kind=kind_evod), parameter :: grib_undef = 9.99e20     ! grib undefine value
 !
       END MODULE MACHINE
-
-#endif
 
