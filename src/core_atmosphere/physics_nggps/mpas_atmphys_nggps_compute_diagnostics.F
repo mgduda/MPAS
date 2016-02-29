@@ -56,8 +56,8 @@
                                          f10msfc
  real(kind=RKIND),dimension(:),pointer:: soilt1,soilt2,soilt3,soilt4,soilw1,soilw2,soilw3,soilw4
 
- real(kind=RKIND),dimension(:),pointer  :: fice,slmsk,q2m,t2m,tsfc,weasd,snwdph,zorl,vfrac,f10m,vtype,stype
- real(kind=RKIND),dimension(:,:),pointer:: slc,stc
+ real(kind=R8KIND),dimension(:),pointer  :: fice,slmsk,q2m,t2m,tsfc,weasd,snwdph,zorl,vfrac,f10m,vtype,stype
+ real(kind=R8KIND),dimension(:,:),pointer:: slc,stc
 
 !local variables:
  integer:: iCell
@@ -162,10 +162,11 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz
  real(kind=RKIND),dimension(:,:),pointer  :: exner,pressure_b,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: uZonal,uMeridional
- real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
 
  real(kind=RKIND),dimension(:),pointer  :: hgtsfc,pressfc
- real(kind=RKIND),dimension(:,:),pointer:: qv,qc,qo3,theta_m
+ real(kind=RKIND),dimension(:,:),pointer:: theta_m
+ real(kind=R8KIND),dimension(:,:),pointer:: qv,qc,qo3
  real(kind=RKIND),dimension(:,:),pointer:: ugrd,vgrd,dpres,pres
  real(kind=RKIND),dimension(:,:),pointer:: temperature,spfh,o3mr,clwmr
 
@@ -659,13 +660,14 @@
  integer,pointer:: nCellsSolve,nVertLevels
  integer,pointer:: index_qv,index_qc,index_qo3
 
- real(kind=RKIND),dimension(:,:),pointer  :: qv,relhum,theta_m
+ real(kind=RKIND),dimension(:,:),pointer  :: relhum,theta_m
  real(kind=RKIND),dimension(:,:),pointer  :: exner,pressure_b,pressure_p
- real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=R8KIND),dimension(:,:),pointer  :: qv
+ real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
  integer:: iCell,k
- real(kind=RKIND):: es,pres,qs,rs,temp
+ real(kind=R8KIND):: es,pres,qs,rs,temp
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -691,7 +693,7 @@
        temp = temp*exner(k,iCell)
        pres = pressure_p(k,iCell) + pressure_b(k,iCell)
        es   = min(pres,fpvs(temp))
-       qs   = eps*es / (pres-+epsm1*es)
+       qs   = eps*es / (pres-epsm1*es)
        rs   = qs / (1._RKIND - qs)
 
        relhum(k,iCell) = qv(k,iCell)/rs * 100._RKIND
