@@ -693,7 +693,7 @@
        temp = temp*exner(k,iCell)
        pres = pressure_p(k,iCell) + pressure_b(k,iCell)
        es   = min(pres,fpvs(temp))
-       qs   = eps*es / (pres-epsm1*es)
+       qs   = eps*es / (pres + epsm1*es)
        rs   = qs / (1._RKIND - qs)
 
        relhum(k,iCell) = qv(k,iCell)/rs * 100._RKIND
