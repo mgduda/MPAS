@@ -556,6 +556,7 @@ module atm_core
       ! During integration, time level 1 stores the model state at the beginning of the
       !   time step, and time level 2 stores the state advanced dt in time by timestep(...)
       itimestep = 1
+      call avec_timer_start(1)
       do while (.not. mpas_is_clock_stop_time(clock))
 
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
@@ -682,6 +683,7 @@ module atm_core
          call mpas_stream_mgr_reset_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)
 
       end do
+      call avec_timer_stop(1)
    
    end function atm_core_run
    
@@ -829,7 +831,9 @@ module atm_core
       if(moist_physics) then
          call mpas_timer_start('physics_driver')
          call physics_timetracker(domain,dt,clock,itimestep,real(xtime_s,kind=R8KIND))
+         call avec_timer_start(2)
          call physics_driver(domain,itimestep,real(xtime_s,kind=R8KIND))
+         call avec_timer_stop(2)
          call mpas_timer_stop('physics_driver')
       endif
 #endif

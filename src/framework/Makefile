@@ -32,6 +32,7 @@ OBJS = mpas_kind_types.o \
        mpas_field_routines.o \
        mpas_pool_routines.o \
        mpas_performance.o \
+       avec_timer_lib.o \
        xml_stream_parser.o
 
 all: framework $(DEPS)

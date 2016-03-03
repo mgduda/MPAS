@@ -50,9 +50,12 @@ module mpas_framework
 
       integer, intent(in), optional :: stdoutUnit_in, stderrUnit_in
 
+      integer :: retval
+
       allocate(dminfo)
       call mpas_io_units_init(stdoutUnit_in, stderrUnit_in)
       call mpas_dmpar_init(dminfo, mpi_comm)
+      call avec_timer_init(dminfo % my_proc_id, retval)
 
    end subroutine mpas_framework_init_phase1!}}}
 
@@ -129,6 +132,7 @@ module mpas_framework
 
       call mpas_deallocate_domain(domain)
 
+      call avec_timers_output()
       call mpas_dmpar_finalize(dminfo)
 
       call mpas_timekeeping_finalize()

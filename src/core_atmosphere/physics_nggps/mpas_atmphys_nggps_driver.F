@@ -129,6 +129,7 @@
 !      call mpas_sfc_prop%mpas_setrad(mesh,nggps_sfc_properties)
 
        call mpas_timer_start('nuopc_rad_run')
+       call avec_timer_start(4)
        call nuopc_rad_run( &
                       mpas_statein%state_fields_in,             &
                       mpas_sfc_prop%sfc_properties,             &
@@ -139,6 +140,7 @@
                       mdl_parameters,                           &
                       mpas_dyn_parameters%dynamic_parameters    &
                          )
+       call avec_timer_stop(4)
        call mpas_timer_stop('nuopc_rad_run')
 
        call mpas_timer_start('nuopc_rad_write')
@@ -172,6 +174,7 @@
 
     !... call to the NGGPS interface between MPAS and the GFS physics:
     call mpas_timer_start('nuopc_phys_run')
+    call avec_timer_start(3)
     call nuopc_phys_run( &
                     mpas_statein%state_fields_in,             &
                     mpas_stateout%state_fields_out,           & 
@@ -183,6 +186,7 @@
                     mdl_parameters,                           &
                     mpas_tbds%tbd_ddt,                        & 
                     mpas_dyn_parameters%dynamic_parameters)
+    call avec_timer_stop(3)
     call mpas_timer_stop('nuopc_phys_run')
 
     call mpas_timer_start('nuopc_phys_write')
