@@ -151,41 +151,42 @@
 int master_sequence_number = 1 ;
 int verbose = 0 ;
 int avec_timer_taskid ;
-int timers_started_at ;
+long timers_started_at ;
 
-int
+long
 AVEC_MILLICLOCK ()
 {
     struct timeval tb ;
     struct timezone tzp ;
-    int isec ;  /* seconds */
-    int usec ;  /* microseconds */
-    int msecs ;
+    long isec ;  /* seconds */
+    long usec ;  /* microseconds */
+    long msecs ;
     gettimeofday( &tb, &tzp ) ;
     isec = tb.tv_sec ;
     usec = tb.tv_usec ;
     msecs = 1000 * isec + usec / 1000 ;
     return(msecs) ;
 }
-int 
+long 
 AVEC_MICROCLOCK ()
 {
     struct timeval tb ;
     struct timezone tzp ;
-    int isec ;  /* seconds */
-    int usec ;  /* microseconds */
-    int msecs ;
+    long isec ;  /* seconds */
+    long usec ;  /* microseconds */
+    long msecs ;
     gettimeofday( &tb, &tzp ) ;
     isec = tb.tv_sec ;
     usec = tb.tv_usec ;
+//fprintf(stderr,"sizes %d %d\n",sizeof(tb.tv_sec),sizeof(tb.tv_usec)) ;
     msecs = 1000000 * isec + usec ;
     return(msecs) ;
 }
 
 
 typedef struct interval {
-  int start_time ;
-  int stop_time ;
+  long start_time ;
+  long stop_time ;
   int master_sequence_number ;
 } interval_t ;
 
@@ -214,7 +215,7 @@ avec_timer_start_private ( int zoneid, int tid )
         zones[zoneid].state = 1 ;
       }
       else {
-        if ( verbose ) fprintf(stderr,"AVEC_TIMER: WARNING: timer for zone %d started when already started\n") ;
+        if ( verbose ) fprintf(stderr,"AVEC_TIMER: WARNING: timer for zone %d started when already started\n",zoneid) ;
       }
     } else {
       if ( verbose ) fprintf(stderr,"AVEC_TIMER start: WARNING: invalid zone id %d\n",zoneid) ;
@@ -239,7 +240,7 @@ avec_timer_stop_private ( int zoneid, int tid )
         zones[zoneid].state = 0 ;
       }
       else {
-        if ( verbose ) fprintf(stderr,"AVEC_TIMER: WARNING: timer for zone %d stopped but not started\n") ;
+        if ( verbose ) fprintf(stderr,"AVEC_TIMER: WARNING: timer for zone %d stopped but not started\n",zoneid) ;
       }
     } else {
       if ( verbose ) fprintf(stderr,"AVEC_TIMER stop: WARNING: invalid zone id %d\n",zoneid) ;
@@ -372,12 +373,12 @@ avec_timers_output_()
   sprintf(fname,"avec_timer_out_%05d.txt",avec_timer_taskid) ;
   if ((fp=fopen(fname,"w"))!=NULL)
   {
-    fprintf(fp,"timer reading at initialization: %d\n",timers_started_at) ;
+    fprintf(fp,"timer reading at initialization: %ld\n",timers_started_at) ;
     fprintf(fp,"taskid,zoneid,zonename,zonesequencenumber,mastersequencenumber,time,starttime,endtime\n"); 
     for ( j = 0 ; j < MAXZONES ; j++ ) {
       if ( zones[j].zoneid != -99 ) {
         for ( i = 0 ; i < zones[j].zone_sequence_number ; i++ ) {
-          fprintf(fp,"%d,%d,%s,%d,%d,%d,%d,%d\n",avec_timer_taskid,zones[j].zoneid,zones[j].name,
+          fprintf(fp,"%d,%d,%s,%d,%d,%ld,%ld,%ld\n",avec_timer_taskid,zones[j].zoneid,zones[j].name,
                                            i, zones[j].intervals[i].master_sequence_number,
                                            zones[j].intervals[i].stop_time-zones[j].intervals[i].start_time,
                                            zones[j].intervals[i].start_time,zones[j].intervals[i].stop_time ) ;
