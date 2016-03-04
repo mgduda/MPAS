@@ -6,6 +6,8 @@
 ! distributed with this code, or at http://mpas-dev.github.com/license.html
 !
 
+#define SECOND_ORDER
+
 #ifdef _GPTL
 #define MPAS_GPTL_START(T) call gptlstart(T)
 #define MPAS_GPTL_STOP(T) call gptlstop(T)
@@ -3578,9 +3580,18 @@ MPAS_GPTL_STOP('mono_exch_2')
          ! hence the enforcement of PD in the copy back to the model state.
 !$OMP BARRIER
 
+!         do iCell=cellStart,cellEnd
+!            do k=1, nVertLevels
+!               scalars_new(iScalar,k,iCell) = max(0.0_RKIND,scalar_new(k,iCell))
+!            end do
+!         end do
+
          do iCell=cellStart,cellEnd
             do k=1, nVertLevels
                scalars_new(iScalar,k,iCell) = max(0.0_RKIND,scalar_new(k,iCell))
+            end do
+            do k=nVertLevels-10, nVertLevels
+               scalars_new(iScalar,k,iCell) = max(s_min(k,iCell),min(s_max(k,iCell),scalar_new(k,iCell)))
             end do
          end do
 
@@ -4010,6 +4021,7 @@ MPAS_GPTL_STOP('mono_exch_2')
 !               kdiff(k,iCell) = min(kdiff(k,iCell),(0.01*config_len_disp**2) * invDt)
 !  ****  constant second order filter in the last 8 levels
 !               if (k .gt. nVertLevels-9) kdiff(k,iCell) = 5.*config_len_disp
+               if (k .gt. (nVertLevels-10)) kdiff(k,iCell) = min(1.0, (k-(nVertLevels-10))/5.)*5.0*config_len_disp
             end do
          end do
 

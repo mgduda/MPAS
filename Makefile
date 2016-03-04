@@ -1,4 +1,4 @@
-MODEL_FORMULATION = -DSINGLE_PRECISION -DCONST_INNER_DIMS -DCONST_NVERTLEVELS=63 -DCONST_MAXEDGES=10 -DCONST_MAXEDGES2=20 -DCONST_NUM_SCALARS=3
+MODEL_FORMULATION = -DCONST_INNER_DIMS -DCONST_NVERTLEVELS=63 -DCONST_MAXEDGES=10 -DCONST_MAXEDGES2=20 -DCONST_NUM_SCALARS=3
 #MODEL_FORMULATION = -DSINGLE_PRECISION
 
 
@@ -146,8 +146,8 @@ ifort:
 	"FC_SERIAL = ifort" \
 	"CC_SERIAL = icc" \
 	"CXX_SERIAL = icpc" \
-	"FFLAGS_OPT = -xHost -align array64byte -O3 -convert big_endian -FR" \
-	"FFLAGS77_OPT = -O3 -convert big_endian -fpp -FI" \
+	"FFLAGS_OPT = -real-size 64 -xHost -align array64byte -O3 -convert big_endian -FR" \
+	"FFLAGS77_OPT = -real-size 64 -O3 -convert big_endian -fpp -FI" \
 	"FFLAGS_PHYS = -real-size 64 -xHost -align array64byte -O3 -convert big_endian -FR" \
 	"FFLAGS77_PHYS = -real-size 64 -O3 -convert big_endian -fpp -FI" \
 	"CFLAGS_OPT = -O3" \
@@ -200,15 +200,15 @@ gfortran:
 	"FC_SERIAL = gfortran" \
 	"CC_SERIAL = gcc" \
 	"CXX_SERIAL = g++" \
-	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
-	"FFLAGS77_OPT = -O3 -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form" \
+	"FFLAGS_OPT = -fdefault-real-8 -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
+	"FFLAGS77_OPT = -fdefault-real-8 -O3 -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form" \
 	"FFLAGS_PHYS = -fdefault-real-8 -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"FFLAGS77_PHYS = -fdefault-real-8 -O3 -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form" \
 	"CFLAGS_OPT = -O3 -m64" \
 	"CXXFLAGS_OPT = -O3 -m64" \
 	"LDFLAGS_OPT = -O3 -m64" \
-	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
-	"FFLAGS77_DEBUG = -g -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"FFLAGS_DEBUG = -fdefault-real-8 -g -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace" \
+	"FFLAGS77_DEBUG = -fdefault-real-8 -g -m64 -cpp -fno-range-check -ffree-line-length-none -fconvert=big-endian -ffixed-form -fbounds-check -fbacktrace" \
 	"CFLAGS_DEBUG = -g -m64" \
 	"CXXFLAGS_DEBUG = -O3 -m64" \
 	"LDFLAGS_DEBUG = -g -m64" \
