@@ -23,6 +23,7 @@ OBJS = mpas_kind_types.o \
        mpas_stream_list.o \
        mpas_forcing.o \
        mpas_c_interfacing.o \
+       mpas_debugging.o \
        random_id.o \
        streams.o \
        timer.o \
@@ -97,6 +98,8 @@ mpas_forcing.o: mpas_derived_types.o mpas_timekeeping.o mpas_io_streams.o mpas_s
 
 xml_stream_parser.o: xml_stream_parser.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPINCLUDES) -I../external/ezxml -c xml_stream_parser.c
+
+mpas_debugging.o: mpas_grid_types.o mpas_dmpar_types.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libframework.a
