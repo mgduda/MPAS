@@ -99,7 +99,7 @@ mpas_forcing.o: mpas_derived_types.o mpas_timekeeping.o mpas_io_streams.o mpas_s
 xml_stream_parser.o: xml_stream_parser.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPINCLUDES) -I../external/ezxml -c xml_stream_parser.c
 
-mpas_debugging.o: mpas_grid_types.o mpas_dmpar_types.o
+mpas_debugging.o: mpas_derived_types.o mpas_io_units.o mpas_pool_routines.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libframework.a

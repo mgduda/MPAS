@@ -1,7 +1,8 @@
 module mpas_debugging
 
-   use mpas_grid_types
-   use mpas_dmpar_types
+   use mpas_derived_types
+   use mpas_io_units
+   use mpas_pool_routines
 
    logical :: write_fields, is_file_open
    character(len=256) :: checkpoint_filename
