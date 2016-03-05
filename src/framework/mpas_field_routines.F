@@ -2182,8 +2182,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field0DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND) :: scalar
+      real(kind=R4KIND) :: scalar4
+      real(kind=R8KIND) :: scalar8
       
-#include "shift_time_levs_scalar.inc"
+#include "shift_time_levs_scalar_real.inc"
 
    end subroutine mpas_shift_time_levs_0dreal!}}}
 
@@ -2211,8 +2213,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field1DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND), dimension(:), pointer :: arr_ptr
+      real(kind=R4KIND), dimension(:), pointer :: arr_ptr4
+      real(kind=R8KIND), dimension(:), pointer :: arr_ptr8
       
-#include "shift_time_levs_array.inc"
+#include "shift_time_levs_array_real.inc"
 
    end subroutine mpas_shift_time_levs_1dreal!}}}
 
@@ -2240,8 +2244,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field2DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND), dimension(:,:), pointer :: arr_ptr
+      real(kind=R4KIND), dimension(:,:), pointer :: arr_ptr4
+      real(kind=R8KIND), dimension(:,:), pointer :: arr_ptr8
       
-#include "shift_time_levs_array.inc"
+#include "shift_time_levs_array_real.inc"
 
    end subroutine mpas_shift_time_levs_2dreal!}}}
 
@@ -2269,8 +2275,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field3DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND), dimension(:,:,:), pointer :: arr_ptr
+      real(kind=R4KIND), dimension(:,:,:), pointer :: arr_ptr4
+      real(kind=R8KIND), dimension(:,:,:), pointer :: arr_ptr8
       
-#include "shift_time_levs_array.inc"
+#include "shift_time_levs_array_real.inc"
 
    end subroutine mpas_shift_time_levs_3dreal!}}}
 
@@ -2298,8 +2306,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field4DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND), dimension(:,:,:,:), pointer :: arr_ptr
+      real(kind=R4KIND), dimension(:,:,:,:), pointer :: arr_ptr4
+      real(kind=R8KIND), dimension(:,:,:,:), pointer :: arr_ptr8
       
-#include "shift_time_levs_array.inc"
+#include "shift_time_levs_array_real.inc"
 
    end subroutine mpas_shift_time_levs_4dreal!}}}
 
@@ -2327,8 +2337,10 @@ module mpas_field_routines
       integer :: i, nlevs
       type (field5DReal), dimension(:), pointer :: fldarr_ptr
       real(kind=RKIND), dimension(:,:,:,:,:), pointer :: arr_ptr
+      real(kind=R4KIND), dimension(:,:,:,:,:), pointer :: arr_ptr4
+      real(kind=R8KIND), dimension(:,:,:,:,:), pointer :: arr_ptr8
       
-#include "shift_time_levs_array.inc"
+#include "shift_time_levs_array_real.inc"
 
    end subroutine mpas_shift_time_levs_5dreal!}}}
 
