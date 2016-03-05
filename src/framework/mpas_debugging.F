@@ -16,21 +16,18 @@ module mpas_debugging
 #ifdef _MPI
 include 'mpif.h'
    integer, parameter :: MPI_INTEGERKIND = MPI_INTEGER
-
-#ifdef SINGLE_PRECISION
    integer, parameter :: MPI_REALKIND = MPI_REAL
-#else
-   integer, parameter :: MPI_REALKIND = MPI_DOUBLE_PRECISION
-#endif
+   integer, parameter :: MPI_DOUBLEKIND = MPI_DOUBLE_PRECISION
 #endif
 
    type exchange_list
       integer :: procID
       integer :: nlist
-      integer, dimension(:), pointer :: list
-      type (exchange_list), pointer :: next
-      real (kind=RKIND), dimension(:), pointer :: rbuffer
-      integer, dimension(:), pointer           :: ibuffer
+      integer, dimension(:), pointer :: list => null()
+      type (exchange_list), pointer :: next => null()
+      real (kind=R4KIND), dimension(:), pointer :: r4buffer => null()
+      real (kind=R8KIND), dimension(:), pointer :: r8buffer => null()
+      integer, dimension(:), pointer           :: ibuffer => null()
       integer :: reqID
    end type exchange_list
 
@@ -41,6 +38,9 @@ include 'mpif.h'
       module procedure dmpar_alltoall_field1dReal
       module procedure dmpar_alltoall_field2dReal
       module procedure dmpar_alltoall_field3dReal
+      module procedure dmpar_alltoall_field1dDouble
+      module procedure dmpar_alltoall_field2dDouble
+      module procedure dmpar_alltoall_field3dDouble
    end interface
 
    integer, pointer :: nCells, nCellsSolve, &
@@ -174,11 +174,6 @@ include 'mpif.h'
         type (field3DReal), pointer :: real3DField
         character(len=*), intent(in), optional :: fieldname
 
-        integer, dimension(:), pointer   :: arrayOut_i1, arrayComp_i1
-        integer, dimension(:,:), pointer :: arrayOut_i2, arrayComp_i2
-        real (kind=RKIND), dimension(:), pointer     :: arrayOut_r1, arrayComp_r1
-        real (kind=RKIND), dimension(:,:), pointer   :: arrayOut_r2, arrayComp_r2
-        real (kind=RKIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
         type (exchange_list), pointer :: sendList, recvList
         type (mpas_pool_field_info_type) :: field_info
 
@@ -196,22 +191,53 @@ include 'mpif.h'
 
            call mpas_pool_begin_iteration(all_fields)
            do while (mpas_pool_get_next_member(all_fields, poolItr))
+if (index(poolItr % memberName, '_blk') == 0) then
                if (poolItr % memberType == MPAS_POOL_FIELD) then
                    if (poolItr % dataType == MPAS_POOL_REAL) then
    
                        if (poolItr % nDims == 1) then
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField)
-                           call compare_r1(real1DField, checkpoint)
+                           if (real1DField % array_kind == 4) then
+                               call compare_r1_4(real1DField, checkpoint)
+                           else if (real1DField % array_kind == 8) then
+                               call compare_r1_8(real1DField, checkpoint)
+                           else
+#ifdef SINGLE_PRECISION
+                               call compare_r1_4(real1DField, checkpoint)
+#else
+                               call compare_r1_8(real1DField, checkpoint)
+#endif
+                           end if
    
                        else if (poolItr % nDims == 2) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField)
-                           call compare_r2(real2DField, checkpoint)
+                           if (real2DField % array_kind == 4) then
+                               call compare_r2_4(real2DField, checkpoint)
+                           else if (real2DField % array_kind == 8) then
+                               call compare_r2_8(real2DField, checkpoint)
+                           else
+#ifdef SINGLE_PRECISION
+                               call compare_r2_4(real2DField, checkpoint)
+#else
+                               call compare_r2_8(real2DField, checkpoint)
+#endif
+                           end if
    
                        else if (poolItr % nDims == 3) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField)
-                           call compare_r3(real3DField, checkpoint)
+                           if (real3DField % array_kind == 4) then
+                               call compare_r3_4(real3DField, checkpoint)
+                           else if (real3DField % array_kind == 8) then
+                               call compare_r3_8(real3DField, checkpoint)
+                           else
+#ifdef SINGLE_PRECISION
+                               call compare_r3_4(real3DField, checkpoint)
+#else
+                               call compare_r3_8(real3DField, checkpoint)
+#endif
+                           end if
    
                        end if
    
@@ -231,6 +257,7 @@ include 'mpif.h'
    
                    end if
                end if
+end if
            end do
 
         else
@@ -244,17 +271,47 @@ include 'mpif.h'
                  if (field_info % nDims == 1) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real1DField)
-                    call compare_r1(real1DField, checkpoint)
+                    if (real1DField % array_kind == 4) then
+                        call compare_r1_4(real1DField, checkpoint)
+                    else if (real1DField % array_kind == 8) then
+                        call compare_r1_8(real1DField, checkpoint)
+                    else
+#ifdef SINGLE_PRECISION
+                        call compare_r1_4(real1DField, checkpoint)
+#else
+                        call compare_r1_8(real1DField, checkpoint)
+#endif
+                    end if
    
                  else if (field_info % nDims == 2) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real2DField)
-                    call compare_r2(real2DField, checkpoint)
+                    if (real2DField % array_kind == 4) then
+                        call compare_r2_4(real2DField, checkpoint)
+                    else if (real2DField % array_kind == 8) then
+                        call compare_r2_8(real2DField, checkpoint)
+                    else
+#ifdef SINGLE_PRECISION
+                        call compare_r2_4(real2DField, checkpoint)
+#else
+                        call compare_r2_8(real2DField, checkpoint)
+#endif
+                    end if
    
                  else if (field_info % nDims == 3) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real3DField)
-                    call compare_r3(real3DField, checkpoint)
+                    if (real3DField % array_kind == 4) then
+                        call compare_r3_4(real3DField, checkpoint)
+                    else if (real3DField % array_kind == 8) then
+                        call compare_r3_8(real3DField, checkpoint)
+                    else
+#ifdef SINGLE_PRECISION
+                        call compare_r3_4(real3DField, checkpoint)
+#else
+                        call compare_r3_8(real3DField, checkpoint)
+#endif
+                    end if
 
                  end if
    
@@ -630,8 +687,8 @@ include 'mpif.h'
       implicit none
 
       type (dm_info), intent(in) :: dminfo
-      real (kind=RKIND), dimension(nOwnedList), intent(in) :: arrayIn
-      real (kind=RKIND), dimension(nNeededList), intent(inout) :: arrayOut
+      real (kind=R4KIND), dimension(nOwnedList), intent(in) :: arrayIn
+      real (kind=R4KIND), dimension(nNeededList), intent(inout) :: arrayOut
       integer, intent(in) :: nOwnedList, nNeededList
       type (exchange_list), pointer :: sendList, recvList
 
@@ -663,8 +720,8 @@ include 'mpif.h'
       recvListPtr => recvList
       do while (associated(recvListPtr))
          if (recvListPtr % procID /= dminfo % my_proc_id) then
-            allocate(recvListPtr % rbuffer(recvListPtr % nlist))
-            call MPI_Irecv(recvListPtr % rbuffer, recvListPtr % nlist, MPI_REALKIND, &
+            allocate(recvListPtr % r4buffer(recvListPtr % nlist))
+            call MPI_Irecv(recvListPtr % r4buffer, recvListPtr % nlist, MPI_REALKIND, &
                            recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
          end if
          recvListPtr => recvListPtr % next
@@ -673,10 +730,10 @@ include 'mpif.h'
       sendListPtr => sendList
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
-            allocate(sendListPtr % rbuffer(sendListPtr % nlist))
+            allocate(sendListPtr % r4buffer(sendListPtr % nlist))
             call packSendBuf1dReal(nOwnedList, arrayIn, sendListPtr, 1, sendListPtr % nlist, &
-                                   sendListPtr % rbuffer, nPacked, lastPackedIdx)
-            call MPI_Isend(sendListPtr % rbuffer, sendListPtr % nlist, MPI_REALKIND, &
+                                   sendListPtr % r4buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r4buffer, sendListPtr % nlist, MPI_REALKIND, &
                            sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
          end if
          sendListPtr => sendListPtr % next
@@ -687,8 +744,8 @@ include 'mpif.h'
          if (recvListPtr % procID /= dminfo % my_proc_id) then
             call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
             call unpackRecvBuf1dReal(nNeededList, arrayOut, recvListPtr, 1, recvListPtr % nlist, &
-                                     recvListPtr % rbuffer, nUnpacked, lastUnpackedIdx)
-            deallocate(recvListPtr % rbuffer)
+                                     recvListPtr % r4buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r4buffer)
          end if
          recvListPtr => recvListPtr % next
       end do
@@ -697,7 +754,7 @@ include 'mpif.h'
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
             call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
-            deallocate(sendListPtr % rbuffer)
+            deallocate(sendListPtr % r4buffer)
          end if
          sendListPtr => sendListPtr % next
       end do
@@ -720,8 +777,8 @@ include 'mpif.h'
 
       type (dm_info), intent(in) :: dminfo
       integer, intent(in) :: dim1, nOwnedList, nNeededList
-      real (kind=RKIND), dimension(dim1,nOwnedList), intent(in) :: arrayIn
-      real (kind=RKIND), dimension(dim1,nNeededList), intent(inout) :: arrayOut
+      real (kind=R4KIND), dimension(dim1,nOwnedList), intent(in) :: arrayIn
+      real (kind=R4KIND), dimension(dim1,nNeededList), intent(inout) :: arrayOut
       type (exchange_list), pointer :: sendList, recvList
 
       type (exchange_list), pointer :: sendListPtr, recvListPtr
@@ -753,8 +810,8 @@ include 'mpif.h'
       do while (associated(recvListPtr))
          if (recvListPtr % procID /= dminfo % my_proc_id) then
             d2 = dim1 * recvListPtr % nlist
-            allocate(recvListPtr % rbuffer(d2))
-            call MPI_Irecv(recvListPtr % rbuffer, d2, MPI_REALKIND, &
+            allocate(recvListPtr % r4buffer(d2))
+            call MPI_Irecv(recvListPtr % r4buffer, d2, MPI_REALKIND, &
                            recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
          end if
          recvListPtr => recvListPtr % next
@@ -764,10 +821,10 @@ include 'mpif.h'
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
             d2 = dim1 * sendListPtr % nlist
-            allocate(sendListPtr % rbuffer(d2))
+            allocate(sendListPtr % r4buffer(d2))
             call packSendBuf2dReal(1, dim1, nOwnedList, arrayIn, sendListPtr, 1, d2, &
-                                   sendListPtr % rbuffer, nPacked, lastPackedIdx)
-            call MPI_Isend(sendListPtr % rbuffer, d2, MPI_REALKIND, &
+                                   sendListPtr % r4buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r4buffer, d2, MPI_REALKIND, &
                            sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
          end if
          sendListPtr => sendListPtr % next
@@ -779,8 +836,8 @@ include 'mpif.h'
             call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
             d2 = dim1 * recvListPtr % nlist
             call unpackRecvBuf2dReal(1, dim1, nNeededList, arrayOut, recvListPtr, 1, d2, &
-                                     recvListPtr % rbuffer, nUnpacked, lastUnpackedIdx)
-            deallocate(recvListPtr % rbuffer)
+                                     recvListPtr % r4buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r4buffer)
          end if
          recvListPtr => recvListPtr % next
       end do
@@ -789,7 +846,7 @@ include 'mpif.h'
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
             call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
-            deallocate(sendListPtr % rbuffer)
+            deallocate(sendListPtr % r4buffer)
          end if
          sendListPtr => sendListPtr % next
       end do
@@ -812,8 +869,8 @@ include 'mpif.h'
 
       type (dm_info), intent(in) :: dminfo
       integer, intent(in) :: dim1, dim2, nOwnedList, nNeededList
-      real (kind=RKIND), dimension(dim1,dim2,nOwnedList), intent(in) :: arrayIn
-      real (kind=RKIND), dimension(dim1,dim2,nNeededList), intent(inout) :: arrayOut
+      real (kind=R4KIND), dimension(dim1,dim2,nOwnedList), intent(in) :: arrayIn
+      real (kind=R4KIND), dimension(dim1,dim2,nNeededList), intent(inout) :: arrayOut
       type (exchange_list), pointer :: sendList, recvList
 
       type (exchange_list), pointer :: sendListPtr, recvListPtr
@@ -845,8 +902,8 @@ include 'mpif.h'
       do while (associated(recvListPtr))
          if (recvListPtr % procID /= dminfo % my_proc_id) then
             d3 = dim1 * dim2 * recvListPtr % nlist
-            allocate(recvListPtr % rbuffer(d3))
-            call MPI_Irecv(recvListPtr % rbuffer, d3, MPI_REALKIND, &
+            allocate(recvListPtr % r4buffer(d3))
+            call MPI_Irecv(recvListPtr % r4buffer, d3, MPI_REALKIND, &
                            recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
          end if
          recvListPtr => recvListPtr % next
@@ -856,10 +913,10 @@ include 'mpif.h'
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
             d3 = dim1 * dim2 * sendListPtr % nlist
-            allocate(sendListPtr % rbuffer(d3))
+            allocate(sendListPtr % r4buffer(d3))
             call packSendBuf3dReal(1, dim1, 1, dim2, nOwnedList, arrayIn, sendListPtr, 1, d3, &
-                                   sendListPtr % rbuffer, nPacked, lastPackedIdx)
-            call MPI_Isend(sendListPtr % rbuffer, d3, MPI_REALKIND, &
+                                   sendListPtr % r4buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r4buffer, d3, MPI_REALKIND, &
                            sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
          end if
          sendListPtr => sendListPtr % next
@@ -871,8 +928,8 @@ include 'mpif.h'
             call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
             d3 = dim1 * dim2 * recvListPtr % nlist
             call unpackRecvBuf3dReal(1, dim1, 1, dim2, nNeededList, arrayOut, recvListPtr, 1, d3, &
-                                     recvListPtr % rbuffer, nUnpacked, lastUnpackedIdx)
-            deallocate(recvListPtr % rbuffer)
+                                     recvListPtr % r4buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r4buffer)
          end if
          recvListPtr => recvListPtr % next
       end do
@@ -881,7 +938,7 @@ include 'mpif.h'
       do while (associated(sendListPtr))
          if (sendListPtr % procID /= dminfo % my_proc_id) then
             call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
-            deallocate(sendListPtr % rbuffer)
+            deallocate(sendListPtr % r4buffer)
          end if
          sendListPtr => sendListPtr % next
       end do
@@ -896,6 +953,279 @@ include 'mpif.h'
 #endif
 
    end subroutine dmpar_alltoall_field3dReal
+
+
+   subroutine dmpar_alltoall_field1dDouble(dminfo, arrayIn, arrayOut, nOwnedList, nNeededList, sendList, recvList)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      real (kind=R8KIND), dimension(nOwnedList), intent(in) :: arrayIn
+      real (kind=R8KIND), dimension(nNeededList), intent(inout) :: arrayOut
+      integer, intent(in) :: nOwnedList, nNeededList
+      type (exchange_list), pointer :: sendList, recvList
+
+      type (exchange_list), pointer :: sendListPtr, recvListPtr
+      integer :: lastPackedIdx, lastUnpackedIdx, nPacked, nUnpacked
+      integer :: mpi_ierr
+      integer :: i
+
+#ifdef _MPI
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID == dminfo % my_proc_id) exit
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID == dminfo % my_proc_id) exit
+         recvListPtr => recvListPtr % next
+      end do
+
+      if (associated(recvListPtr) .and. associated(sendListPtr)) then
+         do i=1,recvListPtr % nlist
+            arrayOut(recvListPtr % list(i)) = arrayIn(sendListPtr % list(i))
+         end do
+      end if
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            allocate(recvListPtr % r8buffer(recvListPtr % nlist))
+            call MPI_Irecv(recvListPtr % r8buffer, recvListPtr % nlist, MPI_DOUBLEKIND, &
+                           recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            allocate(sendListPtr % r8buffer(sendListPtr % nlist))
+            call packSendBuf1dDouble(nOwnedList, arrayIn, sendListPtr, 1, sendListPtr % nlist, &
+                                   sendListPtr % r8buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r8buffer, sendListPtr % nlist, MPI_DOUBLEKIND, &
+                           sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            call unpackRecvBuf1dDouble(nNeededList, arrayOut, recvListPtr, 1, recvListPtr % nlist, &
+                                     recvListPtr % r8buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r8buffer)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            deallocate(sendListPtr % r8buffer)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+#else
+      if (nOwnedList /= nNeededList) then
+         write(0,*) 'Error in dmpar_alltoall_field: For non-dmpar, arrayIn and arrayOut dims must match.'
+         call dmpar_abort(dminfo)
+      else
+         arrayOut(:) = arrayIn(:)
+      end if
+#endif
+
+   end subroutine dmpar_alltoall_field1dDouble
+
+
+   subroutine dmpar_alltoall_field2dDouble(dminfo, arrayIn, arrayOut, dim1, nOwnedList, nNeededList, sendList, recvList)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      integer, intent(in) :: dim1, nOwnedList, nNeededList
+      real (kind=R8KIND), dimension(dim1,nOwnedList), intent(in) :: arrayIn
+      real (kind=R8KIND), dimension(dim1,nNeededList), intent(inout) :: arrayOut
+      type (exchange_list), pointer :: sendList, recvList
+
+      type (exchange_list), pointer :: sendListPtr, recvListPtr
+      integer :: lastPackedIdx, lastUnpackedIdx, nPacked, nUnpacked
+      integer :: mpi_ierr
+      integer :: i, d2
+
+#ifdef _MPI
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID == dminfo % my_proc_id) exit
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID == dminfo % my_proc_id) exit
+         recvListPtr => recvListPtr % next
+      end do
+
+      if (associated(recvListPtr) .and. associated(sendListPtr)) then
+         do i=1,recvListPtr % nlist
+            arrayOut(:,recvListPtr % list(i)) = arrayIn(:,sendListPtr % list(i))
+         end do
+      end if
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            d2 = dim1 * recvListPtr % nlist
+            allocate(recvListPtr % r8buffer(d2))
+            call MPI_Irecv(recvListPtr % r8buffer, d2, MPI_DOUBLEKIND, &
+                           recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            d2 = dim1 * sendListPtr % nlist
+            allocate(sendListPtr % r8buffer(d2))
+            call packSendBuf2dDouble(1, dim1, nOwnedList, arrayIn, sendListPtr, 1, d2, &
+                                   sendListPtr % r8buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r8buffer, d2, MPI_DOUBLEKIND, &
+                           sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            d2 = dim1 * recvListPtr % nlist
+            call unpackRecvBuf2dDouble(1, dim1, nNeededList, arrayOut, recvListPtr, 1, d2, &
+                                     recvListPtr % r8buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r8buffer)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            deallocate(sendListPtr % r8buffer)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+#else
+      if (nOwnedList /= nNeededList) then
+         write(0,*) 'Error in dmpar_alltoall_field: For non-dmpar, arrayIn and arrayOut dims must match.'
+         call dmpar_abort(dminfo)
+      else
+         arrayOut(:,:) = arrayIn(:,:)
+      end if
+#endif
+
+   end subroutine dmpar_alltoall_field2dDouble
+
+  
+   subroutine dmpar_alltoall_field3dDouble(dminfo, arrayIn, arrayOut, dim1, dim2, nOwnedList, nNeededList, sendList, recvList)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      integer, intent(in) :: dim1, dim2, nOwnedList, nNeededList
+      real (kind=R8KIND), dimension(dim1,dim2,nOwnedList), intent(in) :: arrayIn
+      real (kind=R8KIND), dimension(dim1,dim2,nNeededList), intent(inout) :: arrayOut
+      type (exchange_list), pointer :: sendList, recvList
+
+      type (exchange_list), pointer :: sendListPtr, recvListPtr
+      integer :: lastPackedIdx, lastUnpackedIdx, nPacked, nUnpacked
+      integer :: mpi_ierr
+      integer :: i, d3
+
+#ifdef _MPI
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID == dminfo % my_proc_id) exit
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID == dminfo % my_proc_id) exit
+         recvListPtr => recvListPtr % next
+      end do
+
+      if (associated(recvListPtr) .and. associated(sendListPtr)) then
+         do i=1,recvListPtr % nlist
+            arrayOut(:,:,recvListPtr % list(i)) = arrayIn(:,:,sendListPtr % list(i))
+         end do
+      end if
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            d3 = dim1 * dim2 * recvListPtr % nlist
+            allocate(recvListPtr % r8buffer(d3))
+            call MPI_Irecv(recvListPtr % r8buffer, d3, MPI_DOUBLEKIND, &
+                           recvListPtr % procID, recvListPtr % procID, dminfo % comm, recvListPtr % reqID, mpi_ierr)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            d3 = dim1 * dim2 * sendListPtr % nlist
+            allocate(sendListPtr % r8buffer(d3))
+            call packSendBuf3dDouble(1, dim1, 1, dim2, nOwnedList, arrayIn, sendListPtr, 1, d3, &
+                                   sendListPtr % r8buffer, nPacked, lastPackedIdx)
+            call MPI_Isend(sendListPtr % r8buffer, d3, MPI_DOUBLEKIND, &
+                           sendListPtr % procID, dminfo % my_proc_id, dminfo % comm, sendListPtr % reqID, mpi_ierr)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+      recvListPtr => recvList
+      do while (associated(recvListPtr))
+         if (recvListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(recvListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            d3 = dim1 * dim2 * recvListPtr % nlist
+            call unpackRecvBuf3dDouble(1, dim1, 1, dim2, nNeededList, arrayOut, recvListPtr, 1, d3, &
+                                     recvListPtr % r8buffer, nUnpacked, lastUnpackedIdx)
+            deallocate(recvListPtr % r8buffer)
+         end if
+         recvListPtr => recvListPtr % next
+      end do
+
+      sendListPtr => sendList
+      do while (associated(sendListPtr))
+         if (sendListPtr % procID /= dminfo % my_proc_id) then
+            call MPI_Wait(sendListPtr % reqID, MPI_STATUS_IGNORE, mpi_ierr)
+            deallocate(sendListPtr % r8buffer)
+         end if
+         sendListPtr => sendListPtr % next
+      end do
+
+#else
+      if (nOwnedList /= nNeededList) then
+         write(0,*) 'Error in dmpar_alltoall_field: For non-dmpar, arrayIn and arrayOut dims must match.'
+         call dmpar_abort(dminfo)
+      else
+         arrayOut(:,:,:) = arrayIn(:,:,:)
+      end if
+#endif
+
+   end subroutine dmpar_alltoall_field3dDouble
 
   
    subroutine packSendBuf1dInteger(nField, field, sendList, startPackIdx, nBuffer, buffer, nPacked, lastPackedIdx)
@@ -964,9 +1294,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: nField, nBuffer, startPackIdx
-      real (kind=RKIND), dimension(nField), intent(in) :: field
+      real (kind=R4KIND), dimension(nField), intent(in) :: field
       type (exchange_list), intent(in) :: sendList
-      real (kind=RKIND), dimension(nBuffer), intent(out) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(out) :: buffer
       integer, intent(inout) :: nPacked, lastPackedIdx
 
       integer :: i
@@ -991,9 +1321,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: ds, de, nField, nBuffer, startPackIdx
-      real (kind=RKIND), dimension(ds:de,1:nField), intent(in) :: field
+      real (kind=R4KIND), dimension(ds:de,1:nField), intent(in) :: field
       type (exchange_list), intent(in) :: sendList
-      real (kind=RKIND), dimension(nBuffer), intent(out) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(out) :: buffer
       integer, intent(inout) :: nPacked, lastPackedIdx
 
       integer :: i, n
@@ -1025,9 +1355,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: d1s, d1e, d2s, d2e, nField, nBuffer, startPackIdx
-      real (kind=RKIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(in) :: field
+      real (kind=R4KIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(in) :: field
       type (exchange_list), intent(in) :: sendList
-      real (kind=RKIND), dimension(nBuffer), intent(out) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(out) :: buffer
       integer, intent(inout) :: nPacked, lastPackedIdx
 
       integer :: i, j, k, n
@@ -1056,6 +1386,105 @@ include 'mpif.h'
       lastPackedIdx = sendList % nlist
 
    end subroutine packSendBuf3dReal
+
+
+   subroutine packSendBuf1dDouble(nField, field, sendList, startPackIdx, nBuffer, buffer, nPacked, lastPackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: nField, nBuffer, startPackIdx
+      real (kind=R8KIND), dimension(nField), intent(in) :: field
+      type (exchange_list), intent(in) :: sendList
+      real (kind=R8KIND), dimension(nBuffer), intent(out) :: buffer
+      integer, intent(inout) :: nPacked, lastPackedIdx
+
+      integer :: i
+
+      nPacked = 0
+      do i=startPackIdx, sendList % nlist
+         nPacked = nPacked + 1
+         if (nPacked > nBuffer) then
+            nPacked = nPacked - 1
+            lastPackedIdx = i - 1
+            return
+         end if
+         buffer(nPacked) = field(sendList % list(i))
+      end do
+      lastPackedIdx = sendList % nlist
+
+   end subroutine packSendBuf1dDouble
+
+
+   subroutine packSendBuf2dDouble(ds, de, nField, field, sendList, startPackIdx, nBuffer, buffer, nPacked, lastPackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: ds, de, nField, nBuffer, startPackIdx
+      real (kind=R8KIND), dimension(ds:de,1:nField), intent(in) :: field
+      type (exchange_list), intent(in) :: sendList
+      real (kind=R8KIND), dimension(nBuffer), intent(out) :: buffer
+      integer, intent(inout) :: nPacked, lastPackedIdx
+
+      integer :: i, n
+
+      n = de-ds+1
+
+      if (n > nBuffer) then
+         write(0,*) 'packSendBuf2dDouble: Not enough space in buffer to fit a single slice.'
+         return
+      end if
+
+      nPacked = 0
+      do i=startPackIdx, sendList % nlist
+         nPacked = nPacked + n
+         if (nPacked > nBuffer) then
+            nPacked = nPacked - n
+            lastPackedIdx = i - 1
+            return
+         end if
+         buffer(nPacked-n+1:nPacked) = field(ds:de,sendList % list(i))
+      end do
+      lastPackedIdx = sendList % nlist
+
+   end subroutine packSendBuf2dDouble
+
+
+   subroutine packSendBuf3dDouble(d1s, d1e, d2s, d2e, nField, field, sendList, startPackIdx, nBuffer, buffer, nPacked, lastPackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: d1s, d1e, d2s, d2e, nField, nBuffer, startPackIdx
+      real (kind=R8KIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(in) :: field
+      type (exchange_list), intent(in) :: sendList
+      real (kind=R8KIND), dimension(nBuffer), intent(out) :: buffer
+      integer, intent(inout) :: nPacked, lastPackedIdx
+
+      integer :: i, j, k, n
+
+      n = (d1e-d1s+1) * (d2e-d2s+1)
+
+      if (n > nBuffer) then
+         write(0,*) 'packSendBuf2dDouble: Not enough space in buffer to fit a single slice.'
+         return
+      end if
+
+      nPacked = 0
+      do i=startPackIdx, sendList % nlist
+         nPacked = nPacked + n
+         if (nPacked > nBuffer) then
+            nPacked = nPacked - n
+            lastPackedIdx = i - 1
+            return
+         end if
+         k = nPacked-n+1
+         do j=d2s,d2e
+            buffer(k:k+d1e-d1s) = field(d1s:d1e,j,sendList % list(i))
+            k = k + d1e-d1s+1
+         end do
+      end do
+      lastPackedIdx = sendList % nlist
+
+   end subroutine packSendBuf3dDouble
 
 
    subroutine unpackRecvBuf1dInteger(nField, field, recvList, startUnpackIdx, nBuffer, buffer, nUnpacked, lastUnpackedIdx)
@@ -1119,9 +1548,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: nField, nBuffer, startUnpackIdx
-      real (kind=RKIND), dimension(nField), intent(inout) :: field
+      real (kind=R4KIND), dimension(nField), intent(inout) :: field
       type (exchange_list), intent(in) :: recvList
-      real (kind=RKIND), dimension(nBuffer), intent(in) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(in) :: buffer
       integer, intent(inout) :: nUnpacked, lastUnpackedIdx
 
       integer :: i
@@ -1146,9 +1575,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: ds, de, nField, nBuffer, startUnpackIdx
-      real (kind=RKIND), dimension(ds:de,1:nField), intent(inout) :: field
+      real (kind=R4KIND), dimension(ds:de,1:nField), intent(inout) :: field
       type (exchange_list), intent(in) :: recvList
-      real (kind=RKIND), dimension(nBuffer), intent(in) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(in) :: buffer
       integer, intent(inout) :: nUnpacked, lastUnpackedIdx
 
       integer :: i, n
@@ -1176,9 +1605,9 @@ include 'mpif.h'
       implicit none
 
       integer, intent(in) :: d1s, d1e, d2s, d2e, nField, nBuffer, startUnpackIdx
-      real (kind=RKIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(inout) :: field
+      real (kind=R4KIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(inout) :: field
       type (exchange_list), intent(in) :: recvList
-      real (kind=RKIND), dimension(nBuffer), intent(in) :: buffer
+      real (kind=R4KIND), dimension(nBuffer), intent(in) :: buffer
       integer, intent(inout) :: nUnpacked, lastUnpackedIdx
 
       integer :: i, j, k, n
@@ -1202,6 +1631,96 @@ include 'mpif.h'
       lastUnpackedIdx = recvList % nlist
 
    end subroutine unpackRecvBuf3dReal
+
+
+   subroutine unpackRecvBuf1dDouble(nField, field, recvList, startUnpackIdx, nBuffer, buffer, nUnpacked, lastUnpackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: nField, nBuffer, startUnpackIdx
+      real (kind=R8KIND), dimension(nField), intent(inout) :: field
+      type (exchange_list), intent(in) :: recvList
+      real (kind=R8KIND), dimension(nBuffer), intent(in) :: buffer
+      integer, intent(inout) :: nUnpacked, lastUnpackedIdx
+
+      integer :: i
+
+      nUnpacked = 0
+      do i=startUnpackIdx, recvList % nlist
+         nUnpacked = nUnpacked + 1
+         if (nUnpacked > nBuffer) then
+            nUnpacked = nUnpacked - 1
+            lastUnpackedIdx = i - 1
+            return
+         end if
+         field(recvList % list(i)) = buffer(nUnpacked)
+      end do
+      lastUnpackedIdx = recvList % nlist
+
+   end subroutine unpackRecvBuf1dDouble
+
+
+   subroutine unpackRecvBuf2dDouble(ds, de, nField, field, recvList, startUnpackIdx, nBuffer, buffer, nUnpacked, lastUnpackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: ds, de, nField, nBuffer, startUnpackIdx
+      real (kind=R8KIND), dimension(ds:de,1:nField), intent(inout) :: field
+      type (exchange_list), intent(in) :: recvList
+      real (kind=R8KIND), dimension(nBuffer), intent(in) :: buffer
+      integer, intent(inout) :: nUnpacked, lastUnpackedIdx
+
+      integer :: i, n
+
+      n = de-ds+1
+
+      nUnpacked = 0
+      do i=startUnpackIdx, recvList % nlist
+         nUnpacked = nUnpacked + n
+         if (nUnpacked > nBuffer) then
+            nUnpacked = nUnpacked - n
+            lastUnpackedIdx = i - 1
+            return
+         end if
+         field(ds:de,recvList % list(i)) = buffer(nUnpacked-n+1:nUnpacked)
+      end do
+      lastUnpackedIdx = recvList % nlist
+
+   end subroutine unpackRecvBuf2dDouble
+
+
+   subroutine unpackRecvBuf3dDouble(d1s, d1e, d2s, d2e, nField, field, recvList, startUnpackIdx, nBuffer, buffer, &
+                                  nUnpacked, lastUnpackedIdx)
+
+      implicit none
+
+      integer, intent(in) :: d1s, d1e, d2s, d2e, nField, nBuffer, startUnpackIdx
+      real (kind=R8KIND), dimension(d1s:d1e,d2s:d2e,1:nField), intent(inout) :: field
+      type (exchange_list), intent(in) :: recvList
+      real (kind=R8KIND), dimension(nBuffer), intent(in) :: buffer
+      integer, intent(inout) :: nUnpacked, lastUnpackedIdx
+
+      integer :: i, j, k, n
+
+      n = (d1e-d1s+1) * (d2e-d2s+1)
+
+      nUnpacked = 0
+      do i=startUnpackIdx, recvList % nlist
+         nUnpacked = nUnpacked + n
+         if (nUnpacked > nBuffer) then
+            nUnpacked = nUnpacked - n
+            lastUnpackedIdx = i - 1
+            return
+         end if
+         k = nUnpacked-n+1
+         do j=d2s,d2e
+            field(d1s:d1e,j,recvList % list(i)) = buffer(k:k+d1e-d1s)
+            k = k + d1e-d1s+1
+         end do
+      end do
+      lastUnpackedIdx = recvList % nlist
+
+   end subroutine unpackRecvBuf3dDouble
 
 
    integer function binary_search(array, d1, n1, n2, key)
@@ -1297,14 +1816,14 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine quicksort
 
 
-   subroutine compare_r1(real1DField, checkpoint)
+   subroutine compare_r1_8(real1DField, checkpoint)
 
       implicit none
 
       type (field1DReal), pointer :: real1DField
       character(len=*), intent(in) :: checkpoint
 
-      real (kind=RKIND), dimension(:), pointer :: arrayOut_r1, arrayComp_r1
+      real (kind=R8KIND), dimension(:), pointer :: arrayOut_r1, arrayComp_r1
       integer :: i, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
 
@@ -1334,8 +1853,19 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
 
          allocate(arrayOut_r1(outdimglobal))
          allocate(arrayComp_r1(outdimglobal))
-         call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                             outdim, outdimglobal, sendList, recvList)
+         if (real1DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real1DField % array8(1:outdim), arrayOut_r1, &
+                                outdim, outdimglobal, sendList, recvList)
+         else if (real1DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r1_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                                outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r1_8 B'
+#endif
+         end if
          if (write_fields) then
             write(91) arrayOut_r1
          else
@@ -1356,24 +1886,35 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          if (associated(sendList)) then
 
          allocate(arrayOut_r1(0))
-         call dmpar_alltoall_field1dReal(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
-                             outdim, 0, sendList, recvList)
+         if (real1DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real1DField % array8(1:outdim), arrayOut_r1, &
+                                outdim, 0, sendList, recvList)
+         else if (real1DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r1_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                                outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r1_8 B'
+#endif
+         end if
          deallocate(arrayOut_r1)
 
          end if
       end if
 
-   end subroutine compare_r1
+   end subroutine compare_r1_8
 
 
-   subroutine compare_r2(real2DField, checkpoint)
+   subroutine compare_r2_8(real2DField, checkpoint)
 
       implicit none
 
       type (field2DReal), pointer :: real2DField
       character(len=*), intent(in) :: checkpoint
 
-      real (kind=RKIND), dimension(:,:), pointer :: arrayOut_r2, arrayComp_r2
+      real (kind=R8KIND), dimension(:,:), pointer :: arrayOut_r2, arrayComp_r2
       integer :: i, j, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
 
@@ -1402,8 +1943,19 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
 
          allocate(arrayOut_r2(real2DField % dimsizes(1),outdimglobal))
          allocate(arrayComp_r2(real2DField % dimsizes(1),outdimglobal))
-         call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                             real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+         if (real2DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real2DField % array8(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+         else if (real2DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r2_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r2_8 B'
+#endif
+         end if
          if (write_fields) then
             write(91) arrayOut_r2
          else
@@ -1426,24 +1978,35 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          if (associated(sendList)) then
 
          allocate(arrayOut_r2(0,0))
-         call dmpar_alltoall_field2dReal(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
-                             real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+         if (real2DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real2DField % array8(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+         else if (real2DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r2_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r2_8 B'
+#endif
+         end if
          deallocate(arrayOut_r2)
 
          end if
       end if
 
-   end subroutine compare_r2
+   end subroutine compare_r2_8
 
 
-   subroutine compare_r3(real3DField, checkpoint)
+   subroutine compare_r3_8(real3DField, checkpoint)
 
       implicit none
 
       type (field3DReal), pointer :: real3DField
       character(len=*), intent(in) :: checkpoint
 
-      real (kind=RKIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
+      real (kind=R8KIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
       integer :: i, j, k, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
 
@@ -1473,8 +2036,19 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
 
          allocate(arrayOut_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
          allocate(arrayComp_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
-         call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                             real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+         if (real3DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real3DField % array8(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+         else if (real3DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r3_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r3_8 B'
+#endif
+         end if
          if (write_fields) then
             write(91) arrayOut_r3
          else
@@ -1499,14 +2073,303 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          if (associated(sendList)) then
 
          allocate(arrayOut_r3(0,0,0))
-         call dmpar_alltoall_field3dReal(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
-                             real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+         if (real3DField % array_kind == 8) then
+            call dmpar_alltoall_field(dminfo, real3DField % array8(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+         else if (real3DField % array_kind == 4) then
+            write(0,*) 'Type mismatch in compare_r3_8 A'
+         else
+#ifndef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r3_8 B'
+#endif
+         end if
          deallocate(arrayOut_r3)
 
          end if
       end if
 
-   end subroutine compare_r3
+   end subroutine compare_r3_8
+
+
+   subroutine compare_r1_4(real1DField, checkpoint)
+
+      implicit none
+
+      type (field1DReal), pointer :: real1DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=R4KIND), dimension(:), pointer :: arrayOut_r1, arrayComp_r1
+      integer :: i, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(real1DField % dimnames(1)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real1DField % dimnames(1)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real1DField % dimnames(1)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r1(outdimglobal))
+         allocate(arrayComp_r1(outdimglobal))
+         if (real1DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real1DField % array4(1:outdim), arrayOut_r1, &
+                                outdim, outdimglobal, sendList, recvList)
+         else if (real1DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r1_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                                outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r1_4 B'
+#endif
+         end if
+         if (write_fields) then
+            write(91) arrayOut_r1
+         else
+            read(91) arrayComp_r1
+
+            OUT1D: do i=1,size(arrayComp_r1)
+               if (arrayComp_r1(i) /= arrayOut_r1(i)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real1DField % fieldName)//' differs'
+                  exit OUT1D
+               end if
+            end do OUT1D
+         end if
+         deallocate(arrayOut_r1)
+         deallocate(arrayComp_r1)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r1(0))
+         if (real1DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real1DField % array4(1:outdim), arrayOut_r1, &
+                                outdim, 0, sendList, recvList)
+         else if (real1DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r1_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real1DField % array(1:outdim), arrayOut_r1, &
+                                outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r1_4 B'
+#endif
+         end if
+         deallocate(arrayOut_r1)
+
+         end if
+      end if
+
+   end subroutine compare_r1_4
+
+
+   subroutine compare_r2_4(real2DField, checkpoint)
+
+      implicit none
+
+      type (field2DReal), pointer :: real2DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=R4KIND), dimension(:,:), pointer :: arrayOut_r2, arrayComp_r2
+      integer :: i, j, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+      if (trim(real2DField % dimnames(2)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real2DField % dimnames(2)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real2DField % dimnames(2)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r2(real2DField % dimsizes(1),outdimglobal))
+         allocate(arrayComp_r2(real2DField % dimsizes(1),outdimglobal))
+         if (real2DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real2DField % array4(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+         else if (real2DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r2_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r2_4 B'
+#endif
+         end if
+         if (write_fields) then
+            write(91) arrayOut_r2
+         else
+            read(91) arrayComp_r2
+
+            OUT2D: do j=1,size(arrayComp_r2,2)
+            do i=1,size(arrayComp_r2,1)
+               if (arrayComp_r2(i,j) /= arrayOut_r2(i,j)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real2DField % fieldName)//' differs'
+                  exit OUT2D
+               end if
+            end do
+            end do OUT2D
+         end if
+         deallocate(arrayOut_r2)
+         deallocate(arrayComp_r2)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r2(0,0))
+         if (real2DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real2DField % array4(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+         else if (real2DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r2_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real2DField % array(:,1:outdim), arrayOut_r2, &
+                                real2DField % dimsizes(1), outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r2_4 B'
+#endif
+         end if
+         deallocate(arrayOut_r2)
+
+         end if
+      end if
+
+   end subroutine compare_r2_4
+
+
+   subroutine compare_r3_4(real3DField, checkpoint)
+
+      implicit none
+
+      type (field3DReal), pointer :: real3DField
+      character(len=*), intent(in) :: checkpoint
+
+      real (kind=R4KIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
+      integer :: i, j, k, outdim, outdimglobal
+      type (exchange_list), pointer :: sendList, recvList
+
+
+      if (trim(real3DField % dimnames(3)) == 'nCells') then
+         outdim = nCellsSolve
+         outdimglobal = nCellsGlobal
+         sendList => cellSendList
+         recvList => cellRecvList
+      else if (trim(real3DField % dimnames(3)) == 'nEdges') then
+         outdim = nEdgesSolve
+         outdimglobal = nEdgesGlobal
+         sendList => edgeSendList
+         recvList => edgeRecvList
+      else if (trim(real3DField % dimnames(3)) == 'nVertices') then
+         outdim = nVerticesSolve
+         outdimglobal = nVerticesGlobal
+         sendList => vertexSendList
+         recvList => vertexRecvList
+      else
+         nullify(sendList)
+         nullify(recvList)
+      end if
+
+      if (dminfo % my_proc_id == 0) then
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
+         allocate(arrayComp_r3(real3DField % dimsizes(1),real3DField % dimsizes(2),outdimglobal))
+         if (real3DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real3DField % array4(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+         else if (real3DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r3_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, outdimglobal, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r3_4 B'
+#endif
+         end if
+         if (write_fields) then
+            write(91) arrayOut_r3
+         else
+            read(91) arrayComp_r3
+
+            OUT3D: do k=1,size(arrayComp_r3,3)
+            do j=1,size(arrayComp_r3,2)
+            do i=1,size(arrayComp_r3,1)
+               if (arrayComp_r3(i,j,k) /= arrayOut_r3(i,j,k)) then
+                  write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real3DField % fieldName)//' differs'
+                  exit OUT3D
+               end if
+            end do
+            end do
+            end do OUT3D
+         end if
+         deallocate(arrayOut_r3)
+         deallocate(arrayComp_r3)
+
+         end if
+      else
+         if (associated(sendList)) then
+
+         allocate(arrayOut_r3(0,0,0))
+         if (real3DField % array_kind == 4) then
+            call dmpar_alltoall_field(dminfo, real3DField % array4(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+         else if (real3DField % array_kind == 8) then
+            write(0,*) 'Type mismatch in compare_r3_4 A'
+         else
+#ifdef SINGLE_PRECISION
+            call dmpar_alltoall_field(dminfo, real3DField % array(:,:,1:outdim), arrayOut_r3, &
+                                real3DField % dimsizes(1), real3DField % dimsizes(2), outdim, 0, sendList, recvList)
+#else
+            write(0,*) 'Type mismatch in compare_r3_4 B'
+#endif
+         end if
+         deallocate(arrayOut_r3)
+
+         end if
+      end if
+
+   end subroutine compare_r3_4
 
 
    subroutine compare_i1(int1DField, checkpoint)
@@ -1546,7 +2409,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
 
          allocate(arrayOut_i1(outdimglobal))
          allocate(arrayComp_i1(outdimglobal))
-         call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
+         call dmpar_alltoall_field(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
                              outdim, outdimglobal, sendList, recvList)
          if (write_fields) then
             write(91) arrayOut_i1
@@ -1568,7 +2431,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          if (associated(sendList)) then
 
          allocate(arrayOut_i1(0))
-         call dmpar_alltoall_field1dInteger(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
+         call dmpar_alltoall_field(dminfo, int1DField % array(1:outdim), arrayOut_i1, &
                              outdim, 0, sendList, recvList)
          deallocate(arrayOut_i1)
 
@@ -1615,7 +2478,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
 
          allocate(arrayOut_i2(int2DField % dimsizes(1),outdimglobal))
          allocate(arrayComp_i2(int2DField % dimsizes(1),outdimglobal))
-         call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
+         call dmpar_alltoall_field(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
                              int2DField % dimsizes(1), outdim, outdimglobal, sendList, recvList)
          if (write_fields) then
             write(91) arrayOut_i2
@@ -1639,7 +2502,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          if (associated(sendList)) then
 
          allocate(arrayOut_i2(0,0))
-         call dmpar_alltoall_field2dInteger(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
+         call dmpar_alltoall_field(dminfo, int2DField % array(:,1:outdim), arrayOut_i2, &
                              int2DField % dimsizes(1), outdim, 0, sendList, recvList)
          deallocate(arrayOut_i2)
 
