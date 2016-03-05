@@ -10,6 +10,7 @@ module atm_core
    use mpas_derived_types
    use mpas_pool_routines
    use mpas_dmpar
+   use mpas_debugging
 
    type (MPAS_Clock_type), pointer :: clock
 
@@ -44,6 +45,7 @@ module atm_core
       type (field2DReal), pointer :: u_field, pv_edge_field, ru_field, rw_field
       character (len=StrKIND), pointer :: xtime
       type (MPAS_Time_Type) :: startTime
+      logical, pointer :: config_write_checkpoints
 
       integer, pointer :: nVertLevels, maxEdges, maxEdges2, num_scalars
 
@@ -70,9 +72,13 @@ module atm_core
       clock => domain % clock
 
 
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_write_checkpoints', config_write_checkpoints)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
 
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
+      call mpas_debugging_init(domain % dminfo, config_write_checkpoints, &
+                               domain % blocklist % allFields, mesh)
 
       !
       ! If this is a restart run, read the restart stream, else read the input
@@ -499,6 +505,8 @@ module atm_core
       character(len=StrKIND) :: nggps_interval
 #endif
 
+      call mpas_debugging_check('beginning of core_run')
+
       ierr = 0
 
       ! Eventually, dt should be domain specific
@@ -862,6 +870,8 @@ module atm_core
       integer :: ierr
 
       ierr = 0
+
+      call mpas_debugging_finalize()
 
       call mpas_destroy_clock(clock, ierr)
       call mpas_decomp_destroy_decomp_list(domain % decompositions)
