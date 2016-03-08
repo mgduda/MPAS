@@ -24,7 +24,7 @@
  logical,parameter:: newsas           = .true.  !flag for calling new sas convection scheme.
  logical,parameter:: cal_pre          = .true.  !flag for controlling precipitation type algorithm.
  logical,parameter:: ccnorm           = .false. !
- logical,parameter:: cnvgwd           = .false. !flag for convective wave drag.
+ logical,parameter:: cnvgwd           = .true.  !flag for convective wave drag.
  logical,parameter:: crick_proof      = .false. !
  logical,parameter:: dspheat          = .false. !flag for TKE dissipative heating. 
  logical,parameter:: gen_coord_hybrid = .true.  !flag for Henry's generalized coordinate.
