@@ -19,6 +19,7 @@
                 <dim name="R3"                 definition="3"/>
                 <dim name="nVertLevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
+                <dim name="nIntP"              definition="namelist:num_pressure_levels"/>
                 <dim name="nMonths"            definition="namelist:months"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
                 <dim name="nLags"              definition="namelist:input_soil_temperature_lag"/>
@@ -338,9 +339,12 @@
 			<var name="tyear_accum"/>
 			<var name="refl10cm_max"/>
 			<var name="i_rainnc"/>
+                        <var name="i_rainnc_mp"/>
 			<var name="sr"/>
 			<var name="rainncv"/>
 			<var name="rainnc"/>
+			<var name="rainncv_mp"/>
+			<var name="rainnc_mp"/>
 			<var name="snownc"/>
 			<var name="graupelnc"/>
 			<var name="i_rainc"/>
@@ -351,6 +355,14 @@
 			<var name="cubot"/>
 			<var name="cutop"/>
 			<var name="w0avg"/>
+			<var name="qcg"/>
+			<var name="sh3d"/>
+			<var name="qke"/>
+			<var name="qke_adv"/>
+			<var name="cov"/>
+			<var name="qsq"/>
+			<var name="tsq"/>
+			<var name="tke_pbl"/>
 			<var name="kpbl"/>
 			<var name="hpbl"/>
 			<var name="hfx"/>
@@ -454,6 +466,28 @@
 			<var name="xicem"/>
 			<var name="z0"/>
 			<var name="zs"/>
+                        <var name="k22_shallow"/>
+                        <var name="kbcon_shallow"/>
+                        <var name="ktop_shallow"/>
+                        <var name="ktop_deep"/>
+                        <var name="apr_gr"/>
+                        <var name="apr_w"/>
+                        <var name="apr_mc"/>
+                        <var name="apr_st"/>
+                        <var name="apr_as"/>
+                        <var name="apr_capma"/>
+                        <var name="apr_capme"/>
+                        <var name="apr_capmi"/>
+                        <var name="edt_out"/>
+                        <var name="xmb_total"/>
+                        <var name="xmb_shallow"/>
+                        <var name="qc_cu"/>
+                        <var name="qi_cu"/>
+                        <var name="cugd_tten"/>
+                        <var name="cugd_qvten"/>
+                        <var name="cugd_qcten"/>
+                        <var name="cugd_ttens"/>
+                        <var name="cugd_qvtens"/>
 			<var name="rthcuten"/>
 			<var name="rqvcuten"/>
 			<var name="rqccuten"/>
@@ -461,6 +495,7 @@
 			<var name="rqrcuten"/>
 			<var name="rqscuten"/>
 			<var name="rqvdynten"/>
+                        <var name="rthdynten"/>
 			<var name="rucuten"/>
 			<var name="rvcuten"/>
 			<var name="rublten"/>
@@ -469,6 +504,7 @@
 			<var name="rqvblten"/>
 			<var name="rqcblten"/>
 			<var name="rqiblten"/>
+			<var name="rqniblten"/>
 			<var name="rthratensw"/>
 			<var name="rthratenlw"/>
 			<var name="pin"/>
@@ -508,6 +544,62 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+			<var name="pFixed"/>
+			<var name="dtcup_interp"/>
+			<var name="dqvcup_interp"/>
+			<var name="dqccup_interp"/>
+			<var name="dqrcup_interp"/>
+			<var name="dqicup_interp"/>
+			<var name="dqscup_interp"/>
+			<var name="dtpbl_interp"/>
+			<var name="dqvpbl_interp"/>
+			<var name="dqcpbl_interp"/>
+			<var name="dqipbl_interp"/>
+			<var name="dtradlw_interp"/>
+			<var name="dtradsw_interp"/>
+			<var name="dtmp_interp"/>
+			<var name="dqvmp_interp"/>
+			<var name="dqcmp_interp"/>
+			<var name="dqrmp_interp"/>
+			<var name="dqimp_interp"/>
+			<var name="dqsmp_interp"/>
+			<var name="dqgmp_interp"/>
+			<var name="cld_interp"/>
+			<var name="th_interp"/>
+			<var name="qv_interp"/>
+			<var name="qc_interp"/>
+			<var name="qr_interp"/>
+			<var name="qi_interp"/>
+			<var name="qs_interp"/>
+			<var name="qg_interp"/>
+			<var name="acdtcup_interp"/>
+			<var name="acdqvcup_interp"/>
+			<var name="acdqccup_interp"/>
+			<var name="acdqrcup_interp"/>
+			<var name="acdqicup_interp"/>
+			<var name="acdqscup_interp"/>
+			<var name="acdtpbl_interp"/>
+			<var name="acdqvpbl_interp"/>
+			<var name="acdqcpbl_interp"/>
+			<var name="acdqipbl_interp"/>
+			<var name="acdtradlw_interp"/>
+			<var name="acdtradsw_interp"/>
+			<var name="acdtmp_interp"/>
+			<var name="acdqvmp_interp"/>
+			<var name="acdqcmp_interp"/>
+			<var name="acdqrmp_interp"/>
+			<var name="acdqimp_interp"/>
+			<var name="acdqsmp_interp"/>
+			<var name="acdqgmp_interp"/>
+			<var name="accld_interp"/>
+			<var name="acth_interp"/>
+			<var name="acqv_interp"/>
+			<var name="acqc_interp"/>
+			<var name="acqr_interp"/>
+			<var name="acqi_interp"/>
+			<var name="acqs_interp"/>
+			<var name="acqg_interp"/>
+			<var name="i_acth_interp"/>
 		</stream>
 
 		<stream name="output" 
@@ -573,6 +665,7 @@
 			<var name="i_rainnc"/>
 			<var name="rainnc"/>
 			<var name="precipw"/>
+			<var name="precipw_t"/>
 			<var name="cuprec"/>
 			<var name="i_rainc"/>
 			<var name="rainc"/>
@@ -774,6 +867,8 @@
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
+                        <var name="qni"     array_group="number"/>
+                        <var name="qnc"     array_group="number"/>
                 </var_array>
 
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
@@ -931,7 +1026,10 @@
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+                        <var name="tend_qni"   name_in_code="qni"       array_group="number"/>
+                        <var name="tend_qnc"   name_in_code="qnc"       array_group="number"/>
                 </var_array>
+
         </var_struct>
 
 
@@ -949,6 +1047,9 @@
                 <nml_option name="num_soil_layers"                   type="integer"       default_value="4"          in_defaults="false"/>
                 <nml_option name="months"                            type="integer"       default_value="12"         in_defaults="false"/>
 
+                <!-- ... NUMBER OF PRESSURE LEVELS FOR VERTICAL INTERPOLATION OF PHYSICS DIAGNOSTICS: -->
+                <nml_option name="num_pressure_levels"               type="integer"       default_value="34"         in_defaults="false"/>
+
                 <!-- ... DIMENSION NEEDED FOR OZONE AND AEROSOLS CONCENTRATIONS IN THE CAM LONGWAVE AND SHORTWAVE -->
                 <!-- ... RADIATION PARAMETERIZATIONS.                                                             -->
                 <nml_option name="noznlev"                           type="integer"       default_value="59"         in_defaults="false"/>
@@ -963,6 +1064,7 @@
                 <nml_option name="config_sstdiurn_update"            type="logical"       default_value="false"/>
                 <nml_option name="config_deepsoiltemp_update"        type="logical"       default_value="false"/>
                 <nml_option name="config_o3climatology"              type="logical"       default_value="false"      in_defaults="false"/>
+                <nml_option name="config_physics_interp"             type="logical"       default_value="false"      in_defaults="false"/> 
 
                 <nml_option name="config_n_microp"                   type="integer"       default_value="1"          in_defaults="false"/>
 
@@ -986,6 +1088,9 @@
                 <nml_option name="config_radt_sw_scheme"             type="character"     default_value="suite"      in_defaults="false"/>
                 <nml_option name="config_sfclayer_scheme"            type="character"     default_value="suite"      in_defaults="false"/>
 
+                <nml_option name="config_gfconv_closure_deep"        type="integer"       default_value="0"          in_defaults="false"/>
+                <nml_option name="config_gfconv_closure_shallow"     type="integer"       default_value="0"          in_defaults="false"/>
+
                 <nml_option name="config_bucket_radt"                type="real"          default_value="1.0e9"      in_defaults="false"/>
                 <nml_option name="config_bucket_rainc"               type="real"          default_value="100.0"      in_defaults="false"/>
                 <nml_option name="config_bucket_rainnc"              type="real"          default_value="100.0"      in_defaults="false"/>
@@ -994,6 +1099,81 @@
         <var_struct name="diag_physics" time_levs="1">
 
                 <var name="dcEdge_m"      type="real"     dimensions="nCells"/>
+
+
+                <!-- ================================================================================================== -->
+                <!-- PHYSICS DIAGNOSTICS INTERPOLATED ON PRESSURE LEVELS:                                               -->
+                <!-- ================================================================================================== -->
+
+                <var name="pFixed"           type="real"    dimensions="nIntP"/>
+
+                <var name="rthmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqvmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqcmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqrmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqimpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqsmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="rqgmpten"         type="real"    dimensions="nVertLevels nCells Time"/>
+
+                <var name="dtcup_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvcup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqccup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqrcup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqicup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqscup_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtmp_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqcmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqrmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqimp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqsmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqgmp_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtpbl_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqvpbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqcpbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dqipbl_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtradlw_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="dtradsw_interp"   type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="acdtcup_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvcup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqccup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqrcup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqicup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqscup_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtmp_interp"    type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqcmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqrmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqimp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqsmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqgmp_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtpbl_interp"   type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqvpbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqcpbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdqipbl_interp"  type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtradlw_interp" type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acdtradsw_interp" type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="cld_interp"       type="real"    dimensions="nIntP nCells Time"/>
+                <var name="th_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qv_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qc_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qr_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qi_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qs_interp"        type="real"    dimensions="nIntP nCells Time"/>
+                <var name="qg_interp"        type="real"    dimensions="nIntP nCells Time"/>
+ 
+                <var name="accld_interp"     type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acth_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqv_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqc_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqr_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqi_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqs_interp"      type="real"    dimensions="nIntP nCells Time"/>
+                <var name="acqg_interp"      type="real"    dimensions="nIntP nCells Time"/>
+
+                <var name="i_acth_interp"    type="integer" dimensions="nIntP nCells Time"/>
 
                 <!-- ================================================================================================= -->
                 <!-- ... ARRAYS AND VARIABLES FOR UPDATING THE DEEP SOIL TEMPERATURE:                                  -->
@@ -1031,29 +1211,43 @@
                 <var name="refl10cm_max"  type="real"     dimensions="nCells Time"/>
 
                 <var name="i_rainnc"      type="integer"  dimensions="nCells Time"/>
+                <var name="i_rainnc_mp"   type="integer"  dimensions="nCells Time"/>
                 <var name="sr"            type="real"     dimensions="nCells Time"/>
                 <var name="rainncv"       type="real"     dimensions="nCells Time"/>
+                <var name="rainncv_mp"    type="real"     dimensions="nCells Time"/>
                 <var name="snowncv"       type="real"     dimensions="nCells Time"/>
                 <var name="graupelncv"    type="real"     dimensions="nCells Time"/>
 
                 <var name="rainnc"        type="real"     dimensions="nCells Time"/>
+                <var name="rainnc_mp"     type="real"     dimensions="nCells Time"/>
                 <var name="snownc"        type="real"     dimensions="nCells Time"/>
                 <var name="graupelnc"     type="real"     dimensions="nCells Time"/>
 
                 <var name="precipw"       type="real"     dimensions="nCells Time"/>
+                <var name="precipw_t"     type="real"     dimensions="nCells Time"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF CONVECTION:                                                                -->
                 <!-- ================================================================================================== -->
-                <!-- i_rainc   : counter related to how often rainc is begin reset relative to its bucket value    (-)  -->
-                <!-- cuprec    : convective precipitation rate                                                  (mm/s)  -->
-                <!-- rainc     : accumulated time-step convective precipitation                                   (mm)  -->
-                <!-- raincv    : time-step convective precipitation                                               (mm)  -->
+                <!-- i_rainc    : counter related to how often rainc is begin reset relative to its bucket value    (-) -->
+                <!-- cuprec     : convective precipitation rate                                                  (mm/s) -->
+                <!-- rainc      : accumulated time-step convective precipitation                                   (mm) -->
+                <!-- raincv     : time-step convective precipitation                                               (mm) -->
+                <!-- rqvcuten_vi: vertically-integrated tendency of water vapor mixing ratio                  (kg/m2/s) -->
+                <!-- rqccuten_vi: vertically-integrated tendency of cloud water mixing ratio                  (kg/m2/s) -->
+                <!-- rqrcuten_vi: vertically-integrated tendency of rain mixing ratio                         (kg/m2/s) -->
+                <!-- rqicuten_vi: vertically-integrated tendency of cloud ice mixing ratio                    (kg/m2/s) -->
+                <!-- rqscuten_vi: vertically-integrated tendency of snow mixing ratio                         (kg/m2/s) --> 
 
                 <var name="i_rainc"       type="integer"  dimensions="nCells Time"/>
                 <var name="cuprec"        type="real"     dimensions="nCells Time"/>
                 <var name="rainc"         type="real"     dimensions="nCells Time"/>
                 <var name="raincv"        type="real"     dimensions="nCells Time"/>
+                <var name="rqvcuten_vi"   type="real"     dimensions="nCells Time"/>
+                <var name="rqccuten_vi"   type="real"     dimensions="nCells Time"/>
+                <var name="rqrcuten_vi"   type="real"     dimensions="nCells Time"/>
+                <var name="rqicuten_vi"   type="real"     dimensions="nCells Time"/>
+                <var name="rqscuten_vi"   type="real"     dimensions="nCells Time"/>
 
                 <!-- ... KAIN_FRITSCH:                                                                                 -->
                 <!-- cubot     : lowest level of convection                                                        (-) -->
@@ -1066,22 +1260,76 @@
                 <var name="cutop"         type="real"     dimensions="nCells Time"/>
                 <var name="w0avg"         type="real"     dimensions="nVertLevels nCells Time"/>
 
+                <!-- ...  GRELL ONLY:                                                                                  -->
+                <var name="k22_shallow"   type="integer"  dimensions="nCells Time"/>
+                <var name="kbcon_shallow" type="integer"  dimensions="nCells Time"/>
+                <var name="ktop_shallow"  type="integer"  dimensions="nCells Time"/>
+                <var name="ktop_deep"     type="integer"  dimensions="nCells Time"/>
+
+                <var name="apr_gr"        type="real"     dimensions="nCells Time"/>
+                <var name="apr_w"         type="real"     dimensions="nCells Time"/>
+                <var name="apr_mc"        type="real"     dimensions="nCells Time"/>
+                <var name="apr_st"        type="real"     dimensions="nCells Time"/>
+                <var name="apr_as"        type="real"     dimensions="nCells Time"/>
+                <var name="apr_capma"     type="real"     dimensions="nCells Time"/>
+                <var name="apr_capme"     type="real"     dimensions="nCells Time"/>
+                <var name="apr_capmi"     type="real"     dimensions="nCells Time"/>
+
+                <var name="edt_out"       type="real"     dimensions="nCells Time"/>
+                <var name="xmb_total"     type="real"     dimensions="nCells Time"/>
+                <var name="xmb_shallow"   type="real"     dimensions="nCells Time"/>
+
+                <var name="qc_cu"         type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="qi_cu"         type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                                        -->
                 <!-- ================================================================================================== -->
-                <!-- kpbl      : index of PBL top                                                                  (-)  -->
-                <!-- hpbl      : PBL height                                                                        (m)  -->
-                <!-- exch_h    : exchange coefficient                                                              (-)  -->
+                <!-- kpbl      : index of PBL top                                                                   [-] -->
+                <!-- hpbl      : PBL height                                                                         [m] -->
+                <!-- exch_h    : exchange coefficient                                                               [-] -->
 
                 <var name="kpbl"          type="integer"  dimensions="nCells Time"/>
                 <var name="hpbl"          type="real"     dimensions="nCells Time"/>
+		<var name="kzh"           type="real"     dimensions="nVertLevels nCells Time"/>
+		<var name="kzm"           type="real"     dimensions="nVertLevels nCells Time"/>
+		<var name="kzq"           type="real"     dimensions="nVertLevels nCells Time"/>
+
+                <!-- YSU PBL SCHEME: -->
                 <var name="exch_h"        type="real"     dimensions="nVertLevels nCells Time"/>
 
-                <!-- TEMPORARY: -->
-		<var name="kzh"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzm"                               type="real"     dimensions="nVertLevels nCells Time"/>
-		<var name="kzq"                               type="real"     dimensions="nVertLevels nCells Time"/>
+                <!-- MYNN PBL SCHEME: -->
+                <!-- delta     : entrainment layer depth from PBL scheme                                            [m] -->
+                <!-- el_pbl    : mixing length from PBL scheme                                                      [m] -->
+                <!-- wstar     : mixed velocity scale from PBL scheme                                             [m/s] -->
+                <!-- cov       : liquid water - liquid water potential temperature covariance                 [K kg/kg] -->
+                <!-- qke       : twice turbulent kinetic energy                                                [m2 s-2] -->
+                <!-- qke_adv   : twice turbulent kinetic energy                                                [m2 s-2] -->
+                <!-- qsq       : liquid water variance                                                       [(kg/kg)2] -->
+                <!-- tsq       : liquid water potential temperature variance                                       [K2] -->
+                <!-- tke_pbl   : turbulent kinetic energy from PBL                                             [m2/s-2] -->
+
+                <!-- dqke      : TKE change                                                                    [m2/s-2] -->
+                <!-- qbuoy     : TKE production - buoyancy                                                     [m2/s-2] -->
+                <!-- qdiss     : TKE dissipation                                                               [m2/s-2] -->
+                <!-- qshear    : TKE production - shear                                                        [m2/s-2] -->
+                <!-- qwt       : TKE vertical distribution                                                     [m2/s-2] --> 
+
+                <var name="delta"         type="real"    dimensions="nCells Time"/>
+                <var name="wstar"         type="real"    dimensions="nCells Time"/>
+                <var name="cov"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="el_pbl"        type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qke"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qke_adv"       type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qsq"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="tsq"           type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="tke_pbl"       type="real"    dimensions="nVertLevels nCells Time"/>
+
+                <var name="dqke"          type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qbuoy"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qdiss"         type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qshear"        type="real"    dimensions="nVertLevels nCells Time"/>
+                <var name="qwt"           type="real"    dimensions="nVertLevels nCells Time"/>
 
 
                 <!-- ================================================================================================== -->
@@ -1153,8 +1401,22 @@
                 <var name="regime"        type="real"     dimensions="nCells Time"/>
                 <var name="rmol"          type="real"     dimensions="nCells Time"/>
                 <var name="wspd"          type="real"     dimensions="nCells Time"/>
+
+                <!-- ADDITIONAL VARIABLES ONLY NEEDED IN THE MONIN_OBUKOHV SURFACE LAYER SCHEME (SFCLAY): -->
+                <!--  fh        :integrated function for heat                                                       [-] -->
+                <!--  fm        :integrated function for momentum                                                   [-] -->
+
                 <var name="fh"            type="real"     dimensions="nCells Time"/>
                 <var name="fm"            type="real"     dimensions="nCells Time"/>
+
+                <!-- ADDITIONAL VARIABLES ONLY NEEDED IN THE MYNN SURFACE LAYER SCHEME (SFCLAY_MYNN): -->
+                <!--  ch        :surface exchange coefficient for heat                                            [m/s] -->
+                <!--  qcg       :cloud water mixing ratio at the ground surface                                 [kg/kg] -->
+                <!--  sh3d      :stability function for heat                                                        [-] -->
+
+                <var name="ch"            type="real"     dimensions="nCells Time"/>
+                <var name="qcg"           type="real"     dimensions="nCells Time"/>
+                <var name="sh3d"          type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- DIAGNOSTICS: -->
                 <var name="u10"           type="real"     dimensions="nCells Time"/>
@@ -1439,14 +1701,23 @@
                 <var name="rqrcuten"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rqscuten"    type="real"     dimensions="nVertLevels nCells Time"/>
 
-                <!-- TIEDTKE -->
+                <!-- TIEDTKE  AND GRELL -->
                 <!-- rucuten   : tendency of zonal wind due to cumulus convection                              (m/s-1) -->
                 <!-- rvcuten   : tendency of meridional wind due to cumulus convection                         (m/s-1) -->
                 <!-- rqvdynten : tendency of water vapor due to horizontal and vertical advections         (kg/kg/s-1) -->
+                <!-- rthdynten : tendency of potential temperature due to horizontal and vertical advections   (K/s-1) -->
+
                 <var name="rqvdynten"   type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rthdynten"   type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rucuten"     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rvcuten"     type="real"     dimensions="nVertLevels nCells Time"/>
 
+                <!-- GRELL ONLY -->
+                <var name="cugd_tten"   type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="cugd_qvten"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="cugd_qcten"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="cugd_ttens"  type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="cugd_qvtens" type="real"     dimensions="nVertLevels nCells Time"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... TENDENCIES FROM PARAMETERIZATION OF PLANETARY BOUNDARY LAYER PROCESSES:                        -->
@@ -1457,6 +1728,7 @@
                 <!-- rqvblten  : tendency of water vapor mixing ratio due to pbl processes                 (kg/kg s-1)  -->
                 <!-- rqcblten  : tendency of cloud water mixing ratio due to pbl processes                 (kg/kg s-1)  -->
                 <!-- rqiblten  : tendency of cloud ice mixing ratio due to pbl processes                   (kg/kg s-1)  -->
+                <!-- rqniblten : tendency of cloud ice number concentration due to pbl processes             (m-3 s-1)  -->
 
                 <var name="rublten"     type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rvblten"     type="real"     dimensions="nVertLevels nCells Time"/>
@@ -1464,6 +1736,7 @@
                 <var name="rqvblten"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rqcblten"    type="real"     dimensions="nVertLevels nCells Time"/>
                 <var name="rqiblten"    type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="rqniblten"   type="real"     dimensions="nVertLevels nCells Time"/>
 
 
                 <!-- ================================================================================================== -->

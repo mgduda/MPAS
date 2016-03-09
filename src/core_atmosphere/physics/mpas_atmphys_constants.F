@@ -23,9 +23,9 @@
 !>
 !> add-ons and modifications to sourcecode:
 !> ----------------------------------------
-!>    * Replaced the variable g (that originally pointed to gravity) with gravity, for simplicity.
+!>    * replaced the variable g (that originally pointed to gravity) with gravity, for simplicity.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-03-21.
-!>    * Removed the constraint of only using RKIND from mpas_kind_types.
+!>    * removed the constraint of only using RKIND from mpas_kind_types.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
 !>    * added empty subroutine atmphys_constants_init that does not do anything, but needed for 
 !>      compiling MPAS with some compilers.

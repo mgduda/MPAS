@@ -31,8 +31,8 @@
 !>
 !>\details
 !>
-!> subroutines in mpas_atmphys_interface_nhyd:
-!> -------------------------------------------
+!> subroutines in mpas_atmphys_interface:
+!> --------------------------------------
 !> allocate_forall_physics  : allocation of all meteorological variables needed in the physics.
 !> deallocate_forall_physics: deallocation of all meteorological variables needed in the physics.
 !> MPAS_to_physics          : conversion of input "MPAS" variables to "physics" variables.
@@ -41,31 +41,40 @@
 !>
 !> add-ons and modifications to sourcecode:
 !> ----------------------------------------
-!>    * In subroutine MPAS_to_physics, moved the calculation of the local arrays qv_p,qc_p, and
+!>    * in subroutine MPAS_to_physics, moved the calculation of the local arrays qv_p,qc_p, and
 !>      qr_p above the calculation of th_p so that we do not need to use the pointer qv.
 !>    * In subroutine microphysics_from_MPAS, moved the calculation of the local arrays qv_p,qc_p,
 !>      and qr_p above the calculation of th_p so that we do not need to use the pointer qv.
-!>    * In subroutine microphysics_to_MPAS, since microphysics schemes update the temperature and
+!>    * in subroutine microphysics_to_MPAS, since microphysics schemes update the temperature and
 !>      water vapor mixing ratio, we first update the total pressure and exner functions. Then, we
 !>      update the modified potential temperature and calculate the diabatic tendency due to cloud
 !>      microphysics processes.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-11-07.
-!>    * Replaced the variable g (that originally pointed to gravity) with gravity, for simplicity.
+!>    * replaced the variable g (that originally pointed to gravity) with gravity, for simplicity.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-03-21.
 !>    * throughout the sourcecode, replaced all "var_struct" defined arrays by local pointers.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-04-22.
-!>    * Modified sourcecode to use pools.
+!>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
-!>    * Added calculation of the surface pressure tendency. Moved the calculation of znu_p below 
+!>    * added calculation of the surface pressure tendency. Moved the calculation of znu_p below 
 !>      the calculation of the surface pressure to avoid dividing by zero if the surface pressure
 !>      is not output in the init file.
-!>      Laura D. Fowler (birch.mmm.ucar.ecu) / 2014-06-23. 
-!>    * Renamed module mpas_atmphys_interface_nhyd to mpas_atmphys_interface.
+!>      Laura D. Fowler (laura@ucar.ecu) / 2014-06-23. 
+!>    * renamed module mpas_atmphys_interface_nhyd to mpas_atmphys_interface.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-19.
 !>    * In subroutine microphysics_to_MPAS, reverted the calculation of cloud microphysics tendency
 !>      rt_diabatic_tend, and update of the state variables to git hash identifier 7a66f273e182f4.
 !>      This change reflects the fact that we want to compute rt_diabatic_tend at constant volume.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-1-015. 
+!>    * in subroutines microphysics_from_MPAS and microphysics_to_MPAS, added the calculation of
+!>      the cloud microphysics tendencies.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-29.
+!>    * in subroutine microphysics_to_MPAS, reverted the calculation of cloud microphysics tendency
+!>      rt_diabatic_tend, and update of the state variables to git hash identifier 7a66f273e182f4.
+!>      This change reflects the fact that we want to compute rt_diabatic_tend at constant volume.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-10-15. 
+!>    * added the local variables qnc_p and qni_p needed in the MYNN PBL scheme (module_bl_mynn.F).
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06.
 
 
  contains
@@ -105,6 +114,9 @@
  if(.not.allocated(qi_p)   ) allocate(qi_p(ims:ime,kms:kme,jms:jme)   )
  if(.not.allocated(qs_p)   ) allocate(qs_p(ims:ime,kms:kme,jms:jme)   )
  if(.not.allocated(qg_p)   ) allocate(qg_p(ims:ime,kms:kme,jms:jme)   )
+
+ if(.not.allocated(qnc_p)  ) allocate(qnc_p(ims:ime,kms:kme,jms:jme)  )
+ if(.not.allocated(qni_p)  ) allocate(qni_p(ims:ime,kms:kme,jms:jme)  )
 
 !... arrays used for calculating the hydrostatic pressure and exner function:
  if(.not.allocated(psfc_hyd_p)  ) allocate(psfc_hyd_p(ims:ime,jms:jme)          )
@@ -152,6 +164,9 @@
  if(allocated(qs_p)    ) deallocate(qs_p    )
  if(allocated(qg_p)    ) deallocate(qg_p    )
 
+ if(allocated(qnc_p)   ) deallocate(qnc_p   )
+ if(allocated(qni_p)   ) deallocate(qni_p   )
+
  if(allocated(psfc_hyd_p)  ) deallocate(psfc_hyd_p  )
  if(allocated(psfc_hydd_p) ) deallocate(psfc_hydd_p )
  if(allocated(pres_hyd_p)  ) deallocate(pres_hyd_p  )
@@ -178,6 +193,7 @@
 
 !local pointers:
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
+ integer,pointer:: index_qnc,index_qni
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: fzm,fzp,rdzw
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,plrad
@@ -185,6 +201,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
+ real(kind=RKIND),dimension(:,:),pointer  :: qnc,qni
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -234,6 +251,9 @@
  call mpas_pool_get_dimension(state,'index_qs',index_qs)
  call mpas_pool_get_dimension(state,'index_qg',index_qg)
 
+ call mpas_pool_get_dimension(state,'index_qnc',index_qnc)
+ call mpas_pool_get_dimension(state,'index_qni',index_qni)
+
  call mpas_pool_get_array(state,'scalars',scalars,time_lev)
  qv => scalars(index_qv,:,:)
  qc => scalars(index_qc,:,:)
@@ -241,6 +261,9 @@
  qi => scalars(index_qi,:,:)
  qs => scalars(index_qs,:,:)
  qg => scalars(index_qg,:,:)
+
+ qnc => scalars(index_qnc,:,:)
+ qni => scalars(index_qni,:,:)
 
  call mpas_pool_get_array(diag_physics,'plrad',plrad)
 
@@ -255,7 +278,11 @@
     qi_p(i,k,j) = max(0.,qi(k,i))
     qs_p(i,k,j) = max(0.,qs(k,i))
     qg_p(i,k,j) = max(0.,qg(k,i))
-    
+
+    !number concentrations:
+    qnc_p(i,k,j) = max(0.,qnc(k,i))
+    qni_p(i,k,j) = max(0.,qni(k,i))
+ 
     !arrays located at theta points:
     u_p(i,k,j) = u(k,i)
     v_p(i,k,j) = v(k,i)
@@ -412,13 +439,14 @@
  end subroutine MPAS_to_physics
 
 !==================================================================================================
- subroutine microphysics_from_MPAS(mesh,state,time_lev,diag)
+ subroutine microphysics_from_MPAS(mesh,state,time_lev,diag,diag_physics)
 !==================================================================================================
 
 !input variables:
+ type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag
- type(mpas_pool_type),intent(in):: mesh
+ type(mpas_pool_type),intent(in):: diag_physics
 
  integer:: time_lev
 
@@ -429,6 +457,8 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten, &
+                                             rqimpten,rqsmpten,rqgmpten
 
 !local variables:
  integer:: i,k,j
@@ -465,6 +495,14 @@
  qi => scalars(index_qi,:,:)
  qs => scalars(index_qs,:,:)
  qg => scalars(index_qg,:,:)
+
+ call mpas_pool_get_array(diag_physics,'rthmpten',rthmpten)
+ call mpas_pool_get_array(diag_physics,'rqvmpten',rqvmpten)
+ call mpas_pool_get_array(diag_physics,'rqcmpten',rqcmpten)
+ call mpas_pool_get_array(diag_physics,'rqrmpten',rqrmpten)
+ call mpas_pool_get_array(diag_physics,'rqimpten',rqimpten)
+ call mpas_pool_get_array(diag_physics,'rqsmpten',rqsmpten)
+ call mpas_pool_get_array(diag_physics,'rqgmpten',rqgmpten)
 
 !initialize variables needed in the cloud microphysics schemes:
  do j = jts, jte
@@ -504,7 +542,27 @@
 
  end select microp_select_init
 
-! write(0,*) '--- end subroutine microphysics_from_MPAS.'
+!initialize cloud microphysics tendencies:
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+    rthmpten(k,i) = th_p(i,k,j)
+ enddo
+ enddo
+ enddo
+
+ do k = kts,kte
+ do i = its,ite
+    rqvmpten(k,i) = qv(k,i)
+    rqcmpten(k,i) = qc(k,i)
+    rqrmpten(k,i) = qr(k,i)
+    rqimpten(k,i) = qi(k,i)
+    rqsmpten(k,i) = qs(k,i)
+    rqgmpten(k,i) = qg(k,i)
+ enddo
+ enddo
+
+ write(0,*) '--- end subroutine microphysics_from_MPAS.'
 
 !formats:
  201 format(2i6,10(1x,e15.8))
@@ -512,7 +570,7 @@
  end subroutine microphysics_from_MPAS
 
 !==================================================================================================
- subroutine microphysics_to_MPAS(mesh,state,time_lev,diag,tend,itimestep)
+ subroutine microphysics_to_MPAS(mesh,state,time_lev,diag,diag_physics,tend,itimestep)
 !==================================================================================================
 
 !input variables:
@@ -523,6 +581,7 @@
 !output variables:
  type(mpas_pool_type),intent(inout):: state
  type(mpas_pool_type),intent(inout):: diag
+ type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend
 
 !local pointers:
@@ -535,6 +594,8 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rt_diabatic_tend
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
+ real(kind=RKIND),dimension(:,:),pointer  :: rthmpten,rqvmpten,rqcmpten,rqrmpten, &
+                                             rqimpten,rqsmpten,rqgmpten
 
 !local variables:
  integer:: icount
@@ -580,6 +641,14 @@
  qg => scalars(index_qg,:,:)
 
  call mpas_pool_get_array(tend,'rt_diabatic_tend',rt_diabatic_tend)
+
+ call mpas_pool_get_array(diag_physics,'rthmpten',rthmpten)
+ call mpas_pool_get_array(diag_physics,'rqvmpten',rqvmpten)
+ call mpas_pool_get_array(diag_physics,'rqcmpten',rqcmpten)
+ call mpas_pool_get_array(diag_physics,'rqrmpten',rqrmpten)
+ call mpas_pool_get_array(diag_physics,'rqimpten',rqimpten)
+ call mpas_pool_get_array(diag_physics,'rqsmpten',rqsmpten)
+ call mpas_pool_get_array(diag_physics,'rqgmpten',rqgmpten)
 
 !update variables needed in the dynamical core:
  do j = jts,jte
@@ -643,6 +712,26 @@
     case default
 
  end select microp_select_init
+
+!finish calculation of cloud microphysics tendencies:
+ do j = jts,jte
+ do k = kts,kte
+ do i = its,ite
+    rthmpten(k,i) = (th_p(i,k,j)-rthmpten(k,i)) / dt_dyn
+ enddo
+ enddo
+ enddo
+
+ do k = kts,kte
+ do i = its,ite
+    rqvmpten(k,i) = (qv(k,i)-rqvmpten(k,i)) / dt_dyn
+    rqcmpten(k,i) = (qc(k,i)-rqcmpten(k,i)) / dt_dyn
+    rqrmpten(k,i) = (qr(k,i)-rqrmpten(k,i)) / dt_dyn
+    rqimpten(k,i) = (qi(k,i)-rqimpten(k,i)) / dt_dyn
+    rqsmpten(k,i) = (qs(k,i)-rqsmpten(k,i)) / dt_dyn
+    rqgmpten(k,i) = (qg(k,i)-rqgmpten(k,i)) / dt_dyn
+ enddo
+ enddo
 
 !formats:
  201 format(2i6,10(1x,e15.8))

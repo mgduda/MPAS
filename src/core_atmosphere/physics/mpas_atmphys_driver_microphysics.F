@@ -14,6 +14,7 @@
  use mpas_atmphys_constants
  use mpas_atmphys_vars
  use mpas_atmphys_interface
+ use mpas_atmphys_interp_diagnostics
 
 !wrf physics:
  use module_mp_kessler
@@ -67,11 +68,14 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-03-21.
 !>    * throughout the sourcecode, replaced all "var_struct" defined arrays by local pointers.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-04-22.
-!>    * Modified sourcecode to use pools.
+!>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
-!>    * Moved the variable relhum from the diag_physics to the diag pool. Changed the argument
-!>      list for the subroutine compute_relhum accordingly.
-!>      Laura D. Fowler (laura@ucar.edu) / 2015-04-22.
+!>    * added diagnostics of grid-scale instantaneous and accumulated precipitation when there is no
+!>      convection.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-06-19.
+!>    * added call to subroutine interp_pFixed_mp to interpolate cloud microphysics tendencies,
+!>      potential temperature, and water species to fixed pressure levels.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-29.
 
 
  contains
@@ -199,6 +203,9 @@
  type(mpas_pool_type),intent(inout):: diag_physics
  type(mpas_pool_type),intent(inout):: tend
 
+!local pointers:
+ logical,pointer:: config_physics_interp
+
 !local variables and arrays:
  logical:: log_microphysics
  integer:: i,icell,icount,istep,j,k,kk
@@ -209,6 +216,8 @@
 ! write(0,*) '    dt_microp=',dt_microp
 ! write(0,*) '    n_microp =',n_microp
  
+ call mpas_pool_get_config(configs,'config_physics_interp',config_physics_interp)
+
 !initialization:
 ! write(0,*) '    ims= ',ims,' ime=',ime
 ! write(0,*) '    jms= ',jms,' jme=',jme
@@ -229,7 +238,7 @@
  call precip_from_MPAS(diag_physics,mesh)
 
 !... initialization of soundings for non-hydrostatic dynamical cores.
- call microphysics_from_MPAS(mesh,state,time_lev,diag)
+ call microphysics_from_MPAS(mesh,state,time_lev,diag,diag_physics)
 
 !--------------------------------------------------------------------------------------------------
 
@@ -310,7 +319,11 @@
 
 !... copy updated cloud microphysics variables from the wrf-physics grid back to the geodesic-
 !    dynamics grid:
- call microphysics_to_MPAS(mesh,state,time_lev,diag,tend,itimestep)
+ call microphysics_to_MPAS(mesh,state,time_lev,diag,diag_physics,tend,itimestep)
+
+!... interpolate diagnostics to fixed pressure levels:
+ if(config_physics_interp) &
+    call interp_pFixed_mp(dt_dyn,configs,mesh,state,time_lev,diag,diag_physics)
 
 !... deallocation of all microphysics arrays:
  call deallocate_microphysics
@@ -402,12 +415,13 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve
- integer,dimension(:),pointer:: i_rainnc
+ integer,dimension(:),pointer:: i_rainnc,i_rainnc_mp
 
  real(kind=RKIND),pointer:: config_bucket_rainnc
- real(kind=RKIND),dimension(:),pointer:: precipw
- real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,snownc
- real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,snowncv,sr
+ real(kind=RKIND),dimension(:),pointer:: precipw,precipw_t
+ real(kind=RKIND),dimension(:),pointer:: graupelnc,rainnc,rainnc_mp,snownc
+ real(kind=RKIND),dimension(:),pointer:: graupelncv,rainncv,rainncv_mp,snowncv,sr
+ real(kind=RKIND),dimension(:),pointer:: raincv,rqccuten_vi,rqrcuten_vi,rqicuten_vi,rqscuten_vi
 
 !local variables and arrays:
  integer:: i,j,k
@@ -419,18 +433,29 @@
 
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
 
- call mpas_pool_get_array(diag_physics,'i_rainnc'  ,i_rainnc  )
- call mpas_pool_get_array(diag_physics,'precipw'   ,precipw   )
- call mpas_pool_get_array(diag_physics,'graupelnc' ,graupelnc )
- call mpas_pool_get_array(diag_physics,'graupelncv',graupelncv)
- call mpas_pool_get_array(diag_physics,'rainnc'    ,rainnc    )
- call mpas_pool_get_array(diag_physics,'rainncv'   ,rainncv   )
- call mpas_pool_get_array(diag_physics,'snownc'    ,snownc    )
- call mpas_pool_get_array(diag_physics,'snowncv'   ,snowncv   )
- call mpas_pool_get_array(diag_physics,'sr'        ,sr        )
+ call mpas_pool_get_array(diag_physics,'i_rainnc'   ,i_rainnc   )
+ call mpas_pool_get_array(diag_physics,'i_rainnc_mp',i_rainnc_mp)
+ call mpas_pool_get_array(diag_physics,'precipw'    ,precipw    )
+ call mpas_pool_get_array(diag_physics,'precipw_t'  ,precipw_t  )
+ call mpas_pool_get_array(diag_physics,'graupelnc'  ,graupelnc  )
+ call mpas_pool_get_array(diag_physics,'graupelncv' ,graupelncv )
+ call mpas_pool_get_array(diag_physics,'rainnc'     ,rainnc     )
+ call mpas_pool_get_array(diag_physics,'rainnc_mp'  ,rainnc_mp  )
+ call mpas_pool_get_array(diag_physics,'rainncv'    ,rainncv    )
+ call mpas_pool_get_array(diag_physics,'rainncv_mp' ,rainncv_mp )
+ call mpas_pool_get_array(diag_physics,'snownc'     ,snownc     )
+ call mpas_pool_get_array(diag_physics,'snowncv'    ,snowncv    )
+ call mpas_pool_get_array(diag_physics,'sr'         ,sr         )
+
+ call mpas_pool_get_array(diag_physics,'raincv'     ,raincv     )
+ call mpas_pool_get_array(diag_physics,'rqccuten_vi',rqccuten_vi)
+ call mpas_pool_get_array(diag_physics,'rqrcuten_vi',rqrcuten_vi)
+ call mpas_pool_get_array(diag_physics,'rqicuten_vi',rqicuten_vi)
+ call mpas_pool_get_array(diag_physics,'rqscuten_vi',rqscuten_vi)
 
  do i = 1, nCellsSolve
-    precipw(i) = 0._RKIND    
+    precipw(i)   = 0._RKIND
+    precipw_t(i) = 0._RKIND
  enddo
 
 !variables common to all cloud microphysics schemes:
@@ -441,19 +466,29 @@
     !precipitable water:
     do k = kts,kte
        rho_a = rho_p(i,k,j) / (1._RKIND + qv_p(i,k,j))
-       precipw(i) = precipw(i) + qv_p(i,k,j) * rho_a * dz_p(i,k,j)
+       precipw(i)   = precipw(i) + qv_p(i,k,j) * rho_a * dz_p(i,k,j)
+       precipw_t(i) = precipw_t(i) + qv_p(i,k,j) * rho_p(i,k,j) * dz_p(i,k,j)
     enddo
 
     !time-step precipitation:
     rainncv(i) = rainnc_p(i,j)
+    if(raincv(i)+rqccuten_vi(i)+rqrcuten_vi(i)+rqicuten_vi(i)+rqscuten_vi(i) == 0._RKIND) &
+       rainncv_mp(i) = rainncv(i)
     
     !accumulated precipitation:
-    rainnc(i) = rainnc(i) + rainncv(i)
+    rainnc(i)    = rainnc(i) + rainncv(i)
+    rainnc_mp(i) = rainnc_mp(i) + rainncv_mp(i)
 
    if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
       rainnc(i).gt.config_bucket_rainnc) then
       i_rainnc(i) = i_rainnc(i) + 1
       rainnc(i)   = rainnc(i) - config_bucket_rainnc
+   endif
+
+   if(l_acrain .and. config_bucket_rainnc.gt.0._RKIND .and. &
+      rainncv_mp(i).gt.config_bucket_rainnc) then
+      i_rainnc_mp(i) = i_rainnc_mp(i) + 1
+      rainnc_mp(i)   = rainnc_mp(i) - config_bucket_rainnc
    endif
  
  enddo
@@ -623,7 +658,7 @@
 !NOTE: functions rslf and rsif are taken from module_mp_thompson temporarily for computing
 !      the diagnostic relative humidity. These two functions will be removed from this module
 !      when the Thompson cloud microphysics scheme will be restored to MPAS-Dev.
-!      Laura D. Fowler (birch.mmm.ucar.edu) / 2013-07-11.
+!      Laura D. Fowler (laura@ucar.edu) / 2013-07-11.
 
 !+---+-----------------------------------------------------------------+
 ! THIS FUNCTION CALCULATES THE LIQUID SATURATION VAPOR MIXING RATIO AS

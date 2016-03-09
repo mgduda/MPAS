@@ -40,6 +40,8 @@
 !>    * removed the namelist option config_conv_shallow_scheme and associated sourcecode.
 !>    * removed controls to the updated Kain-Fritsch convection scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-05-29.
+!>    * added control for the "Grell GF" multi-scale convection scheme.
+!>      Laura D. Fowler (laura@ucar.edu) / 2013-11-08.
 !>    * throughout the sourcecode, replaced all "var_struct" defined arrays by local pointers.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-04-22.
 !>    * modified sourcecode to use pools.
@@ -49,7 +51,9 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-08-11.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
-
+!>    * added controls for the MYNN surface layer scheme (sfc_mynn) and planetary boundary layer
+!>      scheme (pbl_mynn).
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06.
 
  contains
 
@@ -135,9 +139,11 @@
  endif
 
 !convection scheme:
- if(.not. (config_convection_scheme .eq. 'off'          .or. &
-           config_convection_scheme .eq. 'kain_fritsch' .or. &
-           config_convection_scheme .eq. 'tiedtke'      )) then
+ if(.not. (config_convection_scheme .eq. 'off'                  .or. &
+           config_convection_scheme .eq. 'grell_gf'             .or. &
+           config_convection_scheme .eq. 'kain_fritsch'         .or. &
+           config_convection_scheme .eq. 'tiedtke'              .or. &
+           config_convection_scheme .eq. 'tiedtke.wrf3.3.1'     )) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for config_convection_scheme: ', &
           trim(config_convection_scheme)
@@ -146,8 +152,9 @@
  endif
 
 !pbl scheme:
- if(.not. (config_pbl_scheme .eq. 'off' .or. &
-           config_pbl_scheme .eq. 'ysu')) then
+ if(.not. (config_pbl_scheme .eq. 'off'      .or. &
+           config_pbl_scheme .eq. 'ysu'      .or. &
+           config_pbl_scheme .eq. 'pbl_mynn' )) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for pbl_scheme: ', &
           trim(config_pbl_scheme)
@@ -218,8 +225,9 @@
  endif
 
 !surface-layer scheme:
- if(.not. (config_sfclayer_scheme .eq. 'off'  .or. &
-           config_sfclayer_scheme .eq. 'monin_obukhov')) then
+ if(.not. (config_sfclayer_scheme .eq. 'off'          .or. &
+           config_sfclayer_scheme .eq. 'monin_obukhov'.or. &
+           config_sfclayer_scheme .eq. 'sfc_mynn')) then
  
     write(mpas_err_message,'(A,A10)') 'illegal value for surface layer scheme: ', &
           trim(config_sfclayer_scheme)
