@@ -171,12 +171,12 @@
  integer,pointer:: numP2d,numP3d
  integer,pointer:: nCellsSolve,nVertLevels,nSoilLevels,nOznLevels,nOznPlCoeff
  integer,pointer:: maxran
- real(kind=R8KIND),pointer:: fhour
- real(kind=R8KIND),dimension(:),pointer    :: poz
- real(kind=R8KIND),dimension(:),pointer    :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
- real(kind=R8KIND),dimension(:,:),pointer  :: slc,smc,stc,upd_mf,dwn_mf,det_mf,phy_f2d
- real(kind=R8KIND),dimension(:,:,:),pointer:: ozmix
- real(kind=R8KIND),dimension(:,:,:),pointer:: phy_f3d,phy_fctd
+ real(kind=PHYSKIND),pointer:: fhour
+ real(kind=PHYSKIND),dimension(:),pointer    :: poz
+ real(kind=PHYSKIND),dimension(:),pointer    :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: slc,smc,stc,upd_mf,dwn_mf,det_mf,phy_f2d
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: ozmix
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: phy_f3d,phy_fctd
 
  real(kind=kind_phys),dimension(:),pointer    :: pgr,dpshc_l
  real(kind=kind_phys),dimension(:,:),pointer  :: slc_l,smc_l,stc_l,updmf_l,dwnmf_l, detmf_l,rann_l,phyf2d_l
@@ -345,7 +345,7 @@
    else
       do iCell = 1, nCellsSolve
          do n = 1, nrcm
-            rann_l(iCell,n) = 0.6_R8KIND
+            rann_l(iCell,n) = 0.6_PHYSKIND
          enddo
       enddo
    endif
@@ -389,11 +389,11 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nSoilLevels
- real(kind=R8KIND),dimension(:),pointer  :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
- real(kind=R8KIND),dimension(:,:),pointer:: slc,smc,stc,upd_mf,dwn_mf,det_mf
+ real(kind=PHYSKIND),dimension(:),pointer  :: acv,acvb,acvt,tprcp,srflag,tref,z_c,c_0,c_d,w_0,w_d
+ real(kind=PHYSKIND),dimension(:,:),pointer:: slc,smc,stc,upd_mf,dwn_mf,det_mf
 
- real(kind=R8KIND),dimension(:),pointer  :: gscond_psp,gscond_psp1
- real(kind=R8KIND),dimension(:,:),pointer:: gscond_tp,gscond_tp1,gscond_qp,gscond_qp1  
+ real(kind=PHYSKIND),dimension(:),pointer  :: gscond_psp,gscond_psp1
+ real(kind=PHYSKIND),dimension(:,:),pointer:: gscond_tp,gscond_tp1,gscond_qp,gscond_qp1  
 
  real(kind=kind_phys),dimension(:,:),pointer  :: slc_l,smc_l,stc_l,updmf_l,dwnmf_l, detmf_l
  real(kind=kind_phys),dimension(:,:),pointer  :: phyf2d_l

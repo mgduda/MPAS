@@ -59,14 +59,14 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nFxr
 
- real(kind=R8KIND),dimension(:),pointer  :: sfcnirbmd,sfcnirdfd,sfcnirbmu,sfcnirdfu
- real(kind=R8KIND),dimension(:),pointer  :: sfcvisbmd,sfcvisdfd,sfcvisbmu,sfcvisdfu
- real(kind=R8KIND),dimension(:),pointer  :: coszdg,coszen,semis,sfalb,tsflw
- real(kind=R8KIND),dimension(:),pointer  :: sfclwup,sfclwupc,sfclwdn,sfclwdnc
- real(kind=R8KIND),dimension(:),pointer  :: sfcswup,sfcswupc,sfcswdn,sfcswdnc
- real(kind=R8KIND),dimension(:),pointer  :: toplwup,toplwupc,topswup,topswupc,topswdn
- real(kind=R8KIND),dimension(:,:),pointer:: cldcov,htrlw,htrsw
- real(kind=R8KIND),dimension(:,:),pointer:: fluxr,dswcmp,uswcmp
+ real(kind=PHYSKIND),dimension(:),pointer  :: sfcnirbmd,sfcnirdfd,sfcnirbmu,sfcnirdfu
+ real(kind=PHYSKIND),dimension(:),pointer  :: sfcvisbmd,sfcvisdfd,sfcvisbmu,sfcvisdfu
+ real(kind=PHYSKIND),dimension(:),pointer  :: coszdg,coszen,semis,sfalb,tsflw
+ real(kind=PHYSKIND),dimension(:),pointer  :: sfclwup,sfclwupc,sfclwdn,sfclwdnc
+ real(kind=PHYSKIND),dimension(:),pointer  :: sfcswup,sfcswupc,sfcswdn,sfcswdnc
+ real(kind=PHYSKIND),dimension(:),pointer  :: toplwup,toplwupc,topswup,topswupc,topswdn
+ real(kind=PHYSKIND),dimension(:,:),pointer:: cldcov,htrlw,htrsw
+ real(kind=PHYSKIND),dimension(:,:),pointer:: fluxr,dswcmp,uswcmp
 
  real(kind=kind_phys),dimension(:,:),pointer:: fluxr_l
  real(kind=kind_phys),dimension(:,:),pointer:: cldcov_l,htrlw_l,htrsw_l
@@ -218,14 +218,14 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
 
- real(kind=R8KIND),dimension(:,:),pointer:: tend_thradlw,tend_thradsw,tend_thdiffusion,tend_thcudeep, &
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_thradlw,tend_thradsw,tend_thdiffusion,tend_thcudeep, &
                                            tend_thcushallow,tend_thmicrop
- real(kind=R8KIND),dimension(:,:),pointer:: tend_qvdiffusion,tend_qvcudeep,tend_qvcushallow,tend_qvmicrop
- real(kind=R8KIND),dimension(:,:),pointer:: tend_qo3diffusion,tend_qo3prodct
- real(kind=R8KIND),dimension(:,:),pointer:: tend_udiffusion,tend_ucudeep,tend_ugwdc,tend_ugwdo
- real(kind=R8KIND),dimension(:,:),pointer:: tend_vdiffusion,tend_vcudeep,tend_vgwdc,tend_vgwdo
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_qvdiffusion,tend_qvcudeep,tend_qvcushallow,tend_qvmicrop
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_qo3diffusion,tend_qo3prodct
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_udiffusion,tend_ucudeep,tend_ugwdc,tend_ugwdo
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_vdiffusion,tend_vcudeep,tend_vgwdc,tend_vgwdo
 
- real(kind=R8KIND),dimension(:,:),pointer:: tend_thphysics,tend_qvphysics,tend_qcphysics,tend_qo3physics, &
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_thphysics,tend_qvphysics,tend_qcphysics,tend_qo3physics, &
                                            tend_uphysics,tend_vphysics
 
  real(kind=kind_phys),dimension(:,:),pointer  :: prslk,tgrs,ugrs,vgrs
@@ -235,8 +235,8 @@
 
 !local variables:
  integer:: iCell,k
- real(kind=R8KIND):: dti
- real(kind=R8KIND):: sphm1,sphp1
+ real(kind=PHYSKIND):: dti
+ real(kind=PHYSKIND):: sphm1,sphp1
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*)
@@ -293,7 +293,7 @@
  du3dt => diags%du3dt
  dv3dt => diags%dv3dt
 
- dti = 1._R8KIND/dt_dyn
+ dti = 1._PHYSKIND/dt_dyn
 !potential temperature:
  do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
@@ -342,11 +342,11 @@
        tend_uphysics(k,iCell)   = (gu0(iCell,k)-ugrs(iCell,k))*dti
        tend_vphysics(k,iCell)   = (gv0(iCell,k)-vgrs(iCell,k))*dti
        !conversion from specific humidity to water vapor mixing ratio:
-       tend_qvphysics(k,iCell) = gq0(iCell,k,1)/(1._R8KIND-gq0(iCell,k,1))
-       tend_qvphysics(k,iCell) = (tend_qvphysics(k,iCell)-qgrs(iCell,k,1)/(1._R8KIND-qgrs(iCell,k,1)))*dti
+       tend_qvphysics(k,iCell) = gq0(iCell,k,1)/(1._PHYSKIND-gq0(iCell,k,1))
+       tend_qvphysics(k,iCell) = (tend_qvphysics(k,iCell)-qgrs(iCell,k,1)/(1._PHYSKIND-qgrs(iCell,k,1)))*dti
 
-       sphp1 = 1._R8KIND + gq0(iCell,k,1)
-       sphm1 = 1._R8KIND + qgrs(iCell,k,1)
+       sphp1 = 1._PHYSKIND + gq0(iCell,k,1)
+       sphm1 = 1._PHYSKIND + qgrs(iCell,k,1)
        !conversion from "specific" ozone/cloud condensate mixing ratios to mixing ratios:
        tend_qo3physics(k,iCell) = (gq0(iCell,k,2)*sphp1 - qgrs(iCell,k,2)*sphm1) * dti
        tend_qcphysics(k,iCell)  = (gq0(iCell,k,3)*sphp1 - qgrs(iCell,k,3)*sphm1) * dti

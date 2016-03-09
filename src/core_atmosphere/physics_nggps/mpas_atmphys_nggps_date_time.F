@@ -35,10 +35,10 @@
 !input arguments:
  character(len=StrKIND),intent(in):: date_str
  integer,intent(in):: npoints
- real(kind=R8KIND),intent(in) ,dimension(4,npoints):: field_in
+ real(kind=PHYSKIND),intent(in) ,dimension(4,npoints):: field_in
 
 !output arguments:
- real(kind=R8KIND),intent(out),dimension(npoints):: field_out
+ real(kind=PHYSKIND),intent(out),dimension(npoints):: field_out
 
 !local variables:
  character(len=2):: day15,mon
@@ -49,7 +49,7 @@
  integer,dimension(0:5) :: season
  integer,dimension(0:13):: middle
 
- real(kind=R8KIND):: gmt
+ real(kind=PHYSKIND):: gmt
 
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*)

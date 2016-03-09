@@ -44,15 +44,15 @@
  integer,pointer:: nCellsSolve,nCells
 
  integer,dimension(:),pointer:: landmask
- real(kind=R8KIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,snow,snowc,vegfra
- real(kind=R8KIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac
+ real(kind=PHYSKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,snow,snowc,vegfra
+ real(kind=PHYSKIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac
 
- real(kind=R8KIND),dimension(:),pointer:: facsf,facwf
- real(kind=R8KIND),dimension(:),pointer:: canopy,sltype,vgtype
- real(kind=R8KIND),dimension(:),pointer:: shdmax,shdmin,slope,snoalb
+ real(kind=PHYSKIND),dimension(:),pointer:: facsf,facwf
+ real(kind=PHYSKIND),dimension(:),pointer:: canopy,sltype,vgtype
+ real(kind=PHYSKIND),dimension(:),pointer:: shdmax,shdmin,slope,snoalb
 
- real(kind=R8KIND):: sfc_max,sfc_min
- real(kind=R8KIND),dimension(:),allocatable:: sfc
+ real(kind=PHYSKIND):: sfc_max,sfc_min
+ real(kind=PHYSKIND),dimension(:),allocatable:: sfc
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -86,23 +86,23 @@
 
  do iCell = 1, nCellsSolve
     if(landmask(iCell) == 0) then
-       if(alnsf(iCell) > 0.06_R8KIND) then
+       if(alnsf(iCell) > 0.06_PHYSKIND) then
           write(0,*) '--- alnsf greater than 0.06 over oceans'
           write(0,*) iCell,alnsf(iCell)
           stop
-       elseif(alnwf(iCell) > 0.06_R8KIND) then
+       elseif(alnwf(iCell) > 0.06_PHYSKIND) then
           write(0,*) '--- alnwf greater than 0.06 over oceans'
           write(0,*) iCell,alnwf(iCell)
           stop
-       elseif(alvsf(iCell) > 0.06_R8KIND) then
+       elseif(alvsf(iCell) > 0.06_PHYSKIND) then
           write(0,*) '--- alvsf greater than 0.06 over oceans'
           write(0,*) iCell,alvsf(iCell)
           stop
-       elseif(alvwf(iCell) > 0.06_R8KIND) then
+       elseif(alvwf(iCell) > 0.06_PHYSKIND) then
           write(0,*) '--- alvwf greater than 0.06 over oceans'
           write(0,*) iCell,alvwf(iCell)
           stop
-       elseif(vegfra(iCell) > 0.0_R8KIND) then
+       elseif(vegfra(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- vegfra greater than 0. over oceans'
           write(0,*) iCell,vegfra(iCell)
           stop
@@ -136,39 +136,39 @@
 
  do iCell = 1, nCellsSolve
     if(landmask(iCell) == 0) then
-       if(vgtype(iCell) > 0.0_R8KIND) then
+       if(vgtype(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- vgtype greater than 0. over oceans'
           write(0,*) iCell,vgtype(iCell)
           stop
-       elseif(sltype(iCell) > 0.0_R8KIND) then
+       elseif(sltype(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- sltype greater than 0. over oceans'
           write(0,*) iCell,sltype(iCell)
           stop
-       elseif(canopy(iCell) > 0.0_R8KIND) then
+       elseif(canopy(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- canopy greater than 0. over oceans'
           write(0,*) iCell,canopy(iCell)
           stop
-       elseif(facsf(iCell) > 0.0_R8KIND) then
+       elseif(facsf(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- facsf greater than 0. over oceans'
           write(0,*) iCell,facsf(iCell)
           stop
-       elseif(facwf(iCell) > 0.0_R8KIND) then
+       elseif(facwf(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- facwf greater than 0. over oceans'
           write(0,*) iCell,facwf(iCell)
           stop
-       elseif(shdmax(iCell) > 0.0_R8KIND) then
+       elseif(shdmax(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- shdmax greater than 0. over oceans'
           write(0,*) iCell,shdmax(iCell)
           stop
-       elseif(shdmin(iCell) > 0.0_R8KIND) then
+       elseif(shdmin(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- shdmin greater than 0. over oceans'
           write(0,*) iCell,shdmin(iCell)
           stop
-       elseif(snoalb(iCell) > 0.0_R8KIND) then
+       elseif(snoalb(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- snoalb greater than 0. over oceans'
           write(0,*) iCell,snoalb(iCell)
           stop
-       elseif(slope(iCell) > 0.0_R8KIND) then
+       elseif(slope(iCell) > 0.0_PHYSKIND) then
           write(0,*) '--- slope greater than 0. over oceans'
           write(0,*) iCell,slope(iCell)
           stop
@@ -177,8 +177,8 @@
  enddo
 
  allocate(sfc(1:nCells+1))
- sfc_max = 0._R8KIND
- sfc_min = 0._R8KIND
+ sfc_max = 0._PHYSKIND
+ sfc_min = 0._PHYSKIND
  where(landmask == 0) sfc = alnsf
  write(0,*) minval(sfc)
  write(0,*) maxval(sfc) 
@@ -188,8 +188,8 @@
 
 !initializes the "snow flag" as a function of the accumulated water equivalent snow depth (snow):
  do iCell = 1, nCellsSolve
-    snowc(iCell) = 0._R8KIND
-    if(snow(iCell) > 0._R8KIND) snowc(iCell) = 1._R8KIND
+    snowc(iCell) = 0._PHYSKIND
+    if(snow(iCell) > 0._PHYSKIND) snowc(iCell) = 1._PHYSKIND
  enddo
 
 !initialization of soil layers properties:
@@ -242,9 +242,9 @@
  integer,pointer:: nCellsSolve,nFGSoilLevels
  integer,dimension(:),pointer:: landmask
 
- real(kind=R8KIND),dimension(:),pointer  :: soilz,ter
- real(kind=R8KIND),dimension(:),pointer  :: skintemp,soiltemp,tmn
- real(kind=R8KIND),dimension(:,:),pointer:: st_fg
+ real(kind=PHYSKIND),dimension(:),pointer  :: soilz,ter
+ real(kind=PHYSKIND),dimension(:),pointer  :: skintemp,soiltemp,tmn
+ real(kind=PHYSKIND),dimension(:,:),pointer:: st_fg
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter subroutine adjust_input_soiltemp:'
@@ -265,12 +265,12 @@
     if(landmask(iCell) .eq. 1) then
 
        !adjust the annual deep mean soil temperature and skin temperatures over land:
-       tmn(iCell) = soiltemp(iCell) - 0.0065_R8KIND * ter(iCell)
-       skintemp(iCell) = skintemp(iCell) - 0.0065_R8KIND * (ter(iCell)-soilz(iCell))
+       tmn(iCell) = soiltemp(iCell) - 0.0065_PHYSKIND * ter(iCell)
+       skintemp(iCell) = skintemp(iCell) - 0.0065_PHYSKIND * (ter(iCell)-soilz(iCell))
 
        !adjust the soil layer temperatures:
        do ifgSoil = 1, nFGSoilLevels
-          st_fg(ifgSoil,iCell) = st_fg(ifgSoil,iCell) - 0.0065_R8KIND * (ter(iCell)-soilz(iCell))
+          st_fg(ifgSoil,iCell) = st_fg(ifgSoil,iCell) - 0.0065_PHYSKIND * (ter(iCell)-soilz(iCell))
        enddo
 
     elseif(landmask(iCell) .eq. 0) then
@@ -307,8 +307,8 @@
  integer,pointer:: nCellsSolve,nSoilLevels,nFGSoilLevels
  integer,pointer:: config_nsoillevels
 
- real(kind=R8KIND),dimension(:,:),pointer:: dzs_fg,zs_fg
- real(kind=R8KIND),dimension(:,:),pointer:: dzs,zs
+ real(kind=PHYSKIND),dimension(:,:),pointer:: dzs_fg,zs_fg
+ real(kind=PHYSKIND),dimension(:,:),pointer:: dzs,zs
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -332,27 +332,27 @@
  do iCell = 1, nCellsSolve
 
     iSoil = 1
-    zs_fg(iSoil,iCell) = 0.5_R8KIND * dzs_fg(iSoil,iCell)
+    zs_fg(iSoil,iCell) = 0.5_PHYSKIND * dzs_fg(iSoil,iCell)
     do iSoil = 2, nFGSoilLevels
        zs_fg(iSoil,iCell) = zs_fg(iSoil-1,iCell)        &
-                          + 0.5_R8KIND * dzs_fg(iSoil-1,iCell) &
-                          + 0.5_R8KIND * dzs_fg(iSoil,iCell)
+                          + 0.5_PHYSKIND * dzs_fg(iSoil-1,iCell) &
+                          + 0.5_PHYSKIND * dzs_fg(iSoil,iCell)
     enddo
 
  enddo
 
  do iCell = 1, nCellsSolve
-    dzs(1,iCell) = 0.10_R8KIND
-    dzs(2,iCell) = 0.30_R8KIND
-    dzs(3,iCell) = 0.60_R8KIND
-    dzs(4,iCell) = 1.00_R8KIND
+    dzs(1,iCell) = 0.10_PHYSKIND
+    dzs(2,iCell) = 0.30_PHYSKIND
+    dzs(3,iCell) = 0.60_PHYSKIND
+    dzs(4,iCell) = 1.00_PHYSKIND
 
     iSoil = 1
-    zs(iSoil,iCell) = 0.5_R8KIND * dzs(iSoil,iCell)
+    zs(iSoil,iCell) = 0.5_PHYSKIND * dzs(iSoil,iCell)
     do iSoil = 2, nSoilLevels
        zs(iSoil,iCell) = zs(iSoil-1,iCell)              &
-                       + 0.5_R8KIND * dzs(iSoil-1,iCell) &
-                       + 0.5_R8KIND * dzs(iSoil,iCell)
+                       + 0.5_PHYSKIND * dzs(iSoil-1,iCell) &
+                       + 0.5_PHYSKIND * dzs(iSoil,iCell)
     enddo
 
  enddo
@@ -378,8 +378,8 @@
  integer,pointer:: nCellsSolve,nFGSoilLevels,nSoilLevels
  integer,pointer:: config_nsoillevels
 
- real(kind=R8KIND),dimension(:,:),pointer:: sh2o,smois,tslb
- real(kind=R8KIND),dimension(:,:),pointer:: sl_fg,sm_fg,st_fg
+ real(kind=PHYSKIND),dimension(:,:),pointer:: sh2o,smois,tslb
+ real(kind=PHYSKIND),dimension(:,:),pointer:: sl_fg,sm_fg,st_fg
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -415,9 +415,9 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
-       if(sl_fg(ifgSoil,iCell) .lt. 0._R8KIND) num_sl = num_sl + 1
-       if(sm_fg(ifgSoil,iCell) .lt. 0._R8KIND) num_sm = num_sm + 1
-       if(st_fg(ifgSoil,iCell) .le. 0._R8KIND) num_st = num_st + 1
+       if(sl_fg(ifgSoil,iCell) .lt. 0._PHYSKIND) num_sl = num_sl + 1
+       if(sm_fg(ifgSoil,iCell) .lt. 0._PHYSKIND) num_sm = num_sm + 1
+       if(st_fg(ifgSoil,iCell) .le. 0._PHYSKIND) num_st = num_st + 1
     enddo
  enddo
  if(num_sl .gt. 0) then
@@ -470,11 +470,11 @@
  integer,pointer:: config_nsoillevels
  integer,dimension(:),pointer:: landmask
 
- real(kind=R8KIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
+ real(kind=PHYSKIND),dimension(:,:),allocatable:: zhave,sm_input,st_input
 
- real(kind=R8KIND),dimension(:),pointer  :: skintemp,tmn
- real(kind=R8KIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
- real(kind=R8KIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
+ real(kind=PHYSKIND),dimension(:),pointer  :: skintemp,tmn
+ real(kind=PHYSKIND),dimension(:,:),pointer:: dzs,zs,tslb,smois,sh2o,smcrel
+ real(kind=PHYSKIND),dimension(:,:),pointer:: sm_fg,st_fg,zs_fg
 
 !-----------------------------------------------------------------------------------------------------------------
 
@@ -509,8 +509,8 @@
  num_st = 0
  do iCell = 1, nCellsSolve
     do ifgSoil = 1, nFGSoilLevels
-       if(st_fg(ifgSoil,iCell) .le. 0._R8KIND) num_st = num_st + 1
-       if(sm_fg(ifgSoil,iCell) .lt. 0._R8KIND) num_sm = num_sm + 1
+       if(st_fg(ifgSoil,iCell) .le. 0._PHYSKIND) num_st = num_st + 1
+       if(sm_fg(ifgSoil,iCell) .lt. 0._PHYSKIND) num_sm = num_sm + 1
     enddo
  enddo
  if(num_st .gt. 0) then
@@ -531,17 +531,17 @@
  do iCell = 1, nCellsSolve
 
     ifgSoil = 1
-    zhave(ifgSoil,iCell)    = 0._R8KIND
+    zhave(ifgSoil,iCell)    = 0._PHYSKIND
     st_input(ifgSoil,iCell) = skintemp(iCell)
     sm_input(ifgSoil,iCell) = sm_fg(ifgSoil+1,iCell)
 
     do ifgSoil = 1, nFGSoilLevels
-       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._R8KIND
+       zhave(ifgSoil+1,iCell) = zs_fg(ifgSoil,iCell) / 100._PHYSKIND
        st_input(ifgSoil+1,iCell) = st_fg(ifgSoil,iCell)
        sm_input(ifgSoil+1,iCell) = sm_fg(ifgSoil,iCell)
     enddo
 
-    zhave(nFGSoilLevels+2,iCell) = 300._R8KIND/100._R8KIND
+    zhave(nFGSoilLevels+2,iCell) = 300._PHYSKIND/100._PHYSKIND
     st_input(nFGSoilLevels+2,iCell) = tmn(iCell)
     sm_input(nFGSoilLevels+2,iCell) = sm_input(nFGSoilLevels,iCell)
 
@@ -580,8 +580,8 @@
                     +  sm_input(ifgSoil+1,iCell) * (zs(iSoil,iCell)-zhave(ifgSoil,iCell)))   &
                     / (zhave(ifgSoil+1,iCell)-zhave(ifgSoil,iCell))
 
-                sh2o(iSoil,iCell)   = 0._R8KIND
-                smcrel(iSoil,iCell) = 0._R8KIND
+                sh2o(iSoil,iCell)   = 0._PHYSKIND
+                smcrel(iSoil,iCell) = 0._PHYSKIND
 
                 exit input
              endif
@@ -594,9 +594,9 @@
        !fill the soil temperatures with the skin temperatures over oceans:
        do iSoil = 1, nSoilLevels
           tslb(iSoil,iCell)    = skintemp(iCell)
-          smois(iSoil,iCell)   = 1._R8KIND
-          sh2o(iSoil,iCell)    = 1._R8KIND
-          smcrel(iSoil,iCell)  = 0._R8KIND
+          smois(iSoil,iCell)   = 1._PHYSKIND
+          sh2o(iSoil,iCell)    = 1._PHYSKIND
+          smcrel(iSoil,iCell)  = 0._PHYSKIND
        enddo
 
     endif
@@ -607,10 +607,10 @@
 
  do iCell = 1, nCellsSolve
 
-    if(landmask(iCell).eq.1 .and. tslb(1,iCell).gt.170._R8KIND .and. tslb(1,iCell).lt.400._R8KIND &
-       .and. smois(1,iCell).lt.0.005_R8KIND) then
+    if(landmask(iCell).eq.1 .and. tslb(1,iCell).gt.170._PHYSKIND .and. tslb(1,iCell).lt.400._PHYSKIND &
+       .and. smois(1,iCell).lt.0.005_PHYSKIND) then
        do iSoil = 1, nSoilLevels
-          smois(iSoil,iCell) = 0.005_R8KIND
+          smois(iSoil,iCell) = 0.005_PHYSKIND
        enddo
     endif
 

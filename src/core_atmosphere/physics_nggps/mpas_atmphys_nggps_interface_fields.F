@@ -118,10 +118,10 @@
 !local pointers:
  integer,pointer:: nCellsSolve
 
- real(kind=R8KIND),dimension(:),pointer:: sfclwdn,sfcswdn,sfcswup
- real(kind=R8KIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
+ real(kind=PHYSKIND),dimension(:),pointer:: sfclwdn,sfcswdn,sfcswup
+ real(kind=PHYSKIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
                                          sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd
- real(kind=R8KIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
+ real(kind=PHYSKIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
                                          dnirbm_cpl,dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,      &
                                          nswsfc_cpl,nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,dusfci_cpl,    &
                                          dvsfci_cpl,dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl, & 
@@ -243,9 +243,9 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nBands
- real(kind=R8KIND),dimension(:),pointer    :: sfclwup,sfclwdn,sfclwupc,sfclwdnc
- real(kind=R8KIND),dimension(:),pointer    :: sfcswup,sfcswdn,sfcswupc,sfcswdnc
- real(kind=R8KIND),dimension(:,:),pointer  :: htrlw0,htrsw0
+ real(kind=PHYSKIND),dimension(:),pointer    :: sfclwup,sfclwdn,sfclwupc,sfclwdnc
+ real(kind=PHYSKIND),dimension(:),pointer    :: sfcswup,sfcswdn,sfcswupc,sfcswdnc
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: htrlw0,htrsw0
 
 !local nggps pointers:
  type(sfcflw_type),dimension(:),pointer:: sfcflw_l
@@ -320,18 +320,18 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels,nBands
- real(kind=R8KIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
+ real(kind=PHYSKIND),dimension(:),pointer:: sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu, &
                                          sfcnirbmd,sfcnirdfd,sfcvisbmd,sfcvisdfd
- real(kind=R8KIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
+ real(kind=PHYSKIND),dimension(:),pointer:: dusfc_cpl,dvsfc_cpl,dtsfc_cpl,dqsfc_cpl,dlwsfc_cpl,dswsfc_cpl,        &
                                          dnirbm_cpl,dnirdf_cpl,dvisbm_cpl,dvisdf_cpl,rain_cpl,nlwsfc_cpl,      &
                                          nswsfc_cpl,nnirbm_cpl,nnirdf_cpl,nvisbm_cpl,nvisdf_cpl,dusfci_cpl,    &
                                          dvsfci_cpl,dtsfci_cpl,dqsfci_cpl,dlwsfci_cpl,dswsfci_cpl,dnirbmi_cpl, &
                                          dnirdfi_cpl,dvisbmi_cpl,dvisdfi_cpl,nlwsfci_cpl,nswsfci_cpl,          &
                                          nnirbmi_cpl,nnirdfi_cpl,nvisbmi_cpl,nvisdfi_cpl,t2mi_cpl,q2mi_cpl,    &
                                          u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,oro_cpl,slmsk_cpl
- real(kind=R8KIND),dimension(:),pointer:: xt,xs,xu,xv,xz,zm,xtts,xzts,d_conv,ifd,dt_cool,qrain
+ real(kind=PHYSKIND),dimension(:),pointer:: xt,xs,xu,xv,xz,zm,xtts,xzts,d_conv,ifd,dt_cool,qrain
 
- real(kind=R8KIND),dimension(:,:),pointer  :: htrlw0,htrsw0
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: htrlw0,htrsw0
 
 !local nggps pointers:
  real(kind=kind_phys),dimension(:,:),pointer  :: htrlw0_l,htrsw0_l

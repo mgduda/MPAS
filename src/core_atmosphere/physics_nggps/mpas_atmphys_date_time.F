@@ -52,7 +52,7 @@
  integer,intent(out):: julyr
  integer,intent(out):: julday
 
- real(kind=R8KIND),intent(out) :: gmt
+ real(kind=PHYSKIND),intent(out) :: gmt
 
 !local variables:
  integer:: ny , nm , nd , nh , ni , ns , nt
@@ -106,10 +106,10 @@
 !input arguments:
  character(len=StrKIND),intent(in):: date_str
  integer,intent(in):: npoints
- real(kind=R8KIND),intent(in) ,dimension(12,npoints):: field_in
+ real(kind=PHYSKIND),intent(in) ,dimension(12,npoints):: field_in
 
 !output arguments:
- real(kind=R8KIND),intent(out),dimension(npoints):: field_out
+ real(kind=PHYSKIND),intent(out),dimension(npoints):: field_out
 
 !local variables:
  character(len=2):: day15,mon
@@ -119,7 +119,7 @@
  integer:: target_julyr,target_julday,target_date
  integer,dimension(0:13):: middle
 
- real(kind=R8KIND):: gmt
+ real(kind=PHYSKIND):: gmt
 
 !--------------------------------------------------------------------------------------------------
 
@@ -181,14 +181,14 @@
 
 !input arguments:
  integer,intent(in):: npoints
- real(kind=R8KIND),intent(in) ,dimension(12,npoints):: field_in
+ real(kind=PHYSKIND),intent(in) ,dimension(12,npoints):: field_in
 
 !output arguments:
- real(kind=R8KIND),intent(out),dimension(npoints):: field_min,field_max
+ real(kind=PHYSKIND),intent(out),dimension(npoints):: field_min,field_max
 
 !local variables:
  integer:: n,nn
- real(kind=R8KIND):: minner,maxxer
+ real(kind=PHYSKIND):: minner,maxxer
 
 !--------------------------------------------------------------------------------------------------
  

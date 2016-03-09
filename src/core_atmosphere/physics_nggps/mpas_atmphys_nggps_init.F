@@ -73,15 +73,15 @@
  integer,dimension(:),pointer:: isltyp,ivgtyp
  integer,dimension(:),pointer:: nlonsCell
 
- real(kind=R8KIND),pointer:: fhour
+ real(kind=PHYSKIND),pointer:: fhour
  real(kind=RKIND),dimension(:),pointer:: rdzw
- real(kind=R8KIND),dimension(:),pointer:: oro,oro_uf
- real(kind=R8KIND),dimension(:),pointer:: tisfc,tsea
- real(kind=R8KIND),dimension(:),pointer:: zorl
- real(kind=R8KIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
+ real(kind=PHYSKIND),dimension(:),pointer:: oro,oro_uf
+ real(kind=PHYSKIND),dimension(:),pointer:: tisfc,tsea
+ real(kind=PHYSKIND),dimension(:),pointer:: zorl
+ real(kind=PHYSKIND),dimension(:),pointer:: latCell,coslatCell,sinlatCell
 
  real(kind=RKIND),dimension(:,:),pointer:: zgrid
- real(kind=R8KIND),dimension(:,:),pointer:: rannum_tank
+ real(kind=PHYSKIND),dimension(:,:),pointer:: rannum_tank
 
 !local variables:
  type(MPAS_Time_Type)  :: initTime
@@ -100,9 +100,9 @@
  integer:: lonrbm,iseedl,maxrs
  integer,dimension(:), allocatable:: indxr
 
- real(kind=R8KIND),parameter:: thousnd = 1000._R8KIND
- real(kind=R8KIND):: wrk(1)
- real(kind=R8KIND),dimension(:), allocatable   :: rannum
+ real(kind=PHYSKIND),parameter:: thousnd = 1000._PHYSKIND
+ real(kind=PHYSKIND):: wrk(1)
+ real(kind=PHYSKIND),dimension(:), allocatable   :: rannum
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)
@@ -366,7 +366,7 @@
 
 !initialization of the forecast hour:
  if(.not. config_do_restart) then
-    fhour = 0._R8KIND
+    fhour = 0._PHYSKIND
  endif
 
 !initialization of ozone climatology:

@@ -56,8 +56,8 @@
                                          f10msfc
  real(kind=RKIND),dimension(:),pointer:: soilt1,soilt2,soilt3,soilt4,soilw1,soilw2,soilw3,soilw4
 
- real(kind=R8KIND),dimension(:),pointer  :: fice,slmsk,q2m,t2m,tsfc,weasd,snwdph,zorl,vfrac,f10m,vtype,stype
- real(kind=R8KIND),dimension(:,:),pointer:: slc,stc
+ real(kind=PHYSKIND),dimension(:),pointer  :: fice,slmsk,q2m,t2m,tsfc,weasd,snwdph,zorl,vfrac,f10m,vtype,stype
+ real(kind=PHYSKIND),dimension(:,:),pointer:: slc,stc
 
 !local variables:
  integer:: iCell
@@ -162,11 +162,11 @@
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz
  real(kind=RKIND),dimension(:,:),pointer  :: exner,pressure_b,pressure_p
  real(kind=RKIND),dimension(:,:),pointer  :: uZonal,uMeridional
- real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: scalars
 
  real(kind=RKIND),dimension(:),pointer  :: hgtsfc,pressfc
  real(kind=RKIND),dimension(:,:),pointer:: theta_m
- real(kind=R8KIND),dimension(:,:),pointer:: qv,qc,qo3
+ real(kind=PHYSKIND),dimension(:,:),pointer:: qv,qc,qo3
  real(kind=RKIND),dimension(:,:),pointer:: ugrd,vgrd,dpres,pres
  real(kind=RKIND),dimension(:,:),pointer:: temperature,spfh,o3mr,clwmr
 
@@ -662,12 +662,12 @@
 
  real(kind=RKIND),dimension(:,:),pointer  :: relhum,theta_m
  real(kind=RKIND),dimension(:,:),pointer  :: exner,pressure_b,pressure_p
- real(kind=R8KIND),dimension(:,:),pointer  :: qv
- real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: qv
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
  integer:: iCell,k
- real(kind=R8KIND):: es,pres,qs,rs,temp
+ real(kind=PHYSKIND):: es,pres,qs,rs,temp
 
 !-----------------------------------------------------------------------------------------------------------------
 

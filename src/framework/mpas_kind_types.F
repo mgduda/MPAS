@@ -27,6 +27,13 @@ module mpas_kind_types
    integer, parameter :: RKIND  = selected_real_kind(12)
 #endif
 
+#ifdef CORE_ATMOSPHERE
+   integer, parameter :: PHYSKIND = selected_real_kind(12)
+#endif
+#ifdef CORE_INIT_ATMOSPHERE
+   integer, parameter :: PHYSKIND = selected_real_kind(6)
+#endif
+
    integer, parameter :: I8KIND = selected_int_kind(18)
 
    integer, parameter :: StrKIND = 512

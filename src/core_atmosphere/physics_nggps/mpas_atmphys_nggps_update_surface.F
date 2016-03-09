@@ -38,8 +38,8 @@
  integer,pointer:: nCellsSolve
  integer,dimension(:),pointer:: landmask
 
- real(kind=R8KIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,vfrac,zorl
- real(kind=R8KIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac,zorl12m
+ real(kind=PHYSKIND),dimension(:),pointer:: alnsf,alnwf,alvsf,alvwf,vfrac,zorl
+ real(kind=PHYSKIND),dimension(:,:),pointer:: alnsf4s,alnwf4s,alvsf4s,alvwf4s,greenfrac,zorl12m
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*) '--- enter physics_nggps_update_surface:'
@@ -72,8 +72,8 @@
 !mean values to the current date. set the minimum values for zorl over the oceans.
 !call monthly_interp_to_date(nCellsSolve,current_date,zorl12m,zorl)
 !do iCell = 1, nCellsSolve
-!   if(landmask(iCell) == 1 .and. zorl(iCell) == 0._R8KIND) then 
-!      zorl(iCell) = 2.0_R8KIND
+!   if(landmask(iCell) == 1 .and. zorl(iCell) == 0._PHYSKIND) then 
+!      zorl(iCell) = 2.0_PHYSKIND
 !   endif    
 !enddo
 

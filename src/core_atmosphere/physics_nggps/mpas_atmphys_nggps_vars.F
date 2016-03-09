@@ -48,7 +48,7 @@
 integer:: seed0
 
 !... initial values for the surface roughness length as a function of the vegetation type:
- real(kind=R8KIND),dimension(13):: z0_sib
+ real(kind=PHYSKIND),dimension(13):: z0_sib
  data z0_sib /2.653,0.826,0.563,1.089,0.854,0.856,0.035,0.238,0.065,0.076,0.011,0.035,0.011/
 
 !=================================================================================================================
@@ -156,7 +156,7 @@ integer:: seed0
     qgrs               !
 
 !... ADDITIONAL MPAS ARRAYS NEEDED FOR THE INITIALIZATION OF "STATE_FIELDS_IN" ARRAYS:
- real(kind=R8KIND),dimension(:),allocatable:: &
+ real(kind=PHYSKIND),dimension(:),allocatable:: &
     pgr_hyd            !
 
  real(kind=kind_phys),dimension(:,:),allocatable:: &

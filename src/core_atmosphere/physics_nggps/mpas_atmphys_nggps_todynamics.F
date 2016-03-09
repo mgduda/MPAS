@@ -48,31 +48,31 @@
 
  real(kind=RKIND),dimension(:,:),pointer  :: mass
  real(kind=RKIND),dimension(:,:),pointer  :: mass_edge
- real(kind=R8KIND),dimension(:,:),pointer  :: qv
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: qv
  real(kind=RKIND),dimension(:,:),pointer  :: theta_m
- real(kind=R8KIND),dimension(:,:,:),pointer:: scalars
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: scalars
 
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_thdiffusion,tend_qvdiffusion,  &
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_thdiffusion,tend_qvdiffusion,  &
                                              tend_qcdiffusion,tend_qo3diffusion, &
                                              tend_udiffusion ,tend_vdiffusion 
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_thcudeep,tend_qvcudeep,        &
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_thcudeep,tend_qvcudeep,        &
                                              tend_qccudeep,tend_ucudeep,         &
                                              tend_vcudeep
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_thcushallow,tend_qvcushallow,  &
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_thcushallow,tend_qvcushallow,  &
                                              tend_qccushallow
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_thradlw,tend_thradsw
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_ugwdo,tend_vgwdo
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_ugwdc,tend_vgwdc
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_thradlw,tend_thradsw
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_ugwdo,tend_vgwdo
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_ugwdc,tend_vgwdc
 
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_thphysics,tend_qvphysics,  &
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_thphysics,tend_qvphysics,  &
                                              tend_qcphysics,tend_qo3physics, &
                                              tend_uphysics ,tend_vphysics
 
  real(kind=RKIND),dimension(:,:),pointer  :: tend_theta,tend_u
- real(kind=R8KIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
- real(kind=R8KIND),dimension(:,:,:),pointer:: tend_scalars
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: tend_scalars
 
- real(kind=R8KIND),dimension(:,:),allocatable:: tend_uphysics_Edge
+ real(kind=PHYSKIND),dimension(:,:),allocatable:: tend_uphysics_Edge
  real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 
 !local variables:
@@ -148,14 +148,14 @@
 !shallow convection, and longwave and shortwave radiation:
  allocate(theta(nVertLevels,nCellsSolve)  )
  allocate(tend_th(nVertLevels,nCellsSolve))
- tend_th  = 0._R8KIND
- tend_qv  = 0._R8KIND
- tend_qc  = 0._R8KIND
- tend_qo3 = 0._R8KIND
+ tend_th  = 0._PHYSKIND
+ tend_qv  = 0._PHYSKIND
+ tend_qc  = 0._PHYSKIND
+ tend_qo3 = 0._PHYSKIND
 
 !add coupled physics tendency to u tendency:
  allocate(tend_uphysics_Edge(nVertLevels,nEdges))
- tend_uphysics_Edge(:,:) = 0._R8KIND
+ tend_uphysics_Edge(:,:) = 0._PHYSKIND
  call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
  do iEdge = 1, nEdgesSolve
  do k  = 1, nVertLevels
@@ -217,11 +217,11 @@
 !----------------
  type(block_type),intent(in),target:: block
  type(mpas_pool_type),intent(in):: mesh
- real(kind=R8KIND),intent(in),dimension(:,:):: Ux_tend,Uy_tend 
+ real(kind=PHYSKIND),intent(in),dimension(:,:):: Ux_tend,Uy_tend 
 
 !output arguments:
 !-----------------
- real(kind=R8KIND),intent(out),dimension(:,:):: U_tend
+ real(kind=PHYSKIND),intent(out),dimension(:,:):: U_tend
 
 !local variables:
 !-----------------

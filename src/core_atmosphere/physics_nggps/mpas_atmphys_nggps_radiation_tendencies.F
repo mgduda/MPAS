@@ -108,9 +108,9 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
- real(kind=R8KIND),dimension(:),pointer    :: sfalb,coszen,tsflw,semis,coszdg,rqtk
- real(kind=R8KIND),dimension(:,:),pointer  :: htrsw,htrlw,dtdtr,swhc,hlwc
- real(kind=R8KIND),dimension(:,:,:),pointer:: hlwd
+ real(kind=PHYSKIND),dimension(:),pointer    :: sfalb,coszen,tsflw,semis,coszdg,rqtk
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: htrsw,htrlw,dtdtr,swhc,hlwc
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: hlwd
 
  real(kind=kind_phys),dimension(:,:),pointer  :: htrsw_l,htrlw_l,dtdtr_l,swhc_l,hlwc_l
  real(kind=kind_phys),dimension(:,:,:),pointer:: hlwd_l
@@ -186,9 +186,9 @@
 
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
- real(kind=R8KIND),dimension(:),pointer    :: rqtk
- real(kind=R8KIND),dimension(:,:),pointer  :: dtdtr,swhc,hlwc
- real(kind=R8KIND),dimension(:,:,:),pointer:: hlwd
+ real(kind=PHYSKIND),dimension(:),pointer    :: rqtk
+ real(kind=PHYSKIND),dimension(:,:),pointer  :: dtdtr,swhc,hlwc
+ real(kind=PHYSKIND),dimension(:,:,:),pointer:: hlwd
 
  real(kind=kind_phys),dimension(:,:),pointer  :: dtdtr_l,swhc_l,hlwc_l
  real(kind=kind_phys),dimension(:,:,:),pointer:: hlwd_l

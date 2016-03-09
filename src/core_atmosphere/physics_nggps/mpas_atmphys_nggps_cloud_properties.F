@@ -114,8 +114,8 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
 
- real(kind=R8KIND),dimension(:),pointer  :: cv,cvt,cvb
- real(kind=R8KIND),dimension(:,:),pointer:: cnvqc_v
+ real(kind=PHYSKIND),dimension(:),pointer  :: cv,cvt,cvb
+ real(kind=PHYSKIND),dimension(:,:),pointer:: cnvqc_v
 
  real(kind=kind_phys),dimension(:,:),pointer:: cnvqc_l
 
@@ -162,8 +162,8 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
 
- real(kind=R8KIND),dimension(:),pointer  :: cv,cvt,cvb
- real(kind=R8KIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc
+ real(kind=PHYSKIND),dimension(:),pointer  :: cv,cvt,cvb
+ real(kind=PHYSKIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc
 
  real(kind=kind_phys),dimension(:,:),pointer:: fcice_l,frain_l,rrime_l,deltaq_l,cnvw_l,cnvc_l, &
                                                cldcov_l
@@ -230,8 +230,8 @@
 !local pointers:
  integer,pointer:: nCellsSolve,nVertLevels
 
- real(kind=R8KIND),dimension(:),pointer  :: cv,cvt,cvb
- real(kind=R8KIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc,cnvqc_v
+ real(kind=PHYSKIND),dimension(:),pointer  :: cv,cvt,cvb
+ real(kind=PHYSKIND),dimension(:,:),pointer:: fcice,frain,rrime,cldcov,deltaq,cnvw,cnvc,cnvqc_v
 
  real(kind=kind_phys),dimension(:,:),pointer:: fcice_l,frain_l,rrime_l,deltaq_l,cnvw_l,cnvc_l,cnvqc_l
 

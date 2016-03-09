@@ -32,9 +32,9 @@
  integer,public:: second               !Current second.
  integer,public:: msecond              !Current milli-second.
  integer,public:: julday               !Initial Julian day.
- real(kind=R8KIND),public:: curr_julday !Current Julian day (= 0.0 at 0Z on January 1st).
- real(kind=R8KIND),public:: gmt         !Greenwich mean time hour of model start (hr)
- real(kind=R8KIND),public:: utc_h       !UTC time in hours.
+ real(kind=PHYSKIND),public:: curr_julday !Current Julian day (= 0.0 at 0Z on January 1st).
+ real(kind=PHYSKIND),public:: gmt         !Greenwich mean time hour of model start (hr)
+ real(kind=PHYSKIND),public:: utc_h       !UTC time in hours.
 
 !defines alarms for calling the long- and short-wave radiation codes:
  character(len=*),parameter:: radtlwAlarmID = 'radtlw'
@@ -75,7 +75,7 @@
 !input arguments:
  integer,intent(in):: itimestep
  real(kind=RKIND),intent(in):: dt
- real(kind=R8KIND),intent(in):: xtime_s
+ real(kind=PHYSKIND),intent(in):: xtime_s
 
 !inout arguments:
  type(MPAS_Clock_type),intent(inout):: clock
@@ -99,8 +99,8 @@
 
  logical:: LeapYear
  integer:: ierr
- real(kind=R8KIND):: utc_s
- real(kind=R8KIND):: xtime_m
+ real(kind=PHYSKIND):: utc_s
+ real(kind=PHYSKIND):: xtime_m
 
 !-----------------------------------------------------------------------------------------------------------------
  write(0,*)

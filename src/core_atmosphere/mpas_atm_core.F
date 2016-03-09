@@ -259,15 +259,15 @@ module atm_core
       real (kind=RKIND), dimension(:), pointer :: dcEdge, invDcEdge
       real (kind=RKIND), dimension(:), pointer :: areaTriangle, invAreaTriangle
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
-      real (kind=R8KIND), dimension(:), pointer :: latCellPhys, lonCellPhys, areaCellPhys
-      real (kind=R8KIND) :: piover2
+      real (kind=PHYSKIND), dimension(:), pointer :: latCellPhys, lonCellPhys, areaCellPhys
+      real (kind=PHYSKIND) :: piover2
       integer, pointer :: nCells, nEdges, nVertices, nVertLevels, nEdgesSolve
       integer :: thread
       character(len=StrKIND), pointer :: mminlu
 
       logical, pointer :: config_do_restart, config_do_DAcycling
 
-      piover2 = asin(1.0_R8KIND)
+      piover2 = asin(1.0_PHYSKIND)
 
       call atm_compute_signs(mesh)
    
@@ -305,9 +305,9 @@ module atm_core
  
       do iCell=1,nCells 
          invAreaCell(iCell) = 1.0_RKIND / areaCell(iCell)
-         areaCellPhys(iCell) = real(areaCell(iCell),kind=R8KIND)
-         lonCellPhys(iCell) = real(lonCell(iCell),kind=R8KIND)
-         latCellPhys(iCell) = real(latCell(iCell),kind=R8KIND)
+         areaCellPhys(iCell) = real(areaCell(iCell),kind=PHYSKIND)
+         lonCellPhys(iCell) = real(lonCell(iCell),kind=PHYSKIND)
+         latCellPhys(iCell) = real(latCell(iCell),kind=PHYSKIND)
 
          ! The following can happen if the nearest representable number to Pi/2
          ! in single-precision is larger than Pi/2
@@ -712,7 +712,7 @@ module atm_core
       integer, pointer :: nCells, nVertLevels, index_qv
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
       real (kind=RKIND), dimension(:,:), pointer :: pressure_base, pressure_p, pressure
-      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
+      real (kind=PHYSKIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
@@ -765,7 +765,7 @@ module atm_core
       integer :: iCell, k
       integer, pointer :: nCells, nVertLevels, index_qv
       real (kind=RKIND), dimension(:,:), pointer :: theta, rho, theta_m, rho_zz, zz
-      real (kind=R8KIND), dimension(:,:,:), pointer :: scalars
+      real (kind=PHYSKIND), dimension(:,:,:), pointer :: scalars
 
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
@@ -830,9 +830,9 @@ module atm_core
       !proceed with physics if moist_physics is set to true:
       if(moist_physics) then
          call mpas_timer_start('physics_driver')
-         call physics_timetracker(domain,dt,clock,itimestep,real(xtime_s,kind=R8KIND))
+         call physics_timetracker(domain,dt,clock,itimestep,real(xtime_s,kind=PHYSKIND))
          call avec_timer_start(2)
-         call physics_driver(domain,itimestep,real(xtime_s,kind=R8KIND))
+         call physics_driver(domain,itimestep,real(xtime_s,kind=PHYSKIND))
          call avec_timer_stop(2)
          call mpas_timer_stop('physics_driver')
       endif
