@@ -66,6 +66,7 @@
 
  integer,pointer:: nCellsSolve
  integer,pointer:: nVertLevels,nSoilLevels
+ integer,pointer:: nOznLevels,nOznPlCoeff
  integer,pointer:: nMtgwd
  integer,pointer:: numP2d,numP3d
  integer,pointer:: maxran,maxsub
@@ -112,6 +113,8 @@
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
  call mpas_pool_get_dimension(mesh,'nSoilLevels',nSoilLevels)
+ call mpas_pool_get_dimension(mesh,'nOznLevels' ,nOznLevels )
+ call mpas_pool_get_dimension(mesh,'nOznPlCoeff',nOznPlCoeff)
  call mpas_pool_get_dimension(mesh,'nMtvr'      ,nMtgwd     )
  call mpas_pool_get_dimension(mesh,'numP2d'     ,numP2d     )
  call mpas_pool_get_dimension(mesh,'numP3d'     ,numP3d     )
@@ -152,11 +155,13 @@
  write(0,*) '... hour  =', idate(1)
 
 !--- initialization of dimensions needed in the NGGPS physics:
- lonr    = nCellsSolve
- levr    = nVertLevels
- levs    = nVertLevels
- lsoil   = nSoilLevels
- nmtvr   = nMtgwd
+ lonr     = nCellsSolve
+ levr     = nVertLevels
+ levs     = nVertLevels
+ lsoil    = nSoilLevels
+ levozp   = nOznLevels
+ pl_coeff = nOznPlCoeff
+ nmtvr    = nMtgwd
 
  me = dminfo % my_proc_id
 

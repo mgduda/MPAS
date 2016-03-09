@@ -229,8 +229,8 @@
       logical :: loz1st =.true.       ! first-time clim ozone data read flag
 
 !  ---  optional extra top layer on top of low ceiling models
-      integer, parameter :: LTP = 0   ! no extra top layer
-!     integer, parameter :: LTP = 1   ! add an extra top layer
+!     integer, parameter :: LTP = 0   ! no extra top layer
+      integer, parameter :: LTP = 1   ! add an extra top layer
       logical, parameter :: lextop = (LTP > 0)
 
 !  ---  publicly accessible module programs:

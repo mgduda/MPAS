@@ -1881,9 +1881,9 @@
         if (me == 0 .and. kdt < 5) then
           print *, "OZONE TURNED OFF IN GBPHYS - ozphys not called"
         end if
-!        call ozphys(ix,im,levs,ko3,dtp,gq0(1,1,ntoz),gq0(1,1,ntoz)      &
-!     &,             gt0, poz, prsl, prdout, pl_coeff, del, ldiag3d      &
-!     &,             dq3dt(1,1,6), me)
+        call ozphys(ix,im,levs,ko3,dtp,gq0(1,1,ntoz),gq0(1,1,ntoz)      &
+      &,             gt0, poz, prsl, prdout, pl_coeff, del, ldiag3d      &
+      &,             dq3dt(1,1,6), me)
       endif
 
 !  --- ...  to side-step the ozone physics

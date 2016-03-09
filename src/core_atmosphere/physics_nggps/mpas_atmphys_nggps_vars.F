@@ -86,7 +86,7 @@ integer:: seed0
                            !ictm   = 0  : use data at initial time.
                            !ictm   = *  : see all *init subroutines for description of all other options.
  integer,parameter:: &
- iems     = 1              !control flag for the surface emissivity.
+ iems     = 0              !control flag for the surface emissivity.
                            !iems   = 0  : the surface emissivity is set to 1.
                            !iems   = 1  : climatological surface emissivity, based on surface type.
  integer,parameter:: &
