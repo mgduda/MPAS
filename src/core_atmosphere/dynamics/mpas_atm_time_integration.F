@@ -3582,6 +3582,11 @@ MPAS_GPTL_STOP('mono_exch_2')
             do k=1, nVertLevels
                scalars_new(iScalar,k,iCell) = max(0.0_RKIND,scalar_new(k,iCell))
             end do
+#ifdef MONOTONICITY_FIX
+            do k=nVertLevels-10, nVertLevels
+               scalars_new(iScalar,k,iCell) = max(s_min(k,iCell),min(s_max(k,iCell),scalar_new(k,iCell)))
+            end do
+#endif
          end do
 
       end do !  loop over scalars
@@ -4010,6 +4015,9 @@ MPAS_GPTL_STOP('mono_exch_2')
 !               kdiff(k,iCell) = min(kdiff(k,iCell),(0.01*config_len_disp**2) * invDt)
 !  ****  constant second order filter in the last 8 levels
 !               if (k .gt. nVertLevels-9) kdiff(k,iCell) = 5.*config_len_disp
+#ifdef UPPER_LEVEL_FILTER
+               if (k .gt. (nVertLevels-10)) kdiff(k,iCell) = min(1.0, (k-(nVertLevels-10))/5.)*5.0*config_len_disp
+#endif
             end do
          end do
 
