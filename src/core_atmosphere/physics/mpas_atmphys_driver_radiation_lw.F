@@ -58,7 +58,7 @@
 !> ----------------------------------------
 !>    * removed the pre-processor option "do_hydrostatic_pressure" before call to subroutines
 !>      rrtmg_lw and camrad.
-!>      Laura D. Fowler (birch.mmm,ucar.edu) / 2013-05-29.
+!>      Laura D. Fowler (laura@ucar.edu) / 2013-05-29.
 !>    * added structure diag in the call to subroutine init_radiation_lw.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-01.
 !>    * modified the call to subroutine rrtmg_lwrad to include the option of using the same ozone

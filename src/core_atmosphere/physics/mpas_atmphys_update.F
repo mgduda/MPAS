@@ -64,7 +64,7 @@
  do while(associated(block))
 
     !parameterization of convection: update accumulated precipitation.
-    !call update_convection_deep(dt,config_bucket_rainc,block%mesh,block%diag_physics)
+    !call update_convection(dt,config_bucket_rainc,block%mesh,block%diag_physics)
 
     block => block % next
  end do

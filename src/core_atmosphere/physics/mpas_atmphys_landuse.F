@@ -69,9 +69,9 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-08-24. 
 !>    * added initialization of the background surface albedo over snow.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-10-19.
-!>    * Modified sourcecode to use pools.
+!>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
-!>    * In subroutine landuse_init_forMPAS, added the definition of isurban as a function of the
+!>    * in subroutine landuse_init_forMPAS, added the definition of isurban as a function of the
 !>      input landuse data file.
 !>      Dominikus Heinzeller (IMK) / 2014-07-24.
 

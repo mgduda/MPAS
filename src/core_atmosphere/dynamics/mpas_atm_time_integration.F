@@ -3256,6 +3256,7 @@ MPAS_GPTL_START('mono_exch_2')
          tempField % copyList => block % parinfo % cellsToCopy
          tempField % prev => null()
          tempField % next => null()
+         tempField % isActive = .true.
 
          tempField % array => scale_arr
          call mpas_dmpar_exch_halo_field(tempField, (/ 1 /))

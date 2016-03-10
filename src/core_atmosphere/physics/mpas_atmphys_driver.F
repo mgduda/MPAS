@@ -21,8 +21,9 @@
  use mpas_atmphys_driver_sfclayer
  use mpas_atmphys_constants
  use mpas_atmphys_interface
+ use mpas_atmphys_interp_diagnostics
  use mpas_atmphys_update
- use mpas_atmphys_vars, only: l_camlw,l_conv,l_radtlw,l_radtsw
+ use mpas_atmphys_vars, only: dt_dyn,l_camlw,l_conv,l_radtlw,l_radtsw
  use mpas_timer
 
  implicit none
@@ -84,8 +85,17 @@
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-03.
 !>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
+!>    * added block%configs in the call to driver_convection_deep.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-05-28.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
+!>    * added call to subroutine interp_pFixed to interpolate physics tendencies to fixed pressure
+!>      levels.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-09-29.
+!>    * modified the call to the subroutines driver_sfclayer and driver_pbl for the implementation
+!>      of the MYNN surface layer scheme and PBL schemes. itimestep and block%configs are added to
+!>      the argument list.
+!>      Laura D. Fowler (laura@ucar.edu) / 2015-01-06. 
 
 
  contains
@@ -112,7 +122,7 @@
                                  atm_input,    &
                                  sfc_input
 
- real(kind=RKIND),pointer:: config_bucket_radt
+ logical,pointer:: config_physics_interp
 
  character(len=StrKIND),pointer:: config_bucket_update,     &
                                   config_convection_scheme, &
@@ -122,6 +132,8 @@
                                   config_radt_lw_scheme,    &
                                   config_radt_sw_scheme,    &
                                   config_sfclayer_scheme
+
+ real(kind=RKIND),pointer:: config_bucket_radt
 
 !local variables:
  type(block_type),pointer:: block
@@ -142,6 +154,7 @@
  call mpas_pool_get_config(domain%configs,'config_sfclayer_scheme'  ,config_sfclayer_scheme  )
  call mpas_pool_get_config(domain%configs,'config_bucket_radt'      ,config_bucket_radt      )
  call mpas_pool_get_config(domain%configs,'config_bucket_update'    ,config_bucket_update    )
+ call mpas_pool_get_config(domain%configs,'config_physics_interp'   ,config_physics_interp   )
 
  if(config_convection_scheme .ne. 'off' .or. &
     config_lsm_scheme        .ne. 'off' .or. &
@@ -232,7 +245,7 @@
        call allocate_sfclayer
 !$OMP PARALLEL DO
        do thread=1,block % nThreads
-          call driver_sfclayer(mesh,diag_physics,sfc_input, &
+          call driver_sfclayer(itimestep,block%configs,mesh,diag_physics,sfc_input, &
                                block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -256,7 +269,7 @@
        call allocate_pbl
 !$OMP PARALLEL DO
        do thread=1,block % nThreads
-          call driver_pbl(sfc_input,diag_physics,tend_physics, &
+          call driver_pbl(itimestep,block%configs,sfc_input,diag_physics,tend_physics, &
                           block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -286,7 +299,7 @@
        call allocate_convection
 !$OMP PARALLEL DO
        do thread=1,block % nThreads
-          call driver_convection(itimestep,mesh,sfc_input,diag_physics,tend_physics, &
+          call driver_convection(itimestep,block%configs,mesh,sfc_input,diag_physics,tend_physics, &
                                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
        end do
 !$OMP END PARALLEL DO
@@ -295,13 +308,16 @@
     !update diagnostics:
 !$OMP PARALLEL DO
     do thread=1,block % nThreads
-       call update_convection_step2(block%configs,mesh,diag_physics, &
+       call update_convection_step2(block%configs,mesh,state,time_lev,diag_physics,tend_physics, &
                             block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread))
     end do
 !$OMP END PARALLEL DO
 
     !deallocate arrays shared by all physics parameterizations:
     call deallocate_forall_physics
+
+    !interpolate diagnostics to fixed pressure levels:
+    if(config_physics_interp) call interp_pFixed(dt_dyn,mesh,diag,diag_physics,tend_physics)
 
     block => block % next
  end do 

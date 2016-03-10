@@ -93,6 +93,10 @@
 !>    * added domain%dminfo in call to subroutine physics_update_sst to print local and global
 !>      min and max values of the updated sea-surface temperatures and sea-ice fractions.
 !>      Laura D. Fowler (laura@ucar.edu) / 2013-07-24.
+!>    * in subroutine physics_run_init, changed the definition of ide from ide=ime to ide=ime+1.
+!>      also, changed the definition of jde from jde=jme to jde=jme+1. Except for the "Grell GF"
+!>      convection scheme, this does not affect results when running the other physics schemes.
+!>      Laura D. Fowler (laura@ucar.edu) / 2014-04-10.
 !>    * modified sourcecode to use pools.
 !>      Laura D. Fowler (laura@ucar.edu) / 2014-05-15.
 !>    * renamed config_conv_deep_scheme to config_convection_scheme.
@@ -154,9 +158,8 @@
 ! write(0,*) '--- enter subroutine physics_timetracker: itimestep = ', itimestep
 
  call mpas_pool_get_config(domain%blocklist%configs,'config_convection_scheme',config_convection_scheme)
- call mpas_pool_get_config(domain%blocklist%configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme  )
- call mpas_pool_get_config(domain%blocklist%configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme  )
-
+ call mpas_pool_get_config(domain%blocklist%configs,'config_radt_lw_scheme'   ,config_radt_lw_scheme   )
+ call mpas_pool_get_config(domain%blocklist%configs,'config_radt_sw_scheme'   ,config_radt_sw_scheme   )
  call mpas_pool_get_config(domain%blocklist%configs,'config_conv_interval'   ,config_conv_interval   )
  call mpas_pool_get_config(domain%blocklist%configs,'config_radtlw_interval' ,config_radtlw_interval )
  call mpas_pool_get_config(domain%blocklist%configs,'config_radtsw_interval' ,config_radtsw_interval )
@@ -642,8 +645,8 @@
  jms=1   ; jme=1
  kms=1   ; kme = nVertLevels+1
 
- ids=ims ; ide=ime
- jds=jms ; jde=jme
+ ids=ims ; ide=ime+1
+ jds=jms ; jde=jme+1
  kds=kms ; kde=kme 
 
  its=ims ; ite = ime 
