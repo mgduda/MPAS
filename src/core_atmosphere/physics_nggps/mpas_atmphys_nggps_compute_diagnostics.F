@@ -690,7 +690,7 @@
        temp = theta_m(k,iCell)/(1._RKIND+R_v/R_d*qv(k,iCell))
        temp = temp*exner(k,iCell)
        pres = pressure_p(k,iCell) + pressure_b(k,iCell)
-       es   = min(pres,fpvs(temp))
+       es   = min(0.99_RKIND*pres,fpvs(temp))
        qs   = eps*es / (pres + epsm1*es)
        rs   = qs / (1._RKIND - qs)
 
@@ -698,6 +698,7 @@
     enddo
     enddo
  endif
+ 205 format(2i9,10(1x,e15.8))
 
  end subroutine physics_nggps_compute_relhum
 
