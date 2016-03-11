@@ -35,7 +35,7 @@
                      sqrtpii = 1.0/sqrt(pi+pi), epsterm = rgas/rv, twoby3 = 2.0/3.0, &
                      onebeps = 1.0/epsterm, twoby15 = 2.0 / 15.0,                    &
                      onebrvcp= 1.0/(rv*cp), skew_facw=1.2, skew_fact=1.0,            &
-                     tkef1=0.5, tkef2=1.0-tkef1, tkhmax=1000.0
+                     tkef1=0.5, tkef2=1.0-tkef1
 !                    skew_facw=1.2, skew_fact=0.5
 !                    onebeps = 1.0/epsterm, twoby15 = 2.0 / 15.0, skew_facw=1.2  ! orig
 
@@ -99,9 +99,7 @@
 ! real, parameter :: Ce  = Ck**3/(0.7*Cs**4) * 2.5 , Ces = Ce * 3.0 / 2.5 
 ! real, parameter :: Ces = Ce/0.7*3.0
 
-! real, parameter :: Ce  = Ck**3/(0.7*Cs**4), Ces = Ce*3.0/0.7 ! Commented Moor
-
-  real, parameter :: Ce  = Ck**3/Cs**4, Ces = Ce*3.0/0.7
+  real, parameter :: Ce  = Ck**3/(0.7*Cs**4), Ces = Ce*3.0/0.7
 
 ! real, parameter :: vonk=0.35  ! Von Karman constant
   real, parameter :: vonk=0.4   ! Von Karman constant Moorthi - as in GFS
@@ -442,7 +440,6 @@ contains
       
       Cek = Ce * 3.5
       Cek = Ce * 3.0
-!     Cek = Ce * 2.0
 !     Cek = Ces
 
       if(k == 1) then
@@ -494,7 +491,7 @@ contains
           ratio     = smix/grd
           Cee       = Cek* (pt19 + pt51*ratio)
           wrk       = 0.5 * wrk * (prnum(i,j,ku) + prnum(i,j,kd))
-          a_prod_sh = min(tkhmax,(wrk+0.001))*def2(i,j,k)           ! TKE shear production term
+          a_prod_sh = (wrk+0.001)*def2(i,j,k)           ! TKE shear production term
 
 
 ! smixt (turb. mixing lenght) is calculated in eddy_length() 
@@ -551,12 +548,12 @@ contains
     do k=2,nzm
       do j=1,ny
         do i=1,nx
+!         tkh(i,j,k) = wrk * (isotropy(i,j,k)   * tke(i,j,k)            &
+!                          +  isotropy(i,j,k-1) * tke(i,j,k-1))
 
           wrk1 = wrk / (prnum(i,j,k) + prnum(i,j,k-1))
-
           tkh(i,j,k) = wrk1 * (isotropy(i,j,k) + isotropy(i,j,k-1))     &
                             * (tke(i,j,k)      + tke(i,j,k-1)) ! Eddy thermal diffusivity
-          tkh(i,j,k) = min(tkh(i,j,k),tkhmax)
         end do ! i
       end do ! j
     end do ! k
@@ -793,8 +790,7 @@ contains
               wrk1 = 1.0 / (tscale*tkes*vonk*zl(i,j,k))
               wrk2 = 1.0 / (tscale*tkes*l_inf(i,j))
               wrk1 = 1.0 / (wrk1 + wrk2 + 0.01 * brunt2(i,j,k) / tke(i,j,k))
-!             smixt(i,j,k) = min(max_eddy_length_scale, 2.8284*sqrt(wrk1)/0.3)
-              smixt(i,j,k) = min(max_eddy_length_scale,        sqrt(wrk1)/0.3)
+              smixt(i,j,k) = min(max_eddy_length_scale, 2.8284*sqrt(wrk1)/0.3)
 
 !           smixt(i,j,k) = min(max_eddy_length_scale,(2.8284*sqrt(1./((1./(tscale*tkes*vonk*zl(i,j,k))) & 
 !                  + (1./(tscale*tkes*l_inf(i,j)))+0.01*(brunt2(i,j,k)/tke(i,j,k)))))/0.3)
