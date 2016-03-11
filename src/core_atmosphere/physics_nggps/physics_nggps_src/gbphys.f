@@ -1956,7 +1956,8 @@
           clw(i,k,2) = -999.9
         enddo
       enddo
-      if (.not. ras .or. .not. cscnv) then
+!     if (.not. ras .or. .not. cscnv) then
+      if (.not. do_shoc) then
         do k = 1, levs
           do i = 1, im
             cnvc(i,k)  = 0.0
