@@ -55,6 +55,7 @@ module mpas_framework
       allocate(dminfo)
       call mpas_io_units_init(stdoutUnit_in, stderrUnit_in)
       call mpas_dmpar_init(dminfo, mpi_comm)
+      call MPI_Barrier(dminfo % comm, retval)
       call avec_timer_init(dminfo % my_proc_id, retval)
 
    end subroutine mpas_framework_init_phase1!}}}
