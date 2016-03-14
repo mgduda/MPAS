@@ -48,6 +48,7 @@ physcore:
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2015.txt co2historicaldata_2015.txt)
 endif
 endif
+	( cd ../..; ln -sf ./src/core_atmosphere/avec/avec_timers_config.txt avec_timers_config.txt )
 
 dycore:
 	( cd dynamics; $(MAKE) all PHYSICS="$(PHYSICS)" )

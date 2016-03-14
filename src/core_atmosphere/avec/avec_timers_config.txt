@@ -1,0 +1,4 @@
+zone 1 integrate       2000
+zone 2 physics_driver  2000
+zone 3 nuopc_phys_run  2000
+zone 4 nuopc_rad_run   2000
