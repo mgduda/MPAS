@@ -260,6 +260,8 @@ module atm_core
       real (kind=RKIND), dimension(:), pointer :: areaTriangle, invAreaTriangle
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell
       real (kind=PHYSKIND), dimension(:), pointer :: latCellPhys, lonCellPhys, areaCellPhys
+      real (kind=PHYSKIND), dimension(:), pointer :: slope
+      integer, dimension(:), pointer :: indexToCellID, landmask
       real (kind=PHYSKIND) :: piover2
       integer, pointer :: nCells, nEdges, nVertices, nVertLevels, nEdgesSolve
       integer :: thread
@@ -447,6 +449,23 @@ module atm_core
                           nggps_dynamic_parameters, nggps_sfc_properties,         &
                           nggps_tbd_ddt)
      endif
+
+     !
+     ! Temporary fix for two cells in the 13-km mesh that are land but have
+     ! a slope type < 0.5; ultimately, this should be fixed by using a consistent 
+     ! interpolation scheme in the initialization
+     !
+     call mpas_pool_get_subpool(block % structs, 'nggps_sfc_properties', nggps_sfc_properties)
+     call mpas_pool_get_array(nggps_sfc_properties, 'landmask', landmask)
+     call mpas_pool_get_array(nggps_sfc_properties, 'slope', slope)
+     call mpas_pool_get_array(mesh, 'indexToCellID', indexToCellID)
+     do iCell=1,nCells 
+        if ((landmask(iCell) == 1) .and. slope(iCell) < 0.5) then
+            write(0,*) 'SLOPE KLUDGE: fixing slope for cell ', indexToCellID(iCell)
+            slope(iCell) = 9.0   ! The value used for seaice points in gbphys?
+        end if
+     end do
+
 #endif
    
       call atm_compute_mesh_scaling(mesh, block % configs)
