@@ -309,13 +309,29 @@ module atm_core
          lonCellPhys(iCell) = real(lonCell(iCell),kind=PHYSKIND)
          latCellPhys(iCell) = real(latCell(iCell),kind=PHYSKIND)
 
+         !
          ! The following can happen if the nearest representable number to Pi/2
          ! in single-precision is larger than Pi/2
+         !
          if (latCellPhys(iCell) > piover2) then
             latCellPhys(iCell) = piover2
          end if
          if (latCellPhys(iCell) < -piover2) then
             latCellPhys(iCell) = -piover2
+         end if
+
+         !
+         ! The GFS physics (in radiation_gases.f, in particular) has
+         ! broken code that tries to shift the longitude range from
+         ! (-Pi,Pi) to (0,2*Pi); in order to avoid this broken logic
+         ! in the physics, it is much easer to simply ensure that
+         ! the range of longitudes seen by the physics is (0,2*Pi).
+         !
+         if (lonCellPhys(iCell) > 4.0_PHYSKIND*piover2) then
+            lonCellPhys(iCell) = 4.0_PHYSKIND*piover2
+         end if
+         if (lonCellPhys(iCell) < 0.0_PHYSKIND) then
+            lonCellPhys(iCell) = lonCellPhys(iCell) + 4.0_PHYSKIND*piover2
          end if
       end do
         
