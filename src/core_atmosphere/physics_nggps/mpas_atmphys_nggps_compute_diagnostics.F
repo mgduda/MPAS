@@ -52,9 +52,9 @@
  integer,pointer:: nCellsSolve
 
  integer,dimension(:),pointer:: vtypesfc,stypesfc
- real(kind=RKIND),dimension(:),pointer:: icesfc,slmsksfc,spfh2m,tmp2m,tmpsfc,weasdsfc,snodsfc,zorlsfc,vfracsfc, &
+ real(kind=PHYSKIND),dimension(:),pointer:: icesfc,slmsksfc,spfh2m,tmp2m,tmpsfc,weasdsfc,snodsfc,zorlsfc,vfracsfc, &
                                          f10msfc
- real(kind=RKIND),dimension(:),pointer:: soilt1,soilt2,soilt3,soilt4,soilw1,soilw2,soilw3,soilw4
+ real(kind=PHYSKIND),dimension(:),pointer:: soilt1,soilt2,soilt3,soilt4,soilw1,soilw2,soilw3,soilw4
 
  real(kind=PHYSKIND),dimension(:),pointer  :: fice,slmsk,q2m,t2m,tsfc,weasd,snwdph,zorl,vfrac,f10m,vtype,stype
  real(kind=PHYSKIND),dimension(:,:),pointer:: slc,stc
@@ -107,18 +107,18 @@
  call mpas_pool_get_array(nggps_diagnostics_physics,'soilw4',soilw4)
 
  do iCell = 1, nCellsSolve
-    icesfc(iCell) = 0._RKIND
+    icesfc(iCell) = 0._PHYSKIND
  enddo
 
  do iCell = 1, nCellsSolve
-    if(fice(iCell) .gt. 0._RKIND) icesfc(iCell) = 1._RKIND
+    if(fice(iCell) .gt. 0._PHYSKIND) icesfc(iCell) = 1._PHYSKIND
     slmsksfc(iCell) = slmsk(iCell)
     spfh2m(iCell)   = q2m(iCell)
     tmp2m(iCell)    = t2m(iCell)
     tmpsfc(iCell)   = tsfc(iCell)
     weasdsfc(iCell) = weasd(iCell)
-    snodsfc(iCell)  = snwdph(iCell) * 0.001_RKIND
-    zorlsfc(iCell)  = zorl(iCell) * 0.01_RKIND
+    snodsfc(iCell)  = snwdph(iCell) * 0.001_PHYSKIND
+    zorlsfc(iCell)  = zorl(iCell) * 0.01_PHYSKIND
     vfracsfc(iCell) = vfrac(iCell)
     f10msfc(iCell)  = f10m(iCell)
     vtypesfc(iCell) = int(vtype(iCell))
@@ -164,11 +164,11 @@
  real(kind=RKIND),dimension(:,:),pointer  :: uZonal,uMeridional
  real(kind=PHYSKIND),dimension(:,:,:),pointer:: scalars
 
- real(kind=RKIND),dimension(:),pointer  :: hgtsfc,pressfc
+ real(kind=PHYSKIND),dimension(:),pointer  :: hgtsfc,pressfc
  real(kind=RKIND),dimension(:,:),pointer:: theta_m
  real(kind=PHYSKIND),dimension(:,:),pointer:: qv,qc,qo3
- real(kind=RKIND),dimension(:,:),pointer:: ugrd,vgrd,dpres,pres
- real(kind=RKIND),dimension(:,:),pointer:: temperature,spfh,o3mr,clwmr
+ real(kind=PHYSKIND),dimension(:,:),pointer:: ugrd,vgrd,dpres,pres
+ real(kind=PHYSKIND),dimension(:,:),pointer:: temperature,spfh,o3mr,clwmr
 
 !local variables:
  integer:: iCell,k
@@ -336,14 +336,14 @@
                                   config_radtsw_interval
 
  integer,pointer:: nFxr,nCellsSolve
- real(kind=RKIND),dimension(:),pointer:: albdosfc,dlwrfsfc,ulwrfsfc,dswrfsfc,uswrfsfc,ulwrftoa,dswrftoa,uswrftoa
- real(kind=RKIND),dimension(:),pointer:: tcdcclm,tcdchcl,tcdcmcl,tcdclcl 
+ real(kind=PHYSKIND),dimension(:),pointer:: albdosfc,dlwrfsfc,ulwrfsfc,dswrfsfc,uswrfsfc,ulwrftoa,dswrftoa,uswrftoa
+ real(kind=PHYSKIND),dimension(:),pointer:: tcdcclm,tcdchcl,tcdcmcl,tcdclcl 
 
- real(kind=RKIND),dimension(:),pointer:: cnvprcp,totprcp,gflux,dqsfc,dtsfc,dugwd,dvgwd,dusfc,dvsfc
- real(kind=RKIND),dimension(:),pointer:: cpratsfc,pratesfc,gfluxsfc,lhtflsfc,shtflsfc,ugwdsfc,vgwdsfc, &
+ real(kind=PHYSKIND),dimension(:),pointer:: cnvprcp,totprcp,gflux,dqsfc,dtsfc,dugwd,dvgwd,dusfc,dvsfc
+ real(kind=PHYSKIND),dimension(:),pointer:: cpratsfc,pratesfc,gfluxsfc,lhtflsfc,shtflsfc,ugwdsfc,vgwdsfc, &
                                          uflxsfc,vflxsfc
 
- real(kind=RKIND),dimension(:,:),pointer:: fluxr
+ real(kind=PHYSKIND),dimension(:,:),pointer:: fluxr
 
 !local variables:
  type(MPAS_TimeInterval_Type):: intv
@@ -496,18 +496,18 @@
 !local pointers:
  integer,pointer:: nFxr,nCellsSolve,nVertLevels
 
- real(kind=RKIND),dimension(:),pointer:: psmean,suntim,dlwsfc,ulwsfc,gflux,evbsa,evcwa,transa,  &
+ real(kind=PHYSKIND),dimension(:),pointer:: psmean,suntim,dlwsfc,ulwsfc,gflux,evbsa,evcwa,transa,  &
                                          sbsnoa,snowca,snohfa,ep,dusfc,dvsfc,dtsfc,dqsfc,dugwd, &  
                                          dvgwd,cldwrk,cnvprcp,totprcp,runoff,srunoff,tmpmax,    &
                                          tmpmin,spfhmax,spfhmin
 
- real(kind=RKIND),dimension(:),pointer:: albdosfc,dlwrfsfc,ulwrfsfc,dswrfsfc,uswrfsfc,ulwrftoa,dswrftoa,uswrftoa
- real(kind=RKIND),dimension(:),pointer:: tcdcclm,tcdchcl,tcdcmcl,tcdclcl 
+ real(kind=PHYSKIND),dimension(:),pointer:: albdosfc,dlwrfsfc,ulwrfsfc,dswrfsfc,uswrfsfc,ulwrftoa,dswrftoa,uswrftoa
+ real(kind=PHYSKIND),dimension(:),pointer:: tcdcclm,tcdchcl,tcdcmcl,tcdclcl 
 
- real(kind=RKIND),dimension(:),pointer:: cpratsfc,pratesfc,gfluxsfc,lhtflsfc,shtflsfc,ugwdsfc,vgwdsfc, &
+ real(kind=PHYSKIND),dimension(:),pointer:: cpratsfc,pratesfc,gfluxsfc,lhtflsfc,shtflsfc,ugwdsfc,vgwdsfc, &
                                          uflxsfc,vflxsfc
 
- real(kind=RKIND),dimension(:,:),pointer:: fluxr
+ real(kind=PHYSKIND),dimension(:,:),pointer:: fluxr
 
 !local variables:
  integer:: iCell,iFx,k
