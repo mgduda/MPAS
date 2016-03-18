@@ -46,6 +46,7 @@ physcore:
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2013.txt co2historicaldata_2013.txt)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2014.txt co2historicaldata_2014.txt)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2015.txt co2historicaldata_2015.txt)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/fix_co2_proj/global_co2historicaldata_2016.txt co2historicaldata_2016.txt)
 endif
 endif
 	( cd ../..; ln -sf ./src/core_atmosphere/avec/avec_timers_config.txt avec_timers_config.txt )
