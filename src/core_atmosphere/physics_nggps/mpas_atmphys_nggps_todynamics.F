@@ -284,10 +284,10 @@
  tempField % next => null()
 
  tempField % array => Ux_tend_halo
- call mpas_dmpar_exch_halo_field(tempField)
+ call mpas_dmpar_exch_halo_field(tempField, (/1/))
  
  tempField % array => Uy_tend_halo
- call mpas_dmpar_exch_halo_field(tempField)
+ call mpas_dmpar_exch_halo_field(tempField, (/1/))
 
  U_tend(:,:) = 0.0
  do iCell = 1, nCells
