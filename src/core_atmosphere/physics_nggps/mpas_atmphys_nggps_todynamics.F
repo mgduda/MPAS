@@ -73,7 +73,7 @@
  real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
  real(kind=PHYSKIND),dimension(:,:,:),pointer:: tend_scalars
 
- real(kind=PHYSKIND),dimension(:,:),pointer:: tend_uphysics_Edge
+ real(kind=RKIND),dimension(:,:),pointer:: tend_uphysics_Edge
  real(kind=RKIND),dimension(:,:),allocatable:: theta
  real(kind=RKIND),dimension(:,:),pointer:: tend_th
 
@@ -154,7 +154,7 @@
 !add coupled physics tendency to u tendency:
  allocate(theta(nVertLevels,nCellsSolve)  )
  if (do_full_tend) then
-    tend_uphysics_Edge(:,:) = 0._PHYSKIND
+    tend_uphysics_Edge(:,:) = 0._RKIND
     call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
  end if
 
@@ -219,7 +219,7 @@
 
 !output arguments:
 !-----------------
- real(kind=PHYSKIND),intent(out),dimension(:,:):: U_tend
+ real(kind=RKIND),intent(out),dimension(:,:):: U_tend
 
 !local variables:
 !-----------------
