@@ -72,7 +72,6 @@
                                              tend_uphysics ,tend_vphysics
 
  real(kind=RKIND),dimension(:,:),pointer  :: tend_theta,tend_u
- real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
  real(kind=PHYSKIND),dimension(:,:,:),pointer:: tend_scalars
 
  real(kind=RKIND),dimension(:,:),pointer:: tend_uphysics_Edge
@@ -142,16 +141,12 @@
  call mpas_pool_get_array(tend,'u',tend_u)
  call mpas_pool_get_array(tend,'theta_m',tend_theta)
  call mpas_pool_get_array(tend,'scalars_tend',tend_scalars)
- tend_qv  => tend_scalars(index_qv,:,:)
- tend_qc  => tend_scalars(index_qc,:,:)
- tend_qo3 => tend_scalars(index_qo3,:,:)
 
 !initialize the tendency for the potential temperature and all scalars due to PBL, deep and
 !shallow convection, and longwave and shortwave radiation:
 
 !add coupled physics tendency to u tendency:
  if (do_full_tend) then
-    tend_uphysics_Edge(:,:) = 0._RKIND
     call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
  end if
 
@@ -271,8 +266,6 @@
  allocate(Ux_tend_halo(nVertLevels,nCells+1))
  allocate(Uy_tend_halo(nVertLevels,nCells+1))
 
- Ux_tend_halo(:,:) = 0.
- Uy_tend_halo(:,:) = 0.
  do iCell = 1, nCellsSolve
     do k = 1, nVertLevels
        Ux_tend_halo(k,iCell) = Ux_tend(k,iCell)
