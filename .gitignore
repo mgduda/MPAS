@@ -55,3 +55,6 @@ stream_list.*
 *.i90
 
 src/core_*/inc
+
+# AVEC timing files
+avec_timer_out_*.txt
