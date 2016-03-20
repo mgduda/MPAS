@@ -1,5 +1,8 @@
  <var_struct name="nggps_physics_tendencies" time_levs="1">
 
+    <var name="tend_th" type="real" dimensions="nVertLevels nCells Time"/>
+    <var name="tend_uphysics_Edge" type="real" precision="8" dimensions="nVertLevels nEdges Time"/>
+
     <var name="tend_thphysics" name_in_code="thphysics" type="real" precision="8" dimensions="nVertLevels nCells Time" units="K s^{-1}" 
          description="tendency of potential temperature due to all physics processes"
     />

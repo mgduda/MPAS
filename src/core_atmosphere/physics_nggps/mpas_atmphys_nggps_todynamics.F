@@ -27,7 +27,7 @@
  
 
 !==================================================================================================
- subroutine physics_addtend(block,mesh,state,diag,tend,nggps_physics_tendencies,rk_step)
+ subroutine physics_addtend(block,mesh,state,diag,tend,nggps_physics_tendencies,rk_step,do_full_tend)
 !==================================================================================================
 
 !input variables:
@@ -36,6 +36,7 @@
  type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag
  type(mpas_pool_type),intent(in):: nggps_physics_tendencies
+ logical, intent(inout) :: do_full_tend
 
  integer, intent(in):: rk_step
 
@@ -72,16 +73,13 @@
  real(kind=PHYSKIND),dimension(:,:),pointer  :: tend_qv,tend_qc,tend_qo3
  real(kind=PHYSKIND),dimension(:,:,:),pointer:: tend_scalars
 
- real(kind=PHYSKIND),dimension(:,:),allocatable:: tend_uphysics_Edge
- real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
+ real(kind=PHYSKIND),dimension(:,:),pointer:: tend_uphysics_Edge
+ real(kind=RKIND),dimension(:,:),allocatable:: theta
+ real(kind=RKIND),dimension(:,:),pointer:: tend_th
 
 !local variables:
  integer:: iCell,iEdge,k
 
-!--------------------------------------------------------------------------------------------------
-!write(0,*)
-!write(0,*) '--- enter subroutine physics_addtend:'
- 
  call mpas_pool_get_dimension(mesh,'nCells'     ,nCells)
  call mpas_pool_get_dimension(mesh,'nEdges'     ,nEdges)
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
@@ -129,6 +127,8 @@
  call mpas_pool_get_array(nggps_physics_tendencies,'vgwdc',tend_vgwdc)
 
 !total physics tendencies from driver to gbphys:
+ call mpas_pool_get_array(nggps_physics_tendencies,'tend_th'   ,tend_th )
+ call mpas_pool_get_array(nggps_physics_tendencies,'tend_uphysics_Edge' ,tend_uphysics_Edge )
  call mpas_pool_get_array(nggps_physics_tendencies,'thphysics' ,tend_thphysics )
  call mpas_pool_get_array(nggps_physics_tendencies,'qvphysics' ,tend_qvphysics )
  call mpas_pool_get_array(nggps_physics_tendencies,'qcphysics' ,tend_qcphysics )
@@ -146,66 +146,64 @@
 
 !initialize the tendency for the potential temperature and all scalars due to PBL, deep and
 !shallow convection, and longwave and shortwave radiation:
- allocate(theta(nVertLevels,nCellsSolve)  )
- allocate(tend_th(nVertLevels,nCellsSolve))
- tend_th  = 0._PHYSKIND
- tend_qv  = 0._PHYSKIND
- tend_qc  = 0._PHYSKIND
- tend_qo3 = 0._PHYSKIND
+!MGD tend_th  = 0._PHYSKIND
+!MGD tend_qv  = 0._PHYSKIND
+!MGD tend_qc  = 0._PHYSKIND
+!MGD tend_qo3 = 0._PHYSKIND
 
 !add coupled physics tendency to u tendency:
- allocate(tend_uphysics_Edge(nVertLevels,nEdges))
- tend_uphysics_Edge(:,:) = 0._PHYSKIND
- call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
+ allocate(theta(nVertLevels,nCellsSolve)  )
+ if (do_full_tend) then
+    tend_uphysics_Edge(:,:) = 0._PHYSKIND
+    call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
+ end if
+
+!!!!!!!!! Do always !!!!!!!!!!
  do iEdge = 1, nEdgesSolve
  do k  = 1, nVertLevels
     tend_u(k,iEdge)=tend_u(k,iEdge)+tend_uphysics_Edge(k,iEdge)*mass_edge(k,iEdge)
  enddo
  enddo
- deallocate(tend_uphysics_Edge)
 
 !add coupled physics tendencies to potential temperature,water vapor,cloud condensates, and
 !ozone:
+!!!!!!!!! Do always !!!!!!!!!!
  do iCell = 1, nCellsSolve
  do k = 1, nVertLevels
-    tend_th(k,iCell)  = tend_th(k,iCell)  + tend_thphysics(k,iCell)*mass(k,iCell)
-    tend_qv(k,iCell)  = tend_qv(k,iCell)  + tend_qvphysics(k,iCell)*mass(k,iCell)
-    tend_qc(k,iCell)  = tend_qc(k,iCell)  + tend_qcphysics(k,iCell)*mass(k,iCell)
-    tend_qo3(k,iCell) = tend_qo3(k,iCell) + tend_qo3physics(k,iCell)*mass(k,iCell)
+!    tend_th(k,iCell)  = tend_th(k,iCell)  + tend_thphysics(k,iCell)*mass(k,iCell)
+!    tend_qv(k,iCell)  = tend_qv(k,iCell)  + tend_qvphysics(k,iCell)*mass(k,iCell)
+!    tend_qc(k,iCell)  = tend_qc(k,iCell)  + tend_qcphysics(k,iCell)*mass(k,iCell)
+!    tend_qo3(k,iCell) = tend_qo3(k,iCell) + tend_qo3physics(k,iCell)*mass(k,iCell)
+    tend_th(k,iCell)  = tend_thphysics(k,iCell)*mass(k,iCell)
+    tend_qv(k,iCell)  = tend_qvphysics(k,iCell)*mass(k,iCell)
+    tend_qc(k,iCell)  = tend_qcphysics(k,iCell)*mass(k,iCell)
+    tend_qo3(k,iCell) = tend_qo3physics(k,iCell)*mass(k,iCell)
  enddo
  enddo
 
 !convert the tendency for the potential temperature to the tendency for the modified potential
 !temperature:
+! if (do_full_tend) then
+    do iCell = 1, nCellsSolve
+    do k = 1, nVertLevels
+       theta(k,iCell) = theta_m(k,iCell) / (1. + R_v/R_d * qv(k,iCell))
+       tend_th(k,iCell) = (1. + R_v/R_d * qv(k,iCell)) * tend_th(k,iCell) &
+                       + R_v/R_d * theta(k,iCell) * tend_qv(k,iCell)
+    enddo
+    enddo
+    deallocate(theta)
+! end if
+
+!!!!!!!!! Do always !!!!!!!!!!
  do iCell = 1, nCellsSolve
  do k = 1, nVertLevels
-    theta(k,iCell) = theta_m(k,iCell) / (1. + R_v/R_d * qv(k,iCell))
-    tend_th(k,iCell) = (1. + R_v/R_d * qv(k,iCell)) * tend_th(k,iCell) &
-                    + R_v/R_d * theta(k,iCell) * tend_qv(k,iCell)
     tend_theta(k,iCell) = tend_theta(k,iCell) + tend_th(k,iCell)
  enddo
  enddo
- deallocate(theta)
- deallocate(tend_th)
 
-!if(rk_step .eq. 3) then
-!   write(0,*)
-!   write(0,*) '--- enter subroutine physics_addtend:'
-!   write(0,*) 'max tend_thphysics  = ',maxval(tend_thphysics(:,1:nCellsSolve) )
-!   write(0,*) 'min tend_thphysics  = ',minval(tend_thphysics(:,1:nCellsSolve) )
-!   write(0,*) 'max tend_qvphysics  = ',maxval(tend_qvphysics(:,1:nCellsSolve) )
-!   write(0,*) 'min tend_qvphysics  = ',minval(tend_qvphysics(:,1:nCellsSolve) )
-!   write(0,*) 'max tend_qcphysics  = ',maxval(tend_qcphysics(:,1:nCellsSolve) )
-!   write(0,*) 'min tend_qcphysics  = ',minval(tend_qcphysics(:,1:nCellsSolve) )
-!   write(0,*) 'max tend_qo3physics = ',maxval(tend_qo3physics(:,1:nCellsSolve))
-!   write(0,*) 'min tend_qo3physics = ',minval(tend_qo3physics(:,1:nCellsSolve))
-!   write(0,*) '--- end subroutine physics_addtend'
-!   write(0,*)
-!   stop
-!endif
-
-!write(0,*) '--- end subroutine physics_addtend'
-!write(0,*)
+ if (do_full_tend) then
+    do_full_tend = .false.
+ end if
 
  end subroutine  physics_addtend
 

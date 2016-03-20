@@ -74,7 +74,7 @@ module atm_time_integration
    contains
 
 
-   subroutine atm_timestep(domain, dtDynamics, currTime, itimestep)
+   subroutine atm_timestep(domain, dtDynamics, currTime, itimestep, do_full_tend)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Advance model state forward in time by the specified time step
    !
@@ -90,6 +90,7 @@ module atm_time_integration
       type (MPAS_TimeInterval_type), intent(in) :: dtDynamics
       type (MPAS_Time_type), intent(inout) :: currTime
       integer, intent(in) :: itimestep
+      logical, intent(inout) :: do_full_tend
 
 
       type (block_type), pointer :: block
@@ -109,7 +110,7 @@ module atm_time_integration
 
          MPAS_GPTL_START('atm_srk3')
          call mpas_timer_start('atm_srk3')
-         call atm_srk3(domain, dt, itimestep)
+         call atm_srk3(domain, dt, itimestep, do_full_tend)
          call mpas_timer_stop('atm_srk3')
          MPAS_GPTL_STOP('atm_srk3')
       else
@@ -132,7 +133,7 @@ module atm_time_integration
    end subroutine atm_timestep
 
 
-   subroutine atm_srk3(domain, dt, itimestep)
+   subroutine atm_srk3(domain, dt, itimestep, do_full_tend)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Advance model state forward in time by the specified time step using 
    !   time-split RK3 scheme
@@ -153,6 +154,7 @@ module atm_time_integration
       type (domain_type), intent(inout) :: domain
       real (kind=RKIND), intent(in) :: dt
       integer, intent(in) :: itimestep
+      logical, intent(inout) :: do_full_tend
 
 
       integer :: thread
@@ -452,13 +454,16 @@ MPAS_GPTL_STOP('dyn_tend')
                call mpas_pool_get_subpool(block % structs, 'diag', diag)
                call mpas_pool_get_subpool(block % structs, 'tend', tend)
                call mpas_pool_get_subpool(block % structs, 'nggps_physics_tendencies', tend_physics)
+               call mpas_timer_start('physics_addtend')
                call physics_addtend( block, &
                                       mesh, &
                                      state, &     
                                       diag, &
                                       tend, &
                               tend_physics, &
-                                   rk_step )
+                                   rk_step, &
+                              do_full_tend )
+               call mpas_timer_stop('physics_addtend')
                block => block % next
             end do
 #endif

@@ -853,6 +853,9 @@ module atm_core
       integer :: icycle
       real (kind=RKIND) :: xtime_s
       integer :: ierr
+logical :: do_full_tend
+
+      do_full_tend = .false.
 
       startTime = mpas_get_clock_time(clock, MPAS_START_TIME, ierr)
       currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
@@ -870,6 +873,7 @@ module atm_core
          call physics_driver(domain,itimestep,real(xtime_s,kind=PHYSKIND))
          call avec_timer_stop(2)
          call mpas_timer_stop('physics_driver')
+         do_full_tend = .true.
       endif
 #endif
 
@@ -878,7 +882,7 @@ module atm_core
       dtDynamics = dtDynamics / dynamics_subcycles
       do icycle=1,dynamics_subcycles
 
-         call atm_timestep(domain, dtDynamics, currTime, itimestep)
+         call atm_timestep(domain, dtDynamics, currTime, itimestep, do_full_tend)
 
          ! Move time level 2 fields back into time level 1 for next time step
          call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
