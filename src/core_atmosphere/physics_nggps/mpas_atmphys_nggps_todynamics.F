@@ -30,6 +30,8 @@
  subroutine physics_addtend(block,mesh,state,diag,tend,nggps_physics_tendencies,rk_step,do_full_tend)
 !==================================================================================================
 
+ use mpas_atm_dimensions
+
 !input variables:
  type(block_type),intent(in)    :: block
  type(mpas_pool_type),intent(in):: mesh
@@ -44,7 +46,7 @@
  type(mpas_pool_type),intent(inout):: tend
 
 !local pointers:
- integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
+ integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve
  integer,pointer:: index_qv,index_qc,index_qo3
 
  real(kind=RKIND),dimension(:,:),pointer  :: mass
@@ -79,12 +81,12 @@
 
 !local variables:
  integer:: iCell,iEdge,k
+ real(kind=RKIND) :: rvord
 
  call mpas_pool_get_dimension(mesh,'nCells'     ,nCells)
  call mpas_pool_get_dimension(mesh,'nEdges'     ,nEdges)
  call mpas_pool_get_dimension(mesh,'nCellsSolve',nCellsSolve)
  call mpas_pool_get_dimension(mesh,'nEdgesSolve',nEdgesSolve)
- call mpas_pool_get_dimension(mesh,'nVertLevels',nVertLevels)
 
  call mpas_pool_get_dimension(state,'index_qv' ,index_qv )
  call mpas_pool_get_dimension(state,'index_qc' ,index_qc )
@@ -146,60 +148,22 @@
 
 !initialize the tendency for the potential temperature and all scalars due to PBL, deep and
 !shallow convection, and longwave and shortwave radiation:
-!MGD tend_th  = 0._PHYSKIND
-!MGD tend_qv  = 0._PHYSKIND
-!MGD tend_qc  = 0._PHYSKIND
-!MGD tend_qo3 = 0._PHYSKIND
 
 !add coupled physics tendency to u tendency:
- allocate(theta(nVertLevels,nCellsSolve)  )
  if (do_full_tend) then
     tend_uphysics_Edge(:,:) = 0._RKIND
     call tend_toEdges(block,mesh,tend_uphysics,tend_vphysics,tend_uphysics_Edge)
  end if
 
-!!!!!!!!! Do always !!!!!!!!!!
- do iEdge = 1, nEdgesSolve
- do k  = 1, nVertLevels
-    tend_u(k,iEdge)=tend_u(k,iEdge)+tend_uphysics_Edge(k,iEdge)*mass_edge(k,iEdge)
- enddo
- enddo
+ rvord = R_v / R_d
 
-!add coupled physics tendencies to potential temperature,water vapor,cloud condensates, and
-!ozone:
-!!!!!!!!! Do always !!!!!!!!!!
- do iCell = 1, nCellsSolve
- do k = 1, nVertLevels
-!    tend_th(k,iCell)  = tend_th(k,iCell)  + tend_thphysics(k,iCell)*mass(k,iCell)
-!    tend_qv(k,iCell)  = tend_qv(k,iCell)  + tend_qvphysics(k,iCell)*mass(k,iCell)
-!    tend_qc(k,iCell)  = tend_qc(k,iCell)  + tend_qcphysics(k,iCell)*mass(k,iCell)
-!    tend_qo3(k,iCell) = tend_qo3(k,iCell) + tend_qo3physics(k,iCell)*mass(k,iCell)
-    tend_th(k,iCell)  = tend_thphysics(k,iCell)*mass(k,iCell)
-    tend_qv(k,iCell)  = tend_qvphysics(k,iCell)*mass(k,iCell)
-    tend_qc(k,iCell)  = tend_qcphysics(k,iCell)*mass(k,iCell)
-    tend_qo3(k,iCell) = tend_qo3physics(k,iCell)*mass(k,iCell)
- enddo
- enddo
-
-!convert the tendency for the potential temperature to the tendency for the modified potential
-!temperature:
-! if (do_full_tend) then
-    do iCell = 1, nCellsSolve
-    do k = 1, nVertLevels
-       theta(k,iCell) = theta_m(k,iCell) / (1. + R_v/R_d * qv(k,iCell))
-       tend_th(k,iCell) = (1. + R_v/R_d * qv(k,iCell)) * tend_th(k,iCell) &
-                       + R_v/R_d * theta(k,iCell) * tend_qv(k,iCell)
-    enddo
-    enddo
-    deallocate(theta)
-! end if
-
-!!!!!!!!! Do always !!!!!!!!!!
- do iCell = 1, nCellsSolve
- do k = 1, nVertLevels
-    tend_theta(k,iCell) = tend_theta(k,iCell) + tend_th(k,iCell)
- enddo
- enddo
+ allocate(theta(nVertLevels,nCellsSolve)  )
+ call physics_addtend_work(nCells, nEdges, nCellsSolve, nEdgesSolve, tend_u, tend_uphysics_Edge, mass_edge, &
+                           tend_th, tend_scalars, scalars, index_qv, index_qc, index_qo3, rvord, &
+                           tend_thphysics, tend_qvphysics, tend_qcphysics, tend_qo3physics, mass, &
+                           theta, theta_m, tend_theta &
+                           )
+ deallocate(theta)
 
  if (do_full_tend) then
     do_full_tend = .false.
@@ -207,9 +171,69 @@
 
  end subroutine  physics_addtend
 
+
+ subroutine physics_addtend_work(nCells, nEdges, nCellsSolve, nEdgesSolve, tend_u, tend_uphysics_Edge, mass_edge, &
+                                 tend_th, tend_scalars, scalars, index_qv, index_qc, index_qo3, rvord, &
+                                 tend_thphysics, tend_qvphysics, tend_qcphysics, tend_qo3physics, mass, &
+                                 theta, theta_m, tend_theta &
+                                )
+
+    use mpas_atm_dimensions
+
+    implicit none
+
+    integer, intent(in) :: nCells, nEdges, nCellsSolve, nEdgesSolve
+    integer, intent(in) :: index_qv, index_qc, index_qo3
+    real(kind=RKIND), intent(in) :: rvord
+    real(kind=RKIND), dimension(nVertLevels,nEdges), intent(inout) :: tend_u
+    real(kind=RKIND), dimension(nVertLevels,nEdges), intent(in) :: tend_uphysics_Edge
+    real(kind=RKIND), dimension(nVertLevels,nEdges), intent(in) :: mass_edge
+    real(kind=RKIND), dimension(nVertLevels,nCells), intent(inout) :: tend_th
+    real(kind=PHYSKIND), dimension(num_scalars,nVertLevels,nCells), intent(inout) :: tend_scalars
+    real(kind=PHYSKIND), dimension(num_scalars,nVertLevels,nCells), intent(in) :: scalars
+    real(kind=PHYSKIND), dimension(nVertLevels,nCells), intent(in) :: tend_thphysics
+    real(kind=PHYSKIND), dimension(nVertLevels,nCells), intent(in) :: tend_qvphysics
+    real(kind=PHYSKIND), dimension(nVertLevels,nCells), intent(in) :: tend_qcphysics
+    real(kind=PHYSKIND), dimension(nVertLevels,nCells), intent(in) :: tend_qo3physics
+    real(kind=RKIND), dimension(nVertLevels,nCells), intent(in) :: mass
+    real(kind=RKIND), dimension(nVertLevels,nCellsSolve), intent(inout) :: theta
+    real(kind=RKIND), dimension(nVertLevels,nCells), intent(in) :: theta_m
+    real(kind=RKIND), dimension(nVertLevels,nCells), intent(inout) :: tend_theta
+
+    integer :: iCell, iEdge, k
+
+    do iEdge = 1, nEdgesSolve
+       do k  = 1, nVertLevels
+          tend_u(k,iEdge)=tend_u(k,iEdge)+tend_uphysics_Edge(k,iEdge)*mass_edge(k,iEdge)
+       end do
+    end do
+
+    do iCell = 1, nCellsSolve
+       do k = 1, nVertLevels
+          tend_scalars(index_qv,k,iCell)  = tend_qvphysics(k,iCell)*mass(k,iCell)
+          tend_scalars(index_qc,k,iCell)  = tend_qcphysics(k,iCell)*mass(k,iCell)
+          tend_scalars(index_qo3,k,iCell) = tend_qo3physics(k,iCell)*mass(k,iCell)
+       end do
+    end do
+
+    do iCell = 1, nCellsSolve
+       do k = 1, nVertLevels
+          tend_th(k,iCell)  = tend_thphysics(k,iCell)*mass(k,iCell)
+          theta(k,iCell) = theta_m(k,iCell) / (1.0 + rvord * scalars(index_qv,k,iCell))
+          tend_th(k,iCell) = (1.0 + rvord * scalars(index_qv,k,iCell)) * tend_th(k,iCell) &
+                          + rvord * theta(k,iCell) * tend_scalars(index_qv,k,iCell)
+          tend_theta(k,iCell) = tend_theta(k,iCell) + tend_th(k,iCell)
+       end do
+    end do
+
+ end subroutine physics_addtend_work
+
+
 !==================================================================================================
  subroutine tend_toEdges(block,mesh,Ux_tend,Uy_tend,U_tend)
 !==================================================================================================
+
+ use mpas_atm_dimensions
 
 !input arguments:
 !----------------
@@ -226,7 +250,7 @@
  type (field2DReal), pointer :: tempField
  type (field2DReal), target :: tempFieldTarget
  integer:: iCell,iEdge,k,j
- integer,pointer:: nCells,nCellsSolve,nVertLevels
+ integer,pointer:: nCells,nCellsSolve
  integer,dimension(:),pointer  :: nEdgesOnCell
  integer,dimension(:,:),pointer:: edgesOnCell
 
@@ -237,7 +261,6 @@
 
  call mpas_pool_get_dimension(mesh, 'nCells', nCells)
  call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
- call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
  call mpas_pool_get_array(mesh, 'east', east)
  call mpas_pool_get_array(mesh, 'north', north)
