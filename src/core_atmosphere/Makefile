@@ -6,7 +6,8 @@ PHYSICS=-DDO_PHYSICS_NGGPS
 
 OBJS = mpas_atm_core.o \
        mpas_atm_core_interface.o \
-       mpas_atm_interp_diagnostics.o
+       mpas_atm_interp_diagnostics.o \
+       mpas_atm_dimensions.o
 
 all: physcore dycore atmcore
 
@@ -36,7 +37,7 @@ physcore:
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*DATA* .)
 else
 ifeq ($(PHYSICS),-DDO_PHYSICS_NGGPS)
-physcore:
+physcore: mpas_atm_dimensions.o
 	( cd physics_nggps; $(MAKE) all )
 	( mkdir libphys; cd libphys; ar -x ../physics_nggps/libphys.a )
 	( cd ../..; ln -sf ./src/core_atmosphere/physics_nggps/physics_nggps_files/*.f77 .)
@@ -51,7 +52,7 @@ endif
 endif
 	( cd ../..; ln -sf ./src/core_atmosphere/avec/avec_timers_config.txt avec_timers_config.txt )
 
-dycore:
+dycore: mpas_atm_dimensions.o
 	( cd dynamics; $(MAKE) all PHYSICS="$(PHYSICS)" )
 
 atmcore: physcore dycore $(OBJS)
@@ -60,6 +61,8 @@ atmcore: physcore dycore $(OBJS)
 mpas_atm_core_interface.o: mpas_atm_core.o
 
 mpas_atm_core.o: dycore mpas_atm_interp_diagnostics.o
+
+mpas_atm_dimensions.o:
 
 ifeq ($(PHYSICS),-DDO_PHYSICS)
 clean:
