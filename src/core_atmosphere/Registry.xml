@@ -582,6 +582,16 @@
 			<var name="sst"/>
 			<var name="xice"/>
 		</stream>
+
+		<stream name="avec_benchmark" 
+                        type="output" 
+                        filename_template="benchmark.nc" 
+                        clobber_mode="truncate"
+                        output_interval="none"
+                        runtime_format="single_file">
+
+			<var_array name="scalars"/>
+		</stream>
 	</streams>
 
 

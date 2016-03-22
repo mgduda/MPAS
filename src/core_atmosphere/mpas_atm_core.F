@@ -503,7 +503,7 @@ module atm_core
       implicit none
    
       type (domain_type), intent(inout) :: domain
-      integer :: ierr
+      integer :: ierr, ierr_avec
    
       real (kind=RKIND), pointer :: dt
       logical, pointer :: config_do_restart
@@ -719,6 +719,23 @@ module atm_core
 
          call avec_timer_stop(1)
       end do
+
+      !
+      ! Write special output stream with AVEC benchmark fields
+      !
+      block_ptr => domain % blocklist
+      do while (associated(block_ptr))
+         call compute_avec_diagnostics(block_ptr % structs)
+         block_ptr => block_ptr % next
+      end do
+
+      call mpas_stream_mgr_write(domain % streamManager, streamID='avec_benchmark', forceWriteNow=.true., ierr=ierr_avec)
+      if (ierr_avec /= MPAS_STREAM_MGR_NOERR) then
+         write(0,'(a)') '********************************************************************************'
+         write(0,'(a)') ' Error writing stream ''avec_benchmark''; this may be due to an I/O error'
+         write(0,'(a)') '    because the stream is not defined.'
+         write(0,'(a)') '********************************************************************************'
+      end if
    
    end function atm_core_run
    
@@ -823,6 +840,22 @@ module atm_core
       end do
    
    end subroutine atm_compute_restart_diagnostics
+
+
+   subroutine compute_avec_diagnostics(structs)
+
+      implicit none
+
+      type (mpas_pool_type), pointer :: structs
+ 
+      integer, pointer :: nCells
+      type (mpas_pool_type), pointer :: mesh
+
+
+      call mpas_pool_get_subpool(structs, 'mesh', mesh)
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+
+   end subroutine compute_avec_diagnostics
 
 
    subroutine atm_do_timestep(domain, dt, dynamics_subcycles, itimestep)
