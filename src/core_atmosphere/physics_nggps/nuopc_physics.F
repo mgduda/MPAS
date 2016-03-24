@@ -804,6 +804,9 @@
          logical :: do_shoc            ! flag for SHOC
          logical :: shocaftcnv         ! flag for SHOC
 
+         ! NCAR
+         logical :: nocnv              ! flag for no deep convection
+
          contains
 
            procedure :: print => mdl_param_print
@@ -1812,6 +1815,8 @@
            print *,"hybedmf : ", this%hybedmf
            print *,"dspheat : ", this%dspheat
 
+           print *,"nocnv : ", this%nocnv
+
          endif
 
        end subroutine
@@ -1990,7 +1995,8 @@
                                  ! For radiation
                                  si, ictm, isol, ico2, iaer, ialb, iems,                    &
                                  iovr_sw,iovr_lw,isubc_sw,isubc_lw, shoc_cld,  &
-                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip, nlunit)
+                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip, nlunit, &
+                                 nocnv)
 
          ! use physcons, only: dxmin, dxmax, dxinv
 
@@ -2066,6 +2072,9 @@
          logical :: cscnv
          logical :: do_shoc
          logical :: shocaftcnv
+
+         ! NCAR
+         logical :: nocnv
 
          real(kind=kind_phys) :: dxmaxin, dxminin, dxinvin
 
@@ -2162,6 +2171,9 @@
          mdl%ntot2d           = ntot2d
          mdl%shoc_cld         = shoc_cld
 
+         ! NCAR
+         mdl%nocnv            = nocnv
+
          ! physcons module variables
          dxmax = dxmaxin
          dxmin = dxminin
@@ -2193,7 +2205,8 @@
                                  ! For radiation
                                  si, ictm, isol, ico2, iaer, ialb, iems,                    &
                                  iovr_sw,iovr_lw,isubc_sw,isubc_lw, shoc_cld,   &
-                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip, nlunit)
+                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip, nlunit, &
+                                 nocnv)
 
          implicit none
 
@@ -2270,6 +2283,8 @@
          logical :: do_shoc
          logical :: shocaftcnv
 
+         ! NCAR
+         logical :: nocnv
 
          real(kind=kind_phys) :: dxmax, dxmin, dxinv    ! based on max lon/lat
 
@@ -2324,6 +2339,7 @@
          write (funit, iostat=ios, err=900) idate
          write (funit, iostat=ios, err=900) iflip
          write (funit, iostat=ios, err=900) nlunit
+         write (funit, iostat=ios, err=900) nocnv
 
          flush (funit, iostat=ios, err=900)
 
@@ -2420,6 +2436,8 @@
          print *, "ntot3d : ", ntot3d
          print *, "ntot2d : ", ntot2d
          print *, "shoc_cld : ", shoc_cld
+
+         print *, "nocnv : ", nocnv
          
          end if
 
@@ -2440,7 +2458,8 @@
                                  ! For radiation
                                  si, ictm, isol, ico2, iaer, ialb, iems,                    &
                                  iovr_sw,iovr_lw,isubc_sw,isubc_lw,shoc_cld,   &
-                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip,nlunit)
+                                 sas_shal,crick_proof,ccnorm,norad_precip,idate,iflip,nlunit, &
+                                 nocnv)
 
          ! use physcons, only: dxmax, dxmin, dxinv
 
@@ -2519,6 +2538,8 @@
          logical :: cscnv
          logical :: do_shoc
          logical :: shocaftcnv
+
+         logical :: nocnv
 
 
          ! Radiation option control parameters
@@ -2622,6 +2643,7 @@
          print *, "ntot3d : ", ntot3d
          print *, "ntot2d : ", ntot2d
          print *, "shoc_cld : ", shoc_cld
+         print *, "nocnv : ", nocnv
          end if
 
 
@@ -2660,6 +2682,7 @@
          read (funit, iostat=ios, err=900) idate
          read (funit, iostat=ios, err=900) iflip
          read (funit, iostat=ios, err=900) nlunit
+         read (funit, iostat=ios, err=900) nocnv
 
          ! close file
          close (funit, iostat=ios)
@@ -2754,6 +2777,7 @@
          print *, "ntot3d : ", ntot3d
          print *, "ntot2d : ", ntot2d
          print *, "shoc_cld : ", shoc_cld
+         print *, "nocnv : ", nocnv
          end if ! debug
 
          ! report any errors
@@ -2876,6 +2900,7 @@
 !    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
                  dyn%mpas_area, &
 !--- end Laura D. Fowler.
+                 mdl%nocnv, &
 ! In/Out
                  sfc%hice, sfc%fice, sfc%tisfc, sfc%tsfc, tbd%tprcp, cld%cv,  &
                  cld%cvb, cld%cvt, tbd%srflag, sfc%snowd, sfc%weasd, sfc%sncovr,  &

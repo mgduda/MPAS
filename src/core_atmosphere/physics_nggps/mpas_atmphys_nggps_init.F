@@ -359,7 +359,7 @@
              do_shoc        , shocaftcnv   , ntot3d       , ntot2d      , si               , ictm         , &
              isol           , ico2         , iaer         , ialb        , iems             , iovr_sw      , &
              iovr_lw        , isubc_sw     , isubc_lw     , shoc_cld    , sas_shal         , crick_proof  , &
-             ccnorm         , norad_precip , idate        , iflip       , nlunit)
+             ccnorm         , norad_precip , idate        , iflip       , nlunit           , nocnv)
 
 !deallocate the si array:
  if(allocated(si)) deallocate(si)

@@ -112,5 +112,7 @@
 
  real(kind=kind_phys),dimension(:),allocatable:: si
 
+ logical,parameter:: nocnv = .false.
+
  end module mpas_atmphys_nggps_model_parameters
 !=================================================================================================================

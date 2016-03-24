@@ -304,6 +304,7 @@
 !     levr  - integer, the number of layers GFS Radiative heating calculated at 1 !
 !     adjtrc   - real, dynamics adjustments to tracers             ntrac !
 !     nnp      - integer, physics substep number                   1     !
+!     nocnv    - logical, whether to run without deep convection   1     !
 !                                                                        !
 !  input/outputs:                                                        !
 !     hice      - real, sea-ice thickness                           im   !
@@ -507,6 +508,7 @@
 !    Laura D. Fowler (laura@ucar.edu) / 2105-12-01.
             mpas_area,                                                  &
 !... end Laura D. Fowler.
+            nocnv,                                                      &
 !  ---  input/outputs:
      &      hice,fice,tisfc,tsea,tprcp,cv,cvb,cvt,                      &
      &      srflag,snwdph,weasd,sncovr,zorl,canopy,                     &
@@ -552,6 +554,7 @@
       use physcons,   only : con_cp, con_fvirt, con_g, con_rd, con_rv,  &
      &                       con_hvap, con_hfus, con_rerth, con_pi      &
      &,                      rhc_max, dxmin, dxinv, pa2mb, rlapse
+
       use cs_conv, only : cs_convr
 
       implicit none
@@ -588,6 +591,7 @@
      &                       shal_cnv,   gen_coord_hybrid,   lgocart,   &
      &                       lsidea,     lssav_cpl, pdfcld, shcnvcw,    &
      &                       do_shoc, shocaftcnv
+      logical, intent(in) :: nocnv
 
       real(kind=kind_phys) :: adjtrc(ntrac)
 
@@ -2168,6 +2172,7 @@
 
 !  --- ...  calling convective parameterization
 !
+      if (.not. nocnv) then ! NCAR add logic to turn off deep convection
       if (.not. ras .and. .not. cscnv) then
 
         if (newsas) then             ! no random cloud top
@@ -2277,6 +2282,10 @@
           endif
         endif
       endif   ! end if_not_ras
+      else    ! nocnv
+        rain1(:) = 0.0
+      endif
+
 !
       do i = 1, im
         rainc(i) = frain * rain1(i)
