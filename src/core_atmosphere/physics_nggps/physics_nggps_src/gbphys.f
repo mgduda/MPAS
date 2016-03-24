@@ -989,10 +989,10 @@
         tice(i) = tisfc(i)
 !
 !       work1(i)   = (log(coslat(i) / (nlons(i)*latr)) - dxmin) * dxinv
-        if(coslat(i) < 0._kind_phys) then
-           work1(i) = 0._kind_phys
+        if(coslat(i) <= 0._kind_phys) then
+           work1(i) = 1._kind_phys
         else
-        work1(i)   = (log(coslat(i) / (nlons(i)*latr)) - dxmin) * dxinv
+           work1(i)   = (log(coslat(i) / (nlons(i)*latr)) - dxmin) * dxinv
         endif
         work1(i)   = max(0.0, min(1.0,work1(i)))
         work2(i)   = 1.0 - work1(i)
