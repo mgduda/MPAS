@@ -910,8 +910,7 @@
       allocate ( clw(ix,levs,tottracer+2) )
       if (do_shoc) then
         allocate (qpl(im,levs), qpi(im,levs))
-      endif
-      if (.not. ras .or. .not. cscnv) then
+      else
         allocate ( cnvc(ix,levs), cnvw(ix,levs))
       endif
 !     allocate (fscav(tottracer+3), fswtr(tottracer+3))
@@ -1965,7 +1964,6 @@
           clw(i,k,2) = -999.9
         enddo
       enddo
-!     if (.not. ras .or. .not. cscnv) then
       if (.not. do_shoc) then
         do k = 1, levs
           do i = 1, im
@@ -3167,8 +3165,7 @@
       deallocate (clw)
       if (do_shoc) then
         deallocate (qpl, qpi)
-      endif
-      if (.not. ras .or. .not. cscnv) then
+      else
         deallocate (cnvc, cnvw)
       endif
 !     deallocate (fscav, fswtr)
