@@ -138,6 +138,35 @@ pgi-llnl:
 	"USE_GPTL = $(USE_GPTL)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
+cori:
+	( $(MAKE) all \
+	"FC_PARALLEL = ftn" \
+	"CC_PARALLEL = cc" \
+	"CXX_PARALLEL = CC" \
+	"FC_SERIAL = ftn" \
+	"CC_SERIAL = cc" \
+	"CXX_SERIAL = CC" \
+	"FFLAGS_OPT = -xHost -align array64byte -O3 -convert big_endian -FR" \
+	"FFLAGS77_OPT = -O3 -convert big_endian -fpp -FI" \
+	"FFLAGS_PHYS = -real-size 64 -xHost -align array64byte -O3 -convert big_endian -FR" \
+	"FFLAGS77_PHYS = -real-size 64 -O3 -convert big_endian -fpp -FI" \
+	"CFLAGS_OPT = -O3" \
+	"CXXFLAGS_OPT = -O3" \
+	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_DEBUG = -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
+	"FFLAGS77_DEBUG = -g -convert big_endian -fpp -FI -CU -CB -check all -fpe0 -traceback" \
+	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"CXXFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
+	"FFLAGS_OMP = -openmp" \
+	"CFLAGS_OMP = -openmp" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"USE_GPTL = $(USE_GPTL)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
+
 ifort:
 	( $(MAKE) all \
 	"FC_PARALLEL = mpif90" \
