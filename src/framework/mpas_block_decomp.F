@@ -218,7 +218,8 @@ module mpas_block_decomp
              block_count(local_block_id+1) = block_count(local_block_id+1) + 1
            end do
    
-           call mpas_quicksort(local_nvertices(dminfo % my_proc_id + 1), sorted_local_cell_list)
+!           call mpas_quicksort(local_nvertices(dminfo % my_proc_id + 1), sorted_local_cell_list)
+           call mpas_mergesort(sorted_local_cell_list, 2, 1, local_nvertices(dminfo % my_proc_id + 1))
    
            do i = 1, local_nvertices(dminfo % my_proc_id+1)
              local_cell_list(i) = sorted_local_cell_list(2, i)
