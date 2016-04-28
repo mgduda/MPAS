@@ -11,6 +11,7 @@ module mpas_io
    use mpas_attlist
    use mpas_dmpar
    use mpas_io_units
+   use mpi
 
    use netcdf
 
