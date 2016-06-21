@@ -158,8 +158,8 @@ ifort:
 	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CXXFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
-	"FFLAGS_OMP = -openmp" \
-	"CFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
 	"CORE = $(CORE)" \
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
@@ -184,7 +184,7 @@ ifort-gcc:
 	"CFLAGS_DEBUG = -g" \
 	"CXXFLAGS_DEBUG = -g" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
-	"FFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -fopenmp" \
 	"CORE = $(CORE)" \
 	"DEBUG = $(DEBUG)" \
@@ -322,8 +322,8 @@ intel-nersc:
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_OMP = -openmp" \
-	"CFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
 	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -gen-interfaces -warn interfaces -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
