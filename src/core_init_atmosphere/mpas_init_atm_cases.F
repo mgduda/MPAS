@@ -2440,6 +2440,7 @@ module init_atm_cases
       use init_atm_read_met
       use init_atm_llxy
       use init_atm_hinterp
+      use mpas_atmphys_constants, only : svpt0, svp1, svp2, svp3
 
       implicit none
 
@@ -2619,6 +2620,13 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: sm_fg
       real (kind=RKIND), dimension(:), pointer :: soilz
 
+      ! For outputting surface fields u10, v10, q2, rh2, and t2m from first-guess data
+      real (kind=RKIND), dimension(:), pointer :: u10
+      real (kind=RKIND), dimension(:), pointer :: v10
+      real (kind=RKIND), dimension(:), pointer :: q2
+      real (kind=RKIND), dimension(:), pointer :: rh2
+      real (kind=RKIND), dimension(:), pointer :: t2m
+
       call mpas_pool_get_config(configs, 'config_met_prefix', config_met_prefix)
       call mpas_pool_get_config(configs, 'config_start_time', config_start_time)
       call mpas_pool_get_config(configs, 'config_met_interp', config_met_interp)
@@ -2756,7 +2764,7 @@ module init_atm_cases
 
       call read_next_met_field(field, istatus)
       do while (istatus == 0)
-         if (index(field % field, 'SOILHGT') /= 0) then
+         if (trim(field % field) == 'SOILHGT') then
 
             !
             ! Set up projection
@@ -2774,7 +2782,7 @@ module init_atm_cases
             end if
 
 
-            if (index(field % field, 'SOILHGT') /= 0) then
+            if (trim(field % field) == 'SOILHGT') then
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
@@ -3178,7 +3186,7 @@ module init_atm_cases
       call read_next_met_field(field, istatus)
 
       do while (istatus == 0)
-         if (index(field % field, 'LANDSEA') /= 0) then
+         if (trim(field % field) == 'LANDSEA') then
 
             allocate(maskslab(-2:field % nx+3, field % ny))
             maskslab(1:field % nx, 1:field % ny) = field % slab(1:field % nx, 1:field % ny)
@@ -3240,62 +3248,62 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
 
          mask_array => landmask
 
-         if (index(field % field, 'UU') /= 0 .or. &
-             index(field % field, 'VV') /= 0 .or. &
-             index(field % field, 'TT') /= 0 .or. &
-             index(field % field, 'RH') /= 0 .or. &
-             index(field % field, 'GHT') /= 0 .or. &
-             index(field % field, 'PMSL') /= 0 .or. &
-             index(field % field, 'PSFC') /= 0 .or. &
-             index(field % field, 'SOILHGT') /= 0 .or. &
-             index(field % field, 'SM000010') /= 0 .or. &
-             index(field % field, 'SM010040') /= 0 .or. &
-             index(field % field, 'SM040100') /= 0 .or. &
-             index(field % field, 'SM100200') /= 0 .or. &
-             index(field % field, 'SM010200') /= 0 .or. &
-             index(field % field, 'SM000007') /= 0 .or. &
-             index(field % field, 'SM007028') /= 0 .or. &
-             index(field % field, 'SM028100') /= 0 .or. &
-             index(field % field, 'SM100255') /= 0 .or. &
-             index(field % field, 'ST000010') /= 0 .or. &
-             index(field % field, 'ST010040') /= 0 .or. &
-             index(field % field, 'ST040100') /= 0 .or. &
-             index(field % field, 'ST100200') /= 0 .or. &
-             index(field % field, 'ST010200') /= 0 .or. &
-             index(field % field, 'ST000007') /= 0 .or. &
-             index(field % field, 'ST007028') /= 0 .or. &
-             index(field % field, 'ST028100') /= 0 .or. &
-             index(field % field, 'ST100255') /= 0 .or. &
-             index(field % field, 'PRES') /= 0 .or. &
-             index(field % field, 'SNOW') /= 0 .or. &
-             index(field % field, 'SEAICE') /= 0 .or. &
-             index(field % field, 'SKINTEMP') /= 0) then
+         if (trim(field % field) == 'UU' .or. &
+             trim(field % field) == 'VV' .or. &
+             trim(field % field) == 'TT' .or. &
+             trim(field % field) == 'RH' .or. &
+             trim(field % field) == 'GHT' .or. &
+             trim(field % field) == 'PMSL' .or. &
+             trim(field % field) == 'PSFC' .or. &
+             trim(field % field) == 'SOILHGT' .or. &
+             trim(field % field) == 'SM000010' .or. &
+             trim(field % field) == 'SM010040' .or. &
+             trim(field % field) == 'SM040100' .or. &
+             trim(field % field) == 'SM100200' .or. &
+             trim(field % field) == 'SM010200' .or. &
+             trim(field % field) == 'SM000007' .or. &
+             trim(field % field) == 'SM007028' .or. &
+             trim(field % field) == 'SM028100' .or. &
+             trim(field % field) == 'SM100255' .or. &
+             trim(field % field) == 'ST000010' .or. &
+             trim(field % field) == 'ST010040' .or. &
+             trim(field % field) == 'ST040100' .or. &
+             trim(field % field) == 'ST100200' .or. &
+             trim(field % field) == 'ST010200' .or. &
+             trim(field % field) == 'ST000007' .or. &
+             trim(field % field) == 'ST007028' .or. &
+             trim(field % field) == 'ST028100' .or. &
+             trim(field % field) == 'ST100255' .or. &
+             trim(field % field) == 'PRES' .or. &
+             trim(field % field) == 'SNOW' .or. &
+             trim(field % field) == 'SEAICE' .or. &
+             trim(field % field) == 'SKINTEMP') then
 
-            if (index(field % field, 'SM000010') /= 0 .or. &
-                index(field % field, 'SM010040') /= 0 .or. &
-                index(field % field, 'SM040100') /= 0 .or. &
-                index(field % field, 'SM100200') /= 0 .or. &
-                index(field % field, 'SM010200') /= 0 .or. &
-                index(field % field, 'SM000007') /= 0 .or. &
-                index(field % field, 'SM007028') /= 0 .or. &
-                index(field % field, 'SM028100') /= 0 .or. &
-                index(field % field, 'SM100255') /= 0 .or. &
-                index(field % field, 'ST000010') /= 0 .or. &
-                index(field % field, 'ST010040') /= 0 .or. &
-                index(field % field, 'ST040100') /= 0 .or. &
-                index(field % field, 'ST100200') /= 0 .or. &
-                index(field % field, 'ST010200') /= 0 .or. &
-                index(field % field, 'ST000007') /= 0 .or. &
-                index(field % field, 'ST007028') /= 0 .or. &
-                index(field % field, 'ST028100') /= 0 .or. &
-                index(field % field, 'ST100255') /= 0 .or. &
-                index(field % field, 'SNOW') /= 0 .or. &
-                index(field % field, 'SEAICE') /= 0 .or. &
-                index(field % field, 'SKINTEMP') /= 0) then
+            if (trim(field % field) == 'SM000010' .or. &
+                trim(field % field) == 'SM010040' .or. &
+                trim(field % field) == 'SM040100' .or. &
+                trim(field % field) == 'SM100200' .or. &
+                trim(field % field) == 'SM010200' .or. &
+                trim(field % field) == 'SM000007' .or. &
+                trim(field % field) == 'SM007028' .or. &
+                trim(field % field) == 'SM028100' .or. &
+                trim(field % field) == 'SM100255' .or. &
+                trim(field % field) == 'ST000010' .or. &
+                trim(field % field) == 'ST010040' .or. &
+                trim(field % field) == 'ST040100' .or. &
+                trim(field % field) == 'ST100200' .or. &
+                trim(field % field) == 'ST010200' .or. &
+                trim(field % field) == 'ST000007' .or. &
+                trim(field % field) == 'ST007028' .or. &
+                trim(field % field) == 'ST028100' .or. &
+                trim(field % field) == 'ST100255' .or. &
+                trim(field % field) == 'SNOW' .or. &
+                trim(field % field) == 'SEAICE' .or. &
+                trim(field % field) == 'SKINTEMP') then
                k = 1
-            else if (index(field % field, 'PMSL') == 0 .and. &
-                     index(field % field, 'PSFC') == 0 .and. &
-                     index(field % field, 'SOILHGT') == 0) then
+            else if (trim(field % field) /= 'PMSL' .and. &
+                     trim(field % field) /='PSFC' .and. &
+                     trim(field % field) /= 'SOILHGT')  then
                do k=1,config_nfglevels
                   if (vert_level(k) == field % xlvl .or. vert_level(k) == -1.0) exit
                end do
@@ -3337,76 +3345,100 @@ write(0,*) 'minval, maxval of LANDSEA = ', minval(maskslab), maxval(maskslab)
             !
             ! Horizontally interpolate the field at level k
             !
-            if (index(field % field, 'UU') /= 0) then
+            if (trim(field % field) == 'UU') then
 write(0,*) 'Interpolating U at ', k, vert_level(k)
 
-               mask_array => edge_mask
+               ! For U10, interpolate to cell centers
+               if (vert_level(k) == 200100.0) then
+                  nInterpPoints = nCells
+                  latPoints => latCell
+                  lonPoints => lonCell
+                  call mpas_pool_get_array(fg, 'u10', destField1d)
+                  ndims = 1
 
-               nInterpPoints = nEdges
-               latPoints => latEdge
-               lonPoints => lonEdge
-               call mpas_pool_get_array(fg, 'u', destField2d)
-               ndims = 2
-            else if (index(field % field, 'VV') /= 0) then
+               ! otherwise to edges
+               else
+                  mask_array => edge_mask
+
+                  nInterpPoints = nEdges
+                  latPoints => latEdge
+                  lonPoints => lonEdge
+                  call mpas_pool_get_array(fg, 'u', destField2d)
+                  ndims = 2
+               end if
+
+            else if (trim(field % field) == 'VV') then
 write(0,*) 'Interpolating V at ', k, vert_level(k)
 
-               mask_array => edge_mask
+               ! For V10, interpolate to cell centers
+               if (vert_level(k) == 200100.0) then
+                  nInterpPoints = nCells
+                  latPoints => latCell
+                  lonPoints => lonCell
+                  call mpas_pool_get_array(fg, 'v10', destField1d)
+                  ndims = 1
 
-               nInterpPoints = nEdges
-               latPoints => latEdge
-               lonPoints => lonEdge
-               call mpas_pool_get_array(fg, 'v', destField2d)
-               ndims = 2
-            else if (index(field % field, 'TT') /= 0) then
+               ! otherwise to edges
+               else
+                  mask_array => edge_mask
+
+                  nInterpPoints = nEdges
+                  latPoints => latEdge
+                  lonPoints => lonEdge
+                  call mpas_pool_get_array(fg, 'v', destField2d)
+                  ndims = 2
+               end if
+
+            else if (trim(field % field) == 'TT') then
 write(0,*) 'Interpolating T at ', k, vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 't', destField2d)
                ndims = 2
-            else if (index(field % field, 'RH') /= 0) then
+            else if (trim(field % field) == 'RH') then
 write(0,*) 'Interpolating RH at ', k, vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'rh', destField2d)
                ndims = 2
-            else if (index(field % field, 'GHT') /= 0) then
+            else if (trim(field % field) == 'GHT') then
 write(0,*) 'Interpolating GHT at ', k, vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'z', destField2d)
                ndims = 2
-            else if (index(field % field, 'PRES') /= 0) then
+            else if (trim(field % field) == 'PRES') then
 write(0,*) 'Interpolating PRES at ', k, vert_level(k)
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'p', destField2d)
                ndims = 2
-            else if (index(field % field, 'PMSL') /= 0) then
+            else if (trim(field % field) == 'PMSL') then
 write(0,*) 'Interpolating PMSL'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'pmsl', destField1d)
                ndims = 1
-            else if (index(field % field, 'PSFC') /= 0) then
+            else if (trim(field % field) == 'PSFC') then
 write(0,*) 'Interpolating PSFC'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'psfc', destField1d)
                ndims = 1
-            else if (index(field % field, 'SOILHGT') /= 0) then
+            else if (trim(field % field) == 'SOILHGT') then
 write(0,*) 'Interpolating SOILHGT'
                nInterpPoints = nCells
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'soilz', destField1d)
                ndims = 1
-            else if (index(field % field, 'SM000010') /= 0) then
+            else if (trim(field % field) == 'SM000010') then
 write(0,*) 'Interpolating SM000010'
 
                interp_list(1) = FOUR_POINT
@@ -3426,7 +3458,7 @@ write(0,*) 'Interpolating SM000010'
                ndims = 2
                dzs_fg(k,:) = 10.
                zs_fg(k,:) = 10.
-            else if (index(field % field, 'SM010200') /= 0) then
+            else if (trim(field % field) == 'SM010200') then
 write(0,*) 'Interpolating SM010200'
 
                interp_list(1) = FOUR_POINT
@@ -3446,7 +3478,7 @@ write(0,*) 'Interpolating SM010200'
                ndims = 2
                dzs_fg(k,:) = 200.-10.
                zs_fg(k,:) = 200.
-            else if (index(field % field, 'SM010040') /= 0) then
+            else if (trim(field % field) == 'SM010040') then
 write(0,*) 'Interpolating SM010040'
 
                interp_list(1) = FOUR_POINT
@@ -3466,7 +3498,7 @@ write(0,*) 'Interpolating SM010040'
                ndims = 2
                dzs_fg(k,:) = 40.-10.
                zs_fg(k,:) = 40.
-            else if (index(field % field, 'SM040100') /= 0) then
+            else if (trim(field % field) == 'SM040100') then
 write(0,*) 'Interpolating SM040100'
 
                interp_list(1) = FOUR_POINT
@@ -3486,7 +3518,7 @@ write(0,*) 'Interpolating SM040100'
                ndims = 2
                dzs_fg(k,:) = 100.-40.
                zs_fg(k,:) = 100.
-            else if (index(field % field, 'SM100200') /= 0) then
+            else if (trim(field % field) == 'SM100200') then
 write(0,*) 'Interpolating SM100200'
 
                interp_list(1) = FOUR_POINT
@@ -3506,7 +3538,7 @@ write(0,*) 'Interpolating SM100200'
                ndims = 2
                dzs_fg(k,:) = 200.-100.
                zs_fg(k,:) = 200.
-            else if (index(field % field, 'SM000007') /= 0) then
+            else if (trim(field % field) == 'SM000007') then
 write(0,*) 'Interpolating SM000007'
 
                interp_list(1) = FOUR_POINT
@@ -3526,7 +3558,7 @@ write(0,*) 'Interpolating SM000007'
                ndims = 2
                dzs_fg(k,:) = 7.
                zs_fg(k,:) = 7.
-            else if (index(field % field, 'SM007028') /= 0) then
+            else if (trim(field % field) == 'SM007028') then
 write(0,*) 'Interpolating SM007028'
 
                interp_list(1) = FOUR_POINT
@@ -3546,7 +3578,7 @@ write(0,*) 'Interpolating SM007028'
                ndims = 2
                dzs_fg(k,:) = 28.-7.
                zs_fg(k,:) = 28.
-            else if (index(field % field, 'SM028100') /= 0) then
+            else if (trim(field % field) == 'SM028100') then
 write(0,*) 'Interpolating SM028100'
 
                interp_list(1) = FOUR_POINT
@@ -3566,7 +3598,7 @@ write(0,*) 'Interpolating SM028100'
                ndims = 2
                dzs_fg(k,:) = 100.-28.
                zs_fg(k,:) = 100.
-            else if (index(field % field, 'SM100255') /= 0) then
+            else if (trim(field % field) == 'SM100255') then
 write(0,*) 'Interpolating SM100255'
 
                interp_list(1) = FOUR_POINT
@@ -3586,7 +3618,7 @@ write(0,*) 'Interpolating SM100255'
                ndims = 2
                dzs_fg(k,:) = 255.-100.
                zs_fg(k,:) = 255.
-            else if (index(field % field, 'ST000010') /= 0) then
+            else if (trim(field % field) == 'ST000010') then
 write(0,*) 'Interpolating ST000010'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3607,7 +3639,7 @@ write(0,*) 'Interpolating ST000010'
                ndims = 2
                dzs_fg(k,:) = 10.
                zs_fg(k,:) = 10.
-            else if (index(field % field, 'ST010200') /= 0) then
+            else if (trim(field % field) == 'ST010200') then
 write(0,*) 'Interpolating ST010200'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3628,7 +3660,7 @@ write(0,*) 'Interpolating ST010200'
                ndims = 2
                dzs_fg(k,:) = 200.-10.
                zs_fg(k,:) = 200.
-            else if (index(field % field, 'ST010040') /= 0) then
+            else if (trim(field % field) == 'ST010040') then
 write(0,*) 'Interpolating ST010040'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3649,7 +3681,7 @@ write(0,*) 'Interpolating ST010040'
                ndims = 2
                dzs_fg(k,:) = 40.-10.               
                zs_fg(k,:) = 40.
-            else if (index(field % field, 'ST040100') /= 0) then
+            else if (trim(field % field) == 'ST040100') then
 write(0,*) 'Interpolating ST040100'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3670,7 +3702,7 @@ write(0,*) 'Interpolating ST040100'
                ndims = 2
                dzs_fg(k,:) = 100.-40.             
                zs_fg(k,:) = 100.
-            else if (index(field % field, 'ST100200') /= 0) then
+            else if (trim(field % field) == 'ST100200') then
 write(0,*) 'Interpolating ST100200'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3691,7 +3723,7 @@ write(0,*) 'Interpolating ST100200'
                ndims = 2
                dzs_fg(k,:) = 200.-100.
                zs_fg(k,:) = 200.
-            else if (index(field % field, 'ST000007') /= 0) then
+            else if (trim(field % field) == 'ST000007') then
 write(0,*) 'Interpolating ST000007'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3712,7 +3744,7 @@ write(0,*) 'Interpolating ST000007'
                ndims = 2
                dzs_fg(k,:) = 7.
                zs_fg(k,:) = 7.
-            else if (index(field % field, 'ST007028') /= 0) then
+            else if (trim(field % field) == 'ST007028') then
 write(0,*) 'Interpolating ST007028'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3733,7 +3765,7 @@ write(0,*) 'Interpolating ST007028'
                ndims = 2
                dzs_fg(k,:) = 28.-7.
                zs_fg(k,:) = 28.
-            else if (index(field % field, 'ST028100') /= 0) then
+            else if (trim(field % field) == 'ST028100') then
 write(0,*) 'Interpolating ST028100'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3754,7 +3786,7 @@ write(0,*) 'Interpolating ST028100'
                ndims = 2
                dzs_fg(k,:) = 100.-28.
                zs_fg(k,:) = 100.
-            else if (index(field % field, 'ST100255') /= 0) then
+            else if (trim(field % field) == 'ST100255') then
 write(0,*) 'Interpolating ST100255'
 
                interp_list(1) = SIXTEEN_POINT
@@ -3775,7 +3807,7 @@ write(0,*) 'Interpolating ST100255'
                ndims = 2
                dzs_fg(k,:) = 255.-100.
                zs_fg(k,:) = 255.
-            else if (index(field % field, 'SNOW') /= 0) then
+            else if (trim(field % field) == 'SNOW') then
 write(0,*) 'Interpolating SNOW'
 
                interp_list(1) = FOUR_POINT
@@ -3790,7 +3822,7 @@ write(0,*) 'Interpolating SNOW'
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'snow', destField1d)
                ndims = 1
-            else if (index(field % field, 'SEAICE') /= 0) then
+            else if (trim(field % field) == 'SEAICE') then
 write(0,*) 'Interpolating SEAICE'
 
                interp_list(1) = FOUR_POINT
@@ -3807,7 +3839,7 @@ write(0,*) 'Interpolating SEAICE'
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'xice', destField1d)
                ndims = 1
-            else if (index(field % field, 'SKINTEMP') /= 0) then
+            else if (trim(field % field) == 'SKINTEMP') then
 write(0,*) 'Interpolating SKINTEMP'
                nInterpPoints = nCells
                latPoints => latCell
@@ -3877,6 +3909,41 @@ write(0,*) 'Interpolating SKINTEMP'
       write(0,*) '*************************************************'
       write(0,*) 'Found ', nfglevels_actual, ' levels in the first-guess data'
       write(0,*) '*************************************************'
+
+   
+      !
+      ! Extract surface fields from first-guess
+      !
+!      call mpas_pool_get_array(fg, 'u10', u10)
+!      call mpas_pool_get_array(fg, 'v10', v10)
+      call mpas_pool_get_array(fg, 'q2', q2)
+      call mpas_pool_get_array(fg, 'rh2', rh2)
+      call mpas_pool_get_array(fg, 't2m', t2m)
+      call mpas_pool_get_array(fg, 'u', u_fg)
+      call mpas_pool_get_array(fg, 'v', v_fg)
+      call mpas_pool_get_array(fg, 't', t_fg)
+      call mpas_pool_get_array(fg, 'rh', rh_fg)
+!      u10(:) = 0.0
+!      v10(:) = 0.0
+      q2(:) = 0.0
+      rh2(:) = 0.0
+      t2m(:) = 0.0
+
+      do k=1,config_nfglevels
+         if (vert_level(k) == 200100.0) then
+!            u10(:) = u_fg(k,:)
+!            v10(:) = v_fg(k,:)
+            t2m(:) = t_fg(k,:)
+            rh2(:) = rh_fg(k,:)
+            do iCell = 1, nCells
+               es = svp1 * 10.0_RKIND * exp(svp2 * (t2m(iCell)-svpt0) / (t2m(iCell)-svp3))
+               es = min(es, 0.99_RKIND * 0.01_RKIND * psfc(iCell))
+               rs = 0.622_RKIND * es * 100.0_RKIND / (psfc(iCell) - es * 100.0_RKIND)
+               q2(iCell) = 0.01_RKIND * rs * rh2(iCell)
+             end do
+         end if
+      end do
+
 
 
       ! 
@@ -3951,7 +4018,7 @@ write(0,*) 'Done with soil consistency check'
       if (istatus == 0) then
          call read_next_met_field(field, istatus)
          do while (istatus == 0)
-            if (index(field % field, 'SEAICE') /= 0) then
+            if (trim(field % field) == 'SEAICE') then
 
 write(0,*) 'PROCESSING SEAICE'
 
@@ -3971,7 +4038,7 @@ write(0,*) 'PROCESSING SEAICE'
                                lon1 = real(field % startlon,RKIND))
                end if
 
-               if (index(field % field, 'SEAICE') /= 0) then
+               if (trim(field % field) == 'SEAICE') then
                   nInterpPoints = nCells
                   latPoints => latCell
                   lonPoints => lonCell
