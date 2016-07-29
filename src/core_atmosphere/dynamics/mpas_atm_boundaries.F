@@ -23,23 +23,29 @@ module mpas_atm_boundaries
 
         type (mpas_pool_type), intent(inout) :: mesh
 
-        integer, pointer :: nCells
-        integer :: iCell, j
+        integer, pointer :: nCells, nEdges, nVertices
+        integer :: iCell, iEdge, iVertex, j
         integer, dimension(:), pointer :: bdyMaskCell, bdyMaskEdge, bdyMaskVertex
         integer, dimension(:), pointer :: nEdgesOnCell
-        integer, dimension(:,:), pointer :: cellsOnCell
+        integer, dimension(:,:), pointer :: cellsOnCell, cellsOnEdge, cellsOnVertex
         real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
         real (kind=RKIND) :: r
 
 
         call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
+        call mpas_pool_get_array(mesh, 'bdyMaskEdge', bdyMaskEdge)
+        call mpas_pool_get_array(mesh, 'bdyMaskVertex', bdyMaskVertex)
         call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
         call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
+        call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
+        call mpas_pool_get_array(mesh, 'cellsOnVertex', cellsOnVertex)
         call mpas_pool_get_array(mesh, 'xCell', xCell)
         call mpas_pool_get_array(mesh, 'yCell', yCell)
         call mpas_pool_get_array(mesh, 'zCell', zCell)
 
         call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+        call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
+        call mpas_pool_get_dimension(mesh, 'nVertices', nVertices)
 
         !
         ! Zero-out boundary masks
@@ -118,6 +124,27 @@ module mpas_atm_boundaries
                     end if
                 end do
             end if
+        end do
+
+
+        !
+        ! With cell masks set, compute edge masks. An edge receives the largest
+        ! mask value of either of its neighboring cells.
+        !
+        do iEdge=1,nEdges
+            bdyMaskEdge(iEdge) = max(bdyMaskCell(cellsOnEdge(1,iEdge)), &
+                                     bdyMaskCell(cellsOnEdge(2,iEdge))) 
+        end do
+
+
+        !
+        ! Compute vertex masks similar to edge masks: A vertex receives the largest
+        ! mask value of any of its neighboring cells.
+        !
+        do iVertex=1,nVertices
+            bdyMaskVertex(iVertex) = max(bdyMaskCell(cellsOnVertex(1,iVertex)), &
+                                         bdyMaskCell(cellsOnVertex(2,iVertex)), &
+                                         bdyMaskCell(cellsOnVertex(3,iVertex)))
         end do
 
     end subroutine mpas_atm_setup_bdy_masks
