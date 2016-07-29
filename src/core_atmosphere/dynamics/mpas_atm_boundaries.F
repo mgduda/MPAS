@@ -149,4 +149,47 @@ module mpas_atm_boundaries
 
     end subroutine mpas_atm_setup_bdy_masks
 
+
+    subroutine mpas_atm_compute_bdy_tend(mesh, state, dt, lbc)
+
+        implicit none
+
+        type (mpas_pool_type), intent(in) :: mesh
+        type (mpas_pool_type), intent(in) :: state
+        real (kind=RKIND), intent(in) :: dt
+        type (mpas_pool_type), intent(inout) :: lbc
+
+        real (kind=RKIND), dimension(:,:), pointer :: theta
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+
+
+write(0,*) 'Computing tendency'
+        call mpas_pool_get_array(state, 'theta_m', theta, 1)
+        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
+
+        lbc_tend_theta(:,:) = (theta(:,:) - lbc_tend_theta(:,:)) / dt
+
+    end subroutine mpas_atm_compute_bdy_tend
+
+
+    subroutine mpas_atm_setup_bdy_tend(mesh, state, lbc)
+
+        implicit none
+
+        type (mpas_pool_type), intent(in) :: mesh
+        type (mpas_pool_type), intent(in) :: state
+        type (mpas_pool_type), intent(inout) :: lbc
+
+        real (kind=RKIND), dimension(:,:), pointer :: theta
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+
+
+write(0,*) 'Setting up next tendency'
+        call mpas_pool_get_array(state, 'theta_m', theta, 1)
+        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
+
+        lbc_tend_theta(:,:) = theta(:,:)
+
+    end subroutine mpas_atm_setup_bdy_tend
+
 end module mpas_atm_boundaries
