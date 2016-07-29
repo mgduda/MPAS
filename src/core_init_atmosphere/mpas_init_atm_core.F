@@ -17,6 +17,7 @@ module init_atm_core
       use mpas_stream_manager
       use mpas_io_streams, only : MPAS_STREAM_NEAREST
       use init_atm_cases
+      use mpas_atm_boundaries
    
       implicit none
    
@@ -59,6 +60,8 @@ module init_atm_core
       !
       call MPAS_stream_mgr_read(domain % streamManager, whence=MPAS_STREAM_NEAREST, ierr=ierr)
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, direction=MPAS_STREAM_INPUT, ierr=ierr)
+
+      call mpas_atm_setup_bdy_masks(mesh)
 
    end function init_atm_core_init
    

@@ -64,7 +64,7 @@ mpas_atm_boundaries.o:
 
 mpas_init_atm_core_interface.o: mpas_init_atm_core.o
 
-mpas_init_atm_core.o: mpas_advection.o mpas_init_atm_cases.o
+mpas_init_atm_core.o: mpas_advection.o mpas_init_atm_cases.o mpas_atm_boundaries.o
 
 mpas_init_atm_static.o: \
 	mpas_atm_advection.o \
