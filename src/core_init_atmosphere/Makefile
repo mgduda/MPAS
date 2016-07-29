@@ -12,6 +12,7 @@ OBJS = mpas_init_atm_core.o \
        mpas_init_atm_static.o \
        mpas_init_atm_surface.o \
        read_geogrid.o \
+       mpas_atm_boundaries.o \
        mpas_atmphys_date_time.o \
        mpas_atmphys_initialize_real.o \
        mpas_atmphys_utilities.o
@@ -58,6 +59,8 @@ mpas_init_atm_read_met.o:
 read_geogrid.o:
 
 mpas_init_atm_llxy.o:
+
+mpas_atm_boundaries.o:
 
 mpas_init_atm_core_interface.o: mpas_init_atm_core.o
 
