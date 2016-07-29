@@ -367,18 +367,21 @@
                 <var name="yCell"                        type="real"     dimensions="nCells"/>
                 <var name="zCell"                        type="real"     dimensions="nCells"/>
                 <var name="indexToCellID"                type="integer"  dimensions="nCells"/>
+                <var name="bdyMaskCell"                  type="integer"  dimensions="nCells"/>
                 <var name="latEdge"                      type="real"     dimensions="nEdges"/>
                 <var name="lonEdge"                      type="real"     dimensions="nEdges"/>
                 <var name="xEdge"                        type="real"     dimensions="nEdges"/>
                 <var name="yEdge"                        type="real"     dimensions="nEdges"/>
                 <var name="zEdge"                        type="real"     dimensions="nEdges"/>
                 <var name="indexToEdgeID"                type="integer"  dimensions="nEdges"/>
+                <var name="bdyMaskEdge"                  type="integer"  dimensions="nEdges"/>
                 <var name="latVertex"                    type="real"     dimensions="nVertices"/>
                 <var name="lonVertex"                    type="real"     dimensions="nVertices"/>
                 <var name="xVertex"                      type="real"     dimensions="nVertices"/>
                 <var name="yVertex"                      type="real"     dimensions="nVertices"/>
                 <var name="zVertex"                      type="real"     dimensions="nVertices"/>
                 <var name="indexToVertexID"              type="integer"  dimensions="nVertices"/>
+                <var name="bdyMaskVertex"                type="integer"  dimensions="nVertices"/>
                 <var name="cellsOnEdge"                  type="integer"  dimensions="TWO nEdges"/>
                 <var name="nEdgesOnCell"                 type="integer"  dimensions="nCells"/>
                 <var name="nEdgesOnEdge"                 type="integer"  dimensions="nEdges"/>
