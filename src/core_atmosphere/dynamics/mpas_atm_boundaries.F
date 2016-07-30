@@ -1,9 +1,10 @@
 module mpas_atm_boundaries
 
-    use mpas_derived_types, only : mpas_pool_type
-    use mpas_pool_routines, only : mpas_pool_get_dimension, mpas_pool_get_array
-    use mpas_kind_types, only : RKIND
+    use mpas_derived_types, only : mpas_pool_type, mpas_clock_type, block_type, mpas_time_type, MPAS_NOW
+    use mpas_pool_routines, only : mpas_pool_get_dimension, mpas_pool_get_array, mpas_pool_get_subpool
+    use mpas_kind_types, only : RKIND, StrKIND
     use mpas_geometry_utils, only : mpas_arc_length
+    use mpas_timekeeping, only : mpas_get_clock_time, mpas_get_time
 
     integer, parameter :: OUTSIDE = 0
     integer, parameter :: INSIDE = 1
@@ -12,6 +13,8 @@ module mpas_atm_boundaries
     integer, parameter :: BOUNDARY3 = 4
     integer, parameter :: BOUNDARY4 = 5
     integer, parameter :: BOUNDARY5 = 6
+
+    character(len=StrKIND), private :: LBC_intv_start
 
 
     contains
@@ -150,46 +153,79 @@ module mpas_atm_boundaries
     end subroutine mpas_atm_setup_bdy_masks
 
 
-    subroutine mpas_atm_compute_bdy_tend(mesh, state, dt, lbc)
+    subroutine mpas_atm_setup_bdy_tend(clock, block)
 
         implicit none
 
-        type (mpas_pool_type), intent(in) :: mesh
-        type (mpas_pool_type), intent(in) :: state
-        real (kind=RKIND), intent(in) :: dt
-        type (mpas_pool_type), intent(inout) :: lbc
+        type (mpas_clock_type), intent(in) :: clock
+        type (block_type), intent(inout) :: block
+
+        type (mpas_pool_type), pointer :: mesh
+        type (mpas_pool_type), pointer :: state
+        type (mpas_pool_type), pointer :: lbc
 
         real (kind=RKIND), dimension(:,:), pointer :: theta
         real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
 
-
-write(0,*) 'Computing tendency'
-        call mpas_pool_get_array(state, 'theta_m', theta, 1)
-        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
-
-        lbc_tend_theta(:,:) = (theta(:,:) - lbc_tend_theta(:,:)) / dt
-
-    end subroutine mpas_atm_compute_bdy_tend
-
-
-    subroutine mpas_atm_setup_bdy_tend(mesh, state, lbc)
-
-        implicit none
-
-        type (mpas_pool_type), intent(in) :: mesh
-        type (mpas_pool_type), intent(in) :: state
-        type (mpas_pool_type), intent(inout) :: lbc
-
-        real (kind=RKIND), dimension(:,:), pointer :: theta
-        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+        integer :: ierr
+        type (MPAS_Time_Type) :: currTime
 
 
 write(0,*) 'Setting up next tendency'
+        call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+        call mpas_pool_get_subpool(block % structs, 'state', state)
+        call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
+
+        currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+        call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
+write(0,*) '    will be valid starting '//trim(LBC_intv_start)
+
         call mpas_pool_get_array(state, 'theta_m', theta, 1)
         call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
 
         lbc_tend_theta(:,:) = theta(:,:)
 
     end subroutine mpas_atm_setup_bdy_tend
+
+
+    subroutine mpas_atm_compute_bdy_tend(clock, block, lbc_start_time)
+
+        implicit none
+
+        type (mpas_clock_type), intent(in) :: clock
+        type (block_type), intent(inout) :: block
+        character (len=StrKIND), intent(out) :: lbc_start_time
+
+        type (mpas_pool_type), pointer :: mesh
+        type (mpas_pool_type), pointer :: state
+        type (mpas_pool_type), pointer :: lbc
+        real (kind=RKIND) :: dt
+
+        real (kind=RKIND), dimension(:,:), pointer :: theta
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+
+        integer :: ierr
+        type (MPAS_Time_Type) :: currTime
+
+
+        lbc_start_time = LBC_intv_start
+
+dt = 10800.0
+
+write(0,*) 'Computing tendency'
+write(0,*) '    from '//trim(lbc_start_time)
+        call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+        call mpas_pool_get_subpool(block % structs, 'state', state)
+        call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
+
+        currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+        call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
+
+        call mpas_pool_get_array(state, 'theta_m', theta, 1)
+        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
+
+        lbc_tend_theta(:,:) = (theta(:,:) - lbc_tend_theta(:,:)) / dt
+
+    end subroutine mpas_atm_compute_bdy_tend
 
 end module mpas_atm_boundaries

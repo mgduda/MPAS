@@ -349,12 +349,13 @@ module atm_core
 
       integer :: stream_dir
       character(len=StrKIND) :: input_stream, read_time
-      character(len=StrKIND) :: LBC_intv_start
 
-      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh, lbc
+      type (mpas_pool_type), pointer :: state, diag, diag_physics, mesh
 
       ! For high-frequency diagnostics output
       character (len=StrKIND) :: tempfilename
+
+      character(len=StrKIND) :: LBC_intv_start
 
       ierr = 0
 
@@ -372,15 +373,15 @@ module atm_core
          call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='diagnostics', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
       end if
 
+      !
+      ! Setup for boundary condition generation: do not write LBC tendencies now, since we do not have 
+      ! the necessary information to have generated  such tendencies; instead, call routine to get set up to
+      ! compute tendencies after some integration
+      !
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
-      currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
-      call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
       block_ptr => domain % blocklist
       do while (associated(block_ptr))
-         call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
-         call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
-         call mpas_pool_get_subpool(block_ptr % structs, 'lbc', lbc)
-         call mpas_atm_setup_bdy_tend(mesh, state, lbc)
+         call mpas_atm_setup_bdy_tend(clock, block_ptr)
          block_ptr => block_ptr % next
       end do
 
@@ -490,35 +491,27 @@ module atm_core
          end if
 
          !
-         ! Special treatment for LBC stream
+         ! Special treatment for LBC stream: before writing the stream, compute tendency, then write, then set up
+         ! computation of the next LBC tendencies
          !
          if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
-             write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
 
              block_ptr => domain % blocklist
              do while (associated(block_ptr))
-                call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
-                call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
-                call mpas_pool_get_subpool(block_ptr % structs, 'lbc', lbc)
-                call mpas_atm_compute_bdy_tend(mesh, state, 10800.0_RKIND, lbc)
+                call mpas_atm_compute_bdy_tend(clock, block_ptr, LBC_intv_start)
                 block_ptr => block_ptr % next
              end do
+
+             write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
 
              call mpas_stream_mgr_write(domain % streamManager, streamID='lbc_out', writeTime=trim(LBC_intv_start), ierr=ierr)
              call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', ierr=ierr)
 
              block_ptr => domain % blocklist
              do while (associated(block_ptr))
-                call mpas_pool_get_subpool(block_ptr % structs, 'mesh', mesh)
-                call mpas_pool_get_subpool(block_ptr % structs, 'state', state)
-                call mpas_pool_get_subpool(block_ptr % structs, 'lbc', lbc)
-                call mpas_atm_setup_bdy_tend(mesh, state, lbc)
+                call mpas_atm_setup_bdy_tend(clock, block_ptr)
                 block_ptr => block_ptr % next
              end do
-
-             ! Set next time we need to write
-             currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
-             call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
          end if
 
          call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
