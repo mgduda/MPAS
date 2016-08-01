@@ -164,8 +164,16 @@ module mpas_atm_boundaries
         type (mpas_pool_type), pointer :: state
         type (mpas_pool_type), pointer :: lbc
 
-        real (kind=RKIND), dimension(:,:), pointer :: theta
-        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+        real (kind=RKIND), dimension(:,:), pointer :: u
+        real (kind=RKIND), dimension(:,:), pointer :: w
+        real (kind=RKIND), dimension(:,:), pointer :: theta_m
+        real (kind=RKIND), dimension(:,:), pointer :: rho_zz
+        real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_u
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_w
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta_m
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_rho_zz
+        real (kind=RKIND), dimension(:,:,:), pointer :: lbc_tend_scalars
 
         integer :: ierr
         type (MPAS_Time_Type) :: currTime
@@ -180,10 +188,23 @@ write(0,*) 'Setting up next tendency'
         call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
 write(0,*) '    will be valid starting '//trim(LBC_intv_start)
 
-        call mpas_pool_get_array(state, 'theta_m', theta, 1)
-        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
+        call mpas_pool_get_array(state, 'u', u, 1)
+        call mpas_pool_get_array(state, 'w', w, 1)
+        call mpas_pool_get_array(state, 'theta_m', theta_m, 1)
+        call mpas_pool_get_array(state, 'rho_zz', rho_zz, 1)
+        call mpas_pool_get_array(state, 'scalars', scalars, 1)
 
-        lbc_tend_theta(:,:) = theta(:,:)
+        call mpas_pool_get_array(lbc, 'lbc_tend_u', lbc_tend_u)
+        call mpas_pool_get_array(lbc, 'lbc_tend_w', lbc_tend_w)
+        call mpas_pool_get_array(lbc, 'lbc_tend_theta_m', lbc_tend_theta_m)
+        call mpas_pool_get_array(lbc, 'lbc_tend_rho_zz', lbc_tend_rho_zz)
+        call mpas_pool_get_array(lbc, 'lbc_tend_scalars', lbc_tend_scalars)
+
+        lbc_tend_u(:,:) = u(:,:)
+        lbc_tend_w(:,:) = w(:,:)
+        lbc_tend_theta_m(:,:) = theta_m(:,:)
+        lbc_tend_rho_zz(:,:) = rho_zz(:,:)
+        lbc_tend_scalars(:,:,:) = scalars(:,:,:)
 
     end subroutine mpas_atm_setup_bdy_tend
 
@@ -201,8 +222,16 @@ write(0,*) '    will be valid starting '//trim(LBC_intv_start)
         type (mpas_pool_type), pointer :: lbc
         real (kind=RKIND) :: dt
 
-        real (kind=RKIND), dimension(:,:), pointer :: theta
-        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta
+        real (kind=RKIND), dimension(:,:), pointer :: u
+        real (kind=RKIND), dimension(:,:), pointer :: w
+        real (kind=RKIND), dimension(:,:), pointer :: theta_m
+        real (kind=RKIND), dimension(:,:), pointer :: rho_zz
+        real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_u
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_w
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_theta_m
+        real (kind=RKIND), dimension(:,:), pointer :: lbc_tend_rho_zz
+        real (kind=RKIND), dimension(:,:,:), pointer :: lbc_tend_scalars
 
         integer :: ierr
         type (MPAS_Time_Type) :: currTime
@@ -221,10 +250,23 @@ write(0,*) '    from '//trim(lbc_start_time)
         currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
         call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
 
-        call mpas_pool_get_array(state, 'theta_m', theta, 1)
-        call mpas_pool_get_array(lbc, 'lbc_tend_theta', lbc_tend_theta)
+        call mpas_pool_get_array(state, 'u', u, 1)
+        call mpas_pool_get_array(state, 'w', w, 1)
+        call mpas_pool_get_array(state, 'theta_m', theta_m, 1)
+        call mpas_pool_get_array(state, 'rho_zz', rho_zz, 1)
+        call mpas_pool_get_array(state, 'scalars', scalars, 1)
 
-        lbc_tend_theta(:,:) = (theta(:,:) - lbc_tend_theta(:,:)) / dt
+        call mpas_pool_get_array(lbc, 'lbc_tend_u', lbc_tend_u)
+        call mpas_pool_get_array(lbc, 'lbc_tend_w', lbc_tend_w)
+        call mpas_pool_get_array(lbc, 'lbc_tend_theta_m', lbc_tend_theta_m)
+        call mpas_pool_get_array(lbc, 'lbc_tend_rho_zz', lbc_tend_rho_zz)
+        call mpas_pool_get_array(lbc, 'lbc_tend_scalars', lbc_tend_scalars)
+
+        lbc_tend_u(:,:) = (u(:,:) - lbc_tend_u(:,:)) / dt
+        lbc_tend_w(:,:) = (w(:,:) - lbc_tend_w(:,:)) / dt
+        lbc_tend_theta_m(:,:) = (theta_m(:,:) - lbc_tend_theta_m(:,:)) / dt
+        lbc_tend_rho_zz(:,:) = (rho_zz(:,:) - lbc_tend_rho_zz(:,:)) / dt
+        lbc_tend_scalars(:,:,:) = (scalars(:,:,:) - lbc_tend_scalars(:,:,:)) / dt
 
     end subroutine mpas_atm_compute_bdy_tend
 
