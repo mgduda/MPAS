@@ -98,6 +98,7 @@ module atm_core_interface
 
       use mpas_derived_types, only : mpas_pool_type, mpas_io_context_type
       use mpas_pool_routines, only : mpas_pool_get_config, mpas_pool_get_package
+      use mpas_io_units, only : stderrUnit
 
       implicit none
 
@@ -106,7 +107,30 @@ module atm_core_interface
       type (mpas_io_context_type), intent(inout) :: iocontext
       integer :: ierr
 
+      logical, pointer :: lbc_out
+      logical, pointer :: config_compute_lbc_tend
+
       ierr = 0
+
+
+      call mpas_pool_get_config(configs, 'config_compute_lbc_tend', config_compute_lbc_tend)
+
+      nullify(lbc_out)
+      call mpas_pool_get_package(packages, 'lbc_outActive', lbc_out)
+
+      if (.not. associated(lbc_out)) then
+         write(stderrUnit,*) '********************************************************************************'
+         write(stderrUnit,*) '* Error while setting up packages for atmosphere core.'
+         write(stderrUnit,*) '********************************************************************************'
+         ierr = 1
+         return
+      end if
+
+      if (config_compute_lbc_tend) then
+         lbc_out = .true.
+      else
+         lbc_out = .false.
+      end if
 
    end function atm_setup_packages
 
