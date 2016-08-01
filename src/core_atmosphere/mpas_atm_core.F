@@ -356,6 +356,7 @@ module atm_core
       character (len=StrKIND) :: tempfilename
 
       character(len=StrKIND) :: LBC_intv_start
+      logical, pointer :: config_compute_lbc_tend
 
       ierr = 0
 
@@ -363,6 +364,7 @@ module atm_core
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_compute_lbc_tend', config_compute_lbc_tend)
 
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
@@ -373,17 +375,19 @@ module atm_core
          call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='diagnostics', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
       end if
 
-      !
-      ! Setup for boundary condition generation: do not write LBC tendencies now, since we do not have 
-      ! the necessary information to have generated  such tendencies; instead, call routine to get set up to
-      ! compute tendencies after some integration
-      !
-      call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
-      block_ptr => domain % blocklist
-      do while (associated(block_ptr))
-         call mpas_atm_setup_bdy_tend(clock, block_ptr)
-         block_ptr => block_ptr % next
-      end do
+      if (config_compute_lbc_tend) then
+         !
+         ! Setup for boundary condition generation: do not write LBC tendencies now, since we do not have 
+         ! the necessary information to have generated  such tendencies; instead, call routine to get set up to
+         ! compute tendencies after some integration
+         !
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
+         block_ptr => domain % blocklist
+         do while (associated(block_ptr))
+            call mpas_atm_setup_bdy_tend(clock, block_ptr)
+            block_ptr => block_ptr % next
+         end do
+      end if
 
       if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
          block_ptr => domain % blocklist
@@ -490,28 +494,30 @@ module atm_core
             end do
          end if
 
-         !
-         ! Special treatment for LBC stream: before writing the stream, compute tendency, then write, then set up
-         ! computation of the next LBC tendencies
-         !
-         if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
+         if (config_compute_lbc_tend) then
+            !
+            ! Special treatment for LBC stream: before writing the stream, compute tendency, then write, then set up
+            ! computation of the next LBC tendencies
+            !
+            if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
 
-             block_ptr => domain % blocklist
-             do while (associated(block_ptr))
-                call mpas_atm_compute_bdy_tend(clock, block_ptr, LBC_intv_start)
-                block_ptr => block_ptr % next
-             end do
+                block_ptr => domain % blocklist
+                do while (associated(block_ptr))
+                   call mpas_atm_compute_bdy_tend(clock, block_ptr, LBC_intv_start)
+                   block_ptr => block_ptr % next
+                end do
 
-             write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
+                write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
 
-             call mpas_stream_mgr_write(domain % streamManager, streamID='lbc_out', writeTime=trim(LBC_intv_start), ierr=ierr)
-             call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', ierr=ierr)
+                call mpas_stream_mgr_write(domain % streamManager, streamID='lbc_out', writeTime=trim(LBC_intv_start), ierr=ierr)
+                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', ierr=ierr)
 
-             block_ptr => domain % blocklist
-             do while (associated(block_ptr))
-                call mpas_atm_setup_bdy_tend(clock, block_ptr)
-                block_ptr => block_ptr % next
-             end do
+                block_ptr => domain % blocklist
+                do while (associated(block_ptr))
+                   call mpas_atm_setup_bdy_tend(clock, block_ptr)
+                   block_ptr => block_ptr % next
+                end do
+            end if
          end if
 
          call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
