@@ -1,10 +1,10 @@
 module mpas_atm_boundaries
 
-    use mpas_derived_types, only : mpas_pool_type, mpas_clock_type, block_type, mpas_time_type, MPAS_NOW
+    use mpas_derived_types, only : mpas_pool_type, mpas_clock_type, block_type, mpas_time_type, mpas_timeInterval_type, MPAS_NOW
     use mpas_pool_routines, only : mpas_pool_get_dimension, mpas_pool_get_array, mpas_pool_get_subpool
     use mpas_kind_types, only : RKIND, StrKIND
     use mpas_geometry_utils, only : mpas_arc_length
-    use mpas_timekeeping, only : mpas_get_clock_time, mpas_get_time
+    use mpas_timekeeping, only : mpas_get_clock_time, mpas_get_time, mpas_get_timeinterval, operator(-)
 
     integer, parameter :: OUTSIDE = 0
     integer, parameter :: INSIDE = 1
@@ -14,7 +14,7 @@ module mpas_atm_boundaries
     integer, parameter :: BOUNDARY4 = 5
     integer, parameter :: BOUNDARY5 = 6
 
-    character(len=StrKIND), private :: LBC_intv_start
+    type (MPAS_Time_Type), private :: LBC_intv_start
 
 
     contains
@@ -176,7 +176,7 @@ module mpas_atm_boundaries
         real (kind=RKIND), dimension(:,:,:), pointer :: lbc_tend_scalars
 
         integer :: ierr
-        type (MPAS_Time_Type) :: currTime
+character (len=StrKIND) :: tempstr
 
 
 write(0,*) 'Setting up next tendency'
@@ -184,9 +184,9 @@ write(0,*) 'Setting up next tendency'
         call mpas_pool_get_subpool(block % structs, 'state', state)
         call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
 
-        currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
-        call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
-write(0,*) '    will be valid starting '//trim(LBC_intv_start)
+        LBC_intv_start = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+call mpas_get_time(curr_time=LBC_intv_start, dateTimeString=tempstr, ierr=ierr)
+write(0,*) '    will be valid starting '//trim(tempstr)
 
         call mpas_pool_get_array(state, 'u', u, 1)
         call mpas_pool_get_array(state, 'w', w, 1)
@@ -234,21 +234,26 @@ write(0,*) '    will be valid starting '//trim(LBC_intv_start)
         real (kind=RKIND), dimension(:,:,:), pointer :: lbc_tend_scalars
 
         integer :: ierr
+        integer :: dd_intv, s_intv, sn_intv, sd_intv
         type (MPAS_Time_Type) :: currTime
+        type (MPAS_TimeInterval_Type) :: lbc_interval
 
 
-        lbc_start_time = LBC_intv_start
+        call mpas_get_time(curr_time=LBC_intv_start, dateTimeString=lbc_start_time, ierr=ierr)
+        
 
-dt = 10800.0
+        currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+        lbc_interval = currTime - LBC_intv_start
+        call mpas_get_timeInterval(interval=lbc_interval, DD=dd_intv, S=s_intv, S_n=sn_intv, S_d=sd_intv, ierr=ierr)
+        dt = 86400.0_RKIND * real(dd_intv, kind=RKIND) + real(s_intv, kind=RKIND) + (real(sn_intv, kind=RKIND) / real(sd_intv, kind=RKIND))
 
 write(0,*) 'Computing tendency'
 write(0,*) '    from '//trim(lbc_start_time)
+write(0,*) '    dt = ', dt
         call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
         call mpas_pool_get_subpool(block % structs, 'state', state)
         call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
 
-        currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
-        call mpas_get_time(curr_time=currTime, dateTimeString=LBC_intv_start, ierr=ierr)
 
         call mpas_pool_get_array(state, 'u', u, 1)
         call mpas_pool_get_array(state, 'w', w, 1)
