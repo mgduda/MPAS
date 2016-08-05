@@ -108,17 +108,23 @@ module atm_core_interface
       integer :: ierr
 
       logical, pointer :: lbc_out
+      logical, pointer :: lbc_in
       logical, pointer :: config_compute_lbc_tend
+      logical, pointer :: config_apply_lbc_tend
 
       ierr = 0
 
 
       call mpas_pool_get_config(configs, 'config_compute_lbc_tend', config_compute_lbc_tend)
+      call mpas_pool_get_config(configs, 'config_apply_lbc_tend', config_apply_lbc_tend)
 
       nullify(lbc_out)
       call mpas_pool_get_package(packages, 'lbc_outActive', lbc_out)
 
-      if (.not. associated(lbc_out)) then
+      nullify(lbc_in)
+      call mpas_pool_get_package(packages, 'lbc_inActive', lbc_in)
+
+      if (.not. associated(lbc_out) .or. .not. associated(lbc_in)) then
          write(stderrUnit,*) '********************************************************************************'
          write(stderrUnit,*) '* Error while setting up packages for atmosphere core.'
          write(stderrUnit,*) '********************************************************************************'
@@ -126,10 +132,18 @@ module atm_core_interface
          return
       end if
 
+      ! Probably could just write: lbc_out = config_compute_lbc_tend
       if (config_compute_lbc_tend) then
          lbc_out = .true.
       else
          lbc_out = .false.
+      end if
+
+      ! Probably could just write: lbc_in = config_apply_lbc_tend
+      if (config_apply_lbc_tend) then
+         lbc_in = .true.
+      else
+         lbc_in = .false.
       end if
 
    end function atm_setup_packages

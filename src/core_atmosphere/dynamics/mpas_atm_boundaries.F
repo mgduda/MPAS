@@ -275,4 +275,31 @@ write(0,*) '    dt = ', dt
 
     end subroutine mpas_atm_compute_bdy_tend
 
+
+    subroutine mpas_atm_update_bdy_tend(clock, block)
+
+        implicit none
+
+        type (mpas_clock_type), intent(in) :: clock
+        type (block_type), intent(inout) :: block
+
+!        type (mpas_pool_type), pointer :: mesh
+!        type (mpas_pool_type), pointer :: state
+!        type (mpas_pool_type), pointer :: lbc
+
+        integer :: ierr
+character (len=StrKIND) :: tempstr
+
+
+write(0,*) 'Updating boundary tendency'
+!        call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+!        call mpas_pool_get_subpool(block % structs, 'state', state)
+!        call mpas_pool_get_subpool(block % structs, 'lbc', lbc)
+
+        LBC_intv_start = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+call mpas_get_time(curr_time=LBC_intv_start, dateTimeString=tempstr, ierr=ierr)
+write(0,*) '    are valid starting '//trim(tempstr)
+
+    end subroutine mpas_atm_update_bdy_tend
+
 end module mpas_atm_boundaries

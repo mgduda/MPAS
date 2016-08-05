@@ -331,7 +331,7 @@ module atm_core
       use mpas_stream_manager
       use mpas_derived_types, only : MPAS_STREAM_LATEST_BEFORE, MPAS_STREAM_INPUT, MPAS_STREAM_INPUT_OUTPUT
       use mpas_timer
-      use mpas_atm_boundaries, only : mpas_atm_setup_bdy_tend, mpas_atm_compute_bdy_tend
+      use mpas_atm_boundaries, only : mpas_atm_setup_bdy_tend, mpas_atm_compute_bdy_tend, mpas_atm_update_bdy_tend
    
       implicit none
    
@@ -357,6 +357,7 @@ module atm_core
 
       character(len=StrKIND) :: LBC_intv_start, current_xtime
       logical, pointer :: config_compute_lbc_tend
+      logical, pointer :: config_apply_lbc_tend
 
       ierr = 0
 
@@ -365,6 +366,7 @@ module atm_core
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_restart_timestamp_name', config_restart_timestamp_name)
       call mpas_pool_get_config(domain % blocklist % configs, 'config_compute_lbc_tend', config_compute_lbc_tend)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_apply_lbc_tend', config_apply_lbc_tend)
 
       ! Avoid writing a restart file at the initial time
       call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='restart', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
@@ -423,6 +425,32 @@ module atm_core
 
          write(0,*) ' '
          write(0,*) 'Begin timestep ', trim(timeStamp)
+
+         if (config_apply_lbc_tend) then
+            !
+            ! Special treatment for LBC stream: if it is time to update the LBC tendencies, read them and then call
+            ! a routine to let the boundary module record when the tendencies were last updated
+            !
+            if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)) then
+
+                call mpas_stream_mgr_read(domain % streamManager, streamID='lbc_in', actualWhen=read_time, ierr=ierr)
+                write(0,*) '----------------------------------------------------------------------'
+                write(0,*) '  Read ''lbc_in'' input stream valid at '//trim(read_time)
+                write(0,*) '----------------------------------------------------------------------'
+                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_in', ierr=ierr)
+
+                block_ptr => domain % blocklist
+                do while (associated(block_ptr))
+                   call mpas_atm_update_bdy_tend(clock, block_ptr)
+                   block_ptr => block_ptr % next
+                end do
+            end if
+         else
+!!!! Here may may need to reset the alarm for the lbc_in stream -- are packages not working for alarms?
+            if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)) then
+                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_in', ierr=ierr)
+            end if
+         end if
 
          !
          ! Read external field updates
