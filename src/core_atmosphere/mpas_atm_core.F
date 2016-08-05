@@ -355,7 +355,7 @@ module atm_core
       ! For high-frequency diagnostics output
       character (len=StrKIND) :: tempfilename
 
-      character(len=StrKIND) :: LBC_intv_start
+      character(len=StrKIND) :: LBC_intv_start, current_xtime
       logical, pointer :: config_compute_lbc_tend
 
       ierr = 0
@@ -509,8 +509,13 @@ module atm_core
 
                 write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
 
+                call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
+                current_xtime = atm_substitute_xtime(state, LBC_intv_start)
+
                 call mpas_stream_mgr_write(domain % streamManager, streamID='lbc_out', writeTime=trim(LBC_intv_start), ierr=ierr)
                 call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', ierr=ierr)
+
+                LBC_intv_start = atm_substitute_xtime(state, current_xtime)
 
                 block_ptr => domain % blocklist
                 do while (associated(block_ptr))
@@ -1056,5 +1061,47 @@ module atm_core
       end do ! end loop over edges
 
    end subroutine atm_adv_coef_compression
+
+
+   !-----------------------------------------------------------------------
+   !  routine atm_substitute_xtime
+   !
+   !> \brief Set 'xtime' in a pool with the specified value
+   !> \author Michael Duda
+   !> \date   5 August 2016
+   !> \details
+   !>  Private function that sets the value of 'xtime' in a pool to the specified
+   !   value, and returns the previously stored value.
+   !
+   !-----------------------------------------------------------------------
+   function atm_substitute_xtime(pool, new_xtime) result(old_xtime)
+
+      implicit none
+
+      ! arguments
+      type (mpas_pool_type), intent(inout) :: pool
+      character(len=*), intent(in) :: new_xtime
+
+      ! return variable
+      character(len=StrKIND) :: old_xtime
+
+      ! local variables
+      character(len=StrKIND), pointer :: old_xtime_ptr
+
+      
+      old_xtime_ptr => null()
+      call mpas_pool_get_array(pool, 'xtime', old_xtime_ptr, 1)
+
+      if (.not. associated(old_xtime_ptr)) then
+         old_xtime = '-'
+         write(stderrUnit,*) 'Error: atm_substitute_xtime: xtime not found in pool'
+         return
+      end if
+
+      old_xtime = old_xtime_ptr
+
+      old_xtime_ptr = new_xtime
+
+   end function atm_substitute_xtime
 
 end module atm_core
