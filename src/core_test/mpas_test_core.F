@@ -45,6 +45,25 @@ module test_core
       character (len=StrKIND), pointer :: xtime
       integer :: iErr
 
+      type (MPAS_timeInterval_type) :: intv
+      integer (kind=I8KIND) :: n
+      integer :: i, d
+
+write(0,*) '================================================================='
+      call MPAS_set_timeInterval(intv, S=1) 
+      i = 2_I8KIND**30_I8KIND
+      intv = intv * i
+      call MPAS_get_timeInterval(intv, DD=d, S=i) 
+      write(0,*) 'time interval in seconds: ', i
+      write(0,*) 'time interval in days: ', d
+write(0,*) '================================================================='
+      call MPAS_set_timeInterval(intv, S=1) 
+      n = 2_I8KIND**35_I8KIND
+      intv = intv * n
+      call MPAS_get_timeInterval(intv, DD=d, S_i8=n) 
+      write(0,*) 'time interval in seconds: ', n
+      write(0,*) 'time interval in days: ', d
+write(0,*) '================================================================='
 
       iErr = 0
 
