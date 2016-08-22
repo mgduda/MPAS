@@ -38,6 +38,7 @@ OBJS = \
 	mpas_atmphys_rrtmg_lwinit.o        \
 	mpas_atmphys_rrtmg_swinit.o        \
 	mpas_atmphys_todynamics.o          \
+	mpas_atmphys_todynamics.altomp.o   \
 	mpas_atmphys_update_surface.o      \
 	mpas_atmphys_update.o              \
 	mpas_atmphys_vars.o
@@ -206,6 +207,10 @@ mpas_atmphys_rrtmg_swinit.o: \
 	./physics_wrf/module_ra_rrtmg_sw.o
 
 mpas_atmphys_todynamics.o: \
+	mpas_atmphys_constants.o \
+	mpas_atmphys_vars.o
+
+mpas_atmphys_todynamics.altomp.o: \
 	mpas_atmphys_constants.o \
 	mpas_atmphys_vars.o
 

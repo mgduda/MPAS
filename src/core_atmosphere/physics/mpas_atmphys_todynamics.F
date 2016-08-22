@@ -1,3 +1,6 @@
+! DH* 20160818
+#ifndef MPAS_ALTOMP_TIME_INTEGRATION
+! *DH 20160818
 ! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS)
 ! and the University Corporation for Atmospheric Research (UCAR).
 !
@@ -13,7 +16,6 @@
  use mpas_dmpar
 
  use mpas_atmphys_constants, only: R_d,R_v,degrad
- use mpas_atmphys_vars, only: pbl_scheme,convection_scheme
 
  implicit none
  private
@@ -173,6 +175,7 @@
 
  tend_scalars(:,:,:) = 0._RKIND
 
+<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
  call physics_addtend_work(block, mesh, nCells, nEdges, nCellsSolve, nEdgesSolve, &
                            rk_step, dynamics_substep, &
                            config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
@@ -185,6 +188,9 @@
                            tend_u_phys, tend_rtheta_adv, tend_diabatic, &
                            theta, theta_m, scalars, tend_theta, tend_theta_euler &
                           )
+=======
+    pbl_select: select case (config_pbl_scheme)
+>>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
 
 
  deallocate(theta)
@@ -209,6 +215,7 @@
  201 format(2i6,10(1x,e15.8))
  202 format(3i6,10(1x,e15.8))
 
+<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
  end subroutine physics_addtend
 
 
@@ -292,6 +299,9 @@
        enddo
        enddo
     end if
+=======
+       case default
+>>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
 
 
     !add coupled tendencies due to PBL processes:
@@ -303,6 +313,19 @@
           tend_u_phys(1:nVertLevels,1:nEdges) = rublten_Edge(1:nVertLevels,1:nEdges)
        end if
 
+<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
+=======
+    if(config_convection_scheme .eq. 'cu_tiedtke') then
+       call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
+       call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
+
+       allocate(rucuten_Edge(nVertLevels,nEdges))
+       rucuten_Edge(:,:) = 0.
+       call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge)
+       
+       tend_u_phys(1:nVertLevels,1:nEdges) = tend_u_phys(1:nVertLevels,1:nEdges)+rucuten_Edge(1:nVertLevels,1:nEdges)
+       
+>>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
        do i = 1, nEdgesSolve
        do k  = 1, nVertLevels
           tend_u(k,i)=tend_u(k,i)+rublten_Edge(k,i)*mass_edge(k,i)
@@ -336,6 +359,7 @@
     !add coupled tendencies due to convection:
     if (config_convection_scheme .ne. 'off') then
 
+<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
        do i = 1, nCellsSolve
        do k = 1, nVertLevels
           tend_th(k,i) = tend_th(k,i) + rthcuten(k,i)*mass(k,i)
@@ -344,6 +368,34 @@
           tend_scalars(index_qi,k,i) = tend_scalars(index_qi,k,i) + rqicuten(k,i)*mass(k,i)
        enddo
        enddo
+=======
+    convection_select: select case(config_convection_scheme)
+
+       case('cu_grell_freitas')
+          call mpas_pool_get_array(tend_physics, 'rthdynten' , rthdynten)
+
+          do i = 1, nCellsSolve
+          do k = 1, nVertLevels
+             coeff = 1._RKIND/(1._RKIND + R_v/R_d*qv(k,i))
+             rthdynten(k,i) = coeff*(tend_theta(k,i)-tend_theta_euler(k,i) &
+                            - mass(k,i)*tend_diabatic(k,i))/mass(k,i)
+          enddo
+          enddo
+
+       case('cu_kain_fritsch')
+          call mpas_pool_get_array(tend_physics,'rqrcuten',rqrcuten)
+          call mpas_pool_get_array(tend_physics,'rqscuten',rqscuten)
+          do i = 1, nCellsSolve
+          do k = 1, nVertLevels
+             tend_qr(k,i) = tend_qr(k,i) + rqrcuten(k,i)*mass(k,i)
+             tend_qs(k,i) = tend_qs(k,i) + rqscuten(k,i)*mass(k,i)
+          enddo
+          enddo
+    
+       case('cu_tiedtke')
+          call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
+          call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
+>>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
 
         convection_select: select case(convection_scheme)
 
@@ -493,3 +545,6 @@
 !=================================================================================================================
  end module mpas_atmphys_todynamics
 !=================================================================================================================
+! DH* 20160818
+#endif
+! *DH 20160818
