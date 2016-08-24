@@ -3531,6 +3531,7 @@ MPAS_GPTL_STOP('mono_exch_2')
    end subroutine atm_compute_dyn_tend
 
 
+   ! DH* 20160824 - tested OMP barriers for removal, think that all barriers currently present are needed
    subroutine atm_compute_dyn_tend_work(nCells, nEdges, nVertices, nVertLevels_dummy, &
       nCellsSolve, nEdgesSolve, vertexDegree, maxEdges_dummy, maxEdges2_dummy, num_scalars_dummy, moist_start, moist_end, &
       fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
@@ -4043,7 +4044,6 @@ MPAS_GPTL_STOP('mono_exch_2')
          !
          ! First, storage to hold the result from the first del^2 computation.
          !  we copied code from the theta mixing, hence the theta* names.
-
 
          delsq_w(1:nVertLevels,cellStart:cellEnd) = 0.0
 
