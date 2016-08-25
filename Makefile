@@ -289,13 +289,39 @@ CPPINCLUDES =
 FCINCLUDES = 
 LIBS = 
 ifneq ($(wildcard $(PIO)/lib), ) # Check for newer PIO version
+ifeq "$(USE_PIO2)" "true"
+	CPPINCLUDES = -DUSE_PIO2 -I$(PIO)/include
+	FCINCLUDES = -DUSE_PIO2 -I$(PIO)/include
+	LIBS = -L$(PIO)/lib -lpiof -lpioc
+else
 	CPPINCLUDES = -I$(PIO)/include
 	FCINCLUDES = -I$(PIO)/include
-	LIBS = -L$(PIO)/lib -lpio
+	ifneq ($(wildcard $(PIO)/lib/libpioc.a), ) # CHECK FOR SEPARATE C AND FORTRAN LIBS
+		LIBS = -L$(PIO)/lib -lpiof -lpioc
+	else
+		LIBS = -L$(PIO)/lib -lpio
+	endif
+	ifneq ($(wildcard $(PIO)/lib/libgptl.a), ) # CHECK FOR TIMING LIBRARY
+		LIBS += -lgptl
+	endif
+endif
+else
+ifeq "$(USE_PIO2)" "true"
+	CPPINCLUDES = -DUSE_PIO2 -I$(PIO)/include
+	FCINCLUDES = -DUSE_PIO2 -I$(PIO)/include
+	LIBS = -L$(PIO) -lpiof -lpioc
 else
 	CPPINCLUDES = -I$(PIO)
 	FCINCLUDES = -I$(PIO)
-	LIBS = -L$(PIO) -lpio
+	ifneq ($(wildcard $(PIO)/libpioc.a), ) # CHECK FOR SEPARATE C AND FORTRAN LIBS
+		LIBS = -L$(PIO) -lpiof -lpioc
+	else
+		LIBS = -L$(PIO) -lpio
+	endif
+	ifneq ($(wildcard $(PIO)/libgptl.a), ) # CHECK FOR TIMING LIBRARY
+		LIBS += -lgptl
+	endif
+endif
 endif
 
 ifneq "$(PNETCDF)" ""
@@ -380,6 +406,12 @@ ifeq "$(USE_PAPI)" "true"
 else # USE_PAPI IF
 	PAPI_MESSAGE="Papi libraries are off."
 endif # USE_PAPI IF
+
+ifeq "$(USE_PIO2)" "true"
+	PIO_MESSAGE="Using the PIO 2 library."
+else # USE_PIO2 IF
+	PIO_MESSAGE="Using the PIO 1.x library."
+endif # USE_PIO2 IF
 
 ifeq "$(TAU)" "true"
 	LINKER=tau_f90.sh
@@ -516,6 +548,7 @@ ifeq "$(AUTOCLEAN)" "true"
 	@echo $(AUTOCLEAN_MESSAGE)
 endif
 	@echo $(GEN_F90_MESSAGE)
+	@echo $(PIO_MESSAGE)
 	@echo "*******************************************************************************"
 clean:
 	cd src; $(MAKE) clean RM="$(RM)" CORE="$(CORE)"
@@ -586,6 +619,7 @@ errmsg:
 	@echo "    TAU=true      - builds version using TAU hooks for profiling. Default is off."
 	@echo "    AUTOCLEAN=true    - forces a clean of infrastructure prior to build new core."
 	@echo "    GEN_F90=true  - Generates intermediate .f90 files through CPP, and builds with them."
+	@echo "    USE_PIO2=true - links with the PIO 2 library. Default is to use the PIO 1.x library."
 	@echo ""
 	@echo "Ensure that NETCDF, PNETCDF, PIO, and PAPI (if USE_PAPI=true) are environment variables"
 	@echo "that point to the absolute paths for the libraries."
