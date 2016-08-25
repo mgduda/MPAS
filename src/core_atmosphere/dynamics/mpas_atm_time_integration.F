@@ -344,7 +344,7 @@ module atm_time_integration
                   call mpas_pool_get_dimension(mesh, 'nCells', nCells)
                   call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
 
-                  call atm_advance_acoustic_step( state, diag, tend,  mesh, block % configs, nCells, nVertLevels, rk_sub_timestep(rk_step) )
+                  call atm_advance_acoustic_step( state, diag, tend,  mesh, block % configs, nCells, nVertLevels, rk_sub_timestep(rk_step), small_step )
 
                   block => block % next
                end do
@@ -1049,7 +1049,7 @@ module atm_time_integration
 
 !-------------------------------
 
-   subroutine atm_advance_acoustic_step( state, diag, tend, mesh, configs, nCells, nVertLevels, dts )
+   subroutine atm_advance_acoustic_step( state, diag, tend, mesh, configs, nCells, nVertLevels, dts, small_step )
 
       !  This subroutine performs the entire acoustic step update, following Klemp et al MWR 2007,
       !  using forward-backward vertically implicit integration.  
@@ -1066,6 +1066,7 @@ module atm_time_integration
       type (mpas_pool_type), intent(in)    :: configs
       integer, intent(in) :: nCells                  ! for allocating stack variables
       integer, intent(in) :: nVertLevels             ! for allocating stack variables
+      integer, intent(in) :: small_step
       real (kind=RKIND), intent(in) :: dts
 
 
@@ -1259,6 +1260,13 @@ module atm_time_integration
                             -dpzx(k))/(.5*(zz(k,cell2)+zz(k,cell1)))
                   pgrad = 0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
                   du(k) = dts*(tend_ru(k,iEdge) - cqu(k,iEdge) * pgrad) 
+               end do
+            end if
+
+            !  ****  new code, wcs 9 May 2016
+            if(small_step == 1) then  ! acoustic filter (divergence damping) for first acoustic step - test code
+               do k=1,nVertLevels
+                  du(k) = du(k) - 0.25*smdiv*dcEdge(iEdge)*(tend_rho(k,cell2)-tend_rho(k,cell1))
                end do
             end if
 
