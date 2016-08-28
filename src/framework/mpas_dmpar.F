@@ -796,6 +796,56 @@ include 'mpif.h'
    end subroutine mpas_dmpar_maxloc_real!}}}
 
 !-----------------------------------------------------------------------
+!  routine mpas_dmpar_maxind_real
+!
+!> \brief TBD
+!> \author Michael Duda
+!> \date   12 February 2016
+!> \details
+!>  Write something here...
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_dmpar_maxind_real(dminfo, rField, idx, k, rLat, rLon, rFieldMax, idxMax, kMax, rLatMax, rLonMax)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      real(kind=RKIND), intent(in) :: rField
+      integer, intent(in) :: idx
+      integer, intent(in) :: k
+      real(kind=RKIND), intent(in) :: rLat
+      real(kind=RKIND), intent(in) :: rLon
+      real(kind=RKIND), intent(out) :: rFieldMax
+      integer, intent(out) :: idxMax
+      integer, intent(out) :: kMax
+      real(kind=RKIND), intent(out) :: rLatMax
+      real(kind=RKIND), intent(out) :: rLonMax
+
+      integer :: mpi_ierr
+      real(kind=RKIND), dimension(2,4) :: recvbuf, sendbuf      
+
+#ifdef _MPI
+      sendbuf(1,1) = rField
+      sendbuf(2,1) = real(idx,kind=RKIND)
+      sendbuf(1,2) = rField
+      sendbuf(2,2) = real(k,kind=RKIND)
+      sendbuf(1,3) = rField
+      sendbuf(2,3) = rLat
+      sendbuf(1,4) = rField
+      sendbuf(2,4) = rLon
+      call MPI_Allreduce(sendbuf, recvbuf, 4, MPI_2REALKIND, MPI_MAXLOC, dminfo % comm, mpi_ierr)
+      rFieldMax = recvbuf(1,1)
+      idxMax = nint(recvbuf(2,1))
+      kMax = nint(recvbuf(2,2))
+      rLatMax = recvbuf(2,3)
+      rLonMax = recvbuf(2,4)
+#else
+      COMPILATION FAILURE
+#endif
+
+   end subroutine mpas_dmpar_maxind_real
+
+!-----------------------------------------------------------------------
 !  routine mpas_dmpar_sum_int_array
 !
 !> \brief MPAS dmpar integer array sum routine.
