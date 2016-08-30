@@ -1,7 +1,11 @@
+#ifndef NO_PIO
 #ifdef USE_PIO2
    integer, parameter :: MPAS_IO_OFFSET_KIND = PIO_OFFSET_KIND
 #else
    integer, parameter :: MPAS_IO_OFFSET_KIND = PIO_OFFSET
+#endif
+#else
+   integer, parameter :: MPAS_IO_OFFSET_KIND = selected_int_kind(9)
 #endif
 
    ! File access modes
@@ -15,10 +19,10 @@
                          MPAS_IO_PNETCDF5 = 6
 
    ! Field and attribute types
-   integer, parameter :: MPAS_IO_REAL     =  7,  &
-                         MPAS_IO_DOUBLE   =  8,  &
-                         MPAS_IO_INT      =  9,  &
-                         MPAS_IO_LOGICAL  = 10,  &
+   integer, parameter :: MPAS_IO_REAL     = 7,  &
+                         MPAS_IO_DOUBLE   = 8,  &
+                         MPAS_IO_INT      = 9,  &
+                         MPAS_IO_LOGICAL  = 10, &
                          MPAS_IO_CHAR     = 11
 
    ! Field precision
@@ -57,11 +61,17 @@
                          MPAS_IO_ERR_NOEXIST_READ       = -20, &
                          MPAS_IO_ERR_MISSING_DIM        = -21
 
+
+
    type MPAS_IO_Handle_type
       logical :: initialized = .false.
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
+#ifndef NO_PIO
       type (file_desc_t) :: pio_file
+#else
+      integer :: ncid
+#endif
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
@@ -77,11 +87,17 @@
       type (mpas_io_context_type), pointer :: ioContext => null()
    end type MPAS_IO_Handle_type
 
+
    type decomphandle_type
       integer :: field_type
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
+#ifndef NO_PIO
       type (io_desc_t) :: pio_iodesc
+#else
+      logical :: structured = .false.
+      integer, dimension(:), pointer :: start, count
+#endif
    end type decomphandle_type
 
    type atthandle_type
@@ -105,8 +121,10 @@
    type fieldhandle_type
       character (len=StrKIND) :: fieldname
       integer :: fieldid
-      type (Var_desc_t) :: field_desc
       integer :: field_type
+#ifndef NO_PIO
+      type (Var_desc_t) :: field_desc
+#endif
       logical :: has_unlimited_dim = .false.
       integer :: ndims
       integer :: precision
@@ -138,7 +156,9 @@
 
    type mpas_io_context_type
       type (decomplist_type), pointer :: decomp_list => null()
+#ifndef NO_PIO
       type (iosystem_desc_t), pointer :: pio_iosystem => null()
       integer :: master_pio_iotype = -999
+#endif
       type (dm_info), pointer :: dminfo => null()
    end type mpas_io_context_type
