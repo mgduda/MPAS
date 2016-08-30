@@ -4,32 +4,8 @@
    use mpas_dmpar
    use mpas_io_units
 
-#ifndef NO_PIO
-   use pio
-   use piolib_mod
-   use pionfatt_mod
-   use pio_types
-#else
    use netcdf
-#endif
 
-
-#ifndef NO_PIO
-#ifdef SINGLE_PRECISION
-   integer, parameter :: PIO_REALKIND = PIO_REAL
-#else
-   integer, parameter :: PIO_REALKIND = PIO_DOUBLE
-#endif
-
-   integer, parameter :: MPAS_INT_FILLVAL = NF_FILL_INT
-   character, parameter :: MPAS_CHAR_FILLVAL = achar(NF_FILL_CHAR)
-#ifdef SINGLE_PRECISION
-   real (kind=RKIND), parameter :: MPAS_REAL_FILLVAL = NF_FILL_FLOAT
-#else
-   real (kind=RKIND), parameter :: MPAS_REAL_FILLVAL = NF_FILL_DOUBLE
-#endif
-
-#else
 
 #ifdef SINGLE_PRECISION
    integer, parameter :: IO_REALKIND = NF90_REAL
@@ -43,7 +19,6 @@
    real (kind=RKIND), parameter :: MPAS_REAL_FILLVAL = NF90_FILL_FLOAT
 #else
    real (kind=RKIND), parameter :: MPAS_REAL_FILLVAL = NF90_FILL_DOUBLE
-#endif
 #endif
    
    interface MPAS_io_get_var
@@ -105,11 +80,7 @@
       type (mpas_io_context_type), intent(inout) :: ioContext
       integer, intent(in) :: io_task_count
       integer, intent(in) :: io_task_stride
-#ifndef NO_PIO
-      type (iosystem_desc_t), optional, pointer :: io_system
-#else
       integer, optional :: io_system
-#endif
       integer, intent(out), optional :: ierr
 
       integer :: local_ierr
@@ -119,113 +90,12 @@
 !      write(stderrUnit,*) 'Called MPAS_io_init()'
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
-#ifndef NO_PIO
-      if (present(io_system)) then
-         ioContext % pio_iosystem => io_system
-      else
-!write(stderrUnit,*) 'MGD PIO_init'
-         if ( io_task_count < 0 .or. io_task_count > ioContext % dminfo % nprocs ) then
-            write(stderrUnit, *) ' ERROR: PIO io_task_count has a value of ', io_task_count
-            write(stderrUnit, *) '        It must be between 1 and ', ioContext % dminfo % nprocs
-            local_ierr = 1
-         end if
-
-         if ( io_task_stride <= 0 .or. io_task_stride > ioContext % dminfo % nprocs ) then
-            write(stderrUnit, *) ' ERROR: PIO io_task_stride has a value of ', io_task_stride
-            write(stderrUnit, *) '        It must be between 1 and ', ioContext % dminfo % nprocs
-            local_ierr = 1
-         end if
-
-         if ( io_task_stride * io_task_count > ioContext % dminfo % nprocs ) then
-            write(stderrUnit, *) ' ERROR: PIO io_task_stride * io_task_count has a value of ', io_task_stride * io_task_count
-            write(stderrUnit, *) '        It must be between 1 and ', ioContext % dminfo % nprocs
-            local_ierr = 1
-         end if
-
-         if ( local_ierr /= 0 ) then
-            call mpas_dmpar_global_abort('ERROR: Invalid PIO configuration.')
-         end if
-
-         allocate(ioContext % pio_iosystem)
-         call PIO_init(ioContext % dminfo % my_proc_id, &  ! comp_rank
-                       ioContext % dminfo % comm,       &  ! comp_comm
-                       io_task_count,             &     ! num_iotasks
-                       0,                         &     ! num_aggregator
-                       io_task_stride,            &     ! stride
-                       PIO_rearr_box,             &     ! rearr
-                       ioContext % pio_iosystem)           ! iosystem
-  
-      end if
-
-      call pio_seterrorhandling(ioContext % pio_iosystem, PIO_BCAST_ERROR)
-#endif
-
    end subroutine MPAS_io_init
 
 
-#ifndef NO_PIO
-!***********************************************************************
-!
-!  routine MPAS_io_set_iotype
-!
-!> \brief   Set master PIO io type
-!> \author  Doug Jacobsen
-!> \date    10/18/2013
-!> \details 
-!>  This routine sets the master io type for use with PIO.
-!
-!-----------------------------------------------------------------------
-   subroutine MPAS_io_set_iotype(ioContext, io_type_in, ierr)
-
-      implicit none
-
-      type (mpas_io_context_type), intent(inout) :: ioContext
-      integer, intent(in) :: io_type_in
-      integer, intent(out), optional :: ierr
-
-      if (present(ierr)) then
-         ierr = MPAS_IO_NOERR
-      end if
-
-      ioContext % master_pio_iotype = io_type_in
-
-   end subroutine MPAS_io_set_iotype
-
-
-!***********************************************************************
-!
-!  routine MPAS_io_unset_iotype
-!
-!> \brief   Unset master PIO io type
-!> \author  Doug Jacobsen
-!> \date    10/18/2013
-!> \details 
-!>  This routine sets the master io type for use with PIO to it's default
-!>  "unset" value.
-!
-!-----------------------------------------------------------------------
-   subroutine MPAS_io_unset_iotype(ioContext, ierr)
-
-      implicit none
-
-      type (mpas_io_context_type), intent(inout) :: ioContext
-      integer, intent(out), optional :: ierr
-
-      if (present(ierr)) then
-         ierr = MPAS_IO_NOERR
-      end if
-
-      ioContext % master_pio_iotype = -999
-
-   end subroutine MPAS_io_unset_iotype
-#endif
-
-   
    type (MPAS_IO_Handle_type) function MPAS_io_open(filename, mode, ioformat, ioContext, clobber_file, truncate_file, ierr)
 
-#ifdef NO_PIO
       use mpi, only : MPI_INFO_NULL
-#endif
 
       implicit none
 
@@ -276,28 +146,7 @@
       MPAS_io_open % ioformat = ioformat
       MPAS_io_open % ioContext => ioContext
 
-#ifndef NO_PIO
-      if (ioContext % master_pio_iotype /= -999) then
-         pio_iotype = ioContext % master_pio_iotype
-         pio_mode = PIO_64BIT_OFFSET
-      else
-         if (ioformat == MPAS_IO_PNETCDF) then
-            pio_iotype = PIO_iotype_pnetcdf
-            pio_mode = PIO_64BIT_OFFSET
-         else if (ioformat == MPAS_IO_PNETCDF5) then
-            pio_iotype = PIO_iotype_pnetcdf
-            pio_mode = PIO_64BIT_DATA
-         else if (ioformat == MPAS_IO_NETCDF) then
-            pio_iotype = PIO_iotype_netcdf
-            pio_mode = PIO_64BIT_OFFSET
-         else if (ioformat == MPAS_IO_NETCDF4) then
-            pio_iotype = PIO_iotype_netcdf4p
-            pio_mode = PIO_64BIT_OFFSET
-         end if
-      end if
-#else
       nf_iotype = ior(NF90_NETCDF4, NF90_MPIIO)
-#endif
 
       if (mode == MPAS_IO_WRITE) then
 !write(stderrUnit,*) 'MGD PIO_createfile'
@@ -314,18 +163,11 @@
          end if
  
          if (exists .and. (.not. local_truncate)) then
-#ifndef NO_PIO
-            pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_write)
-            MPAS_io_open % preexisting_file = .true.
-         else
-            pio_ierr = PIO_createfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), pio_mode)
-#else
             nf_iotype = ior(nf_iotype, NF90_WRITE)
             nf_ierr = nf90_open(trim(filename), nf_iotype, MPAS_io_open % ncid, comm=ioContext % dminfo % comm, info=MPI_INFO_NULL)
             MPAS_io_open % preexisting_file = .true.
          else
             nf_ierr = nf90_create(trim(filename), nf_iotype, MPAS_io_open % ncid, comm=ioContext % dminfo % comm, info=MPI_INFO_NULL)
-#endif
             if (exists) then
                write(stderrUnit,'(a)') 'MPAS I/O: Truncating existing data in output file '//trim(filename)
             end if
@@ -337,12 +179,7 @@
             if (present(ierr)) ierr = MPAS_IO_ERR_NOEXIST_READ
             return
          end if
-#ifndef NO_PIO
-!write(stderrUnit,*) 'MGD PIO_openfile'
-         pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
-#else
          nf_ierr = nf90_open(trim(filename), nf_iotype, MPAS_io_open % ncid, comm=ioContext % dminfo % comm, info=MPI_INFO_NULL)
-#endif
       endif
       if (nf_ierr /= NF90_NOERR) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -350,37 +187,14 @@
       end if
 
       if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
-#ifndef NO_PIO
-!MPAS_io_open % unlimited_dimid = 44
-         pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % unlimited_dimid)
-!write(stderrUnit,*) 'Found unlimited dim ', MPAS_io_open % unlimited_dimid
-         if (pio_ierr /= PIO_noerr) then
-#else
 !         MPAS_io_open % unlimited_dimid = NF90_UNLIMITED
          nf_ierr = nf90_inq_dimid(MPAS_io_open % ncid, 'Time', MPAS_io_open % unlimited_dimid)
 
          nf_ierr = nf90_inquire_dimension(MPAS_io_open % ncid, MPAS_io_open % unlimited_dimid, len=MPAS_io_open % preexisting_records)
          if (nf_ierr /= NF90_NOERR) then
-#endif
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
          end if
-#ifndef NO_PIO
-
-         ! Here we're depending on the undocumented behavior of PIO to return a
-         ! negative dimension ID when an unlimited dimension is not found.  This
-         ! might change in the future, causing this code to break, though it
-         ! shouldn't break for files with unlimited dimensions.
-         if ( MPAS_io_open % unlimited_dimid >= 0 ) then
-            pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % unlimited_dimid, MPAS_io_open % preexisting_records)
-            if (pio_ierr /= PIO_noerr) then
-               if (present(ierr)) ierr = MPAS_IO_ERR_PIO
-               return
-            end if
-         else
-            MPAS_io_open % preexisting_records = -1
-         end if
-#endif
       end if
 
       MPAS_io_open % initialized = .true.
@@ -413,13 +227,8 @@
          return
       end if
 
-#ifndef NO_PIO
-      pio_ierr = PIO_inq_dimname(handle % pio_file, handle % unlimited_dimid, dimname) 
-      if (pio_ierr /= PIO_noerr) then
-#else
       nf_ierr = nf90_inquire_dimension(handle % ncid, handle % unlimited_dimid, name=dimname) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_NO_UNLIMITED_DIM
          dimname = ' '
          return
@@ -1020,17 +829,12 @@
             nf_type = NF90_DOUBLE
          end if
       else if (new_fieldlist_node % fieldhandle % field_type == MPAS_IO_REAL) then
-#ifndef NO_PIO
          if (local_precision == MPAS_IO_DOUBLE_PRECISION) then
-            pio_type = PIO_double
+            nf_type = NF90_DOUBLE
             new_fieldlist_node % fieldhandle % field_type = MPAS_IO_DOUBLE
          else
-            pio_type = PIO_real
+            nf_type = NF90_REAL
          end if
-#else
-         !TODO: handle up-conversion from single-precision to double-precision in file?
-         nf_type = NF90_REAL
-#endif
       else if (new_fieldlist_node % fieldhandle % field_type == MPAS_IO_INT) then
          nf_type = NF90_INT
       else if (new_fieldlist_node % fieldhandle % field_type == MPAS_IO_CHAR) then
@@ -1276,68 +1080,6 @@
       do i=1,ndims-1
          dimlist(i) = field_cursor % fieldhandle % dims(i) % dimsize
          new_decomp % decomphandle % dims(i) = dimlist(i)
-#ifndef NO_PIO
-         pd = pd * int(dimlist(i),MPAS_IO_OFFSET_KIND)
-      end do
-      new_decomp % decomphandle % dims(ndims) = field_cursor % fieldhandle % dims(ndims) % dimsize
-      dimlist(ndims) = size(indices)
-      pd = pd * int(dimlist(ndims),MPAS_IO_OFFSET_KIND)
-
-      allocate(compdof(pd)) 
-
-      indx = 1
-      if (ndims == 5) then
-         do i5=1,dimlist(5)
-         do i4=1,dimlist(4)
-         do i3=1,dimlist(3)
-         do i2=1,dimlist(2)
-         do i1=1,dimlist(1)
-            compdof(indx) = i1 &
-                          + (i2-1)*int(dimlist(1),MPAS_IO_OFFSET_KIND) &
-                          + (i3-1)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND) &
-                          + (i4-1)*int(dimlist(3),MPAS_IO_OFFSET_KIND)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND) &
-                          + int(indices(i5)-1,MPAS_IO_OFFSET_KIND)*int(dimlist(4),MPAS_IO_OFFSET_KIND)*int(dimlist(3),MPAS_IO_OFFSET_KIND)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND)
-            indx = indx + 1
-         end do
-         end do
-         end do
-         end do
-         end do
-      else if (ndims == 4) then
-         do i4=1,dimlist(4)
-         do i3=1,dimlist(3)
-         do i2=1,dimlist(2)
-         do i1=1,dimlist(1)
-            compdof(indx) = i1 &
-                          + (i2-1)*int(dimlist(1),MPAS_IO_OFFSET_KIND) &
-                          + (i3-1)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND) &
-                          + int(indices(i4)-1,MPAS_IO_OFFSET_KIND)*int(dimlist(3),MPAS_IO_OFFSET_KIND)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND)
-            indx = indx + 1
-         end do
-         end do
-         end do
-         end do
-      else if (ndims == 3) then
-         do i3=1,dimlist(3)
-         do i2=1,dimlist(2)
-         do i1=1,dimlist(1)
-            compdof(indx) = i1 + (i2-1)*int(dimlist(1),MPAS_IO_OFFSET_KIND) + int(indices(i3)-1,MPAS_IO_OFFSET_KIND)*int(dimlist(2),MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND)
-            indx = indx + 1
-         end do
-         end do
-         end do
-      else if (ndims == 2) then
-         do i2=1,dimlist(2)
-         do i1=1,dimlist(1)
-            compdof(indx) = i1 + int(indices(i2)-1,MPAS_IO_OFFSET_KIND)*int(dimlist(1),MPAS_IO_OFFSET_KIND)
-            indx = indx + 1
-         end do
-         end do
-      else if (ndims == 1) then
-         do i1=1,dimlist(1)
-            compdof(indx) = int(indices(i1),MPAS_IO_OFFSET_KIND)
-            indx = indx + 1
-#else
       end do
       new_decomp % decomphandle % dims(ndims) = field_cursor % fieldhandle % dims(ndims) % dimsize
       dimlist(ndims) = size(indices)
@@ -1369,7 +1111,6 @@
          do i=1,ndims-1
             new_decomp % decomphandle % start(i) = 1
             new_decomp % decomphandle % count(i) = dimlist(i)
-#endif
          end do
          new_decomp % decomphandle % start(ndims) = indices(1)
          new_decomp % decomphandle % count(ndims) = size(indices)
@@ -1382,27 +1123,12 @@
 
       end if
 
-#ifndef NO_PIO
-      dimlist(ndims) = field_cursor % fieldhandle % dims(ndims) % dimsize
-      call PIO_initdecomp(handle % ioContext % pio_iosystem, pio_type, dimlist, compdof, new_decomp % decomphandle % pio_iodesc)
-
-      ! Add new decomposition to the list
-      if (.not. associated(handle % ioContext % decomp_list)) then
-         handle % ioContext % decomp_list => new_decomp
-!write(stderrUnit,*) 'Adding first item to the decomp_list'
-      else
-         new_decomp % next => handle % ioContext % decomp_list
-         handle % ioContext % decomp_list => new_decomp
-!write(stderrUnit,*) 'Adding new decomp to the head of the list'
-#else
-
       ! Add new decomposition to the list
       if (.not. associated(handle % ioContext % decomp_list)) then
          handle % ioContext % decomp_list => new_decomp
       else
          new_decomp % next => handle % ioContext % decomp_list
          handle % ioContext % decomp_list => new_decomp
-#endif
       end if
 
       field_cursor % fieldhandle % decomp => new_decomp % decomphandle
@@ -1495,13 +1221,6 @@
 
 !      write(stderrUnit,*) 'Checking for unlimited dim'
       if (field_cursor % fieldhandle % has_unlimited_dim) then
-#ifndef NO_PIO
-#ifdef USE_PIO2
-         call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
-#else
-         call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
-#endif
-#endif
          start1(1) = handle % frame_number
          count1(1) = 1
      
@@ -1521,16 +1240,14 @@
                nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, singleVal)
             end if
             realVal = real(singleVal,RKIND)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             if (field_cursor % fieldhandle % has_unlimited_dim) then
-               pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, doubleVal)
+               nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleVal, start=start1)
             else
-               pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % field_desc, doubleVal)
+               nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleVal)
             end if
             realVal = real(doubleVal,RKIND)
-#endif
          else
             if (field_cursor % fieldhandle % has_unlimited_dim) then
                nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, realVal, start=start1)
@@ -1635,29 +1352,35 @@
             end if
             realArray1d(:) = real(singleArray1d(:),RKIND)
             deallocate(singleArray1d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray1d(size(realArray1d,1)))
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                    doubleArray1d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start2(1:1) = field_cursor % fieldhandle % decomp % start(:)
+                  count2(1:1) = field_cursor % fieldhandle % decomp % count(:)
+                  start2(2) = handle % frame_number
+                  count2(2) = 1
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start2, count=count2)
+               else
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start2(1) = 1
                   start2(2) = handle % frame_number
                   count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count2(2) = 1
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start2, count2, doubleArray1d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start2, count=count2)
                else
                   start1(:) = 1
                   count1(1) = field_cursor % fieldhandle % dims(1) % dimsize
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start1, count1, doubleArray1d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start1, count=count1)
                end if
             end if
             realArray1d(:) = real(doubleArray1d(:),RKIND)
             deallocate(doubleArray1d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -1717,13 +1440,20 @@
             end if
             realArray2d(:,:) = real(singleArray2d(:,:),RKIND)
             deallocate(singleArray2d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray2d(size(realArray2d,1), size(realArray2d,2)))
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                    doubleArray2d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start3(1:2) = field_cursor % fieldhandle % decomp % start(:)
+                  count3(1:2) = field_cursor % fieldhandle % decomp % count(:)
+                  start3(3) = handle % frame_number
+                  count3(3) = 1
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start3, count=count3)
+               else
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start3(:) = 1
@@ -1731,17 +1461,16 @@
                   count3(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count3(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count3(3) = 1
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start3, count3, doubleArray2d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start3, count=count3)
                else
                   start2(:) = 1
                   count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count2(2) = field_cursor % fieldhandle % dims(2) % dimsize
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start2, count2, doubleArray2d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start2, count=count2)
                end if
             end if
             realArray2d(:,:) = real(doubleArray2d(:,:),RKIND)
             deallocate(doubleArray2d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -1805,13 +1534,20 @@
             end if
             realArray3d(:,:,:) = real(singleArray3d(:,:,:),RKIND)
             deallocate(singleArray3d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray3d(size(realArray3d,1),size(realArray3d,2),size(realArray3d,3)))
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                    doubleArray3d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start4(1:3) = field_cursor % fieldhandle % decomp % start(:)
+                  count4(1:3) = field_cursor % fieldhandle % decomp % count(:)
+                  start4(4) = handle % frame_number
+                  count4(4) = 1
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start4, count=count4)
+               else
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start4(:) = 1
@@ -1820,18 +1556,17 @@
                   count4(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count4(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count4(4) = 1
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start4, count4, doubleArray3d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start4, count=count4)
                else
                   start3(:) = 1
                   count3(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count3(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count3(3) = field_cursor % fieldhandle % dims(3) % dimsize
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start3, count3, doubleArray3d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start3, count=count3)
                end if
             end if
             realArray3d(:,:,:) = real(doubleArray3d(:,:,:),RKIND)
             deallocate(doubleArray3d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -1899,13 +1634,20 @@
             end if
             realArray4d(:,:,:,:) = real(singleArray4d(:,:,:,:),RKIND)
             deallocate(singleArray4d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray4d(size(realArray4d,1),size(realArray4d,2),size(realArray4d,3),size(realArray4d,4)))
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                    doubleArray4d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start5(1:4) = field_cursor % fieldhandle % decomp % start(:)
+                  count5(1:4) = field_cursor % fieldhandle % decomp % count(:)
+                  start5(5) = handle % frame_number
+                  count5(5) = 1
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start5, count=count5)
+               else
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start5(:) = 1
@@ -1915,19 +1657,18 @@
                   count5(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count5(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count5(5) = 1
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start5, count5, doubleArray4d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start5, count=count5)
                else
                   start4(:) = 1
                   count4(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count4(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count4(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count4(4) = field_cursor % fieldhandle % dims(4) % dimsize
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start4, count4, doubleArray4d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start4, count=count4)
                end if
             end if
             realArray4d(:,:,:,:) = real(doubleArray4d(:,:,:,:),RKIND)
             deallocate(doubleArray4d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -1999,13 +1740,20 @@
             end if
             realArray5d(:,:,:,:,:) = real(singleArray5d(:,:,:,:,:),RKIND)
             deallocate(singleArray5d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray5d(size(realArray5d,1),size(realArray5d,2),size(realArray5d,3),size(realArray5d,4),size(realArray5d,5)))
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_read_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                   doubleArray5d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start6(1:5) = field_cursor % fieldhandle % decomp % start(:)
+                  count6(1:5) = field_cursor % fieldhandle % decomp % count(:)
+                  start6(6) = handle % frame_number
+                  count6(6) = 1
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start6, count=count6)
+               else
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start6(:) = 1
@@ -2016,7 +1764,7 @@
                   count6(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count6(5) = field_cursor % fieldhandle % dims(5) % dimsize
                   count6(6) = 1
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start6, count6, doubleArray5d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start6, count=count6)
                else
                   start5(:) = 1
                   count5(1) = field_cursor % fieldhandle % dims(1) % dimsize
@@ -2024,12 +1772,11 @@
                   count5(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count5(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count5(5) = field_cursor % fieldhandle % dims(5) % dimsize
-                  pio_ierr = PIO_get_var(handle % pio_file, field_cursor % fieldhandle % fieldid, start5, count5, doubleArray5d)
+                  nf_ierr = nf90_get_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start5, count=count5)
                end if
             end if
             realArray5d(:,:,:,:,:) = real(doubleArray5d(:,:,:,:,:),RKIND)
             deallocate(doubleArray5d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -2531,13 +2278,6 @@
 
       if (field_cursor % fieldhandle % has_unlimited_dim) then
 
-#ifndef NO_PIO
-#ifdef USE_PIO2
-         call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
-#else
-         call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
-#endif
-#endif
          start1(1) = handle % frame_number
          count1(1) = 1
      
@@ -2560,16 +2300,14 @@
             else
                nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, singleVal)
             end if
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             doubleVal = real(realVal,R8KIND)
             if (field_cursor % fieldhandle % has_unlimited_dim) then
-               pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, doubleVal)
+               nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleVal, start=start1)
             else
-               pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, doubleVal)
+               nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleVal)
             end if
-#endif
          else
             if (field_cursor % fieldhandle % has_unlimited_dim) then
                nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, realVal, start=start1)
@@ -2646,29 +2384,35 @@
                end if
             end if
             deallocate(singleArray1d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray1d(size(realArray1d)))
             doubleArray1d(:) = real(realArray1d(:),R8KIND)
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_write_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                     doubleArray1d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start2(1:1) = field_cursor % fieldhandle % decomp % start(:)
+                  count2(1:1) = field_cursor % fieldhandle % decomp % count(:)
+                  start2(2) = handle % frame_number
+                  count2(2) = 1
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start2, count=count2)
+               else
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start2(1) = 1
                   start2(2) = handle % frame_number
                   count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count2(2) = 1
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start2, count2, doubleArray1d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start2, count=count2)
                else
                   start1(1) = 1
                   count1(1) = field_cursor % fieldhandle % dims(1) % dimsize
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start1, count1, doubleArray1d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray1d, start=start1, count=count1)
                end if
             end if
             deallocate(doubleArray1d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -2728,14 +2472,21 @@
                end if
             end if
             deallocate(singleArray2d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray2d(size(realArray2d,1), size(realArray2d,2)))
             doubleArray2d(:,:) = real(realArray2d(:,:),R8KIND)
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_write_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                     doubleArray2d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start3(1:2) = field_cursor % fieldhandle % decomp % start(:)
+                  count3(1:2) = field_cursor % fieldhandle % decomp % count(:)
+                  start3(3) = handle % frame_number
+                  count3(3) = 1
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start3, count=count3)
+               else
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start3(1) = 1
@@ -2744,16 +2495,15 @@
                   count3(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count3(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count3(3) = 1
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start3, count3, doubleArray2d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start3, count=count3)
                else
                   start2(:) = 1
                   count2(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count2(2) = field_cursor % fieldhandle % dims(2) % dimsize
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start2, count2, doubleArray2d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray2d, start=start2, count=count2)
                end if
             end if
             deallocate(doubleArray2d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -2819,14 +2569,21 @@
                end if
             end if
             deallocate(singleArray3d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray3d(size(realArray3d,1), size(realArray3d,2), size(realArray3d,3)))
             doubleArray3d(:,:,:) = real(realArray3d(:,:,:),R8KIND)
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_write_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                     doubleArray3d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start4(1:3) = field_cursor % fieldhandle % decomp % start(:)
+                  count4(1:3) = field_cursor % fieldhandle % decomp % count(:)
+                  start4(4) = handle % frame_number
+                  count4(4) = 1
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start4, count=count4)
+               else
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start4(1) = 1
@@ -2837,17 +2594,16 @@
                   count4(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count4(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count4(4) = 1
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start4, count4, doubleArray3d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start4, count=count4)
                else
                   start3(:) = 1
                   count3(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count3(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count3(3) = field_cursor % fieldhandle % dims(3) % dimsize
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start3, count3, doubleArray3d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray3d, start=start3, count=count3)
                end if
             end if
             deallocate(doubleArray3d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -2919,14 +2675,21 @@
                end if
             end if
             deallocate(singleArray4d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray4d(size(realArray4d,1), size(realArray4d,2), size(realArray4d,3), size(realArray4d,4)))
             doubleArray4d(:,:,:,:) = real(realArray4d(:,:,:,:),R8KIND)
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_write_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                     doubleArray4d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start5(1:4) = field_cursor % fieldhandle % decomp % start(:)
+                  count5(1:4) = field_cursor % fieldhandle % decomp % count(:)
+                  start5(5) = handle % frame_number
+                  count5(5) = 1
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start5, count=count5)
+               else
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start5(1) = 1
@@ -2939,18 +2702,17 @@
                   count5(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count5(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count5(5) = 1
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start5, count5, doubleArray4d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start5, count=count5)
                else
                   start4(:) = 1
                   count4(1) = field_cursor % fieldhandle % dims(1) % dimsize
                   count4(2) = field_cursor % fieldhandle % dims(2) % dimsize
                   count4(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count4(4) = field_cursor % fieldhandle % dims(4) % dimsize
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start4, count4, doubleArray4d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray4d, start=start4, count=count4)
                end if
             end if
             deallocate(doubleArray4d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -3028,14 +2790,21 @@
                end if
             end if
             deallocate(singleArray5d)
-#ifndef NO_PIO
          else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
              (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
             allocate(doubleArray5d(size(realArray5d,1), size(realArray5d,2), size(realArray5d,3), size(realArray5d,4), size(realArray5d,5)))
             doubleArray5d(:,:,:,:,:) = real(realArray5d(:,:,:,:,:),R8KIND)
             if (associated(field_cursor % fieldhandle % decomp)) then
-               call PIO_write_darray(handle % pio_file, field_cursor % fieldhandle % field_desc, field_cursor % fieldhandle % decomp % pio_iodesc, &
-                                     doubleArray5d, pio_ierr)
+               if (field_cursor % fieldhandle % has_unlimited_dim) then
+                  start6(1:5) = field_cursor % fieldhandle % decomp % start(:)
+                  count6(1:5) = field_cursor % fieldhandle % decomp % count(:)
+                  start6(6) = handle % frame_number
+                  count6(6) = 1
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start6, count=count6)
+               else
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, &
+                                         start=field_cursor % fieldhandle % decomp % start, count=field_cursor % fieldhandle % decomp % count)
+               end if
             else
                if (field_cursor % fieldhandle % has_unlimited_dim) then
                   start6(1) = 1
@@ -3050,7 +2819,7 @@
                   count6(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count6(5) = field_cursor % fieldhandle % dims(5) % dimsize
                   count6(6) = 1
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start6, count6, doubleArray5d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start6, count=count6)
                else
                   start5(:) = 1
                   count5(1) = field_cursor % fieldhandle % dims(1) % dimsize
@@ -3058,11 +2827,10 @@
                   count5(3) = field_cursor % fieldhandle % dims(3) % dimsize
                   count5(4) = field_cursor % fieldhandle % dims(4) % dimsize
                   count5(5) = field_cursor % fieldhandle % dims(5) % dimsize
-                  pio_ierr = PIO_put_var(handle % pio_file, field_cursor % fieldhandle % field_desc, start5, count5, doubleArray5d)
+                  nf_ierr = nf90_put_var(handle % ncid, field_cursor % fieldhandle % fieldid, doubleArray5d, start=start5, count=count5)
                end if
             end if
             deallocate(doubleArray5d)
-#endif
          else
             if (associated(field_cursor % fieldhandle % decomp)) then
                if (field_cursor % fieldhandle % has_unlimited_dim) then
@@ -3462,11 +3230,7 @@
       integer :: nf_ierr
       integer :: varid
       integer :: xtype
-#ifdef USE_PIO2
       integer (kind=MPAS_IO_OFFSET_KIND) :: len
-#else
-      integer :: len
-#endif
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
@@ -3601,11 +3365,7 @@
       integer :: nf_ierr
       integer :: varid
       integer :: xtype
-#ifdef USE_PIO2
       integer (kind=MPAS_IO_OFFSET_KIND) :: len, attlen
-#else
-      integer :: len, attlen
-#endif
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
@@ -3755,11 +3515,7 @@
       real (kind=R4KIND) :: singleVal
       real (kind=R8KIND) :: doubleVal
       integer :: xtype
-#ifdef USE_PIO2
       integer (kind=MPAS_IO_OFFSET_KIND) :: len
-#else
-      integer :: len
-#endif
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
@@ -3837,47 +3593,37 @@
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
-#ifndef NO_PIO
 
       if ((local_precision == MPAS_IO_SINGLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
 
-         if (xtype /= PIO_REAL) then
+         if (xtype /= NF90_REAL) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, singleVal)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, singleVal)
          attValue = real(singleVal,RKIND)
 
       else if ((local_precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
 
-         if (xtype /= PIO_DOUBLE) then
+         if (xtype /= NF90_DOUBLE) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, doubleVal)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, doubleVal)
          attValue = real(doubleVal,RKIND)
 
       else
 
-         if (xtype /= PIO_DOUBLE .and. xtype /= PIO_REAL) then
+         if (xtype /= NF90_DOUBLE .and. xtype /= NF90_REAL) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, attValue)
 
       end if
-      if (pio_ierr /= PIO_noerr) then
-#else
-      if (xtype /= IO_REALKIND) then
-         if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
-         return
-      end if
-
-      nf_ierr = nf90_get_att(handle % ncid, varid, attName, attValue)
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -3939,11 +3685,7 @@
       real (kind=R4KIND), dimension(:), allocatable :: singleVal
       real (kind=R8KIND), dimension(:), allocatable :: doubleVal
       integer :: xtype
-#ifdef USE_PIO2
       integer (kind=MPAS_IO_OFFSET_KIND) :: len, attlen
-#else
-      integer :: len, attlen
-#endif
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
@@ -4024,65 +3766,49 @@
          return
       end if
 
-#ifndef NO_PIO
-      pio_ierr = PIO_inq_attlen(handle % pio_file, varid, attName, attlen)
-      if (pio_ierr /= PIO_noerr) then
-#else
-      if (xtype /= IO_REALKIND) then
-         if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
-         return
-      end if
-
       nf_ierr = nf90_inquire_attribute(handle % ncid, varid, attName, len=attlen)
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
 
-#ifndef NO_PIO
       if ((local_precision == MPAS_IO_SINGLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
 
-         if (xtype /= PIO_REAL) then
+         if (xtype /= NF90_REAL) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
          allocate(attValue(attlen))
          allocate(singleVal(attlen))
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, singleVal)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, singleVal)
          attValue(:) = real(singleVal(:),RKIND)
          deallocate(singleVal)
 
       else if ((local_precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
 
-         if (xtype /= PIO_DOUBLE) then
+         if (xtype /= NF90_DOUBLE) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
          allocate(attValue(attlen))
          allocate(doubleVal(attlen))
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, doubleVal)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, doubleVal)
          attValue(:) = real(doubleVal(:),RKIND)
          deallocate(doubleVal)
 
       else
 
-         if (xtype /= PIO_DOUBLE .and. xtype /= PIO_REAL) then
+         if (xtype /= NF90_DOUBLE .and. xtype /= NF90_REAL) then
             if (present(ierr)) ierr=MPAS_IO_ERR_WRONG_ATT_TYPE
             return
          end if
          allocate(attValue(attlen))
-         pio_ierr = PIO_get_att(handle % pio_file, varid, attName, attValue)
+         nf_ierr = nf90_get_att(handle % ncid, varid, attName, attValue)
 
       end if
-      if (pio_ierr /= PIO_noerr) then
-#else
-      allocate(attValue(attlen))
-      nf_ierr = nf90_get_att(handle % ncid, varid, attName, attValue)
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -4141,11 +3867,7 @@
       integer :: nf_ierr
       integer :: varid
       integer :: xtype
-#ifdef USE_PIO2
       integer (kind=MPAS_IO_OFFSET_KIND) :: len
-#else
-      integer :: len
-#endif
       type (fieldlist_type), pointer :: field_cursor
       type (attlist_type), pointer :: att_cursor, new_att_node
 
@@ -4397,19 +4119,14 @@
          end if
       end if
 
-#ifndef NO_PIO
       if ( present(syncVal) ) then
          if ( syncVal ) then
             call mpas_dmpar_bcast_int(handle % iocontext % dminfo, attValueLocal, IO_NODE)
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
-      if (pio_ierr /= PIO_noerr) then
-#else
-      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValue) 
+      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValueLocal) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -4559,19 +4276,14 @@
          end if
       end if
 
-#ifndef NO_PIO
       if ( present(syncVal) ) then
          if ( syncVal ) then
             call mpas_dmpar_bcast_ints(handle % iocontext % dminfo, size(attValueLocal, dim=1), attValueLocal, IO_NODE)
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
-      if (pio_ierr /= PIO_noerr) then
-#else
-      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValue) 
+      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValueLocal) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -4721,7 +4433,6 @@
          end if
       end if
 
-#ifndef NO_PIO
       if ( present(syncVal) ) then
          if ( syncVal ) then
             call mpas_dmpar_bcast_real(handle % iocontext % dminfo, attValueLocal, IO_NODE)
@@ -4731,20 +4442,16 @@
       if ((new_attlist_node % attHandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
          singleVal = real(attValueLocal,R4KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, singleVal) 
       else if ((new_attlist_node % attHandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
          doubleVal = real(attValueLocal,R8KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, doubleVal) 
       else
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValueLocal) 
       end if
 
-      if (pio_ierr /= PIO_noerr) then
-#else
-      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValue) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -4903,7 +4610,6 @@
          end if
       end if
 
-#ifndef NO_PIO
       if ( present(syncVal) ) then
          if ( syncVal ) then
             call mpas_dmpar_bcast_reals(handle % iocontext % dminfo, size(attValueLocal, dim=1), attValueLocal, IO_NODE)
@@ -4914,22 +4620,18 @@
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
          allocate(singleVal(size(attValueLocal)))
          singleVal(:) = real(attValueLocal(:),R4KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, singleVal) 
          deallocate(singleVal)
       else if ((new_attlist_node % attHandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
          allocate(doubleVal(size(attValueLocal)))
          doubleVal(:) = real(attValueLocal(:),R8KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, doubleVal) 
          deallocate(doubleVal)
       else
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+         nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValueLocal) 
       end if
-      if (pio_ierr /= PIO_noerr) then
-#else
-      nf_ierr = nf90_put_att(handle % ncid, varid, attName, attValue) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
@@ -5080,19 +4782,14 @@
          end if
       end if
 
-#ifndef NO_PIO
       if ( present(syncVal) ) then
          if ( syncVal ) then
             call mpas_dmpar_bcast_char(handle % iocontext % dminfo, attValueLocal, IO_NODE)
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal)) 
-      if (pio_ierr /= PIO_noerr) then
-#else
-      nf_ierr = nf90_put_att(handle % ncid, varid, attName, trim(attValue)) 
+      nf_ierr = nf90_put_att(handle % ncid, varid, attName, trim(attValueLocal)) 
       if (nf_ierr /= NF90_NOERR) then
-#endif
 
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
 
@@ -5108,13 +4805,8 @@
                return
             end if
 
-#ifndef NO_PIO
-            pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal)) 
-            if (pio_ierr /= PIO_noerr) then
-#else
-            nf_ierr = nf90_put_att(handle % ncid, varid, attName, trim(attValue)) 
+            nf_ierr = nf90_put_att(handle % ncid, varid, attName, trim(attValueLocal)) 
             if (nf_ierr /= NF90_NOERR) then
-#endif
                return
             end if
 
@@ -5283,31 +4975,13 @@
 !if (.not. associated(decomp_del % decomphandle)) write(stderrUnit,*) 'OOPS... do not have decomphandle'
          deallocate(decomp_del % decomphandle % dims)
          deallocate(decomp_del % decomphandle % indices)
-#ifndef NO_PIO
-         call PIO_freedecomp(ioContext % pio_iosystem, decomp_del % decomphandle % pio_iodesc)
-#else
          if (decomp_del % decomphandle % structured) then
             deallocate(decomp_del % decomphandle % start)
             deallocate(decomp_del % decomphandle % count)
          end if
-#endif
          deallocate(decomp_del % decomphandle)
          deallocate(decomp_del)
       end do
-
-#ifndef NO_PIO
-!write(stderrUnit,*) 'MGD PIO_finalize'
-      if (present(finalize_iosystem)) then
-         if ( finalize_iosystem ) then
-           call PIO_finalize(ioContext % pio_iosystem, pio_ierr)
-           if (pio_ierr /= PIO_noerr) then
-              if (present(ierr)) ierr = MPAS_IO_ERR_PIO
-              return
-           end if
-           deallocate(ioContext % pio_iosystem)
-         end if
-      end if
-#endif
 
    end subroutine MPAS_io_finalize
 
