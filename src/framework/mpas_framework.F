@@ -68,13 +68,12 @@ module mpas_framework
 !>  the time keeper, and the IO infrastructure.
 !
 !-----------------------------------------------------------------------
-   subroutine mpas_framework_init_phase2(domain, io_system, calendar)!{{{
+   subroutine mpas_framework_init_phase2(domain, calendar)!{{{
 
       implicit none
 
       type (domain_type), pointer :: domain
 
-      type (iosystem_desc_t), optional, pointer :: io_system
       character(len=*), intent(in), optional :: calendar
 
       character(len=StrKIND), pointer :: config_calendar_type
@@ -104,7 +103,7 @@ module mpas_framework
          pio_num_iotasks = domain % dminfo % nprocs
       end if
       domain % ioContext % dminfo => domain % dminfo
-      call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride, io_system)
+      call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride)
 
    end subroutine mpas_framework_init_phase2!}}}
 
@@ -119,13 +118,12 @@ module mpas_framework
 !>  This routine finalizes the MPAS framework. It calls routines related to finalizing different parts of MPAS, that are housed within the framework.
 !
 !-----------------------------------------------------------------------  
-   subroutine mpas_framework_finalize(dminfo, domain, io_system)!{{{
+   subroutine mpas_framework_finalize(dminfo, domain)!{{{
   
       implicit none
 
       type (dm_info), pointer :: dminfo
       type (domain_type), pointer :: domain
-      type (iosystem_desc_t), optional, pointer :: io_system
 
       call MPAS_io_finalize(domain % ioContext, .false.)
 
