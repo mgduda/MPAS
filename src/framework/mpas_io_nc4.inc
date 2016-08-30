@@ -284,10 +284,9 @@
 
       nf_ierr = nf90_inq_dimid(handle % ncid, trim(dimname), new_dimlist_node % dimhandle % dimid)
       if (nf_ierr /= NF90_NOERR) then
-         if (present(ierr)) ierr = MPAS_IO_ERR_PIO
+         if (present(ierr)) ierr = MPAS_IO_ERR_MISSING_DIM
          deallocate(new_dimlist_node % dimhandle)
          deallocate(new_dimlist_node)
-         write(stderrUnit,*) 'WARNING: Dimension ', trim(dimname), ' not in input file.'
          dimsize = -1
          return
       end if
