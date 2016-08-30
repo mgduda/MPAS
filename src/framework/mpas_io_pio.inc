@@ -81,11 +81,7 @@
       type (mpas_io_context_type), intent(inout) :: ioContext
       integer, intent(in) :: io_task_count
       integer, intent(in) :: io_task_stride
-#ifndef NO_PIO
       type (iosystem_desc_t), optional, pointer :: io_system
-#else
-      integer, optional :: io_system
-#endif
       integer, intent(out), optional :: ierr
 
       integer :: local_ierr
