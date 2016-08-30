@@ -65,7 +65,7 @@
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
-      integer :: pio_unlimited_dimid
+      integer :: unlimited_dimid
       integer :: preexisting_records = 0
       integer (kind=MPAS_IO_OFFSET_KIND) :: frame_number = 1
       type (dimlist_type), pointer :: dimlist_head => null()

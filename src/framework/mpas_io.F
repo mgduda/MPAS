@@ -313,9 +313,9 @@ module mpas_io
       end if
 
       if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
-!MPAS_io_open % pio_unlimited_dimid = 44
-         pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % pio_unlimited_dimid)
-!write(stderrUnit,*) 'Found unlimited dim ', MPAS_io_open % pio_unlimited_dimid
+!MPAS_io_open % unlimited_dimid = 44
+         pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % unlimited_dimid)
+!write(stderrUnit,*) 'Found unlimited dim ', MPAS_io_open % unlimited_dimid
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
@@ -325,8 +325,8 @@ module mpas_io
          ! negative dimension ID when an unlimited dimension is not found.  This
          ! might change in the future, causing this code to break, though it
          ! shouldn't break for files with unlimited dimensions.
-         if ( MPAS_io_open % pio_unlimited_dimid >= 0 ) then
-            pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % pio_unlimited_dimid, MPAS_io_open % preexisting_records)
+         if ( MPAS_io_open % unlimited_dimid >= 0 ) then
+            pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % unlimited_dimid, MPAS_io_open % preexisting_records)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                return
@@ -366,7 +366,7 @@ module mpas_io
          return
       end if
 
-      pio_ierr = PIO_inq_dimname(handle % pio_file, handle % pio_unlimited_dimid, dimname) 
+      pio_ierr = PIO_inq_dimname(handle % pio_file, handle % unlimited_dimid, dimname) 
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_NO_UNLIMITED_DIM
          dimname = ' '
@@ -430,7 +430,7 @@ module mpas_io
          return
       end if
 
-      if (new_dimlist_node % dimhandle % dimid == handle % pio_unlimited_dimid) new_dimlist_node % dimhandle % is_unlimited_dim = .true.
+      if (new_dimlist_node % dimhandle % dimid == handle % unlimited_dimid) new_dimlist_node % dimhandle % is_unlimited_dim = .true.
 
       pio_ierr = PIO_inq_dimlen(handle % pio_file, new_dimlist_node % dimhandle % dimid, new_dimlist_node % dimhandle % dimsize)
       if (pio_ierr /= PIO_noerr) then
@@ -698,7 +698,7 @@ module mpas_io
          ! Get information about dimensions
          do i=1,new_fieldlist_node % fieldhandle % ndims
             new_fieldlist_node % fieldhandle % dims(i) % dimid = dimids(i)
-            if (dimids(i) == handle % pio_unlimited_dimid) then
+            if (dimids(i) == handle % unlimited_dimid) then
                new_fieldlist_node % fieldhandle % dims(i) % is_unlimited_dim = .true.
                new_fieldlist_node % fieldhandle % has_unlimited_dim = .true.
             end if
