@@ -113,6 +113,9 @@ module test_core_streams
       call MPAS_stream_mgr_create_stream(domain % streamManager, 'R4_stream', MPAS_STREAM_OUTPUT, 'r4_data.nc', &
                                          realPrecision=MPAS_IO_SINGLE_PRECISION, &
                                          clobberMode=MPAS_STREAM_CLOBBER_TRUNCATE, &
+#ifdef NO_PIO
+                                         ioType=MPAS_IO_NETCDF4, &
+#endif
                                          ierr=local_ierr)
       if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
          ierr = 1
@@ -123,6 +126,9 @@ module test_core_streams
       call MPAS_stream_mgr_create_stream(domain % streamManager, 'R8_stream', MPAS_STREAM_OUTPUT, 'r8_data.nc', &
                                          realPrecision=MPAS_IO_DOUBLE_PRECISION, &
                                          clobberMode=MPAS_STREAM_CLOBBER_TRUNCATE, &
+#ifdef NO_PIO
+                                         ioType=MPAS_IO_NETCDF4, &
+#endif
                                          ierr=local_ierr)
       if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
          ierr = 1
@@ -134,6 +140,9 @@ module test_core_streams
                                          filenameInterval="0001-00-00_00:00:00", &
                                          realPrecision=MPAS_IO_DOUBLE_PRECISION, &
                                          clobberMode=MPAS_STREAM_CLOBBER_TRUNCATE, &
+#ifdef NO_PIO
+                                         ioType=MPAS_IO_NETCDF4, &
+#endif
                                          ierr=local_ierr)
       if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
          ierr = 1
@@ -186,6 +195,9 @@ module test_core_streams
       call MPAS_stream_mgr_create_stream(domain % streamManager, 'R4_stream', MPAS_STREAM_INPUT, 'r4_data.nc', &
                                          realPrecision=MPAS_IO_SINGLE_PRECISION, &
                                          clobberMode=MPAS_STREAM_CLOBBER_TRUNCATE, &
+#ifdef NO_PIO
+                                         ioType=MPAS_IO_NETCDF4, &
+#endif
                                          ierr=local_ierr)
       if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
          ierr = 1
@@ -196,6 +208,9 @@ module test_core_streams
       call MPAS_stream_mgr_create_stream(domain % streamManager, 'R8_stream', MPAS_STREAM_INPUT, 'r8_data.nc', &
                                          realPrecision=MPAS_IO_DOUBLE_PRECISION, &
                                          clobberMode=MPAS_STREAM_CLOBBER_TRUNCATE, &
+#ifdef NO_PIO
+                                         ioType=MPAS_IO_NETCDF4, &
+#endif
                                          ierr=local_ierr)
       if (local_ierr /= MPAS_STREAM_MGR_NOERR) then
          ierr = 1

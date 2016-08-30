@@ -364,6 +364,7 @@ bluegene:
 CPPINCLUDES = 
 FCINCLUDES = 
 LIBS = 
+ifneq "$(PIO)" ""
 ifneq ($(wildcard $(PIO)/lib), ) # Check for newer PIO version
 ifeq "$(USE_PIO2)" "true"
 	CPPINCLUDES = -DUSE_PIO2 -I$(PIO)/include
@@ -384,6 +385,9 @@ else
 	FCINCLUDES = -I$(PIO)
 	LIBS = -L$(PIO) -lpio
 endif
+endif
+else
+	CPPINCLUDES = -DNO_PIO
 endif
 
 ifneq "$(PNETCDF)" ""
@@ -488,11 +492,15 @@ else # USE_PAPI IF
 	PAPI_MESSAGE="Papi libraries are off."
 endif # USE_PAPI IF
 
+ifneq "$(PIO)" ""
 ifeq "$(USE_PIO2)" "true"
 	PIO_MESSAGE="Using the PIO 2 library."
 else # USE_PIO2 IF
 	PIO_MESSAGE="Using the PIO 1.x library."
 endif # USE_PIO2 IF
+else
+	PIO_MESSAGE="PIO support not enabled."
+endif
 
 ifdef TIMER_LIB
 ifeq "$(TIMER_LIB)" "tau"
