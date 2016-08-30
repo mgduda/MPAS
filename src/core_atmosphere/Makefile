@@ -32,6 +32,7 @@ physcore:
 	( cd physics; $(MAKE) all )
 	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a )
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*TBL .)
+	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/MP_THOMPSON*DBL .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*DATA* .)
 
 dycore:
