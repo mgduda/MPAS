@@ -162,9 +162,6 @@ module atm_time_integration
       real (kind=RKIND), dimension(:), pointer :: latCell, lonCell, latEdge, lonEdge
       integer :: indexMax, kMax, indexMax_global, kMax_global
       real (kind=RKIND) :: wspd, latMax, lonMax, latMax_global, lonMax_global
-      real (kind=RKIND) :: pi_const
-
-      pi_const = 2.0_RKIND*asin(1.0_RKIND)
 
       !
       ! Retrieve configuration options
@@ -649,8 +646,8 @@ module atm_time_integration
             call mpas_dmpar_maxind_real(domain % dminfo, &
                                         scalar_max, indexMax, kMax, latMax, lonMax, &
                                         global_scalar_max, indexMax_global, kMax_global, latMax_global, lonMax_global)
-            latMax_global = latMax_global * 180.0_RKIND / pi_const
-            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            latMax_global = latMax_global * 180.0_RKIND / pii
+            lonMax_global = lonMax_global * 180.0_RKIND / pii
             if (lonMax_global > 180.0) then
                lonMax_global = lonMax_global - 360.0
             end if
@@ -682,8 +679,8 @@ module atm_time_integration
             call mpas_dmpar_maxind_real(domain % dminfo, &
                                         scalar_max, indexMax, kMax, latMax, lonMax, &
                                         global_scalar_max, indexMax_global, kMax_global, latMax_global, lonMax_global)
-            latMax_global = latMax_global * 180.0_RKIND / pi_const
-            lonMax_global = lonMax_global * 180.0_RKIND / pi_const
+            latMax_global = latMax_global * 180.0_RKIND / pii
+            lonMax_global = lonMax_global * 180.0_RKIND / pii
             if (lonMax_global > 180.0) then
                lonMax_global = lonMax_global - 360.0
             end if
@@ -1144,6 +1141,8 @@ module atm_time_integration
       real (kind=RKIND) :: pgrad, flux, resm
       real (kind=RKIND), pointer :: epssm, smdiv
 
+      logical, pointer :: add_top_damp
+
       real (kind=RKIND), pointer :: cf1, cf2, cf3
       real (kind=RKIND) :: pr, pl
       integer :: kr, kl
@@ -1215,6 +1214,7 @@ module atm_time_integration
       ! smdiv is the 3D divergence-damping coefficient.
       call mpas_pool_get_config(configs, 'config_epssm', epssm) 
       call mpas_pool_get_config(configs, 'config_smdiv', smdiv) 
+      call mpas_pool_get_config(configs, 'config_add_diffusive_damping', add_top_damp) 
 
 
       rcv = rgas/(cp-rgas)
@@ -1396,6 +1396,7 @@ module atm_time_integration
          ! the implicit Rayleigh damping on w (gravity-wave absorbing) 
 
          do k=2,nVertLevels
+            if (add_top_damp) dss(k,iCell) = 0.
             rw_p(k,iCell) = (rw_p(k,iCell)-dts*dss(k,iCell)*               &
                         (fzm(k)*zz (k,iCell)+fzp(k)*zz (k-1,iCell))        &
                         *(fzm(k)*rho_zz(k,iCell)+fzp(k)*rho_zz(k-1,iCell))       &
@@ -2582,6 +2583,11 @@ module atm_time_integration
       real (kind=RKIND), pointer :: config_visc4_2dsmag
       real (kind=RKIND), pointer :: config_len_disp
 
+      logical, pointer :: add_top_damp
+      real (kind=RKIND), pointer :: zd, config_xnutr
+      real (kind=RKIND) :: z, zt, dz, kdiffv
+      real (kind=RKIND), allocatable, dimension(:,:) :: dampk, dampkv
+
       real (kind=RKIND) :: flux3, flux4
       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
 
@@ -2708,11 +2714,19 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'cf2', cf2)
       call mpas_pool_get_array(mesh, 'cf3', cf3)
 
+      call mpas_pool_get_config(configs, 'config_zd', zd)
+      call mpas_pool_get_config(configs, 'config_add_diffusive_damping', add_top_damp)
+      call mpas_pool_get_config(configs, 'config_xnutr', config_xnutr)
 
       prandtl_inv = 1.0_RKIND/prandtl
 
 !      write(0,*) ' rk_step in compute_dyn_tend ',rk_step
 
+      allocate(dampk(nVertLevels, nCells+1))
+      allocate(dampkv(nVertLevels, nCells+1))
+
+      dampk(:,:)  = 0.0
+      dampkv(:,:) = 0.0
 
       delsq_horiz_mixing = .false.
       if (config_horiz_mixing == "2d_smagorinsky" .and. (rk_step == 1 .or. rk_diffusion)) then
@@ -2731,11 +2745,28 @@ module atm_time_integration
                                                 + defc_a(iEdge,iCell)*v(k,EdgesOnCell(iEdge,iCell))
                end do
             end do
+
+            zt = zgrid(nVertLevels+1,iCell)
             do k=1, nVertLevels
                ! here is the Smagorinsky formulation, 
                ! followed by imposition of an upper bound on the eddy viscosity
                kdiff(k,iCell) = (c_s * config_len_disp)**2 * sqrt(d_diag(k)**2 + d_off_diag(k)**2)
                kdiff(k,iCell) = min(kdiff(k,iCell),(0.01*config_len_disp**2)/dt)
+
+               if (add_top_damp) then
+                 z = 0.5*(zgrid(k,iCell) + zgrid(k+1,iCell))
+                 dz= (zgrid(k+1,iCell) - zgrid(k,iCell))
+                 if (z > zd) then
+                    dampk(k,iCell) = config_len_disp**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+                    !dampk(k,iCell) = areaCell(iCell)/dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+                    dampkv(k,iCell)= dz**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+                    ! set upper limit on vertical K (based on horizontal K)
+                    dampkv(k,iCell)= min(dampkv(k,iCell), dampk(k,iCell))
+
+                    kdiff(k,iCell) = max(kdiff(k,iCell), dampk(k,iCell)) 
+                 end if
+               end if
+
             end do
          end do
 !ldf (2012-10-10):
@@ -3085,7 +3116,7 @@ module atm_time_integration
       !
       !  vertical mixing for u - 2nd order filter in physical (z) space
       !
-      if ( v_mom_eddy_visc2 > 0.0 ) then
+      if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
 
          if (config_mix_full) then
 
@@ -3105,7 +3136,8 @@ module atm_time_integration
                   z0 = 0.5*(z2+z3)
                   zp = 0.5*(z3+z4)
 
-                  tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + rho_edge(k,iEdge) * v_mom_eddy_visc2*(  &
+                  kdiffv = max(0.5*(dampkv(k,cell1)+dampkv(k,cell2)), v_mom_eddy_visc2)
+                  tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + rho_edge(k,iEdge) * kdiffv *(  &
                                      (u(k+1,iEdge)-u(k  ,iEdge))/(zp-z0)                      &
                                     -(u(k  ,iEdge)-u(k-1,iEdge))/(z0-zm) )/(0.5*(zp-zm))
                end do
@@ -3434,11 +3466,12 @@ module atm_time_integration
 
       if (rk_step == 1 .or. rk_diffusion) then
 
-         if ( v_mom_eddy_visc2 > 0.0 ) then
+         if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
 
             do iCell = 1, nCellsSolve
             do k=2,nVertLevels
-               tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + v_mom_eddy_visc2*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
+               kdiffv = max(fzm(k)*dampkv(k,iCell)+fzp(k)*dampkv(k-1,iCell), v_mom_eddy_visc2)
+               tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + kdiffv*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
                                         (w(k+1,iCell)-w(k  ,iCell))*rdzw(k)                              &
                                        -(w(k  ,iCell)-w(k-1,iCell))*rdzw(k-1) )*rdzu(k)
             end do
@@ -3458,6 +3491,9 @@ module atm_time_integration
       end do
 
       deallocate(qtot)
+
+      deallocate(dampk)
+      deallocate(dampkv)
 
 !----------- rhs for theta
 
