@@ -3099,10 +3099,21 @@ module init_atm_cases
 
                end if
 
+               if (areaCell(cell1) > 0.0_RKIND) then
                   zb(k,1,iEdge) = (z_edge-zgrid(k,cell1))*dvEdge(iEdge)/areaCell(cell1) 
-                  zb(k,2,iEdge) = (z_edge-zgrid(k,cell2))*dvEdge(iEdge)/areaCell(cell2) 
                   zb3(k,1,iEdge)=  z_edge3*dvEdge(iEdge)/areaCell(cell1) 
+               else
+                  zb(k,1,iEdge) = 1.0e36_RKIND
+                  zb3(k,1,iEdge)=  1.0e36_RKIND
+               end if
+
+               if (areaCell(cell2) > 0.0_RKIND) then
+                  zb(k,2,iEdge) = (z_edge-zgrid(k,cell2))*dvEdge(iEdge)/areaCell(cell2) 
                   zb3(k,2,iEdge)=  z_edge3*dvEdge(iEdge)/areaCell(cell2) 
+               else
+                  zb(k,2,iEdge) = 1.0e36_RKIND
+                  zb3(k,2,iEdge)=  1.0e36_RKIND
+               end if
   
             end do
 
