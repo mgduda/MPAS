@@ -72,7 +72,6 @@ module atm_time_integration
    ! Used in physics_addtend
    real(kind=RKIND),dimension(:,:),allocatable:: rublten_Edge, rucuten_Edge
    real(kind=RKIND),dimension(:,:),allocatable:: theta, tend_th
-   real(kind=RKIND),dimension(:,:),allocatable,target:: Ux_tend_halo, Uy_tend_halo
 
    contains
 
@@ -380,8 +379,6 @@ module atm_time_integration
       ! Used in physics_addtend
       allocate(theta(nVertLevels,nCellsSolve))
       allocate(tend_th(nVertLevels,nCellsSolve))
-      allocate(Ux_tend_halo(nVertLevels,nCells+1))
-      allocate(Uy_tend_halo(nVertLevels,nCells+1))
       if(config_pbl_scheme .ne. 'off') then
          allocate(rublten_Edge(nVertLevels,nEdges))
       end if
@@ -406,7 +403,7 @@ module atm_time_integration
 !$OMP &    rho_zz_int, scalar_tend_array, uReconstructX, uReconstructY, uReconstructZ, &
 !$OMP &    uReconstructZonal, uReconstructMeridional, u, config_convection_scheme, &
 !$OMP &    scalars_1, scalars_2, rqvdynten, index_qv, config_dt, config_microp_scheme, &
-!$OMP &    itimestep, rublten_Edge, rucuten_Edge, theta, tend_th, Ux_tend_halo, Uy_tend_halo) &
+!$OMP &    itimestep, rublten_Edge, rucuten_Edge, theta, tend_th) &
 !$OMP &    private(thread, dynamics_substep, rk_step, small_step)
 
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
@@ -508,15 +505,14 @@ module atm_time_integration
 #endif
 
 !$OMP do schedule(static,1) private(thread)
-               do thread=1,block % nThreads
-                  call physics_addtend( block, mesh, state, diag, tend, tend_physics, &
-                                        block % configs, rk_step, dynamics_substep, theta, tend_th, &
-                                        Ux_tend_halo, Uy_tend_halo, rublten_Edge, rucuten_Edge, &
-                                        block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                        block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                        block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                        block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread) )
-               end do
+            do thread=1,block % nThreads
+               call physics_addtend( block, mesh, state, diag, tend, tend_physics, block % configs, &
+                                     rk_step, theta, tend_th, rublten_Edge, rucuten_Edge, &
+                                     block % cellThreadStart(thread), block % cellThreadEnd(thread), &
+                                     block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
+                                     block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
+                                     block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread) )
+            end do
 !$OMP end do
 
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
@@ -529,8 +525,8 @@ module atm_time_integration
             !  we are solving for all edges of owned cells to minimize communications
             !  during the acoustic substeps
             !***********************************
-! tend_u
 !$OMP master
+! tend_u
             call mpas_pool_get_field(tend, 'u', tend_u_field)
             call mpas_dmpar_exch_halo_field(tend_u_field, (/ 1 /))
 !$OMP end master
@@ -990,8 +986,6 @@ module atm_time_integration
 #ifdef DO_PHYSICS
       deallocate(theta)
       deallocate(tend_th)
-      deallocate(Ux_tend_halo)
-      deallocate(Uy_tend_halo)
       if(config_pbl_scheme .ne. 'off') then
          deallocate(rublten_Edge)
       end if
@@ -3514,7 +3508,6 @@ MPAS_GPTL_STOP('mono_exch_2')
    end subroutine atm_compute_dyn_tend
 
 
-   ! DH* 20160824 - tested OMP barriers for removal, think that all barriers currently present are needed
    subroutine atm_compute_dyn_tend_work(nCells, nEdges, nVertices, nVertLevels_dummy, &
       nCellsSolve, nEdgesSolve, vertexDegree, maxEdges_dummy, maxEdges2_dummy, num_scalars_dummy, moist_start, moist_end, &
       fEdge, dvEdge, dcEdge, invDcEdge, invDvEdge, invAreaCell, invAreaTriangle, meshScalingDel2, meshScalingDel4, &
