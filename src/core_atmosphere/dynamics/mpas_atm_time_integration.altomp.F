@@ -70,7 +70,6 @@ module atm_time_integration
    real (kind=RKIND), allocatable, dimension(:,:) :: ke_edge
 
    ! Used in physics_addtend
-   real(kind=RKIND),dimension(:,:),allocatable:: rublten_Edge, rucuten_Edge
    real(kind=RKIND),dimension(:,:),allocatable:: theta, tend_th
 
    contains
@@ -213,7 +212,7 @@ module atm_time_integration
 
       real (kind=RKIND), dimension(:,:), pointer :: rqvdynten
 
-
+      
       !
       ! Retrieve configuration options
       !
@@ -329,9 +328,7 @@ module atm_time_integration
       call mpas_pool_get_dimension(mesh, 'nVertices', nVertices)
       call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
       call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
-#ifdef DO_PHYSICS
-      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
-#endif
+
       ! Arrays
       call mpas_pool_get_array(state, 'scalars', scalars, 2)
       call mpas_pool_get_array(state, 'w', w, 2)
@@ -379,12 +376,6 @@ module atm_time_integration
       ! Used in physics_addtend
       allocate(theta(nVertLevels,nCellsSolve))
       allocate(tend_th(nVertLevels,nCellsSolve))
-      if(config_pbl_scheme .ne. 'off') then
-         allocate(rublten_Edge(nVertLevels,nEdges))
-      end if
-      if(config_convection_scheme .eq. 'cu_tiedtke') then
-         allocate(rucuten_Edge(nVertLevels,nEdges))
-      end if
 #endif
 
       ! Used in atm_advance_scalars_mono?
@@ -403,7 +394,7 @@ module atm_time_integration
 !$OMP &    rho_zz_int, scalar_tend_array, uReconstructX, uReconstructY, uReconstructZ, &
 !$OMP &    uReconstructZonal, uReconstructMeridional, u, config_convection_scheme, &
 !$OMP &    scalars_1, scalars_2, rqvdynten, index_qv, config_dt, config_microp_scheme, &
-!$OMP &    itimestep, rublten_Edge, rucuten_Edge, theta, tend_th) &
+!$OMP &    itimestep, theta, tend_th, config_time_integration_order) &
 !$OMP &    private(thread, dynamics_substep, rk_step, small_step)
 
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
@@ -463,21 +454,21 @@ module atm_time_integration
          RK3_DYNAMICS : do rk_step = 1, 3  ! Runge-Kutta loop
 
 !$OMP barrier
-               ! recompute vertically implicit coefficients if necessary
-               if( (config_time_integration_order == 3) .and. (rk_step == 2)) then
+            ! recompute vertically implicit coefficients if necessary
+            if( (config_time_integration_order == 3) .and. (rk_step == 2)) then
 
-                  !  Compute the coefficients for the vertically implicit solve in the acoustic step.
-                  !  These coefficients will work for the 2nd and 3rd acoustic steps (dt is the same for both).
+               !  Compute the coefficients for the vertically implicit solve in the acoustic step.
+               !  These coefficients will work for the 2nd and 3rd acoustic steps (dt is the same for both).
 !$OMP do schedule(static,1) private(thread)
-                  do thread=1,block % nThreads
-                     call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
-                                                     block % cellThreadStart(thread), block % cellThreadEnd(thread), &
-                                                     block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
-                                                     block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
-                                                     block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
-                  end do
+               do thread=1,block % nThreads
+                  call atm_compute_vert_imp_coefs( state, mesh, diag, block % configs, nVertLevels, rk_sub_timestep(rk_step), &
+                                                  block % cellThreadStart(thread), block % cellThreadEnd(thread), &
+                                                  block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
+                                                  block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
+                                                  block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
+               end do
 !$OMP end do
-               end if  
+            end if  
 
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
             call mpas_timer_start('atm_compute_dyn_tend')
@@ -494,7 +485,7 @@ module atm_time_integration
                                           block % edgeSolveThreadStart(thread), block % edgeSolveThreadEnd(thread))
             end do
 !$OMP end do
-               MPAS_GPTL_STOP('dyn_tend')
+            MPAS_GPTL_STOP('dyn_tend')
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
             call mpas_timer_stop('atm_compute_dyn_tend')
 #endif
@@ -507,7 +498,7 @@ module atm_time_integration
 !$OMP do schedule(static,1) private(thread)
             do thread=1,block % nThreads
                call physics_addtend( block, mesh, state, diag, tend, tend_physics, block % configs, &
-                                     rk_step, theta, tend_th, rublten_Edge, rucuten_Edge, &
+                                     rk_step, dynamics_substep, theta, tend_th, &
                                      block % cellThreadStart(thread), block % cellThreadEnd(thread), &
                                      block % edgeThreadStart(thread), block % edgeThreadEnd(thread), &
                                      block % cellSolveThreadStart(thread), block % cellSolveThreadEnd(thread), &
@@ -553,7 +544,7 @@ module atm_time_integration
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             do small_step = 1, number_sub_steps(rk_step)
-   
+
                !***********************************
                !  see above for tend_u
                !***********************************
@@ -639,7 +630,7 @@ module atm_time_integration
 
             ! scalar advection: RK3 scheme of Skamarock and Gassmann (2011). 
             ! PD or monotonicity constraints applied only on the final Runge-Kutta substep.
-   
+
             if (config_scalar_advection .and. (.not. config_split_dynamics_transport) ) then
 
 #ifdef MPAS_TIME_INTEGRATION_SUBTIMERS
@@ -773,6 +764,8 @@ module atm_time_integration
          rk_timestep(1) = dt/3.
          rk_timestep(2) = dt/2.
          rk_timestep(3) = dt
+         !  switch for 2nd order time integration for scalar transport
+         if(config_time_integration_order == 2) rk_timestep(1) = dt/2.
 !$OMP end master
 !$OMP barrier
 
@@ -986,12 +979,6 @@ module atm_time_integration
 #ifdef DO_PHYSICS
       deallocate(theta)
       deallocate(tend_th)
-      if(config_pbl_scheme .ne. 'off') then
-         deallocate(rublten_Edge)
-      end if
-      if(config_convection_scheme .eq. 'cu_tiedtke') then
-         deallocate(rucuten_Edge)
-      end if
 #endif
 
    end subroutine atm_srk3
@@ -1729,75 +1716,75 @@ module atm_time_integration
       if(small_step /= 1) then  !  not needed on first small step 
 
          do iCell = cellStart,cellEnd
-           ! acoustic step divergence damping - forward weight rtheta_pp - see Klemp et al MWR 2007
-           do k = 1,nVertLevels
-              rtheta_pp_tmp = rtheta_pp(k,iCell)
-              rtheta_pp(k,iCell) = (rtheta_pp(k,iCell) + smdiv_p_forward * (rtheta_pp(k,iCell)-zz_rtheta_pp_old(k,iCell)))*zz(k,iCell)
+            ! acoustic step divergence damping - forward weight rtheta_pp - see Klemp et al MWR 2007
+            do k = 1,nVertLevels
+               rtheta_pp_tmp = rtheta_pp(k,iCell)
+               rtheta_pp(k,iCell) = (rtheta_pp(k,iCell) + smdiv_p_forward * (rtheta_pp(k,iCell)-zz_rtheta_pp_old(k,iCell)))*zz(k,iCell)
               zz_rtheta_pp_old(k,iCell) = rtheta_pp_tmp
-           end do
-        end do
-        
+            end do
+         end do
+
 !$OMP BARRIER
 
-        ! forward-backward acoustic step integration.
-        ! begin by updating the horizontal velocity u, 
-        ! and accumulating the contribution from the updated u to the other tendencies.
+         ! forward-backward acoustic step integration.
+         ! begin by updating the horizontal velocity u, 
+         ! and accumulating the contribution from the updated u to the other tendencies.
 
-        ! we are looping over all edges, but only computing on edges of owned cells. This will include updates of
-        ! all owned edges plus some edges that are owned by other blocks.  We perform these redundant computations
-        ! so that we do not have to communicate updates of u to update the cell variables (rho, w, and theta). 
+         ! we are looping over all edges, but only computing on edges of owned cells. This will include updates of
+         ! all owned edges plus some edges that are owned by other blocks.  We perform these redundant computations
+         ! so that we do not have to communicate updates of u to update the cell variables (rho, w, and theta). 
 
-        !MGD this loop will not be very load balanced with if-test below
+         !MGD this loop will not be very load balanced with if-test below
 
-        do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
+         do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
  
-           cell1 = cellsOnEdge(1,iEdge)
-           cell2 = cellsOnEdge(2,iEdge)
+            cell1 = cellsOnEdge(1,iEdge)
+            cell2 = cellsOnEdge(2,iEdge)
 
-           ! update edges for block-owned cells
-           if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
+            ! update edges for block-owned cells
+            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
 
 !DIR$ IVDEP
-              do k=1,nVertLevels
-!!                 pgrad = ((zz_rtheta_pp(k,cell2)-zz_rtheta_pp_old(k,cell1))*invDcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
-                 pgrad = ((rtheta_pp(k,cell2)-rtheta_pp(k,cell1))*invDcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
-                 pgrad = cqu(k,iEdge)*0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
-                 pgrad = pgrad + 0.5*zxu(k,iEdge)*gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))
-                 ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - pgrad) 
-              end do
+               do k=1,nVertLevels
+!!                pgrad = ((zz_rtheta_pp(k,cell2)-zz_rtheta_pp_old(k,cell1))*invDcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
+                  pgrad = ((rtheta_pp(k,cell2)-rtheta_pp(k,cell1))*invDcEdge(iEdge) )/(.5*(zz(k,cell2)+zz(k,cell1)))
+                  pgrad = cqu(k,iEdge)*0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
+                  pgrad = pgrad + 0.5*zxu(k,iEdge)*gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))
+                  ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - pgrad) 
+               end do
 
-              ! accumulate ru_p for use later in scalar transport
+               ! accumulate ru_p for use later in scalar transport
 !DIR$ IVDEP
-              do k=1,nVertLevels
-                 ruAvg(k,iEdge) = ruAvg(k,iEdge) + ru_p(k,iEdge)
-              end do
+               do k=1,nVertLevels
+                  ruAvg(k,iEdge) = ruAvg(k,iEdge) + ru_p(k,iEdge)
+               end do
 
-           end if ! end test for block-owned cells
+            end if ! end test for block-owned cells
 
-        end do ! end loop over edges
+         end do ! end loop over edges
 
       else !  this is all that us needed for ru_p update for first acoustic step in RK substep
 
-        do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
+         do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
 
-           cell1 = cellsOnEdge(1,iEdge)
-           cell2 = cellsOnEdge(2,iEdge)
+            cell1 = cellsOnEdge(1,iEdge)
+            cell2 = cellsOnEdge(2,iEdge)
 
-           ! update edges for block-owned cells
-           if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
+            ! update edges for block-owned cells
+            if (cell1 <= nCellsSolve .or. cell2 <= nCellsSolve ) then
 
 !DIR$ IVDEP
-              do k=1,nVertLevels
-                 ru_p(k,iEdge) = dts*tend_ru(k,iEdge) - smdiv*dcEdge(iEdge)*(tend_rho(k,cell2)-tend_rho(k,cell1))
-              end do
+               do k=1,nVertLevels
+                  ru_p(k,iEdge) = dts*tend_ru(k,iEdge) - smdiv*dcEdge(iEdge)*(tend_rho(k,cell2)-tend_rho(k,cell1))
+               end do
 !DIR$ IVDEP
-              do k=1,nVertLevels
+               do k=1,nVertLevels
 !!                 ruAvg(k,iEdge) = ruAvg(k,iEdge) + ru_p(k,iEdge)
-                 ruAvg(k,iEdge) = ru_p(k,iEdge)                 
-              end do
+                  ruAvg(k,iEdge) = ru_p(k,iEdge)                 
+               end do
 
-           end if ! end test for block-owned cells
-        end do ! end loop over edges
+            end if ! end test for block-owned cells
+         end do ! end loop over edges
 
       end if ! test for first acoustic step
 
@@ -3695,7 +3682,6 @@ MPAS_GPTL_STOP('mono_exch_2')
             d_diag(1:nVertLevels) = 0.0
             d_off_diag(1:nVertLevels) = 0.0
             do iEdge=1,nEdgesOnCell(iCell)
-!DIR$ IVDEP
                do k=1,nVertLevels
                   d_diag(k)     = d_diag(k)     + defc_a(iEdge,iCell)*u(k,EdgesOnCell(iEdge,iCell))  &
                                                 - defc_b(iEdge,iCell)*v(k,EdgesOnCell(iEdge,iCell))
@@ -3737,7 +3723,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
       do iCell = cellStart,cellEnd
          r = invAreaCell(iCell)
-!DIR$ IVDEP
          do k = 1,nVertLevels
             h_divergence(k,iCell) = h_divergence(k,iCell) * r
          end do
@@ -3789,7 +3774,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
          k = 2
          wduz(k) =  0.5*( rw(k,cell1)+rw(k,cell2))*(fzm(k)*u(k,iEdge)+fzp(k)*u(k-1,iEdge))
-!DIR$ IVDEP
          do k=3,nVertLevels-1
             wduz(k) = flux3( u(k-2,iEdge),u(k-1,iEdge),u(k,iEdge),u(k+1,iEdge),0.5*(rw(k,cell1)+rw(k,cell2)), 1.0_RKIND )
          end do
@@ -3808,7 +3792,6 @@ MPAS_GPTL_STOP('mono_exch_2')
          q(:) = 0.0
          do j = 1,nEdgesOnEdge(iEdge)
             eoe = edgesOnEdge(j,iEdge)
-!DIR$ IVDEP
             do k=1,nVertLevels
                workpv = 0.5 * (pv_edge(k,iEdge) + pv_edge(k,eoe))
 !  the original definition of pv_edge had a factor of 1/density.  We have removed that factor
@@ -3887,7 +3870,6 @@ MPAS_GPTL_STOP('mono_exch_2')
             do i=1,vertexDegree
                iEdge = edgesOnVertex(i,iVertex)
                edge_sign = invAreaTriangle(iVertex) * dcEdge(iEdge) * edgesOnVertex_sign(i,iVertex)
-!DIR$ IVDEP
                do k=1,nVertLevels
                   delsq_vorticity(k,iVertex) = delsq_vorticity(k,iVertex) + edge_sign * delsq_u(k,iEdge)
                end do
@@ -3900,7 +3882,6 @@ MPAS_GPTL_STOP('mono_exch_2')
             do i=1,nEdgesOnCell(iCell)
                iEdge = edgesOnCell(i,iCell)
                edge_sign = r * dvEdge(iEdge) * edgesOnCell_sign(i,iCell)
-!DIR$ IVDEP
                do k=1,nVertLevels
                   delsq_divergence(k,iCell) = delsq_divergence(k,iCell) + edge_sign * delsq_u(k,iEdge)
                end do
@@ -3965,7 +3946,6 @@ MPAS_GPTL_STOP('mono_exch_2')
             iEdge = edgesOnCell(i,iCell)
             edge_sign = edgesOnCell_sign(i,iCell) * dvEdge(iEdge) * 0.5
 
-!DIR$ IVDEP
             do k=2,nVertLevels
                ru_edge_w(k) = fzm(k)*ru(k,iEdge) + fzp(k)*ru(k-1,iEdge)
             end do
@@ -3976,7 +3956,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
             do j=1,nAdvCellsForEdge(iEdge)
                iAdvCell = advCellsForEdge(j,iEdge)
-!DIR$ IVDEP
                do k=2,nVertLevels
                   scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order * sign(1.0_RKIND,ru_edge_w(k)) * adv_coefs_3rd(j,iEdge)
                   flux_arr(k) = flux_arr(k) + scalar_weight * w(k,iAdvCell)
@@ -4014,12 +3993,12 @@ MPAS_GPTL_STOP('mono_exch_2')
 
       if (rk_step == 1) then
 
-!  !OMP BARRIER  why is this openmp barrier here???
 
          ! del^4 horizontal filter.  We compute this as del^2 ( del^2 (u) ).
          !
          ! First, storage to hold the result from the first del^2 computation.
          !  we copied code from the theta mixing, hence the theta* names.
+
 
          delsq_w(1:nVertLevels,cellStart:cellEnd) = 0.0
 
@@ -4057,7 +4036,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
                edge_sign = meshScalingDel4(iEdge)*r_areaCell*dvEdge(iEdge)*edgesOnCell_sign(i,iCell) * invDcEdge(iEdge)
 
-!DIR$ IVDEP
                do k=2,nVertLevels
                   tend_w_euler(k,iCell) = tend_w_euler(k,iCell) - edge_sign * (delsq_w(k,cell2) - delsq_w(k,cell1))
                end do
@@ -4084,7 +4062,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
          k = 2
          wdwz(k) =  0.25*(rw(k,icell)+rw(k-1,iCell))*(w(k,iCell)+w(k-1,iCell))
-!DIR$ IVDEP
          do k=3,nVertLevels-1
             wdwz(k) = flux3( w(k-2,iCell),w(k-1,iCell),w(k,iCell),w(k+1,iCell),0.5*(rw(k,iCell)+rw(k-1,iCell)), 1.0_RKIND )
          end do
@@ -4135,7 +4112,6 @@ MPAS_GPTL_STOP('mono_exch_2')
 
             do j=1,nAdvCellsForEdge(iEdge)
                iAdvCell = advCellsForEdge(j,iEdge)
-!DIR$ IVDEP
                do k=1,nVertLevels
                   scalar_weight = adv_coefs(j,iEdge) + coef_3rd_order*sign(1.0_RKIND,ru(k,iEdge))*adv_coefs_3rd(j,iEdge)
                   flux_arr(k) = flux_arr(k) + scalar_weight* theta_m(k,iAdvCell)
@@ -4211,11 +4187,9 @@ MPAS_GPTL_STOP('mono_exch_2')
                cell1 = cellsOnEdge(1,iEdge)
                cell2 = cellsOnEdge(2,iEdge)
 
-!DIR$ IVDEP
                do k=1,nVertLevels
                   tend_theta_euler(k,iCell) = tend_theta_euler(k,iCell) - edge_sign*(delsq_theta(k,cell2) - delsq_theta(k,cell1))
                end do
-
             end do
          end do
 
@@ -4233,7 +4207,6 @@ MPAS_GPTL_STOP('mono_exch_2')
          k = 2
          wdtz(k) =  rw(k,icell)*(fzm(k)*theta_m(k,iCell)+fzp(k)*theta_m(k-1,iCell))  
          wdtz(k) =  wdtz(k)+(rw_save(k,icell)-rw(k,icell))*(fzm(k)*theta_m_save(k,iCell)+fzp(k)*theta_m_save(k-1,iCell))
-!DIR$ IVDEP
          do k=3,nVertLevels-1
             wdtz(k) = flux3( theta_m(k-2,iCell),theta_m(k-1,iCell),theta_m(k,iCell),theta_m(k+1,iCell), rw(k,iCell), coef_3rd_order )
             wdtz(k) =  wdtz(k) + (rw_save(k,icell)-rw(k,iCell))*(fzm(k)*theta_m_save(k,iCell)+fzp(k)*theta_m_save(k-1,iCell))  ! rtheta_pp redefinition

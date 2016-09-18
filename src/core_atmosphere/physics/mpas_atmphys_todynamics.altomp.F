@@ -21,7 +21,6 @@
  private
  public:: physics_addtend
 
-
 !Interface between the physics parameterizations and the non-hydrostatic dynamical core.
 !Laura D. Fowler (send comments to laura@ucar.edu).
 !2013-05-01.
@@ -58,10 +57,12 @@
 
 
    !=================================================================================================================
-   subroutine physics_addtend(block, mesh, state, diag, tend, tend_physics, configs, rk_step, dynamics_substep, theta, tend_th, &
-                              rublten_Edge, rucuten_Edge, cellStart, cellEnd, edgeStart, edgeEnd, &
+   subroutine physics_addtend(block, mesh, state, diag, tend, tend_physics, configs, rk_step, dynamics_substep, &
+                              theta, tend_th, cellStart, cellEnd, edgeStart, edgeEnd, &
                               cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd)
    !=================================================================================================================
+
+      use mpas_atm_dimensions
 
       ! input variables
       type(block_type),intent(in),target:: block
@@ -72,7 +73,7 @@
       integer, intent(in):: dynamics_substep
 
       real(kind=RKIND),dimension(:,:),intent(inout):: theta, tend_th
-      real(kind=RKIND),dimension(:,:),intent(inout):: rublten_Edge, rucuten_Edge
+
       integer, intent(in):: cellStart, cellEnd, edgeStart, edgeEnd
       integer, intent(in):: cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd
       
@@ -85,7 +86,7 @@
       character(len=StrKIND), pointer :: config_pbl_scheme, config_convection_scheme, &
                                          config_radt_lw_scheme, config_radt_sw_scheme
       integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg, index_ni
-      integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
+      integer,pointer:: nCells,nCellsSolve,nEdges,nEdgesSolve
       integer,dimension(:,:),pointer:: cellsOnEdge
       real(kind=RKIND),dimension(:,:),pointer:: east,north,edge_normal
       real(kind=RKIND),dimension(:,:),pointer:: mass
@@ -100,33 +101,37 @@
                                                 rucuten,rvcuten
       real(kind=RKIND),dimension(:,:),pointer:: rthratenlw,rthratensw
       real(kind=RKIND),dimension(:,:),pointer:: rthdynten
-      real(kind=RKIND),dimension(:,:),pointer :: tend_u_phys
+      real(kind=RKIND),dimension(:,:),pointer:: rublten_Edge,rucuten_Edge
+      
+      real(kind=RKIND),dimension(:,:),pointer:: tend_rtheta_adv
+      real(kind=RKIND),dimension(:,:),pointer:: tend_u_phys
       real(kind=RKIND),dimension(:,:),pointer  :: tend_theta,tend_theta_euler,tend_diabatic,tend_u
       real(kind=RKIND),dimension(:,:,:),pointer:: tend_scalars
-      
+
       call mpas_pool_get_dimension(mesh, 'nCells', nCells)
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
       call mpas_pool_get_dimension(mesh, 'nEdgesSolve', nEdgesSolve)
-      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
-      
+
       call mpas_pool_get_config(configs, 'config_pbl_scheme', config_pbl_scheme)
       call mpas_pool_get_config(configs, 'config_convection_scheme', config_convection_scheme)
       call mpas_pool_get_config(configs, 'config_radt_lw_scheme', config_radt_lw_scheme)
       call mpas_pool_get_config(configs, 'config_radt_sw_scheme', config_radt_sw_scheme)
-      
+
       call mpas_pool_get_array(state, 'theta_m', theta_m, 1)
       call mpas_pool_get_array(state, 'scalars', scalars, 1)
       call mpas_pool_get_array(state, 'rho_zz', mass, 2)
       call mpas_pool_get_array(diag , 'rho_edge', mass_edge)
-      
-      call mpas_pool_get_dimension(state,'index_qv',index_qv)
-      call mpas_pool_get_dimension(state,'index_qc',index_qc)
-      call mpas_pool_get_dimension(state,'index_qr',index_qr)
-      call mpas_pool_get_dimension(state,'index_qi',index_qi)
-      call mpas_pool_get_dimension(state,'index_qs',index_qs)
-      call mpas_pool_get_dimension(state,'index_qg',index_qg)
-      call mpas_pool_get_dimension(state,'index_ni',index_ni)
+
+      call mpas_pool_get_array(diag , 'tend_rtheta_adv', tend_rtheta_adv)
+      call mpas_pool_get_array(diag, 'tend_u_phys', tend_u_phys) !nick
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      call mpas_pool_get_dimension(state, 'index_qc', index_qc)
+      call mpas_pool_get_dimension(state, 'index_qr', index_qr)
+      call mpas_pool_get_dimension(state, 'index_qi', index_qi)
+      call mpas_pool_get_dimension(state, 'index_qs', index_qs)
+      call mpas_pool_get_dimension(state, 'index_qg', index_qg)
+      call mpas_pool_get_dimension(state, 'index_ni', index_ni)
       
       call mpas_pool_get_array(tend,'rt_diabatic_tend',tend_diabatic)
       call mpas_pool_get_array(tend_physics, 'rthdynten' , rthdynten)
@@ -138,87 +143,97 @@
       call mpas_pool_get_array(tend,'theta_m'     , tend_theta      )
       call mpas_pool_get_array(tend,'theta_euler' , tend_theta_euler)
       call mpas_pool_get_array(tend,'scalars_tend', tend_scalars    )
-      
-      call mpas_pool_get_array(diag , 'tend_u_phys', tend_u_phys) !nick
+
       call mpas_pool_get_array(mesh, 'east', east)
       call mpas_pool_get_array(mesh, 'north', north)
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
       call mpas_pool_get_array(mesh, 'edgeNormalVectors', edge_normal)
       
-      call mpas_pool_get_array(tend_physics,'rublten' ,rublten )
-      call mpas_pool_get_array(tend_physics,'rvblten' ,rvblten )
-      call mpas_pool_get_array(tend_physics,'rthblten',rthblten)
-      call mpas_pool_get_array(tend_physics,'rqvblten',rqvblten)
-      call mpas_pool_get_array(tend_physics,'rqcblten',rqcblten)
-      call mpas_pool_get_array(tend_physics,'rqiblten',rqiblten)
-      call mpas_pool_get_array(tend_physics,'rniblten',rniblten)
+      call mpas_pool_get_array(tend_physics, 'rublten', rublten)
+      call mpas_pool_get_array(tend_physics, 'rvblten', rvblten)
+      call mpas_pool_get_array(tend_physics, 'rthblten', rthblten)
+      call mpas_pool_get_array(tend_physics, 'rqvblten', rqvblten)
+      call mpas_pool_get_array(tend_physics, 'rqcblten', rqcblten)
+      call mpas_pool_get_array(tend_physics, 'rqiblten', rqiblten)
+      call mpas_pool_get_array(tend_physics, 'rniblten', rniblten)
+      call mpas_pool_get_array(tend_physics, 'rublten_Edge', rublten_Edge)
       
-      call mpas_pool_get_array(tend_physics,'rthcuten',rthcuten)
-      call mpas_pool_get_array(tend_physics,'rqvcuten',rqvcuten)
-      call mpas_pool_get_array(tend_physics,'rqccuten',rqccuten)
-      call mpas_pool_get_array(tend_physics,'rqicuten',rqicuten)
-      call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
-      call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
-      call mpas_pool_get_array(tend_physics,'rqrcuten',rqrcuten)
-      call mpas_pool_get_array(tend_physics,'rqscuten',rqscuten)
-      call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
-      call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
+      call mpas_pool_get_array(tend_physics, 'rthcuten', rthcuten)
+      call mpas_pool_get_array(tend_physics, 'rqvcuten', rqvcuten)
+      call mpas_pool_get_array(tend_physics, 'rqccuten', rqccuten)
+      call mpas_pool_get_array(tend_physics, 'rqicuten', rqicuten)
+      call mpas_pool_get_array(tend_physics, 'rucuten', rucuten)
+      call mpas_pool_get_array(tend_physics, 'rvcuten', rvcuten)
+      call mpas_pool_get_array(tend_physics, 'rqrcuten', rqrcuten)
+      call mpas_pool_get_array(tend_physics, 'rqscuten', rqscuten)
+      call mpas_pool_get_array(tend_physics, 'rucuten', rucuten)
+      call mpas_pool_get_array(tend_physics, 'rvcuten', rvcuten)
+      call mpas_pool_get_array(tend_physics, 'rucuten_Edge', rucuten_Edge)
       
-      
-      call physics_addtend_work(block, mesh, rk_step, theta, tend_th, &
+      call physics_addtend_work(block, mesh, rk_step, dynamics_substep, theta, tend_th, &
              & rublten_Edge, rucuten_Edge, cellStart, cellEnd, edgeStart, edgeEnd, cellSolveStart, cellSolveEnd, &
-             & edgeSolveStart, edgeSolveEnd, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertLevels, &
+             & edgeSolveStart, edgeSolveEnd, nCells, nCellsSolve, nEdges, nEdgesSolve, &
              & config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
              & theta_m, scalars, mass, mass_edge, index_qv, index_qc, index_qr, index_qi, index_qs, index_qg, &
              & index_ni, tend_diabatic, rthdynten, rthratenlw, rthratensw, tend_u, tend_theta, tend_theta_euler, &
-             & tend_scalars, tend_u_phys, east, north, cellsOnEdge, edge_normal, rublten, rvblten, rthblten, &
+             & tend_scalars, tend_u_phys, tend_rtheta_adv, east, north, cellsOnEdge, edge_normal, rublten, rvblten, rthblten, &
              & rqvblten, rqcblten, rqiblten, rniblten, rthcuten, rqvcuten, rqccuten, rqicuten, &
              & rqrcuten, rqscuten, rucuten, rvcuten)
 
    end subroutine physics_addtend
 
    !=================================================================================================================
-   subroutine physics_addtend_work(block, mesh, rk_step, theta, tend_th, &
+   subroutine physics_addtend_work(block, mesh, rk_step, dynamics_substep, theta, tend_th, &
               & rublten_Edge, rucuten_Edge, cellStart, cellEnd, edgeStart, edgeEnd, cellSolveStart, cellSolveEnd, &
-              & edgeSolveStart, edgeSolveEnd, nCells, nCellsSolve, nEdges, nEdgesSolve, nVertLevels, &
+              & edgeSolveStart, edgeSolveEnd, nCells, nCellsSolve, nEdges, nEdgesSolve, &
               & config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
               & theta_m, scalars, mass, mass_edge, index_qv, index_qc, index_qr, index_qi, index_qs, index_qg, &
               & index_ni, tend_diabatic, rthdynten, rthratenlw, rthratensw, tend_u, tend_theta, tend_theta_euler, &
-              & tend_scalars, tend_u_phys, east, north, cellsOnEdge, edge_normal, rublten, rvblten, rthblten, &
+              & tend_scalars, tend_u_phys, tend_rtheta_adv, east, north, cellsOnEdge, edge_normal, rublten, rvblten, rthblten, &
               & rqvblten, rqcblten, rqiblten, rniblten, rthcuten, rqvcuten, rqccuten, rqicuten, &
               & rqrcuten, rqscuten, rucuten, rvcuten)
    !=================================================================================================================
-   
+
+      use mpas_atm_dimensions
+
       !input variables:
       type(block_type),intent(in),target:: block
       type(mpas_pool_type),intent(in):: mesh
-      integer, intent(in):: rk_step
-     
+      integer, intent(in) :: rk_step
+      integer, intent(in) :: dynamics_substep
       integer, intent(in):: cellStart, cellEnd, edgeStart, edgeEnd
       integer, intent(in):: cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd
       character(len=StrKIND), intent(in) :: config_pbl_scheme, config_convection_scheme, &
                                             config_radt_lw_scheme, config_radt_sw_scheme
-      integer, intent(in) :: nCells,nCellsSolve,nEdges,nEdgesSolve,nVertLevels
-      real(kind=RKIND),dimension(:,:), intent(in) :: tend_theta_euler, tend_diabatic
-      real(kind=RKIND),dimension(:,:), intent(in) :: rthblten,rqvblten,rqcblten, &
+      integer, intent(in) :: nCells,nCellsSolve,nEdges,nEdgesSolve
+      
+      
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: tend_theta_euler, tend_diabatic
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: rthblten,rqvblten,rqcblten, &
                                                      rqiblten,rublten,rvblten
-      real(kind=RKIND),dimension(:,:), intent(in) :: rniblten
-      real(kind=RKIND),dimension(:,:), intent(in) :: rthcuten,rqvcuten,rqccuten, &
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: rniblten
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: rthcuten,rqvcuten,rqccuten, &
                                                      rqrcuten,rqicuten,rqscuten, &
                                                      rucuten,rvcuten
-      real(kind=RKIND),dimension(:,:), intent(in) :: rthratenlw,rthratensw
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: rthratenlw,rthratensw
+      
+      ! DH* TODO ADD MISSING DIMENSION INFORMATION?
       integer, dimension(:,:), intent(in) :: cellsOnEdge
-      real(kind=RKIND),dimension(:,:), intent(in) :: east,north,edge_normal
-      real(kind=RKIND),dimension(:,:), intent(in) :: mass
-      real(kind=RKIND),dimension(:,:), intent(in) :: mass_edge
-      real(kind=RKIND),dimension(:,:), intent(in) :: theta_m
+      real(kind=RKIND),dimension(:,:), intent(in) :: east,north
+      real(kind=RKIND),dimension(:,:), intent(in) :: edge_normal
+      real(kind=RKIND),dimension(nVertLevels,nCells), intent(in) :: mass
+      real(kind=RKIND),dimension(nVertLevels,nEdges+1), intent(in) :: mass_edge
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(in) :: theta_m
       
       !inout variables
-      real(kind=RKIND),dimension(:,:),intent(inout):: theta, tend_th
-      real(kind=RKIND),dimension(:,:),intent(inout):: rublten_Edge, rucuten_Edge
-      real(kind=RKIND),dimension(:,:,:), intent(inout), target :: scalars, tend_scalars
-      real(kind=RKIND),dimension(:,:), intent(inout) :: tend_u_phys, tend_u, tend_theta
-      real(kind=RKIND),dimension(:,:), intent(inout) :: rthdynten
+      real(kind=RKIND),dimension(nVertLevels,nCellsSolve),intent(inout):: theta, tend_th
+      real(kind=RKIND),dimension(nVertLevels,nCells+1),intent(inout):: tend_theta
+      real(kind=RKIND),dimension(nVertLevels,nEdges+1),intent(inout):: rublten_Edge, rucuten_Edge
+      real(kind=RKIND),dimension(num_scalars,nVertLevels,nCells+1), intent(inout), target :: scalars, tend_scalars
+      real(kind=RKIND),dimension(nVertLevels,nEdges+1), intent(inout) :: tend_u_phys, tend_u
+      
+      real(kind=RKIND), dimension(nVertLevels,nCells+1), intent(in) :: tend_rtheta_adv
+      real(kind=RKIND),dimension(nVertLevels,nCells+1), intent(inout) :: rthdynten
       
       ! Local variables
       integer :: i, iCell, k, n
@@ -237,7 +252,8 @@
       tend_qi => tend_scalars(index_qi,:,:)
       tend_qs => tend_scalars(index_qs,:,:)
       tend_qg => tend_scalars(index_qg,:,:)
-     
+      tend_ni => tend_scalars(index_ni,:,:)
+
       !initialize the tendency for the potential temperature and all scalars
       !due to PBL, convection, and longwave and shortwave radiation:
       tend_qv(:,cellStart:cellEnd) = 0._RKIND
@@ -246,18 +262,40 @@
       tend_qi(:,cellStart:cellEnd) = 0._RKIND
       tend_qs(:,cellStart:cellEnd) = 0._RKIND
       tend_qg(:,cellStart:cellEnd) = 0._RKIND
+      tend_ni(:,cellStart:cellEnd) = 0._RKIND
       tend_th(:,cellSolveStart:cellSolveEnd) = 0._RKIND
-     
+
+      !MGD does this need to happen for GF or Tiedtke?
+      if (config_convection_scheme .eq. 'cu_grell_freitas') then
+         !
+         !save the tendency of the modified potential temperature due to horizontal and vertical advections,
+         !and mixing before adding tendencies due to physics processes (PBL,convection,radiation) for use in
+         !the Grell-GF and new Tiedtke parameterization of convection:
+         !
+         do i = cellSolveStart, cellSolveEnd
+!DIR$ IVDEP
+            do k = 1, nVertLevels
+               coeff = 1._RKIND/(1._RKIND + R_v_over_R_d*qv(k,i))
+               rthdynten(k,i) = coeff*tend_rtheta_adv(k,i)/mass(k,i)
+            enddo
+         enddo
+      end if
+
+! This barrier is needed!
+!$OMP barrier
+
       !add coupled tendencies due to PBL processes:
-      if(config_pbl_scheme .ne. 'off') then
-     
-         ! Barriers implemented in tend_toEdges, in particular on exit
-         call tend_toEdges(block, mesh, rublten, rvblten, rublten_Edge, &
-                           nCells, nCellsSolve, nVertLevels, east, north, cellsOnEdge, &
-                           edge_normal, edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
-     
-         tend_u_phys(1:nVertLevels,edgeStart:edgeEnd) = rublten_Edge(1:nVertLevels,edgeStart:edgeEnd)
-         
+      if (config_pbl_scheme .ne. 'off') then
+         if (rk_step == 1 .and. dynamics_substep == 1) then
+            ! Barriers implemented in tend_toEdges, in particular on exit
+            call tend_toEdges(block, mesh, rublten, rvblten, rublten_Edge, &
+                              nCells, nCellsSolve, east, north, cellsOnEdge, &
+                              edge_normal, edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
+
+            !MGD for PV budget? should a similar line be in the cumulus section below?
+            tend_u_phys(1:nVertLevels,edgeStart:edgeEnd) = rublten_Edge(1:nVertLevels,edgeStart:edgeEnd)
+         end if
+
          do i = edgeSolveStart, edgeSolveEnd
 !DIR$ IVDEP
             do k  = 1, nVertLevels
@@ -278,10 +316,7 @@
          pbl_select: select case (config_pbl_scheme)
          
             case("bl_mynn")
-               tend_ni => tend_scalars(index_ni,:,:)
-               tend_ni(:,cellStart:cellEnd) = 0._RKIND
      
-!$OMP barrier
                do i = cellSolveStart, cellSolveEnd
 !DIR$ IVDEP
                   do k = 1, nVertLevels
@@ -296,28 +331,8 @@
       endif
      
       !add coupled tendencies due to convection:
-      if(config_convection_scheme .ne. 'off') then
-     
-         if(config_convection_scheme .eq. 'cu_tiedtke') then
-     
-            ! Barriers implemented in tend_toEdges, in particular on exit
-            call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge, &
-                              nCells, nCellsSolve, nVertLevels, east, north, cellsOnEdge, &
-                              edge_normal, & ! Ux_tend_halo, Uy_tend_halo, &
-                              edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
-     
-            tend_u_phys(1:nVertLevels,edgeStart:edgeEnd) = tend_u_phys(1:nVertLevels,edgeStart:edgeEnd) + &
-                                                         & rucuten_Edge(1:nVertLevels,edgeStart:edgeEnd)
-     
-            do i = edgeSolveStart, edgeSolveEnd
-!DIR$ IVDEP
-               do k  = 1, nVertLevels
-                  tend_u(k,i)=tend_u(k,i)+rucuten_Edge(k,i)*mass_edge(k,i)
-               enddo
-            enddo
-     
-         endif
-     
+      if (config_convection_scheme .ne. 'off') then
+
          do i = cellSolveStart, cellSolveEnd
 !DIR$ IVDEP
             do k = 1, nVertLevels
@@ -334,14 +349,14 @@
      
                do i = cellSolveStart, cellSolveEnd
                   do k = 1, nVertLevels
+!DIR$ IVDEP
                      coeff = 1._RKIND/(1._RKIND + R_v_over_R_d*qv(k,i))
                      rthdynten(k,i) = coeff*(tend_theta(k,i)-tend_theta_euler(k,i) &
                                     - mass(k,i)*tend_diabatic(k,i))/mass(k,i)
                   enddo
                enddo
-     
+
             case('cu_kain_fritsch')
-     
                do i = cellSolveStart, cellSolveEnd
 !DIR$ IVDEP
                   do k = 1, nVertLevels
@@ -351,26 +366,27 @@
                enddo
       
             case('cu_tiedtke')
-   
-               ! Barriers implemented in tend_toEdges, in particular on exit
-               call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge, &
-                              nCells, nCellsSolve, nVertLevels, east, north, cellsOnEdge, &
-                              edge_normal, & ! Ux_tend_halo, Uy_tend_halo, &
-                              edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
-   
+               if (rk_step == 1 .and. dynamics_substep == 1) then
+                  ! Barriers implemented in tend_toEdges, in particular on exit
+                  call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge, &
+                                 nCells, nCellsSolve, east, north, cellsOnEdge, &
+                                 edge_normal, & ! Ux_tend_halo, Uy_tend_halo, &
+                                 edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
+               end if
+
                do i = edgeSolveStart, edgeSolveEnd
 !DIR$ IVDEP
                   do k  = 1, nVertLevels
                      tend_u(k,i) = tend_u(k,i) + rucuten_Edge(k,i)*mass_edge(k,i)
                   enddo
                enddo
-      
+
              case default
-      
+
          end select convection_select
-      
+
       endif
-      
+
       !add coupled tendencies due to longwave radiation:
       if(config_radt_lw_scheme .ne. 'off') then
          do i = cellSolveStart, cellSolveEnd
@@ -380,7 +396,7 @@
             enddo
          enddo
       endif
-      
+    
       !add coupled tendencies due to shortwave radiation:
       if(config_radt_sw_scheme .ne. 'off') then
          do i = cellSolveStart, cellSolveEnd
@@ -390,7 +406,7 @@
             enddo
          enddo
       endif
-   
+
       !if non-hydrostatic core, convert the tendency for the potential temperature to a
       !tendency for the modified potential temperature:
       do i = cellSolveStart, cellSolveEnd
@@ -402,12 +418,12 @@
             tend_theta(k,i) = tend_theta(k,i) + tend_th(k,i)
          end do
       end do
-   
+
       if (rk_step .eq. 3) then
 !$OMP barrier
          if(mpas_threading_get_thread_num() .eq. 0) then
-            write(0,*)
-            write(0,*) '--- enter subroutine physics_addtend:'
+            write(0,*) ' '
+            write(0,*) '--- enter subroutine physics_addtend, rk_step, dynamics_substep:', rk_step, dynamics_substep
             write(0,*) 'max rthblten   = ',maxval(rthblten(:,:))
             write(0,*) 'min rthblten   = ',minval(rthblten(:,:))
             write(0,*) 'max rthcuten   = ',maxval(rthcuten(:,:))
@@ -445,20 +461,20 @@
             write(0,*) 'max theta      = ',maxval(theta(:,:))
             write(0,*) 'min theta      = ',minval(theta(:,:))
         
-            write(0,*) 'mean tend_qv = ',   sum(tend_qv(:,:))/(max(1,size(tend_qv(:,:))))
-            write(0,*) 'mean tend_qc = ',   sum(tend_qc(:,:))/(max(1,size(tend_qc(:,:))))
-            write(0,*) 'mean tend_qr = ',   sum(tend_qr(:,:))/(max(1,size(tend_qr(:,:))))
-            write(0,*) 'mean tend_qi = ',   sum(tend_qi(:,:))/(max(1,size(tend_qi(:,:))))
-            write(0,*) 'mean tend_qs = ',   sum(tend_qs(:,:))/(max(1,size(tend_qs(:,:))))
-            write(0,*) 'mean tend_qg = ',   sum(tend_qg(:,:))/(max(1,size(tend_qg(:,:))))
-            write(0,*) 'mean tend_th = ',   sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
+            write(0,*) 'mean tend_qv    = ',sum(tend_qv(:,:))/(max(1,size(tend_qv(:,:))))
+            write(0,*) 'mean tend_qc    = ',sum(tend_qc(:,:))/(max(1,size(tend_qc(:,:))))
+            write(0,*) 'mean tend_qr    = ',sum(tend_qr(:,:))/(max(1,size(tend_qr(:,:))))
+            write(0,*) 'mean tend_qi    = ',sum(tend_qi(:,:))/(max(1,size(tend_qi(:,:))))
+            write(0,*) 'mean tend_qs    = ',sum(tend_qs(:,:))/(max(1,size(tend_qs(:,:))))
+            write(0,*) 'mean tend_qg    = ',sum(tend_qg(:,:))/(max(1,size(tend_qg(:,:))))
+            write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
             write(0,*) 'mean tend_u     = ',sum(tend_u(:,:))/(max(1,size(tend_u(:,:))))
             write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
             write(0,*) 'mean tend_theta = ',sum(tend_theta(:,:))/(max(1,size(tend_theta(:,:))))
             write(0,*) 'mean theta      = ',sum(theta(:,:))/(max(1,size(theta(:,:))))
         
             write(0,*) '--- end subroutine physics_addtend'
-            write(0,*)
+            write(0,*) ' '
          endif
       endif
 
@@ -470,27 +486,29 @@
    
    
    !=================================================================================================================
-   subroutine tend_toEdges(block,mesh,Ux_tend,Uy_tend,U_tend, nCells, nCellsSolve, nVertLevels, east, north, &
+   subroutine tend_toEdges(block,mesh,Ux_tend,Uy_tend,U_tend, nCells, nCellsSolve, east, north, &
                           cellsOnEdge, edge_normal, edgeStart, edgeEnd, cellSolveStart, cellSolveEnd)
    !=================================================================================================================
    
+      use mpas_atm_dimensions
+      
       !input arguments:
       type(block_type), intent(in),target:: block
       type(mpas_pool_type), intent(in):: mesh
       real(kind=RKIND), intent(in), dimension(:,:), target :: Ux_tend, Uy_tend 
-      integer, intent(in):: nCells, nCellsSolve, nVertLevels
+      integer, intent(in):: nCells, nCellsSolve
       integer,dimension(:,:), intent(in):: cellsOnEdge
       real(kind=RKIND),dimension(:,:), intent(in):: east,north,edge_normal
       integer, intent(in) :: edgeStart, edgeEnd, cellSolveStart, cellSolveEnd
       
       !output arguments:
-      real(kind=RKIND), intent(out), dimension(:,:):: U_tend
+      real(kind=RKIND), intent(out), dimension(:,:) :: U_tend
       
       !local variables:
       real(kind=RKIND), dimension(:,:), pointer :: Ux_tend_halo, Uy_tend_halo
       type (field2DReal), pointer :: tempField
       type (field2DReal), target :: tempFieldTarget
-      integer:: iCell, iEdge, k
+      integer:: iEdge
       integer:: cell1, cell2
       
       !-----------------------------------------------------------------------------------------------------------------

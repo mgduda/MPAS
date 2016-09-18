@@ -1,5 +1,10 @@
-MODEL_FORMULATION =
-
+#MODEL_FORMULATION =
+#
+# temporary directives to set:
+# export MPAS_TIME_INTEGRATION_FLAG="-DMPAS_ALTOMP_TIME_INTEGRATION" # enables alternative threaded version of the time integration
+# export MPAS_TIME_INTEGRATION_SUBTIMERS="-DMPAS_TIME_INTEGRATION_SUBTIMERS" # enables detailed timing of time integration steps
+#
+MODEL_FORMULATION = $(MPAS_TIME_INTEGRATION_FLAG) $(MPAS_TIME_INTEGRATION_SUBTIMERS)
 
 dummy:
 	( $(MAKE) error )
