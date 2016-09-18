@@ -21,7 +21,6 @@
  private
  public:: physics_addtend
 
-
 !Interface between the physics parameterizations and the non-hydrostatic dynamical core.
 !Laura D. Fowler (send comments to laura@ucar.edu).
 !2013-05-01.
@@ -109,6 +108,10 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 
+ ! just for printing
+ real(kind=RKIND), dimension(:,:), pointer  :: tend_qv,tend_qc,tend_qr,tend_qi,tend_qs,tend_qg
+ real(kind=RKIND), dimension(:,:), pointer  :: tend_ni
+
 !=================================================================================================================
  call mpas_pool_get_dimension(mesh, 'nCells', nCells)
  call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
@@ -175,7 +178,6 @@
 
  tend_scalars(:,:,:) = 0._RKIND
 
-<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
  call physics_addtend_work(block, mesh, nCells, nEdges, nCellsSolve, nEdgesSolve, &
                            rk_step, dynamics_substep, &
                            config_pbl_scheme, config_convection_scheme, config_radt_lw_scheme, config_radt_sw_scheme, &
@@ -188,34 +190,80 @@
                            tend_u_phys, tend_rtheta_adv, tend_diabatic, &
                            theta, theta_m, scalars, tend_theta, tend_theta_euler &
                           )
-=======
-    pbl_select: select case (config_pbl_scheme)
->>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
 
+ if (rk_step .eq. 3) then
+   !$OMP barrier
+   tend_qv => tend_scalars(index_qv,:,:)
+   tend_qc => tend_scalars(index_qc,:,:)
+   tend_qr => tend_scalars(index_qr,:,:)
+   tend_qi => tend_scalars(index_qi,:,:)
+   tend_qs => tend_scalars(index_qs,:,:)
+   tend_qg => tend_scalars(index_qg,:,:)
+   tend_ni => tend_scalars(index_ni,:,:)
+   if(mpas_threading_get_thread_num() .eq. 0) then
+      write(0,*) ' '
+      write(0,*) '--- enter subroutine physics_addtend, rk_step, dynamics_substep:', rk_step, dynamics_substep
+      write(0,*) 'max rthblten   = ',maxval(rthblten(:,:))
+      write(0,*) 'min rthblten   = ',minval(rthblten(:,:))
+      write(0,*) 'max rthcuten   = ',maxval(rthcuten(:,:))
+      write(0,*) 'min rthcuten   = ',minval(rthcuten(:,:))
+      write(0,*) 'max rthratenlw = ',maxval(rthratenlw(:,:))
+      write(0,*) 'min rthratenlw = ',minval(rthratenlw(:,:))
+      write(0,*) 'max rthratensw = ',maxval(rthratensw(:,:))
+      write(0,*) 'min rthratensw = ',minval(rthratensw(:,:))
+   
+      write(0,*) 'mean rthblten   = ',sum(rthblten(:,:))/(max(1,size(rthblten(:,:))))
+      write(0,*) 'mean rthcuten   = ',sum(rthcuten(:,:))/(max(1,size(rthcuten(:,:))))
+      write(0,*) 'mean rthratenlw = ',sum(rthratenlw(:,:))/(max(1,size(rthratenlw(:,:))))
+      write(0,*) 'mean rthratensw = ',sum(rthratensw(:,:))/(max(1,size(rthratensw(:,:))))
+   
+      write(0,*) 'max tend_qv = ',   maxval(tend_qv(:,:))
+      write(0,*) 'min tend_qv = ',   minval(tend_qv(:,:))
+      write(0,*) 'max tend_qc = ',   maxval(tend_qc(:,:))
+      write(0,*) 'min tend_qc = ',   minval(tend_qc(:,:))
+      write(0,*) 'max tend_qr = ',   maxval(tend_qr(:,:))
+      write(0,*) 'min tend_qr = ',   minval(tend_qr(:,:))
+      write(0,*) 'max tend_qi = ',   maxval(tend_qi(:,:))
+      write(0,*) 'min tend_qi = ',   minval(tend_qi(:,:))
+      write(0,*) 'max tend_qs = ',   maxval(tend_qs(:,:))
+      write(0,*) 'min tend_qs = ',   minval(tend_qs(:,:))
+      write(0,*) 'max tend_qg = ',   maxval(tend_qg(:,:))
+      write(0,*) 'min tend_qg = ',   minval(tend_qg(:,:))
+      write(0,*) 'max tend_th = ',   maxval(tend_th(:,:))
+      write(0,*) 'min tend_th = ',   minval(tend_th(:,:))
+      write(0,*) 'max tend_u     = ',maxval(tend_u(:,:))
+      write(0,*) 'min tend_u     = ',minval(tend_u(:,:))
+      write(0,*) 'max tend_th    = ',maxval(tend_th(:,:))
+      write(0,*) 'min tend_th    = ',minval(tend_th(:,:))
+      write(0,*) 'max tend_theta = ',maxval(tend_theta(:,:))
+      write(0,*) 'min tend_theta = ',minval(tend_theta(:,:))
+      write(0,*) 'max theta      = ',maxval(theta(:,:))
+      write(0,*) 'min theta      = ',minval(theta(:,:))
+   
+      write(0,*) 'mean tend_qv    = ',sum(tend_qv(:,:))/(max(1,size(tend_qv(:,:))))
+      write(0,*) 'mean tend_qc    = ',sum(tend_qc(:,:))/(max(1,size(tend_qc(:,:))))
+      write(0,*) 'mean tend_qr    = ',sum(tend_qr(:,:))/(max(1,size(tend_qr(:,:))))
+      write(0,*) 'mean tend_qi    = ',sum(tend_qi(:,:))/(max(1,size(tend_qi(:,:))))
+      write(0,*) 'mean tend_qs    = ',sum(tend_qs(:,:))/(max(1,size(tend_qs(:,:))))
+      write(0,*) 'mean tend_qg    = ',sum(tend_qg(:,:))/(max(1,size(tend_qg(:,:))))
+      write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
+      write(0,*) 'mean tend_u     = ',sum(tend_u(:,:))/(max(1,size(tend_u(:,:))))
+      write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
+      write(0,*) 'mean tend_theta = ',sum(tend_theta(:,:))/(max(1,size(tend_theta(:,:))))
+      write(0,*) 'mean theta      = ',sum(theta(:,:))/(max(1,size(theta(:,:))))
+   
+      write(0,*) '--- end subroutine physics_addtend'
+      write(0,*) ' '
+   endif
+ endif
 
  deallocate(theta)
  deallocate(tend_th)
-
-! if(rk_step .eq. 3) then
-!    write(0,*)
-!    write(0,*) '--- enter subroutine physics_addtend:'
-!    write(0,*) 'max rthblten   = ',maxval(rthblten(:,1:nCellsSolve))
-!    write(0,*) 'min rthblten   = ',minval(rthblten(:,1:nCellsSolve))
-!    write(0,*) 'max rthcuten   = ',maxval(rthcuten(:,1:nCellsSolve))
-!    write(0,*) 'min rthcuten   = ',minval(rthcuten(:,1:nCellsSolve))
-!    write(0,*) 'max rthratenlw = ',maxval(rthratenlw(:,1:nCellsSolve))
-!    write(0,*) 'min rthratenlw = ',minval(rthratenlw(:,1:nCellsSolve))
-!    write(0,*) 'max rthratensw = ',maxval(rthratensw(:,1:nCellsSolve))
-!    write(0,*) 'min rthratensw = ',minval(rthratensw(:,1:nCellsSolve))
-!    write(0,*) '--- end subroutine physics_addtend'
-!    write(0,*)
-! endif
 
 !formats:
  201 format(2i6,10(1x,e15.8))
  202 format(3i6,10(1x,e15.8))
 
-<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
  end subroutine physics_addtend
 
 
@@ -299,9 +347,6 @@
        enddo
        enddo
     end if
-=======
-       case default
->>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
 
 
     !add coupled tendencies due to PBL processes:
@@ -313,19 +358,6 @@
           tend_u_phys(1:nVertLevels,1:nEdges) = rublten_Edge(1:nVertLevels,1:nEdges)
        end if
 
-<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
-=======
-    if(config_convection_scheme .eq. 'cu_tiedtke') then
-       call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
-       call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
-
-       allocate(rucuten_Edge(nVertLevels,nEdges))
-       rucuten_Edge(:,:) = 0.
-       call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge)
-       
-       tend_u_phys(1:nVertLevels,1:nEdges) = tend_u_phys(1:nVertLevels,1:nEdges)+rucuten_Edge(1:nVertLevels,1:nEdges)
-       
->>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
        do i = 1, nEdgesSolve
        do k  = 1, nVertLevels
           tend_u(k,i)=tend_u(k,i)+rublten_Edge(k,i)*mass_edge(k,i)
@@ -341,7 +373,7 @@
        enddo
        enddo
 
-       pbl_select: select case (trim(pbl_scheme))
+       pbl_select: select case (config_pbl_scheme)
 
           case("bl_mynn")
 
@@ -359,7 +391,6 @@
     !add coupled tendencies due to convection:
     if (config_convection_scheme .ne. 'off') then
 
-<<<<<<< a5b426072128835dc4b6f9b4947e4238f4b77eb2
        do i = 1, nCellsSolve
        do k = 1, nVertLevels
           tend_th(k,i) = tend_th(k,i) + rthcuten(k,i)*mass(k,i)
@@ -368,36 +399,8 @@
           tend_scalars(index_qi,k,i) = tend_scalars(index_qi,k,i) + rqicuten(k,i)*mass(k,i)
        enddo
        enddo
-=======
-    convection_select: select case(config_convection_scheme)
 
-       case('cu_grell_freitas')
-          call mpas_pool_get_array(tend_physics, 'rthdynten' , rthdynten)
-
-          do i = 1, nCellsSolve
-          do k = 1, nVertLevels
-             coeff = 1._RKIND/(1._RKIND + R_v/R_d*qv(k,i))
-             rthdynten(k,i) = coeff*(tend_theta(k,i)-tend_theta_euler(k,i) &
-                            - mass(k,i)*tend_diabatic(k,i))/mass(k,i)
-          enddo
-          enddo
-
-       case('cu_kain_fritsch')
-          call mpas_pool_get_array(tend_physics,'rqrcuten',rqrcuten)
-          call mpas_pool_get_array(tend_physics,'rqscuten',rqscuten)
-          do i = 1, nCellsSolve
-          do k = 1, nVertLevels
-             tend_qr(k,i) = tend_qr(k,i) + rqrcuten(k,i)*mass(k,i)
-             tend_qs(k,i) = tend_qs(k,i) + rqscuten(k,i)*mass(k,i)
-          enddo
-          enddo
-    
-       case('cu_tiedtke')
-          call mpas_pool_get_array(tend_physics,'rucuten' ,rucuten )
-          call mpas_pool_get_array(tend_physics,'rvcuten' ,rvcuten )
->>>>>>> Support for alternative omp implementation of atm_srk3, and threading of physics_addtend; also: bug fix in original and threaded physics_addtend
-
-        convection_select: select case(convection_scheme)
+        convection_select: select case(config_convection_scheme)
 
            case('cu_grell_freitas')
 
