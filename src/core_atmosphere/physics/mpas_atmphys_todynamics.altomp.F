@@ -265,6 +265,8 @@
       tend_ni(:,cellStart:cellEnd) = 0._RKIND
       tend_th(:,cellSolveStart:cellSolveEnd) = 0._RKIND
 
+!$OMP barrier
+
       !MGD does this need to happen for GF or Tiedtke?
       if (config_convection_scheme .eq. 'cu_grell_freitas') then
          !
@@ -280,9 +282,6 @@
             enddo
          enddo
       end if
-
-! This barrier is needed!
-!$OMP barrier
 
       !add coupled tendencies due to PBL processes:
       if (config_pbl_scheme .ne. 'off') then
