@@ -1317,8 +1317,11 @@ MGD                <var name="zb3_cell"                  type="real"     dimensi
                         <var name="qg"      array_group="moist" packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1}"
                              description="Graupel mixing ratio"/>
 
-MGD                     <var name="nr"     array_group="number"   packages="mp_thompson_in"/>
-MGD                     <var name="ni"     array_group="number"   packages="bl_mynn_in;mp_thompson_in"/>
+                        <var name="nr"      array_group="number" packages="mp_thompson_in" units="m^{-3}"
+                             description="Rain number concentration"/>
+
+                        <var name="ni"      array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3}"
+                             description="Ice number concentration"/>
 
                 </var_array>
 
@@ -1810,8 +1813,11 @@ MGD                <var name="updraft_helicity_max"    type="real"     dimension
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist" packages="mp_thompson_in;mp_wsm6_in" units="kg kg^{-1} s^{-1}"
                              description="Tendency of graupel mixing ratio"/>
 
-MGD                     <var name="tend_nr"     name_in_code="nr"     array_group="number"   packages="mp_thompson_in"/>
-                     <var name="tend_ni"     name_in_code="ni"     array_group="number"   packages="bl_mynn_in;mp_thompson_in"/>
+                        <var name="tend_nr"    name_in_code="nr"        array_group="number" packages="mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Tendency of rain number concentration"/>
+
+                        <var name="tend_ni"    name_in_code="ni"        array_group="number" packages="bl_mynn_in;mp_thompson_in" units="m^{-3} s^{-1}"
+                             description="Tendency of ice number concentration"/>
 
                 </var_array>
         </var_struct>
@@ -2202,21 +2208,47 @@ MGD                <var name="k22_shallow"   type="integer"  dimensions="nCells 
                 <!-- qshear    : TKE production - shear                                                        [m2/s-2] -->
                 <!-- qwt       : TKE vertical distribution                                                     [m2/s-2] -->
 
-MGD                <var name="delta"         type="real"    dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in"/>
-                <var name="wstar"         type="real"    dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in"/>
-                <var name="cov"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="el_pbl"        type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qke"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qke_adv"       type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qsq"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="tsq"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="tke_pbl"       type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
+                <var name="delta"         type="real"    dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="m"
+                     description="entrainment layer depth from PBL scheme"/>
 
-                <var name="dqke"          type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qbuoy"         type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qdiss"         type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-                <var name="qshear"        type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
-MGD                <var name="qwt"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
+                <var name="wstar"         type="real"    dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="m s^{-1}"
+                     description="mixed velocity scale from PBL scheme"/>
+
+                <var name="cov"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="K kg kg^{-1}"
+                     description="liquid water - liquid water potential temperature covariance"/>
+
+                <var name="el_pbl"        type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m"
+                     description="mixing length from PBL scheme"/>
+
+                <var name="qke"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="twice turbulent kinetic energy"/>
+
+                <var name="qke_adv"       type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}-"
+                     description="twice turbulent kinetic energy"/>
+
+                <var name="qsq"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="kg^2 kg^{-2}"
+                     description="liquid water variance"/>
+
+                <var name="tsq"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="K^2"
+                     description="liquid water potential temperature variance"/>
+
+                <var name="tke_pbl"       type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="turbulent kinetic energy from PBL"/>
+
+                <var name="dqke"          type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="TKE change"/>
+
+                <var name="qbuoy"         type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="TKE production - buoyancy"/>
+
+                <var name="qdiss"         type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="TKE dissipation"/>
+
+                <var name="qshear"        type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="TKE production - shear"/>
+
+                <var name="qwt"           type="real"    dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="m^2 s^{-2}"
+                     description="TKE vertical distribution"/>
 
 
                 <!-- ================================================================================================== -->
@@ -2358,9 +2390,14 @@ MGD                <var name="qwt"           type="real"    dimensions="nVertLev
                 <!--  qcg       :cloud water mixing ratio at the ground surface                                 [kg/kg] -->
                 <!--  sh3d      :stability function for heat                                                        [-] -->
 
-MGD                <var name="ch"            type="real"     dimensions="nCells Time"/>
-                <var name="qcg"           type="real"     dimensions="nCells Time" packages="bl_mynn_in"/>
-                <var name="sh3d"          type="real"     dimensions="nVertLevels nCells Time" packages="bl_mynn_in"/>
+                <var name="ch" type="real" dimensions="nCells Time" units="m s^{-1}"
+                     description="surface exchange coefficient for heat"/>
+
+                <var name="qcg" type="real" dimensions="nCells Time" packages="bl_mynn_in" units="kg kg^{-1}"
+                     description="cloud water mixing ratio at the ground surface"/>
+
+                <var name="sh3d" type="real" dimensions="nVertLevels nCells Time" packages="bl_mynn_in" units="-"
+                     description="stability function for heat"/>
 
                 <!-- DIAGNOSTICS: -->
                 <var name="u10" type="real" dimensions="nCells Time" packages="bl_mynn_in;bl_ysu_in" units="m s^{-1}"
@@ -2824,13 +2861,27 @@ MGD                <var name="ch"            type="real"     dimensions="nCells 
                 <!-- hu_oml             :ocean mixed layer integrated u (zonal velocity)                        [m^2/s] -->
                 <!-- hv_oml             :ocean mixed layer integrated v (meridional velocity)                   [m^2/s] -->
 
-MGD                <var name="t_oml"                 type="real"     dimensions="nCells Time"/>
-                <var name="t_oml_initial"         type="real"     dimensions="nCells Time"/>
-                <var name="t_oml_200m_initial"    type="real"     dimensions="nCells Time"/>
-                <var name="h_oml"                 type="real"     dimensions="nCells Time"/>
-                <var name="h_oml_initial"         type="real"     dimensions="nCells Time"/>
-                <var name="hu_oml"                type="real"     dimensions="nCells Time"/>
-                <var name="hv_oml"                type="real"     dimensions="nCells Time"/>
+                <var name="t_oml"                 type="real" dimensions="nCells Time" units="K"
+                     description="ocean mixed layer temperature"/>
+
+                <var name="t_oml_initial"         type="real" dimensions="nCells Time" units="K"
+                     description="ocean mixed layer temperature at initial time"/>
+
+                <var name="t_oml_200m_initial"    type="real" dimensions="nCells Time" units="K"
+                     description="ocean mixed layer 200 m mean temperature at initial time"/>
+
+                <var name="h_oml"                 type="real" dimensions="nCells Time" units="m"
+                     description="ocean mixed layer depth"/>
+
+                <var name="h_oml_initial"         type="real" dimensions="nCells Time" units="m"
+                     description="ocean mixed layer depth at initial time"/>
+
+                <var name="hu_oml"                type="real" dimensions="nCells Time" units="m^2 s^{-1}"
+                     description="ocean mixed layer integrated u (zonal velocity)"/>
+
+                <var name="hv_oml"                type="real" dimensions="nCells Time" units="m^2 s^{-1}"
+                     description="ocean mixed layer integrated v (meridional velocity)"/>
+
         </var_struct>
 
         <var_struct name="tend_physics" time_levs="1">
@@ -2884,7 +2935,8 @@ MGD                <var name="t_oml"                 type="real"     dimensions=
 		<!-- GRELL ONLY -->
 		<!-- rthdynten : tendency of potential temperature due to horizontal and vertical advections   (K/s-1) -->
 
-MGD		<var name="rthdynten"    type="real"    dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in"/>
+                <var name="rthdynten" type="real" dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in" units="K s^{-1}"
+                     description="tendency of potential temperature due to horizontal and vertical advections"/>
 
 
                 <!-- ================================================================================================== -->
