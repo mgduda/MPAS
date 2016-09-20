@@ -63,7 +63,10 @@
                      description="Time integration scheme"
                      possible_values="`SRK3'"/>
 
-MGD                <nml_option name="config_time_integration_order"        type="integer"       default_value="2"/>
+                <nml_option name="config_time_integration_order" type="integer" default_value="2"
+                     units="-"
+                     description="Order for RK time integration"
+                     possible_values="2 or 3"/>
 
                 <nml_option name="config_dt" type="real" default_value="720.0"
                      units="s"
@@ -1096,12 +1099,14 @@ MGD                <nml_option name="config_smdiv_p_forward"      type="real"   
                 <var name="dvEdge" type="real" dimensions="nEdges" units="m"
                      description="Spherical distance between vertex endpoints of an edge"/>
 
-MGD                <var name="invDvEdge"                 type="real"     dimensions="nEdges"/>
+                <var name="invDvEdge" type="real" dimensions="nEdges" units="m^{-1}"
+                     description="Inverse distance between vertex endpoints of an edge"/>
 
                 <var name="dcEdge" type="real" dimensions="nEdges" units="m"
-                     description="Spherical distance between cells separated by an edge "/>
+                     description="Spherical distance between cells separated by an edge"/>
 
-MGD                <var name="invDcEdge"                 type="real"     dimensions="nEdges"/>
+                <var name="invDcEdge" type="real" dimensions="nEdges" units="m^{-1}"
+                     description="Inverse distance between cells separated by an edge"/>
 
                 <var name="angleEdge" type="real" dimensions="nEdges" units="rad"
                      description="Angle between local north and the positive tangential direction of an edge"/>
@@ -1115,7 +1120,8 @@ MGD                <var name="invDcEdge"                 type="real"     dimensi
                 <var name="areaTriangle" type="real" dimensions="nVertices" units="m^2"
                      description="Spherical area of a Delaunay triangle"/>
 
-MGD                <var name="invAreaTriangle"           type="real"     dimensions="nVertices"/>
+                <var name="invAreaTriangle" type="real" dimensions="nVertices" units="m^{-2}"
+                     description="Inverse area of a Delaunay triangle"/>
 
                 <var name="edgeNormalVectors" type="real" dimensions="R3 nEdges" units="unitless"
                      description="Cartesian components of the vector normal to an edge and tangential to the surface of the sphere"/>
@@ -1609,12 +1615,23 @@ MGD                <var name="tend_rtheta_adv"         type="real"     dimension
                 <var name="relhum_925hPa" type="real" dimensions="nCells Time" units="percent"
                      description="Relative humidity vertically interpolated to 925 hPa"/>
 
-MGD                <var name="dewpoint_200hPa"          type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_250hPa"          type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_500hPa"          type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_700hPa"          type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_850hPa"          type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_925hPa"          type="real"     dimensions="nCells Time"/>
+                <var name="dewpoint_200hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 200 hPa"/>
+
+                <var name="dewpoint_250hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 250 hPa"/>
+
+                <var name="dewpoint_500hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 500 hPa"/>
+
+                <var name="dewpoint_700hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 700 hPa"/>
+
+                <var name="dewpoint_850hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 850 hPa"/>
+
+                <var name="dewpoint_925hPa" type="real" dimensions="nCells Time" units="deg C"
+                     description="Dewpoint temperature vertically interpolated to 925 hPa"/>
 
                 <var name="height_200hPa" type="real" dimensions="nCells Time" units="m"
                      description="Geometric height interpolated to 200 hPa"/>
@@ -2045,7 +2062,7 @@ MGD                <nml_option name="config_oml1d"                      type="lo
                 <!-- refl10cm_max: maximum column reflectivity                                                   (dBz)  -->
 
                 <var name="refl10cm_max" type="real" dimensions="nCells Time" packages="mp_thompson_in;mp_wsm6_in" units="dBZ"
-                     description="10 cm maximum radar reflectivity"/>
+                     description="column maximum 10 cm radar reflectivity"/>
 
                 <var name="i_rainnc" type="integer" dimensions="nCells Time" packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="unitless"
                      description="incidence of accumulated grid-scale precipitation greater than config_bucket_rainnc"/>
@@ -2063,8 +2080,11 @@ MGD                <nml_option name="config_oml1d"                      type="lo
                      description="time-step grid-scale precipitation of graupel"/>
 
                 <!-- added convective diagnostics, WCS 201503 -->
-MGD                <var name="refl10cm_1km"           type="real"     dimensions="nCells Time"/>
-MGD                <var name="refl10cm_1km_max"       type="real"     dimensions="nCells Time"/>
+                <var name="refl10cm_1km" type="real" dimensions="nCells Time" units="dBZ"
+                     description="diagnosed 10 cm radar reflectivity at 1 km AGL"/>
+
+                <var name="refl10cm_1km_max" type="real" dimensions="nCells Time" units="dBZ"
+                     description="maximum diagnosed 10 cm radar reflectivity at 1 km AGL since last output time"/>
 
                 <var name="rainnc" type="real" dimensions="nCells Time" packages="mp_kessler_in;mp_thompson_in;mp_wsm6_in" units="mm"
                      description="accumulated total grid-scale precipitation"/>
