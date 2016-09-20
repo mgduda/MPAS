@@ -32,8 +32,10 @@
                      description="The number of atmospheric layers"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"
                      description="The number of atmospheric levels, always one more than the number of layers"/>
-MGD                <dim name="nIsoLevelsT"         definition="5"/>
-MGD                <dim name="nIsoLevelsZ"         definition="13"/>
+                <dim name="nIsoLevelsT"         definition="5"
+                     description="Number of isobaric levels to which temperature will be vertically interpolated"/>
+                <dim name="nIsoLevelsZ"         definition="13"
+                     description="Number of isobaric levels to which height will be vertically interpolated"/>
                 <dim name="nMonths"            definition="namelist:months"
                      description="The number of months in a year"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"
@@ -1190,7 +1192,8 @@ MGD                <var name="kiteForCell"               type="integer"  dimensi
                 <var name="fzp" type="real" dimensions="nVertLevels" units="unitless"
                      description="Weight for linear interpolation to w(k) point for u(k-1) level variable"/>
 
-MGD                <var name="zxu"                       type="real"     dimensions="nVertLevels nEdges"/>
+                <var name="zxu" type="real" dimensions="nVertLevels nEdges" units="unitless"
+                     description="dz/dx on horizontal coordinate surfaces at u levels"/>
 
                 <var name="zz" type="real" dimensions="nVertLevels nCells" units="unitless"
                      description="d(zeta)/dz, vertical metric term"/>
@@ -1261,8 +1264,11 @@ MGD                <var name="zb3_cell"                  type="real"     dimensi
                 <var name="m_hybi" type="real" dimensions="nAerLevels nCells" units="unitless"
                      description="Matched hybi (needs to be re-checked)"/>
 
-MGD                <var name="t_iso_levels"              type="real"     dimensions="nIsoLevelsT"/>
-MGD                <var name="z_iso_levels"              type="real"     dimensions="nIsoLevelsZ"/>
+                <var name="t_iso_levels" type="real" dimensions="nIsoLevelsT" units="Pa"
+                     description="Levels for vertical interpolation of temperature to isobaric surfaces"/>
+
+                <var name="z_iso_levels" type="real" dimensions="nIsoLevelsZ" units="Pa"
+                     description="Levels for vertical interpolation of height to isobaric surfaces"/>
         </var_struct>
 
         <var_struct name="state" time_levs="2">
@@ -1700,9 +1706,14 @@ MGD                <var name="dewpoint_200hPa"          type="real"     dimensio
                 <var name="vorticity_925hPa" type="real" dimensions="nVertices Time" units="s^{-1}"
                      description="Relative vorticity vertically interpolated to 925 hPa"/>
 
-MGD                <var name="t_isobaric"             type="real"     dimensions="nIsoLevelsT nCells Time"/>
-                <var name="z_isobaric"             type="real"     dimensions="nIsoLevelsZ nCells Time"/>
-                <var name="meanT_500_300"          type="real"     dimensions="nCells Time"/>
+                <var name="t_isobaric"       type="real" dimensions="nIsoLevelsT nCells Time" units="K"
+                     description="Temperature interpolated to isobaric surfaces defined in t_iso_levels"/>
+
+                <var name="z_isobaric"       type="real" dimensions="nIsoLevelsZ nCells Time" units="m"
+                     description="Height interpolated to isobaric surfaces defined in z_iso_levels"/>
+
+                <var name="meanT_500_300"    type="real" dimensions="nCells Time" units="K"
+                     description="Mean temperature in the 300 hPa - 500 hPa layer"/>
 
                 <!-- convective diagnostics, WCS 201503 -->
 MGD                <var name="updraft_helicity_max"    type="real"     dimensions="nCells Time"/>
