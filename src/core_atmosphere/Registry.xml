@@ -227,11 +227,6 @@ MGD                <nml_option name="config_smagorinsky_coef"           type="re
 
 MGD                <nml_option name="config_smdiv_p_forward"      type="real"          default_value="0.1"/>
 
-                <nml_option name="config_newpx" type="logical" default_value="false"
-                     units="-"
-                     description="Whether to use experimental formulation for horizontal pressure gradient computation"
-                     possible_values=".true. or .false."/>
-
                 <nml_option name="config_apvm_upwinding" type="real" default_value="0.5" in_defaults="false"
                      units="-"
                      description="Amount of upwinding in APVM"
@@ -1175,13 +1170,6 @@ MGD                <var name="kiteForCell"               type="integer"  dimensi
 
                 <var name="cf3" type="real" dimensions="" units="unitless"
                      description="Surface interpolation weight for level k=3 value"/>
-
-                <!-- coefficients used by "newpx" horizontal pressure gradient option -->
-                <var name="cpr" type="real" dimensions="THREE nEdges" units="unitless"
-                     description="Coefficients for right cell in `newpx' horizontal pressure gradient formulation"/>
-
-                <var name="cpl" type="real" dimensions="THREE nEdges" units="unitless"
-                     description="Coefficients for left cell in `newpx' horizontal pressure gradient formulation"/>
 
                 <!-- description of the vertical grid structure -->
                 <var name="zgrid" type="real" dimensions="nVertLevelsP1 nCells" units="m MSL"
