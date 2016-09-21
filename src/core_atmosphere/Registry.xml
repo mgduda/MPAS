@@ -213,7 +213,10 @@
                      description="Upwinding coefficient in the 3rd order advection scheme"
                      possible_values="0 $\leq$ config_coef_3rd_order $\leq$ 1"/>
 
-MGD                <nml_option name="config_smagorinsky_coef"           type="real"          default_value="0.125"       in_defaults="false"/>
+                <nml_option name="config_smagorinsky_coef" type="real" default_value="0.125" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
 
                 <nml_option name="config_mix_full" type="logical" default_value="true" in_defaults="false"
                      units="-"
@@ -230,7 +233,10 @@ MGD                <nml_option name="config_smagorinsky_coef"           type="re
                      description="3-d divergence damping coefficient"
                      possible_values="Positive real values"/>
 
-MGD                <nml_option name="config_smdiv_p_forward"      type="real"          default_value="0.1"/>
+                <nml_option name="config_smdiv_p_forward" type="real" default_value="0.1"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
 
                 <nml_option name="config_apvm_upwinding" type="real" default_value="0.5" in_defaults="false"
                      units="-"
@@ -1165,9 +1171,14 @@ MGD                <nml_option name="config_smdiv_p_forward"      type="real"   
                 <var name="meshScalingDel4" type="real" dimensions="nEdges" units="unitless"
                      description="Scaling coefficient for $\nabla^4$ eddy hyper-viscosity"/>
 
-MGD                <var name="edgesOnVertex_sign"        type="real"     dimensions="vertexDegree nVertices"/>
-MGD                <var name="edgesOnCell_sign"          type="real"     dimensions="maxEdges nCells"/>
-MGD                <var name="kiteForCell"               type="integer"  dimensions="maxEdges nCells"/>
+                <var name="edgesOnVertex_sign" type="real" dimensions="vertexDegree nVertices" units="TBD"
+                     description="TBD"/>
+
+                <var name="edgesOnCell_sign" type="real" dimensions="maxEdges nCells" units="TBD"
+                     description="TBD"/>
+
+                <var name="kiteForCell" type="integer" dimensions="maxEdges nCells" units="TBD"
+                     description="TBD"/>
 
                 <!-- coefficients for vertical extrapolation to the surface -->
                 <var name="cf1" type="real" dimensions="" units="unitless"
@@ -1210,8 +1221,11 @@ MGD                <var name="kiteForCell"               type="integer"  dimensi
                 <var name="zb3" type="real" dimensions="nVertLevelsP1 TWO nEdges" units="unitless"
                      description="Coefficients for 3rd-order correction to contribution from u to omega diagnosis"/>
 
-MGD                <var name="zb_cell"                   type="real"     dimensions="nVertLevelsP1 maxEdges nCells"/>
-MGD                <var name="zb3_cell"                  type="real"     dimensions="nVertLevelsP1 maxEdges nCells"/>
+                <var name="zb_cell" type="real" dimensions="nVertLevelsP1 maxEdges nCells" units="TBD"
+                     description="TBD"/>
+
+                <var name="zb3_cell" type="real" dimensions="nVertLevelsP1 maxEdges nCells" units="TBD"
+                     description="TBD"/>
 
                 <var name="pzm" type="real" dimensions="nVertLevels nCells" units="-"
                      description="Used by newpx formulation"/>
@@ -1435,24 +1449,59 @@ MGD                <var name="zb3_cell"                  type="real"     dimensi
                      description="absolute vorticity/rho_zz averaged to the cell center from the vertices"/>
 
                 <!-- nick PV budget -->
-MGD                  <var name="ertel_pv"                 type="real"     dimensions="nVertLevels nCells Time"/>
-                  <var name="u_pv"                 type="real"     dimensions="nCells Time"/>
-                  <var name="v_pv"                 type="real"     dimensions="nCells Time"/>
-                  <var name="theta_pv"                 type="real"     dimensions="nCells Time"/>
-                  <var name="vort_pv"                 type="real"     dimensions="nCells Time"/>
-                  <var name="depv_dt_lw" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="depv_dt_sw" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="depv_dt_bl" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="depv_dt_cu" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="dtheta_dt_mp" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="depv_dt_mp" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="dtheta_dt_mix" type="real" dimensions="nVertLevels nCells Time"/>
-                  <var name="depv_dt_mix" type="real" dimensions="nVertLevels nCells Time"/>
-			            <var name="depv_dt_diab" type="real" dimensions="nVertLevels nCells Time"/>
-			            <var name="depv_dt_fric" type="real" dimensions="nVertLevels nCells Time"/>
-			            <var name="tend_u_phys" type="real" dimensions="nVertLevels nEdges Time"/>
-                  <var name="depv_dt_diab_pv" type="real" dimensions="nCells Time"/>
-MGD			            <var name="depv_dt_fric_pv" type="real" dimensions="nCells Time"/>
+                <var name="ertel_pv" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="u_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="v_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="theta_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="vort_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_lw" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_sw" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_bl" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_cu" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="dtheta_dt_mp" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_mp" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="dtheta_dt_mix" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_mix" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_diab" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_fric" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="tend_u_phys" type="real" dimensions="nVertLevels nEdges Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_diab_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="depv_dt_fric_pv" type="real" dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
 
                 <!-- reconstructed horizontal velocity vectors at cell centers -->
                 <var name="uReconstructX" type="real" dimensions="nVertLevels nCells Time" units="m s^{-1}"
@@ -1560,7 +1609,8 @@ MGD			            <var name="depv_dt_fric_pv" type="real" dimensions="nCells Tim
                 <var name="rtheta_pp_old" type="real" dimensions="nVertLevels nCells Time" units="kg K m^{-3}"
                      description="predicted value rtheta_pp, saved during acoustic steps for divergence damping calculation"/>
 
-MGD                <var name="zz_rtheta_pp_old"        type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="zz_rtheta_pp_old" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
 
                 <var name="rho_p" type="real" dimensions="nVertLevels nCells Time" units="kg m^{-3}"
                      description="rho/zz perturbation from the reference state value, advanced over acoustic steps"/>
@@ -1574,7 +1624,8 @@ MGD                <var name="zz_rtheta_pp_old"        type="real"     dimension
                 <var name="kdiff" type="real" dimensions="nVertLevels nCells Time" units="m^2 s^{-1}"
                      description="Smagorinsky horizontal eddy viscosity"/>
 
-MGD                <var name="tend_rtheta_adv"         type="real"     dimensions="nVertLevels nCells Time"/>
+                <var name="tend_rtheta_adv" type="real" dimensions="nVertLevels nCells Time" units="TBD"
+                     description="TBD"/>
 
                 <var name="surface_pressure" type="real" dimensions="nCells Time" units="Pa"
                      description="Diagnosed surface pressure"/>
@@ -1736,23 +1787,56 @@ MGD                <var name="tend_rtheta_adv"         type="real"     dimension
                      description="Mean temperature in the 300 hPa - 500 hPa layer"/>
 
                 <!-- convective diagnostics, WCS 201503 -->
-MGD                <var name="updraft_helicity_max"    type="real"     dimensions="nCells Time"/>
-                <var name="w_velocity_max"         type="real"     dimensions="nCells Time"/>
-                <var name="wind_speed_level1_max"  type="real"     dimensions="nCells Time"/>
-                <var name="cape"                   type="real"     dimensions="nCells Time"/>
-                <var name="cin"                    type="real"     dimensions="nCells Time"/>
-                <var name="lcl"                    type="real"     dimensions="nCells Time"/>
-                <var name="lfc"                    type="real"     dimensions="nCells Time"/>
-                <var name="srh_0_1km"              type="real"     dimensions="nCells Time"/>
-                <var name="srh_0_3km"              type="real"     dimensions="nCells Time"/>
-                <var name="uzonal_surface"         type="real"     dimensions="nCells Time"/>
-                <var name="uzonal_1km"             type="real"     dimensions="nCells Time"/>
-                <var name="uzonal_6km"             type="real"     dimensions="nCells Time"/>
-                <var name="umeridional_surface"    type="real"     dimensions="nCells Time"/>
-                <var name="umeridional_1km"        type="real"     dimensions="nCells Time"/>
-                <var name="umeridional_6km"        type="real"     dimensions="nCells Time"/>
-                <var name="temperature_surface"    type="real"     dimensions="nCells Time"/>
-                <var name="dewpoint_surface"       type="real"     dimensions="nCells Time"/>
+                <var name="updraft_helicity_max"   type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="w_velocity_max"         type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="wind_speed_level1_max"  type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="cape"                   type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="cin"                    type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="lcl"                    type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="lfc"                    type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="srh_0_1km"              type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="srh_0_3km"              type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="uzonal_surface"         type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="uzonal_1km"             type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="uzonal_6km"             type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="umeridional_surface"    type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="umeridional_1km"        type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="umeridional_6km"        type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="temperature_surface"    type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
+
+                <var name="dewpoint_surface"       type="real"     dimensions="nCells Time" units="TBD"
+                     description="TBD"/>
 
         </var_struct>
 
@@ -1995,8 +2079,15 @@ MGD                <var name="updraft_helicity_max"    type="real"     dimension
                      description="configuration for surface layer-scheme"
                      possible_values="`suite',`monin_obukhov',`off'"/>
 
-MGD                <nml_option name="config_gfconv_closure_deep"        type="integer"       default_value="0"          in_defaults="false"/>
-                <nml_option name="config_gfconv_closure_shallow"     type="integer"       default_value="8"          in_defaults="false"/>
+                <nml_option name="config_gfconv_closure_deep" type="integer" default_value="0" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
+
+                <nml_option name="config_gfconv_closure_shallow" type="integer" default_value="8" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
 
                 <nml_option name="config_bucket_radt" type="real" default_value="1.0e9" in_defaults="false"
                      units="-"
@@ -2013,10 +2104,26 @@ MGD                <nml_option name="config_gfconv_closure_deep"        type="in
                      description="threshold above which the accumulated grid-scale precipitation is reset"
                      possible_values="Positive real values"/>
 
-MGD                <nml_option name="config_oml1d"                      type="logical"       default_value="false"      in_defaults="false"/>
-                <nml_option name="config_oml_hml0"                   type="real"          default_value="30.0"       in_defaults="false"/>
-                <nml_option name="config_oml_gamma"                  type="real"          default_value="0.14"       in_defaults="false"/>
-                <nml_option name="config_oml_relaxation_time"        type="real"          default_value="864000."    in_defaults="false"/>
+                <nml_option name="config_oml1d" type="logical" default_value="false" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
+
+                <nml_option name="config_oml_hml0" type="real" default_value="30.0" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
+
+                <nml_option name="config_oml_gamma" type="real" default_value="0.14" in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
+
+                <nml_option name="config_oml_relaxation_time" type="real" default_value="864000." in_defaults="false"
+                     units="TBD"
+                     description="TBD"
+                     possible_values="TBD"/>
+
         </nml_record>
 
         <var_struct name="diag_physics" time_levs="1">
@@ -2104,14 +2211,26 @@ MGD                <nml_option name="config_oml1d"                      type="lo
                 <var name="precipw" type="real" dimensions="nCells Time" units="kg m^{-2}"
                      description="precipitable water"/>
 
-MGD                <var name="rainprod"     type="real"    dimensions="nVertLevels nCells Time" packages="mp_thompson_in"/>
-                <var name="evapprod"     type="real"    dimensions="nVertLevels nCells Time" packages="mp_thompson_in"/>
-                <var name="re_cloud"     type="real"    dimensions="nVertLevels nCells Time" packages="mp_thompson_in"/>
-                <var name="re_ice"       type="real"    dimensions="nVertLevels nCells Time" packages="mp_thompson_in"/>
-                <var name="re_snow"      type="real"    dimensions="nVertLevels nCells Time" packages="mp_thompson_in"/>
+                <var name="rainprod" type="real" dimensions="nVertLevels nCells Time" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
 
-                <var name="nt_c"         type="real"    dimensions="nCells"      packages="mp_thompson_in"/>
-MGD                <var name="mu_c"         type="real"    dimensions="nCells"      packages="mp_thompson_in"/>
+                <var name="evapprod" type="real" dimensions="nVertLevels nCells Time" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="re_cloud" type="real" dimensions="nVertLevels nCells Time" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="re_ice" type="real" dimensions="nVertLevels nCells Time" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="re_snow" type="real" dimensions="nVertLevels nCells Time" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="nt_c" type="real" dimensions="nCells" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="mu_c" type="real" dimensions="nCells" packages="mp_thompson_in" units="TBD"
+                     description="TBD"/>
 
                 <!-- ================================================================================================== -->
                 <!-- ... PARAMETERIZATION OF CONVECTION:                                                                -->
@@ -2143,16 +2262,29 @@ MGD                <var name="mu_c"         type="real"    dimensions="nCells"  
                      description="time running-averaged vertical velocity"/>
 
                 <!-- ... GRELL-FREITAS ONLY:                                                                           -->
-MGD                <var name="k22_shallow"   type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in"/>
-                <var name="kbcon_shallow" type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in"/>
-                <var name="ktop_shallow"  type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in"/>
-                <var name="ktop_deep"     type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in"/>
+                <var name="k22_shallow"   type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
 
-                <var name="xmb_total"     type="real"     dimensions="nCells Time" packages="cu_grell_freitas_in"/>
-                <var name="xmb_shallow"   type="real"     dimensions="nCells Time" packages="cu_grell_freitas_in"/>
+                <var name="kbcon_shallow" type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
 
-                <var name="qc_cu"         type="real"     dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in"/>
-                <var name="qi_cu"         type="real"     dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in"/>
+                <var name="ktop_shallow"  type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="ktop_deep"     type="integer"  dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="xmb_total"     type="real"     dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="xmb_shallow"   type="real"     dimensions="nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="qc_cu"         type="real"     dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
+
+                <var name="qi_cu"         type="real"     dimensions="nVertLevels nCells Time" packages="cu_grell_freitas_in" units="TBD"
+                     description="TBD"/>
 
                 <!-- ... KAIN_FRITSCH AND GRELL-FREITAS:                                                               -->
                 <!-- cubot     : lowest level of convection                                                        (-) -->
