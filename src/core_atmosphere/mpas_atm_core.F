@@ -331,7 +331,7 @@ module atm_core
       use mpas_stream_manager
       use mpas_derived_types, only : MPAS_STREAM_LATEST_BEFORE, MPAS_STREAM_INPUT, MPAS_STREAM_INPUT_OUTPUT
       use mpas_timer
-      use mpas_atm_boundaries, only : mpas_atm_setup_bdy_tend, mpas_atm_compute_bdy_tend, mpas_atm_update_bdy_tend
+      use mpas_atm_boundaries, only : mpas_atm_setup_bdy_tend, mpas_atm_update_bdy_tend
    
       implicit none
    
@@ -378,17 +378,23 @@ module atm_core
       end if
 
       if (config_compute_lbc_tend) then
-         !
-         ! Setup for boundary condition generation: do not write LBC tendencies now, since we do not have 
-         ! the necessary information to have generated  such tendencies; instead, call routine to get set up to
-         ! compute tendencies after some integration
-         !
-         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)
-         block_ptr => domain % blocklist
-         do while (associated(block_ptr))
-            call mpas_atm_setup_bdy_tend(clock, block_ptr)
-            block_ptr => block_ptr % next
-         end do
+         if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
+            block_ptr => domain % blocklist
+            do while (associated(block_ptr))
+               call mpas_atm_setup_bdy_tend(clock, block_ptr)
+               block_ptr => block_ptr % next
+            end do
+         end if
+      end if
+
+      if (config_apply_lbc_tend) then
+         if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)) then
+            block_ptr => domain % blocklist
+            do while (associated(block_ptr))
+               call mpas_atm_update_bdy_tend(clock, domain % streamManager, block_ptr, .true.)
+               block_ptr => block_ptr % next
+            end do
+         end if
       end if
 
       if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
@@ -426,31 +432,18 @@ module atm_core
          write(0,*) ' '
          write(0,*) 'Begin timestep ', trim(timeStamp)
 
+
          if (config_apply_lbc_tend) then
-            !
-            ! Special treatment for LBC stream: if it is time to update the LBC tendencies, read them and then call
-            ! a routine to let the boundary module record when the tendencies were last updated
-            !
             if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)) then
-
-                call mpas_stream_mgr_read(domain % streamManager, streamID='lbc_in', actualWhen=read_time, ierr=ierr)
-                write(0,*) '----------------------------------------------------------------------'
-                write(0,*) '  Read ''lbc_in'' input stream valid at '//trim(read_time)
-                write(0,*) '----------------------------------------------------------------------'
-                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_in', ierr=ierr)
-
-                block_ptr => domain % blocklist
-                do while (associated(block_ptr))
-                   call mpas_atm_update_bdy_tend(clock, block_ptr)
-                   block_ptr => block_ptr % next
-                end do
-            end if
-         else
-!!!! Here may may need to reset the alarm for the lbc_in stream -- are packages not working for alarms?
-            if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)) then
-                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_in', ierr=ierr)
+               block_ptr => domain % blocklist
+               do while (associated(block_ptr))
+                  call mpas_atm_update_bdy_tend(clock, domain % streamManager, block_ptr, .false.)
+                  block_ptr => block_ptr % next
+               end do
             end if
          end if
+         call MPAS_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_in', direction=MPAS_STREAM_INPUT, ierr=ierr)
+
 
          !
          ! Read external field updates
@@ -523,33 +516,12 @@ module atm_core
          end if
 
          if (config_compute_lbc_tend) then
-            !
-            ! Special treatment for LBC stream: before writing the stream, compute tendency, then write, then set up
-            ! computation of the next LBC tendencies
-            !
             if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, streamID='lbc_out', direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
-
-                block_ptr => domain % blocklist
-                do while (associated(block_ptr))
-                   call mpas_atm_compute_bdy_tend(clock, block_ptr, LBC_intv_start)
-                   block_ptr => block_ptr % next
-                end do
-
-                write(0,*) 'Need to write LBC data at '//trim(LBC_intv_start)
-
-                call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
-                current_xtime = atm_substitute_xtime(state, LBC_intv_start)
-
-                call mpas_stream_mgr_write(domain % streamManager, streamID='lbc_out', writeTime=trim(LBC_intv_start), ierr=ierr)
-                call mpas_stream_mgr_reset_alarms(domain % streamManager, streamID='lbc_out', ierr=ierr)
-
-                LBC_intv_start = atm_substitute_xtime(state, current_xtime)
-
-                block_ptr => domain % blocklist
-                do while (associated(block_ptr))
-                   call mpas_atm_setup_bdy_tend(clock, block_ptr)
-                   block_ptr => block_ptr % next
-                end do
+               block_ptr => domain % blocklist
+               do while (associated(block_ptr))
+                  call mpas_atm_setup_bdy_tend(clock, block_ptr)
+                  block_ptr => block_ptr % next
+               end do
             end if
          end if
 
@@ -687,6 +659,7 @@ module atm_core
       use mpas_timekeeping
       use mpas_kind_types
       use atm_time_integration
+!      use mpas_atm_boundaries, only : mpas_atm_get_bdy_tend
 #ifdef DO_PHYSICS
       use mpas_atmphys_control
       use mpas_atmphys_driver
@@ -726,6 +699,7 @@ module atm_core
 #endif
 
       call atm_timestep(domain, dt, timeStamp, itimestep)
+!      call mpas_atm_get_bdy_tend(domain % clock, domain % blocklist)
 
    end subroutine atm_do_timestep
    
