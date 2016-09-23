@@ -242,6 +242,9 @@
                         <var name="edgeNormalVectors"/>
                         <var name="localVerticalUnitVectors"/>
                         <var name="cellTangentPlane"/>
+                        <var name="bdyMaskCell"/>
+                        <var name="bdyMaskEdge"/>
+                        <var name="bdyMaskVertex"/>
                         <var name="fEdge"/>
                         <var name="fVertex"/>
                         <var name="ter"/>
