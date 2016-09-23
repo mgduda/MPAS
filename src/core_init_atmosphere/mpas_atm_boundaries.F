@@ -5,13 +5,11 @@ module mpas_atm_boundaries
     use mpas_kind_types, only : RKIND
     use mpas_geometry_utils, only : mpas_arc_length
 
-    integer, parameter :: OUTSIDE = 0
-    integer, parameter :: INSIDE = 1
-    integer, parameter :: BOUNDARY = 2
-    integer, parameter :: BOUNDARY2 = 3
-    integer, parameter :: BOUNDARY3 = 4
-    integer, parameter :: BOUNDARY4 = 5
-    integer, parameter :: BOUNDARY5 = 6
+    integer, parameter :: nSpecLayers = 2
+    integer, parameter :: nRelaxLayers = 5
+    integer, parameter :: OUTSIDE = -1
+    integer, parameter :: INSIDE = 0
+    integer, dimension(nSpecLayers + nRelaxLayers), parameter :: BOUNDARY = (/ 1, 2, 3, 4, 5, 6, 7 /)
 
 
     contains
@@ -30,6 +28,8 @@ module mpas_atm_boundaries
         integer, dimension(:,:), pointer :: cellsOnCell, cellsOnEdge, cellsOnVertex
         real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell
         real (kind=RKIND) :: r
+        real (kind=RKIND) :: xc, yc, zc
+        integer :: n, bmin, bmax
 
 
         call mpas_pool_get_array(mesh, 'bdyMaskCell', bdyMaskCell)
@@ -52,13 +52,14 @@ module mpas_atm_boundaries
         !
         bdyMaskCell(:) = OUTSIDE
 
+        call convert_lx(xc, yc, zc, 6371229.0, 40.0*3.1459265359/180.0, -95.0*3.14159265359/180.0)
 
         !
         ! Identify interior cells
         !
         do iCell=1,nCells
-            if (mpas_arc_length(6371229.0_RKIND, 0.0_RKIND, 0.0_RKIND, &
-                                xCell(iCell), yCell(iCell), zCell(iCell)) < 4000000.0_RKIND) then
+            if (mpas_arc_length(xc, yc, zc, &
+                                xCell(iCell), yCell(iCell), zCell(iCell)) < 2500000.0_RKIND) then
                 bdyMaskCell(iCell) = INSIDE
             end if
         end do
@@ -71,7 +72,7 @@ module mpas_atm_boundaries
             if (bdyMaskCell(iCell) == OUTSIDE) then
                 do j=1,nEdgesOnCell(iCell)
                     if (bdyMaskCell(cellsOnCell(j,iCell)) == INSIDE) then
-                        bdyMaskCell(iCell) = BOUNDARY
+                        bdyMaskCell(iCell) = BOUNDARY(1)
                         exit
                     end if
                 end do
@@ -82,48 +83,17 @@ module mpas_atm_boundaries
         !
         ! And so on...
         !
-        do iCell=1,nCells
-            if (bdyMaskCell(iCell) == OUTSIDE) then
-                do j=1,nEdgesOnCell(iCell)
-                    if (bdyMaskCell(cellsOnCell(j,iCell)) == BOUNDARY) then
-                        bdyMaskCell(iCell) = BOUNDARY2
-                        exit
-                    end if
-                end do
-            end if
-        end do
-
-        do iCell=1,nCells
-            if (bdyMaskCell(iCell) == OUTSIDE) then
-                do j=1,nEdgesOnCell(iCell)
-                    if (bdyMaskCell(cellsOnCell(j,iCell)) == BOUNDARY2) then
-                        bdyMaskCell(iCell) = BOUNDARY3
-                        exit
-                    end if
-                end do
-            end if
-        end do
-
-        do iCell=1,nCells
-            if (bdyMaskCell(iCell) == OUTSIDE) then
-                do j=1,nEdgesOnCell(iCell)
-                    if (bdyMaskCell(cellsOnCell(j,iCell)) == BOUNDARY3) then
-                        bdyMaskCell(iCell) = BOUNDARY4
-                        exit
-                    end if
-                end do
-            end if
-        end do
-
-        do iCell=1,nCells
-            if (bdyMaskCell(iCell) == OUTSIDE) then
-                do j=1,nEdgesOnCell(iCell)
-                    if (bdyMaskCell(cellsOnCell(j,iCell)) == BOUNDARY4) then
-                        bdyMaskCell(iCell) = BOUNDARY5
-                        exit
-                    end if
-                end do
-            end if
+        do n = 2, nSpecLayers+nRelaxLayers
+            do iCell=1,nCells
+                if (bdyMaskCell(iCell) == OUTSIDE) then
+                    do j=1,nEdgesOnCell(iCell)
+                        if (bdyMaskCell(cellsOnCell(j,iCell)) == BOUNDARY(n-1)) then
+                            bdyMaskCell(iCell) = BOUNDARY(n)
+                            exit
+                        end if
+                    end do
+                end if
+            end do
         end do
 
 
@@ -132,8 +102,17 @@ module mpas_atm_boundaries
         ! mask value of either of its neighboring cells.
         !
         do iEdge=1,nEdges
-            bdyMaskEdge(iEdge) = max(bdyMaskCell(cellsOnEdge(1,iEdge)), &
-                                     bdyMaskCell(cellsOnEdge(2,iEdge))) 
+            bmin = min(bdyMaskCell(cellsOnEdge(1,iEdge)), &
+                       bdyMaskCell(cellsOnEdge(2,iEdge))) 
+
+            bmax = max(bdyMaskCell(cellsOnEdge(1,iEdge)), &
+                       bdyMaskCell(cellsOnEdge(2,iEdge))) 
+
+            if (bmin /= bmax .and. bmin == OUTSIDE) then
+                bdyMaskEdge(iEdge) = bmax
+            else
+                bdyMaskEdge(iEdge) = bmin
+            end if
         end do
 
 
@@ -142,11 +121,41 @@ module mpas_atm_boundaries
         ! mask value of any of its neighboring cells.
         !
         do iVertex=1,nVertices
-            bdyMaskVertex(iVertex) = max(bdyMaskCell(cellsOnVertex(1,iVertex)), &
-                                         bdyMaskCell(cellsOnVertex(2,iVertex)), &
-                                         bdyMaskCell(cellsOnVertex(3,iVertex)))
+            bmin = min(bdyMaskCell(cellsOnVertex(1,iVertex)), &
+                       bdyMaskCell(cellsOnVertex(2,iVertex)), &
+                       bdyMaskCell(cellsOnVertex(3,iVertex)))
+
+            bmax = max(bdyMaskCell(cellsOnVertex(1,iVertex)), &
+                       bdyMaskCell(cellsOnVertex(2,iVertex)), &
+                       bdyMaskCell(cellsOnVertex(3,iVertex)))
+
+            if (bmin /= bmax .and. bmin == OUTSIDE) then
+                bdyMaskVertex(iVertex) = bmax
+            else
+                bdyMaskVertex(iVertex) = bmin
+            end if
         end do
 
     end subroutine mpas_atm_setup_bdy_masks
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! SUBROUTINE CONVERT_LX
+    !
+    ! Convert (lat,lon) to an (x, y, z) location on a sphere with specified radius.
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine convert_lx(x, y, z, radius, lat, lon)
+
+       implicit none
+
+       real (kind=RKIND), intent(in) :: radius
+       real (kind=RKIND), intent(out) :: x, y, z
+       real (kind=RKIND), intent(in) :: lat, lon
+
+       z = radius * sin(lat)
+       x = radius * cos(lon) * cos(lat)
+       y = radius * sin(lon) * cos(lat)
+
+    end subroutine convert_lx
 
 end module mpas_atm_boundaries
