@@ -1,3 +1,6 @@
+! DH* 20160818
+#ifndef MPAS_ALTOMP_TIME_INTEGRATION
+! *DH 20160818
 ! Copyright (c) 2013,  Los Alamos National Security, LLC (LANS)
 ! and the University Corporation for Atmospheric Research (UCAR).
 !
@@ -13,12 +16,10 @@
  use mpas_dmpar
 
  use mpas_atmphys_constants, only: R_d,R_v,degrad
- use mpas_atmphys_vars, only: pbl_scheme,convection_scheme
 
  implicit none
  private
  public:: physics_addtend, physics_get_tend
-
 
 !Interface between the physics parameterizations and the non-hydrostatic dynamical core.
 !Laura D. Fowler (send comments to laura@ucar.edu).
@@ -107,6 +108,10 @@
 
  real(kind=RKIND),dimension(:,:),allocatable:: theta,tend_th
 
+ ! just for printing
+ real(kind=RKIND), dimension(:,:), pointer  :: tend_qv,tend_qc,tend_qr,tend_qi,tend_qs,tend_qg
+ real(kind=RKIND), dimension(:,:), pointer  :: tend_ni
+
 !=================================================================================================================
  call mpas_pool_get_dimension(mesh, 'nCells', nCells)
  call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
@@ -186,24 +191,74 @@
                            theta, theta_m, scalars, tend_theta, tend_theta_euler &
                           )
 
+ if (rk_step .eq. 3) then
+   !$OMP barrier
+   tend_qv => tend_scalars(index_qv,:,:)
+   tend_qc => tend_scalars(index_qc,:,:)
+   tend_qr => tend_scalars(index_qr,:,:)
+   tend_qi => tend_scalars(index_qi,:,:)
+   tend_qs => tend_scalars(index_qs,:,:)
+   tend_qg => tend_scalars(index_qg,:,:)
+   tend_ni => tend_scalars(index_ni,:,:)
+   if(mpas_threading_get_thread_num() .eq. 0) then
+      write(0,*) ' '
+      write(0,*) '--- enter subroutine physics_addtend, rk_step, dynamics_substep:', rk_step, dynamics_substep
+      write(0,*) 'max rthblten   = ',maxval(rthblten(:,:))
+      write(0,*) 'min rthblten   = ',minval(rthblten(:,:))
+      write(0,*) 'max rthcuten   = ',maxval(rthcuten(:,:))
+      write(0,*) 'min rthcuten   = ',minval(rthcuten(:,:))
+      write(0,*) 'max rthratenlw = ',maxval(rthratenlw(:,:))
+      write(0,*) 'min rthratenlw = ',minval(rthratenlw(:,:))
+      write(0,*) 'max rthratensw = ',maxval(rthratensw(:,:))
+      write(0,*) 'min rthratensw = ',minval(rthratensw(:,:))
+   
+      write(0,*) 'mean rthblten   = ',sum(rthblten(:,:))/(max(1,size(rthblten(:,:))))
+      write(0,*) 'mean rthcuten   = ',sum(rthcuten(:,:))/(max(1,size(rthcuten(:,:))))
+      write(0,*) 'mean rthratenlw = ',sum(rthratenlw(:,:))/(max(1,size(rthratenlw(:,:))))
+      write(0,*) 'mean rthratensw = ',sum(rthratensw(:,:))/(max(1,size(rthratensw(:,:))))
+   
+      write(0,*) 'max tend_qv = ',   maxval(tend_qv(:,:))
+      write(0,*) 'min tend_qv = ',   minval(tend_qv(:,:))
+      write(0,*) 'max tend_qc = ',   maxval(tend_qc(:,:))
+      write(0,*) 'min tend_qc = ',   minval(tend_qc(:,:))
+      write(0,*) 'max tend_qr = ',   maxval(tend_qr(:,:))
+      write(0,*) 'min tend_qr = ',   minval(tend_qr(:,:))
+      write(0,*) 'max tend_qi = ',   maxval(tend_qi(:,:))
+      write(0,*) 'min tend_qi = ',   minval(tend_qi(:,:))
+      write(0,*) 'max tend_qs = ',   maxval(tend_qs(:,:))
+      write(0,*) 'min tend_qs = ',   minval(tend_qs(:,:))
+      write(0,*) 'max tend_qg = ',   maxval(tend_qg(:,:))
+      write(0,*) 'min tend_qg = ',   minval(tend_qg(:,:))
+      write(0,*) 'max tend_th = ',   maxval(tend_th(:,:))
+      write(0,*) 'min tend_th = ',   minval(tend_th(:,:))
+      write(0,*) 'max tend_u     = ',maxval(tend_u(:,:))
+      write(0,*) 'min tend_u     = ',minval(tend_u(:,:))
+      write(0,*) 'max tend_th    = ',maxval(tend_th(:,:))
+      write(0,*) 'min tend_th    = ',minval(tend_th(:,:))
+      write(0,*) 'max tend_theta = ',maxval(tend_theta(:,:))
+      write(0,*) 'min tend_theta = ',minval(tend_theta(:,:))
+      write(0,*) 'max theta      = ',maxval(theta(:,:))
+      write(0,*) 'min theta      = ',minval(theta(:,:))
+   
+      write(0,*) 'mean tend_qv    = ',sum(tend_qv(:,:))/(max(1,size(tend_qv(:,:))))
+      write(0,*) 'mean tend_qc    = ',sum(tend_qc(:,:))/(max(1,size(tend_qc(:,:))))
+      write(0,*) 'mean tend_qr    = ',sum(tend_qr(:,:))/(max(1,size(tend_qr(:,:))))
+      write(0,*) 'mean tend_qi    = ',sum(tend_qi(:,:))/(max(1,size(tend_qi(:,:))))
+      write(0,*) 'mean tend_qs    = ',sum(tend_qs(:,:))/(max(1,size(tend_qs(:,:))))
+      write(0,*) 'mean tend_qg    = ',sum(tend_qg(:,:))/(max(1,size(tend_qg(:,:))))
+      write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
+      write(0,*) 'mean tend_u     = ',sum(tend_u(:,:))/(max(1,size(tend_u(:,:))))
+      write(0,*) 'mean tend_th    = ',sum(tend_th(:,:))/(max(1,size(tend_th(:,:))))
+      write(0,*) 'mean tend_theta = ',sum(tend_theta(:,:))/(max(1,size(tend_theta(:,:))))
+      write(0,*) 'mean theta      = ',sum(theta(:,:))/(max(1,size(theta(:,:))))
+   
+      write(0,*) '--- end subroutine physics_addtend'
+      write(0,*) ' '
+   endif
+ endif
 
  deallocate(theta)
  deallocate(tend_th)
-
-! if(rk_step .eq. 3) then
-!    write(0,*)
-!    write(0,*) '--- enter subroutine physics_addtend:'
-!    write(0,*) 'max rthblten   = ',maxval(rthblten(:,1:nCellsSolve))
-!    write(0,*) 'min rthblten   = ',minval(rthblten(:,1:nCellsSolve))
-!    write(0,*) 'max rthcuten   = ',maxval(rthcuten(:,1:nCellsSolve))
-!    write(0,*) 'min rthcuten   = ',minval(rthcuten(:,1:nCellsSolve))
-!    write(0,*) 'max rthratenlw = ',maxval(rthratenlw(:,1:nCellsSolve))
-!    write(0,*) 'min rthratenlw = ',minval(rthratenlw(:,1:nCellsSolve))
-!    write(0,*) 'max rthratensw = ',maxval(rthratensw(:,1:nCellsSolve))
-!    write(0,*) 'min rthratensw = ',minval(rthratensw(:,1:nCellsSolve))
-!    write(0,*) '--- end subroutine physics_addtend'
-!    write(0,*)
-! endif
 
 !formats:
  201 format(2i6,10(1x,e15.8))
@@ -484,7 +539,7 @@
        enddo
        enddo
 
-       pbl_select: select case (trim(pbl_scheme))
+       pbl_select: select case (config_pbl_scheme)
 
           case("bl_mynn")
 
@@ -511,7 +566,7 @@
        enddo
        enddo
 
-        convection_select: select case(convection_scheme)
+        convection_select: select case(config_convection_scheme)
 
            case('cu_grell_freitas')
 
@@ -827,3 +882,6 @@
 !=================================================================================================================
  end module mpas_atmphys_todynamics
 !=================================================================================================================
+! DH* 20160818
+#endif
+! *DH 20160818

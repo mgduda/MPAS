@@ -1,5 +1,10 @@
-MODEL_FORMULATION =
-
+#MODEL_FORMULATION =
+#
+# temporary directives to set:
+# export MPAS_TIME_INTEGRATION_FLAG="-DMPAS_ALTOMP_TIME_INTEGRATION" # enables alternative threaded version of the time integration
+# export MPAS_TIME_INTEGRATION_SUBTIMERS="-DMPAS_TIME_INTEGRATION_SUBTIMERS" # enables detailed timing of time integration steps
+#
+MODEL_FORMULATION = $(MPAS_TIME_INTEGRATION_FLAG) $(MPAS_TIME_INTEGRATION_SUBTIMERS)
 
 dummy:
 	( $(MAKE) error )
@@ -158,8 +163,8 @@ ifort:
 	"CFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"CXXFLAGS_DEBUG = -g -fpe0 -traceback" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
-	"FFLAGS_OMP = -openmp" \
-	"CFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
 	"CORE = $(CORE)" \
 	"DEBUG = $(DEBUG)" \
 	"USE_PAPI = $(USE_PAPI)" \
@@ -184,7 +189,7 @@ ifort-gcc:
 	"CFLAGS_DEBUG = -g" \
 	"CXXFLAGS_DEBUG = -g" \
 	"LDFLAGS_DEBUG = -g -fpe0 -traceback" \
-	"FFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
 	"CFLAGS_OMP = -fopenmp" \
 	"CORE = $(CORE)" \
 	"DEBUG = $(DEBUG)" \
@@ -201,6 +206,32 @@ gfortran:
 	"FC_SERIAL = gfortran" \
 	"CC_SERIAL = gcc" \
 	"CXX_SERIAL = g++" \
+	"FFLAGS_PROMOTION = -fdefault-real-8 -fdefault-double-8" \
+	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
+	"CFLAGS_OPT = -O3 -m64" \
+	"CXXFLAGS_OPT = -O3 -m64" \
+	"LDFLAGS_OPT = -O3 -m64" \
+	"FFLAGS_DEBUG = -g -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form -fbounds-check -fbacktrace -ffpe-trap=invalid,zero,overflow" \
+	"CFLAGS_DEBUG = -g -m64" \
+	"CXXFLAGS_DEBUG = -O3 -m64" \
+	"LDFLAGS_DEBUG = -g -m64" \
+	"FFLAGS_OMP = -fopenmp" \
+	"CFLAGS_OMP = -fopenmp" \
+	"CORE = $(CORE)" \
+	"DEBUG = $(DEBUG)" \
+	"USE_PAPI = $(USE_PAPI)" \
+	"OPENMP = $(OPENMP)" \
+	"USE_GPTL = $(USE_GPTL)" \
+	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
+
+gfortran-clang:
+	( $(MAKE) all \
+	"FC_PARALLEL = mpif90" \
+	"CC_PARALLEL = mpicc -cc=clang-omp" \
+	"CXX_PARALLEL = mpicxx -cxx=clang-omp++" \
+	"FC_SERIAL = gfortran" \
+	"CC_SERIAL = clang-omp" \
+	"CXX_SERIAL = clang-omp++" \
 	"FFLAGS_PROMOTION = -fdefault-real-8 -fdefault-double-8" \
 	"FFLAGS_OPT = -O3 -m64 -ffree-line-length-none -fconvert=big-endian -ffree-form" \
 	"CFLAGS_OPT = -O3 -m64" \
@@ -322,8 +353,8 @@ intel-nersc:
 	"CFLAGS_OPT = -O3" \
 	"CXXFLAGS_OPT = -O3" \
 	"LDFLAGS_OPT = -O3" \
-	"FFLAGS_OMP = -openmp" \
-	"CFLAGS_OMP = -openmp" \
+	"FFLAGS_OMP = -qopenmp" \
+	"CFLAGS_OMP = -qopenmp" \
 	"FFLAGS_DEBUG = -real-size 64 -g -convert big_endian -FR -CU -CB -check all -gen-interfaces -warn interfaces -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \

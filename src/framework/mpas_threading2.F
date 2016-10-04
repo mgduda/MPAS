@@ -37,7 +37,7 @@ module mpas_threading2
 
         use mpas_derived_types, only : block_type
         use mpas_pool_routines, only : mpas_pool_get_dimension
-#ifdef _OPENMP
+#ifdef MPAS_OPENMP
         use omp_lib
 #endif
 
@@ -55,7 +55,7 @@ module mpas_threading2
 
         block => blocklist
         do while (associated(block))
-#ifdef _OPENMP
+#ifdef MPAS_OPENMP
 !$OMP PARALLEL
 !$OMP MASTER
             block % nThreads = OMP_get_num_threads()
@@ -85,7 +85,7 @@ module mpas_threading2
             call mpas_pool_get_dimension(block % dimensions, 'nVertices', nVertices)
             call mpas_pool_get_dimension(block % dimensions, 'nVerticesSolve', nVerticesSolve)
 
-#ifdef _OPENMP
+#ifdef MPAS_OPENMP
 !$OMP PARALLEL PRIVATE(threadid)
             threadid = OMP_get_thread_num()
 
