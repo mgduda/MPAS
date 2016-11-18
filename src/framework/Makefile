@@ -104,7 +104,7 @@ xml_stream_parser.o: xml_stream_parser.c
 
 mpas_field_accessor.o: mpas_derived_types.o mpas_kind_types.o mpas_pool_routines.o mpas_io_units.o
 
-mpas_debugging.o: mpas_grid_types.o mpas_dmpar_types.o
+mpas_debugging.o: mpas_derived_types.o mpas_io_units.o
 
 clean:
 	$(RM) *.o *.mod *.f90 libframework.a
