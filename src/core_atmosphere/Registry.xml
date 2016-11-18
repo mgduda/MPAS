@@ -341,6 +341,13 @@
                      possible_values="Non-negative real values"/>
 	</nml_record>
 
+        <nml_record name="debugging" in_defaults="true">
+                <nml_option name="config_write_checkpoints" type="logical" default_value="true"
+                     units="-"
+                     description="Whether to write checkpointing information, or to read back previously written checkpoints"
+                     possible_values="true or false"/>
+        </nml_record>
+
 
 <!-- **************************************************************************************** -->
 <!-- **************************************  Packages  ************************************** -->

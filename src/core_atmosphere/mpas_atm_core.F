@@ -11,6 +11,7 @@ module atm_core
    use mpas_pool_routines
    use mpas_dmpar
    use mpas_abort, only : mpas_dmpar_global_abort
+   use mpas_debugging
 
    type (MPAS_Clock_type), pointer :: clock
 
@@ -49,7 +50,16 @@ module atm_core
 
       integer, pointer :: nVertLevels, maxEdges, maxEdges2, num_scalars
 
+      logical, pointer :: config_write_checkpoints
+
       ierr = 0
+
+      !
+      ! Setup debugging via checkpoint files
+      !
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_write_checkpoints', config_write_checkpoints)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
+      call mpas_debugging_init(domain % dminfo, config_write_checkpoints, domain % blocklist % allfields, mesh)
 
 
       !
@@ -486,6 +496,12 @@ module atm_core
       real (kind=R8KIND) :: diag_start_time, diag_stop_time
       real (kind=R8KIND) :: input_start_time, input_stop_time
       real (kind=R8KIND) :: output_start_time, output_stop_time
+
+      currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
+      call mpas_get_time(curr_time=currTime, dateTimeString=timeStamp, ierr=ierr)         
+      timeStamp(14:14) = '.'
+      timeStamp(17:17) = '.'
+      call mpas_debugging_set_filename('checkpoint.'//trim(timeStamp))
       
       ierr = 0
       
@@ -687,6 +703,11 @@ module atm_core
                write(22,*) trim(timeStamp)
                close(22)
             end if
+
+            timeStamp(14:14) = '.'
+            timeStamp(17:17) = '.'
+            call mpas_debugging_set_filename('checkpoint.'//trim(timeStamp))
+
          end if
 
          call mpas_atm_diag_reset()
@@ -911,6 +932,12 @@ module atm_core
       ! Finalize threading
       !
       call mpas_atm_threading_finalize(domain % blocklist)
+
+
+      !
+      ! Finalize debugging via checkpoint files
+      !
+      call mpas_debugging_finalize()
    
    end function atm_core_finalize
 
