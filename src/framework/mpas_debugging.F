@@ -159,11 +159,13 @@ include 'mpif.h'
    end subroutine mpas_debugging_set_filename
 
 
-   subroutine mpas_debugging_check(checkpoint, fieldname)
+   subroutine mpas_debugging_check(checkpoint, fieldname, timelevel)
 
         implicit none
 
         character(len=*), intent(in) :: checkpoint
+        character(len=*), intent(in), optional :: fieldname
+        integer, intent(in), optional :: timelevel
 
         integer :: i, j, k, outdim, outdimglobal
         type (mpas_pool_iterator_type) :: poolItr
@@ -172,7 +174,6 @@ include 'mpif.h'
         type (field1DReal), pointer :: real1DField
         type (field2DReal), pointer :: real2DField
         type (field3DReal), pointer :: real3DField
-        character(len=*), intent(in), optional :: fieldname
 
         integer, dimension(:), pointer   :: arrayOut_i1, arrayComp_i1
         integer, dimension(:,:), pointer :: arrayOut_i2, arrayComp_i2
@@ -200,17 +201,17 @@ include 'mpif.h'
                    if (poolItr % dataType == MPAS_POOL_REAL) then
    
                        if (poolItr % nDims == 1) then
-                           call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField)
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField, timeLevel=timelevel)
                            if (real1DField % isActive) call compare_r1(real1DField, checkpoint)
    
                        else if (poolItr % nDims == 2) then
    
-                           call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField)
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField, timeLevel=timelevel)
                            if (real2DField % isActive) call compare_r2(real2DField, checkpoint)
    
                        else if (poolItr % nDims == 3) then
    
-                           call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField)
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField, timeLevel=timelevel)
                            if (real3DField % isActive) call compare_r3(real3DField, checkpoint)
    
                        end if
@@ -219,12 +220,12 @@ include 'mpif.h'
    
                        if (poolItr % nDims == 1) then
    
-                           call mpas_pool_get_field(all_fields, poolItr % memberName, int1DField)
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, int1DField, timeLevel=timelevel)
                            if (int1DField % isActive) call compare_i1(int1DField, checkpoint)
    
                        else if (poolItr % nDims == 2) then
    
-                           call mpas_pool_get_field(all_fields, poolItr % memberName, int2DField)
+                           call mpas_pool_get_field(all_fields, poolItr % memberName, int2DField, timeLevel=timelevel)
                            if (int2DField % isActive) call compare_i2(int2DField, checkpoint)
    
                         end if
@@ -243,17 +244,17 @@ include 'mpif.h'
    
                  if (field_info % nDims == 1) then
    
-                    call mpas_pool_get_field(all_fields, fieldname, real1DField)
+                    call mpas_pool_get_field(all_fields, fieldname, real1DField, timeLevel=timelevel)
                     if (real1DField % isActive) call compare_r1(real1DField, checkpoint)
    
                  else if (field_info % nDims == 2) then
    
-                    call mpas_pool_get_field(all_fields, fieldname, real2DField)
+                    call mpas_pool_get_field(all_fields, fieldname, real2DField, timeLevel=timelevel)
                     if (real2DField % isActive) call compare_r2(real2DField, checkpoint)
    
                  else if (field_info % nDims == 3) then
    
-                    call mpas_pool_get_field(all_fields, fieldname, real3DField)
+                    call mpas_pool_get_field(all_fields, fieldname, real3DField, timeLevel=timelevel)
                     if (real3DField % isActive) call compare_r3(real3DField, checkpoint)
 
                  end if
@@ -262,12 +263,12 @@ include 'mpif.h'
    
                  if (field_info % nDims == 1) then
    
-                    call mpas_pool_get_field(all_fields, fieldname, int1DField)
+                    call mpas_pool_get_field(all_fields, fieldname, int1DField, timeLevel=timelevel)
                     if (int1DField % isActive .and. associated(int1dField % array)) call compare_i1(int1DField, checkpoint)
    
                  else if (field_info % nDims == 2) then
    
-                    call mpas_pool_get_field(all_fields, fieldname, int2DField)
+                    call mpas_pool_get_field(all_fields, fieldname, int2DField, timeLevel=timelevel)
                     if (int2DField % isActive) call compare_i2(int2DField, checkpoint)
    
                  end if
