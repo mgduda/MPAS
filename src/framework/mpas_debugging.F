@@ -159,13 +159,14 @@ include 'mpif.h'
    end subroutine mpas_debugging_set_filename
 
 
-   subroutine mpas_debugging_check(checkpoint, fieldname, timelevel)
+   subroutine mpas_debugging_check(checkpoint, fieldname, timelevel, includehalos)
 
         implicit none
 
         character(len=*), intent(in) :: checkpoint
         character(len=*), intent(in), optional :: fieldname
         integer, intent(in), optional :: timelevel
+        logical, intent(in), optional :: includehalos
 
         integer :: i, j, k, outdim, outdimglobal
         type (mpas_pool_iterator_type) :: poolItr
@@ -182,6 +183,13 @@ include 'mpif.h'
         real (kind=RKIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
         type (exchange_list), pointer :: sendList, recvList
         type (mpas_pool_field_info_type) :: field_info
+        logical :: local_includeHalos
+
+        if (present(includehalos)) then
+           local_includeHalos = includehalos
+        else
+           local_includehalos = .true.
+        end if
 
 
         if (.not. is_file_open) then
@@ -202,17 +210,17 @@ include 'mpif.h'
    
                        if (poolItr % nDims == 1) then
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real1DField, timeLevel=timelevel)
-                           if (real1DField % isActive) call compare_r1(real1DField, checkpoint)
+                           if (real1DField % isActive) call compare_r1(real1DField, checkpoint, local_includeHalos)
    
                        else if (poolItr % nDims == 2) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real2DField, timeLevel=timelevel)
-                           if (real2DField % isActive) call compare_r2(real2DField, checkpoint)
+                           if (real2DField % isActive) call compare_r2(real2DField, checkpoint, local_includeHalos)
    
                        else if (poolItr % nDims == 3) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, real3DField, timeLevel=timelevel)
-                           if (real3DField % isActive) call compare_r3(real3DField, checkpoint)
+                           if (real3DField % isActive) call compare_r3(real3DField, checkpoint, local_includeHalos)
    
                        end if
    
@@ -221,12 +229,12 @@ include 'mpif.h'
                        if (poolItr % nDims == 1) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, int1DField, timeLevel=timelevel)
-                           if (int1DField % isActive) call compare_i1(int1DField, checkpoint)
+                           if (int1DField % isActive) call compare_i1(int1DField, checkpoint, local_includeHalos)
    
                        else if (poolItr % nDims == 2) then
    
                            call mpas_pool_get_field(all_fields, poolItr % memberName, int2DField, timeLevel=timelevel)
-                           if (int2DField % isActive) call compare_i2(int2DField, checkpoint)
+                           if (int2DField % isActive) call compare_i2(int2DField, checkpoint, local_includeHalos)
    
                         end if
    
@@ -245,17 +253,17 @@ include 'mpif.h'
                  if (field_info % nDims == 1) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real1DField, timeLevel=timelevel)
-                    if (real1DField % isActive) call compare_r1(real1DField, checkpoint)
+                    if (real1DField % isActive) call compare_r1(real1DField, checkpoint, local_includeHalos)
    
                  else if (field_info % nDims == 2) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real2DField, timeLevel=timelevel)
-                    if (real2DField % isActive) call compare_r2(real2DField, checkpoint)
+                    if (real2DField % isActive) call compare_r2(real2DField, checkpoint, local_includeHalos)
    
                  else if (field_info % nDims == 3) then
    
                     call mpas_pool_get_field(all_fields, fieldname, real3DField, timeLevel=timelevel)
-                    if (real3DField % isActive) call compare_r3(real3DField, checkpoint)
+                    if (real3DField % isActive) call compare_r3(real3DField, checkpoint, local_includeHalos)
 
                  end if
    
@@ -264,12 +272,12 @@ include 'mpif.h'
                  if (field_info % nDims == 1) then
    
                     call mpas_pool_get_field(all_fields, fieldname, int1DField, timeLevel=timelevel)
-                    if (int1DField % isActive .and. associated(int1dField % array)) call compare_i1(int1DField, checkpoint)
+                    if (int1DField % isActive) call compare_i1(int1DField, checkpoint, local_includeHalos)
    
                  else if (field_info % nDims == 2) then
    
                     call mpas_pool_get_field(all_fields, fieldname, int2DField, timeLevel=timelevel)
-                    if (int2DField % isActive) call compare_i2(int2DField, checkpoint)
+                    if (int2DField % isActive) call compare_i2(int2DField, checkpoint, local_includeHalos)
    
                  end if
    
@@ -1298,16 +1306,18 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine quicksort
 
 
-   subroutine compare_r1(real1DField, checkpoint)
+   subroutine compare_r1(real1DField, checkpoint, includehalos)
 
       implicit none
 
       type (field1DReal), pointer :: real1DField
       character(len=*), intent(in) :: checkpoint
+      logical, intent(in) :: includehalos
 
       real (kind=RKIND), dimension(:), pointer :: arrayOut_r1, arrayComp_r1
       integer :: i, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
+      integer :: cmplimit
 
 
       if (trim(real1DField % dimnames(1)) == 'nCells') then
@@ -1330,6 +1340,12 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          nullify(recvList)
       end if
 
+      if (includehalos) then
+         cmplimit = outdimglobal
+      else
+         cmplimit = outdim
+      end if
+
       if (dminfo % my_proc_id == 0) then
          if (associated(sendList)) then
 
@@ -1342,7 +1358,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          else
             read(91) arrayComp_r1
 
-            OUT1D: do i=1,size(arrayComp_r1)
+            OUT1D: do i=1,cmplimit
                if (arrayComp_r1(i) /= arrayOut_r1(i)) then
                   write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real1DField % fieldName)//' differs'
                   exit OUT1D
@@ -1367,16 +1383,18 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine compare_r1
 
 
-   subroutine compare_r2(real2DField, checkpoint)
+   subroutine compare_r2(real2DField, checkpoint, includehalos)
 
       implicit none
 
       type (field2DReal), pointer :: real2DField
       character(len=*), intent(in) :: checkpoint
+      logical, intent(in) :: includehalos
 
       real (kind=RKIND), dimension(:,:), pointer :: arrayOut_r2, arrayComp_r2
       integer :: i, j, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
+      integer :: cmplimit
 
       if (trim(real2DField % dimnames(2)) == 'nCells') then
          outdim = nCellsSolve
@@ -1398,6 +1416,12 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          nullify(recvList)
       end if
 
+      if (includehalos) then
+         cmplimit = outdimglobal
+      else
+         cmplimit = outdim
+      end if
+
       if (dminfo % my_proc_id == 0) then
          if (associated(sendList)) then
 
@@ -1410,7 +1434,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          else
             read(91) arrayComp_r2
 
-            OUT2D: do j=1,size(arrayComp_r2,2)
+            OUT2D: do j=1,cmplimit
             do i=1,size(arrayComp_r2,1)
                if (arrayComp_r2(i,j) /= arrayOut_r2(i,j)) then
                   write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(real2DField % fieldName)//' differs'
@@ -1437,16 +1461,18 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine compare_r2
 
 
-   subroutine compare_r3(real3DField, checkpoint)
+   subroutine compare_r3(real3DField, checkpoint, includehalos)
 
       implicit none
 
       type (field3DReal), pointer :: real3DField
       character(len=*), intent(in) :: checkpoint
+      logical, intent(in) :: includehalos
 
       real (kind=RKIND), dimension(:,:,:), pointer :: arrayOut_r3, arrayComp_r3
       integer :: i, j, k, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
+      integer :: cmplimit
 
 
       if (trim(real3DField % dimnames(3)) == 'nCells') then
@@ -1469,6 +1495,12 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          nullify(recvList)
       end if
 
+      if (includehalos) then
+         cmplimit = outdimglobal
+      else
+         cmplimit = outdim
+      end if
+
       if (dminfo % my_proc_id == 0) then
          if (associated(sendList)) then
 
@@ -1481,7 +1513,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          else
             read(91) arrayComp_r3
 
-            OUT3D: do k=1,size(arrayComp_r3,3)
+            OUT3D: do k=1,cmplimit
             do j=1,size(arrayComp_r3,2)
             do i=1,size(arrayComp_r3,1)
                if (arrayComp_r3(i,j,k) /= arrayOut_r3(i,j,k)) then
@@ -1510,16 +1542,18 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine compare_r3
 
 
-   subroutine compare_i1(int1DField, checkpoint)
+   subroutine compare_i1(int1DField, checkpoint, includehalos)
 
       implicit none
 
       type (field1DInteger), pointer :: int1DField
       character(len=*), intent(in) :: checkpoint
+      logical, intent(in) :: includehalos
 
       integer, dimension(:), pointer :: arrayOut_i1, arrayComp_i1
       integer :: i, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
+      integer :: cmplimit
 
 
       if (trim(int1DField % dimnames(1)) == 'nCells') then
@@ -1542,6 +1576,12 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          nullify(recvList)
       end if
 
+      if (includehalos) then
+         cmplimit = outdimglobal
+      else
+         cmplimit = outdim
+      end if
+
       if (dminfo % my_proc_id == 0) then
          if (associated(sendList)) then
 
@@ -1554,7 +1594,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          else
             read(91) arrayComp_i1
 
-            OUT1DI: do i=1,size(arrayComp_i1)
+            OUT1DI: do i=1,cmplimit
                if (arrayComp_i1(i) /= arrayOut_i1(i)) then
                   write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int1DField % fieldName)//' differs'
                   exit OUT1DI
@@ -1579,16 +1619,18 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
    end subroutine compare_i1
 
 
-   subroutine compare_i2(int2DField, checkpoint)
+   subroutine compare_i2(int2DField, checkpoint, includehalos)
 
       implicit none
 
       type (field2DInteger), pointer :: int2DField
       character(len=*), intent(in) :: checkpoint
+      logical, intent(in) :: includehalos
 
       integer, dimension(:,:), pointer :: arrayOut_i2, arrayComp_i2
       integer :: i, j, outdim, outdimglobal
       type (exchange_list), pointer :: sendList, recvList
+      integer :: cmplimit
 
 
       if (trim(int2DField % dimnames(2)) == 'nCells') then
@@ -1611,6 +1653,12 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          nullify(recvList)
       end if
 
+      if (includehalos) then
+         cmplimit = outdimglobal
+      else
+         cmplimit = outdim
+      end if
+
       if (dminfo % my_proc_id == 0) then
          if (associated(sendList)) then
 
@@ -1623,7 +1671,7 @@ if (top > 1000) write(0,*) 'Error: Quicksort exhausted its stack.'
          else
             read(91) arrayComp_i2
 
-            OUT2DI: do j=1,size(arrayComp_i2,2)
+            OUT2DI: do j=1,cmplimit
             do i=1,size(arrayComp_i2,1)
                if (arrayComp_i2(i,j) /= arrayOut_i2(i,j)) then
                   write(stderrUnit,*) trim(checkpoint)//' :: Field '//trim(int2DField % fieldName)//' differs'
