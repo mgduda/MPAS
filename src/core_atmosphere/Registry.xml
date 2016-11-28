@@ -272,6 +272,11 @@
                      units="-"
                      description="Stride between file I/O tasks"
                      possible_values="Integer valued, $\leq$ (\# MPI tasks) / config_pio_num_iotasks"/>
+
+                <nml_option name="config_sionlib_numfiles" type="integer" default_value="1"
+                     units="-"
+                     description="Numer of separate SIONlib filesStride between file I/O tasks"
+                     possible_values="Integer valued, $\geq$ 1 and $\leq$ \# MPI tasks"/>
         </nml_record>
 
         <nml_record name="decomposition" in_defaults="true">

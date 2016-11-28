@@ -18,6 +18,7 @@
 	<nml_record name="io" in_defaults="true">
 		<nml_option name="config_pio_num_iotasks"            type="integer"       default_value="0"/>
 		<nml_option name="config_pio_stride"                 type="integer"       default_value="1"/>
+		<nml_option name="config_sionlib_numfiles"           type="integer"       default_value="1"/>
 	</nml_record>
 	<nml_record name="decomposition" in_defaults="true">
 		<nml_option name="config_num_halos"                  type="integer"       default_value="3"/>

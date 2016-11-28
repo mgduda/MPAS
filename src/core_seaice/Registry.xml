@@ -325,6 +325,10 @@
 			description="Integer specifying the stride of each IO task."
 			possible_values="Any positive integer value greater than 0."
 		/>
+		<nml_option name="config_sionlib_numfiles" type="integer" default_value="1" units="unitless"
+			description="Numer of separate SIONlib filesStride between file I/O tasks"
+			possible_values="Integer valued, $\geq$ 1 and $\leq$ \# MPI tasks"
+		/>
 		<nml_option name="config_write_output_on_startup" type="logical" default_value="false" units="unitless"
 			description="If true write the output streams to disk after model initialization but before time stepping."
 			possible_values="true or false"

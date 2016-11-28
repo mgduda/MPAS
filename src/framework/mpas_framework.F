@@ -78,6 +78,8 @@ module mpas_framework
       integer, pointer :: config_pio_num_iotasks, config_pio_stride
       integer :: pio_num_iotasks
       integer :: pio_stride
+      integer, pointer :: config_sionlib_numfiles
+      integer :: sionlib_numfiles
 
       call mpas_timer_init(domain)
 
@@ -88,6 +90,9 @@ module mpas_framework
       call mpas_pool_get_config(domain % configs, 'config_calendar_type', config_calendar_type)
       call mpas_pool_get_config(domain % configs, 'config_pio_num_iotasks', config_pio_num_iotasks)
       call mpas_pool_get_config(domain % configs, 'config_pio_stride', config_pio_stride)
+#ifdef SIONLIB
+      call mpas_pool_get_config(domain % configs, 'config_sionlib_numfiles', config_sionlib_numfiles)
+#endif
 
       if (present(calendar)) then
          call mpas_timekeeping_init(calendar)
