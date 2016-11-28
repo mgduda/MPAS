@@ -1823,14 +1823,12 @@ module mpas_io_streams
       !
       ! Set variable indices
       !
-      if (ndims > 0 .and. isDecomposed) then
-         call MPAS_io_set_var_indices(stream % fileHandle, trim(fieldName), indices, io_err)
-         call MPAS_io_err_mesg(io_err, .false.)
-         if (io_err /= MPAS_IO_NOERR) then
-            if (present(ierr)) ierr = MPAS_IO_ERR
-            deallocate(new_field_list_node)
-            return
-         end if
+      call MPAS_io_set_var_indices(stream % fileHandle, trim(fieldName), indices, isDecomposed, io_err)
+      call MPAS_io_err_mesg(io_err, .false.)
+      if (io_err /= MPAS_IO_NOERR) then
+         if (present(ierr)) ierr = MPAS_IO_ERR
+         deallocate(new_field_list_node)
+         return
       end if
 
 

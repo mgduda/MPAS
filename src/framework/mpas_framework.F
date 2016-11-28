@@ -106,7 +106,12 @@ module mpas_framework
          pio_num_iotasks = domain % dminfo % nprocs
       end if
       domain % ioContext % dminfo => domain % dminfo
+#ifdef SIONLIB
+      sionlib_numfiles = config_sionlib_numfiles
+      call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride, sionlib_numfiles, io_system)
+#else
       call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride, io_system)
+#endif
 
    end subroutine mpas_framework_init_phase2!}}}
 

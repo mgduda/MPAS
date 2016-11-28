@@ -454,7 +454,7 @@ ifneq "$(SIONLIB)" ""
 	CPPINCLUDES += `$(SIONLIB)/bin/sionconfig --mpi --cflags --f90`
 	FCINCLUDES += `$(SIONLIB)/bin/sionconfig --mpi --cflags --f90`
 	LIBS += `$(SIONLIB)/bin/sionconfig --mpi --libs --f90`
-	CPPINCLUDES += -DSIONLIB
+	override CPPFLAGS += -DSIONLIB
 	SIONLIB_MESSAGE="MPAS was compiled with SIONlib support in $(SIONLIB)"
 else
 	SIONLIB_MESSAGE="MPAS was compiled without SIONlib support"

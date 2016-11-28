@@ -17,6 +17,10 @@ module mpas_io
    use pionfatt_mod
    use pio_types
 
+#ifdef SIONLIB
+   use mpas_sion
+#endif
+
 #ifdef SINGLE_PRECISION
    integer, parameter :: PIO_REALKIND = PIO_REAL
 #else
@@ -95,14 +99,20 @@ module mpas_io
 
    contains
 
-
+#ifdef SIONLIB
+   subroutine MPAS_io_init(ioContext, io_task_count, io_task_stride, io_numfiles, io_system, ierr)
+#else
    subroutine MPAS_io_init(ioContext, io_task_count, io_task_stride, io_system, ierr)
+#endif
 
       implicit none
 
       type (mpas_io_context_type), intent(inout) :: ioContext
       integer, intent(in) :: io_task_count
       integer, intent(in) :: io_task_stride
+#ifdef SIONLIB
+      integer, intent(in) :: io_numfiles
+#endif
       type (iosystem_desc_t), optional, pointer :: io_system
       integer, intent(out), optional :: ierr
 
@@ -116,28 +126,28 @@ module mpas_io
       if (present(io_system)) then
          ioContext % pio_iosystem => io_system
       else
-!call mpas_log_write('MGD PIO_init')
+!         call mpas_log_write('MGD PIO_init')
          if ( io_task_count < 0 .or. io_task_count > ioContext % dminfo % nprocs ) then
-            call mpas_log_write('PIO io_task_count has a value of $i.', MPAS_LOG_ERR, intArgs=(/io_task_count/))
-            call mpas_log_write('        It must be between 1 and $i.', MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
+            call mpas_log_write('PIO io_task_count has a value of $i.', messageType=MPAS_LOG_ERR, intArgs=(/io_task_count/))
+            call mpas_log_write('        It must be between 1 and $i.', messageType=MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
             local_ierr = 1
          end if
 
          if ( io_task_stride <= 0 .or. io_task_stride > ioContext % dminfo % nprocs ) then
-            call mpas_log_write('PIO io_task_stride has a value of $i.', MPAS_LOG_ERR, intArgs=(/io_task_stride/) )
-            call mpas_log_write('        It must be between 1 and $i.', MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
+            call mpas_log_write('PIO io_task_stride has a value of $i.', messageType=MPAS_LOG_ERR, intArgs=(/io_task_stride/) )
+            call mpas_log_write('        It must be between 1 and $i.', messageType=MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
             local_ierr = 1
          end if
 
          if ( io_task_stride * io_task_count > ioContext % dminfo % nprocs ) then
-            call mpas_log_write('PIO io_task_stride * io_task_count has a value of $i.', MPAS_LOG_ERR, &
+            call mpas_log_write('PIO io_task_stride * io_task_count has a value of $i.', messageType=MPAS_LOG_ERR, &
                     intArgs=(/io_task_stride * io_task_count/) )
-            call mpas_log_write('        It must be between 1 and $i.', MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
+            call mpas_log_write('        It must be between 1 and $i.', messageType=MPAS_LOG_ERR, intArgs=(/ioContext % dminfo % nprocs/) )
             local_ierr = 1
          end if
 
          if ( local_ierr /= 0 ) then
-            call mpas_log_write('Invalid PIO configuration.', MPAS_LOG_CRIT)
+            call mpas_log_write('Invalid PIO configuration.', messageType=MPAS_LOG_CRIT)
          end if
 
          allocate(ioContext % pio_iosystem)
@@ -153,6 +163,13 @@ module mpas_io
 
       call pio_seterrorhandling(ioContext % pio_iosystem, PIO_BCAST_ERROR)
 
+#ifdef SIONLIB
+      !call mpas_log_write('MPAS_SION_init')
+      call MPAS_SION_init(ioContext % dminfo, io_numfiles, local_ierr)
+      if (local_ierr /= SIONLIB_noerr) then
+         call mpas_dmpar_global_abort('ERROR: Initialisation of SIONLIB failed.')
+      end if
+#endif
    end subroutine MPAS_io_init
 
 
@@ -252,7 +269,12 @@ module mpas_io
       if (ioformat /= MPAS_IO_NETCDF .and. &
           ioformat /= MPAS_IO_NETCDF4 .and. &
           ioformat /= MPAS_IO_PNETCDF .and. &
+#ifdef SIONLIB
+          ioformat /= MPAS_IO_PNETCDF5 .and. &
+          ioformat /= MPAS_IO_SIONLIB ) then
+#else
           ioformat /= MPAS_IO_PNETCDF5) then
+#endif
          if (present(ierr)) ierr = MPAS_IO_ERR_INVALID_FORMAT
          return 
       end if
@@ -304,13 +326,37 @@ module mpas_io
          end if
  
          if (exists .and. (.not. local_truncate)) then
+#ifdef SIONLIB
+            ! For SIONlib, we only allow one frame per file - that means that local_truncate must be .true.;
+            ! this check is actually performed in mpas_stream_manager.F -> stream_mgr_create_stream_c
+            if (ioformat == MPAS_IO_SIONLIB) then
+               call mpas_log_write('MPAS I/O: ERROR - for SIONlib format, local-truncate must be true when writing to existing file '//trim(filename), messageType=MPAS_LOG_ERR)
+               if (present(ierr)) ierr = MPAS_IO_ERR_WRONG_MODE
+               return
+            else
+                pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_write)
+            end if
+#else
             pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_write)
+#endif
             MPAS_io_open % preexisting_file = .true.
          else
+#ifdef SIONLIB
+            if (ioformat == MPAS_IO_SIONLIB) then
+               call MPAS_SION_open(MPAS_io_open, filename, ioContext % dminfo, mode, pio_ierr)
+               if (pio_ierr /= SIONLIB_noerr) then
+                  if (present(ierr)) ierr = MPAS_IO_ERR_SION
+                  return
+               end if
+            else
+               pio_ierr = PIO_createfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), pio_mode)
+            end if
+#else
             pio_ierr = PIO_createfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), pio_mode)
+#endif
 #ifdef MPAS_DEBUG
             if (exists) then
-               call mpas_log_write('MPAS I/O: Truncating existing data in output file '//trim(filename), MPAS_LOG_WARN)
+               call mpas_log_write('MPAS I/O: Truncating existing data in output file '//trim(filename), messageType=MPAS_LOG_WARN)
             end if
 #endif
          end if
@@ -322,17 +368,44 @@ module mpas_io
             return
          end if
 !call mpas_log_write('MGD PIO_openfile')
+#ifdef SIONLIB
+         if (ioformat == MPAS_IO_SIONLIB) then
+            call MPAS_SION_open(MPAS_io_open, filename, ioContext % dminfo, mode, pio_ierr)
+            if (pio_ierr /= SIONLIB_noerr) then
+               if (present(ierr)) ierr = MPAS_IO_ERR_SION
+               return
+            end if
+            ! At this point in time, read all metadata (dimensions, attributes and variables)
+            ! and perform any necessary precision conversions of attribute values.
+            call MPAS_SION_read_metadata(MPAS_io_open, pio_ierr)
+            if (pio_ierr /= SIONLIB_noerr) then
+               if (present(ierr)) ierr = MPAS_IO_ERR_SION
+               return
+            end if
+         else
+            pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
+         end if
+#else
          pio_ierr = PIO_openfile(ioContext % pio_iosystem, MPAS_io_open % pio_file, pio_iotype, trim(filename), PIO_nowrite)
-      endif
+#endif
+      end if
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
 
+#ifdef SIONLIB
+      ! SIONLIB files only contain data for one time stamp -> no preexisting records
+      if ( (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) .and. &
+           (ioformat == MPAS_IO_SIONLIB) ) then
+         MPAS_io_open % preexisting_records = -1
+      else if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
+#else
       if (mode == MPAS_IO_READ .or. MPAS_io_open % preexisting_file) then
+#endif
 !MPAS_io_open % pio_unlimited_dimid = 44
-         pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % pio_unlimited_dimid)
-!call mpas_log_write('Found unlimited dim $i', intArgs=(/MPAS_io_open % pio_unlimited_dimid/) )
+         pio_ierr = PIO_inquire(MPAS_io_open % pio_file, unlimitedDimID=MPAS_io_open % unlimited_dimid)
+!call mpas_log_write('Found unlimited dim $i', intArgs=(/MPAS_io_open % unlimited_dimid/) )
          if (pio_ierr /= PIO_noerr) then
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             return
@@ -342,8 +415,8 @@ module mpas_io
          ! negative dimension ID when an unlimited dimension is not found.  This
          ! might change in the future, causing this code to break, though it
          ! shouldn't break for files with unlimited dimensions.
-         if ( MPAS_io_open % pio_unlimited_dimid >= 0 ) then
-            pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % pio_unlimited_dimid, MPAS_io_open % preexisting_records)
+         if ( MPAS_io_open % unlimited_dimid >= 0 ) then
+            pio_ierr = PIO_inq_dimlen(MPAS_io_open % pio_file, MPAS_io_open % unlimited_dimid, MPAS_io_open % preexisting_records)
             if (pio_ierr /= PIO_noerr) then
                if (present(ierr)) ierr = MPAS_IO_ERR_PIO
                return
@@ -360,39 +433,6 @@ module mpas_io
    end function MPAS_io_open
 
 
-   subroutine MPAS_io_inq_unlimited_dim(handle, dimname, ierr)
-
-      implicit none
-
-      type (MPAS_IO_Handle_type), intent(inout) :: handle
-      character (len=*), intent(out) :: dimname
-      integer, intent(out), optional :: ierr
-
-      integer :: pio_ierr
-
-!      call mpas_log_write('Called MPAS_io_inq_unlimited_dim()')
-      if (present(ierr)) ierr = MPAS_IO_NOERR
-
-      ! Sanity checks
-      if (.not. handle % initialized) then
-         if (present(ierr)) ierr = MPAS_IO_ERR_UNINIT_HANDLE
-         return 
-      end if
-      if (handle % iomode /= MPAS_IO_READ) then       ! We could eventually handle this for write mode, too...
-         if (present(ierr)) ierr = MPAS_IO_ERR_WRONG_MODE
-         return
-      end if
-
-      pio_ierr = PIO_inq_dimname(handle % pio_file, handle % pio_unlimited_dimid, dimname) 
-      if (pio_ierr /= PIO_noerr) then
-         if (present(ierr)) ierr = MPAS_IO_ERR_NO_UNLIMITED_DIM
-         dimname = ' '
-         return
-      end if
-
-   end subroutine MPAS_io_inq_unlimited_dim
-
-
    subroutine MPAS_io_inq_dim(handle, dimname, dimsize, ierr)
 
       implicit none
@@ -406,7 +446,7 @@ module mpas_io
       type (dimlist_type), pointer :: dim_cursor
       integer :: pio_ierr
 
-!      call mpas_log_write('Called MPAS_io_inq_dim()')
+!      call mpas_log_write('Called MPAS_io_inq_dim() for dimension "' // trim(dimName) // '"')
       if (present(ierr)) ierr = MPAS_IO_NOERR
 
       ! Sanity checks
@@ -428,6 +468,16 @@ module mpas_io
          dim_cursor => dim_cursor % next
       end do
 
+#ifdef SIONLIB
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+         ! For SIONlib data, the dimension should have been found if it is already in the
+         ! file, because we read all metadata upfront when opening a file for reading.
+         call mpas_log_write('WARNING: Dimension ' // trim(dimname) // ' not in input file.', messageType=MPAS_LOG_WARN)
+         if (present(ierr)) ierr = MPAS_IO_ERR_MISSING_DIM
+         dimsize = -1
+         return
+      end if
+#endif
 
       !
       ! Otherwise, query the file-level API for information about the dim
@@ -447,7 +497,7 @@ module mpas_io
          return
       end if
 
-      if (new_dimlist_node % dimhandle % dimid == handle % pio_unlimited_dimid) new_dimlist_node % dimhandle % is_unlimited_dim = .true.
+      if (new_dimlist_node % dimhandle % dimid == handle % unlimited_dimid) new_dimlist_node % dimhandle % is_unlimited_dim = .true.
 
       pio_ierr = PIO_inq_dimlen(handle % pio_file, new_dimlist_node % dimhandle % dimid, new_dimlist_node % dimhandle % dimsize)
       if (pio_ierr /= PIO_noerr) then
@@ -484,6 +534,9 @@ module mpas_io
       integer, intent(out), optional :: ierr
 
       integer :: pio_ierr
+#ifdef SIONLIB
+      integer :: dimid_run
+#endif
       integer :: inq_dimsize
       type (dimlist_type), pointer :: new_dimlist_node
       type (dimlist_type), pointer :: dim_cursor
@@ -561,6 +614,44 @@ module mpas_io
 
       new_dimlist_node % dimhandle % dimname = dimname
       new_dimlist_node % dimhandle % dimsize = dimsize
+
+#ifdef SIONLIB
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          ! Need to know which dimid to assign, check all existing - this changes dim_cursor!
+          dimid_run = 0
+          dim_cursor => handle % dimlist_head
+          do while (associated(dim_cursor))
+             dimid_run = max(dimid_run, dim_cursor % dimhandle % dimid)
+             dim_cursor => dim_cursor % next
+          end do
+
+          dimid_run = dimid_run + 1
+          call MPAS_SION_def_dim(handle, dimname, dimid_run, dimsize, pio_ierr)
+          if (pio_ierr /= SIONLIB_noerr) then
+              if (present(ierr)) ierr = MPAS_IO_ERR_SION
+              deallocate(new_dimlist_node % dimhandle)
+              deallocate(new_dimlist_node)
+              return
+          end if
+          new_dimlist_node % dimhandle % dimid = dimid_run
+          if (dimsize == MPAS_IO_UNLIMITED_DIM) then
+             new_dimlist_node % dimhandle % is_unlimited_dim = .true.
+         end if
+      else
+          if (dimsize == MPAS_IO_UNLIMITED_DIM) then
+             new_dimlist_node % dimhandle % is_unlimited_dim = .true.
+             pio_ierr = PIO_def_dim(handle % pio_file, trim(dimname), PIO_unlimited, new_dimlist_node % dimhandle % dimid)
+          else
+             pio_ierr = PIO_def_dim(handle % pio_file, trim(dimname), dimsize, new_dimlist_node % dimhandle % dimid)
+          end if
+          if (pio_ierr /= PIO_noerr) then
+             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
+             deallocate(new_dimlist_node % dimhandle)
+             deallocate(new_dimlist_node)
+             return
+          end if
+      end if
+#else
       if (dimsize == MPAS_IO_UNLIMITED_DIM) then
          new_dimlist_node % dimhandle % is_unlimited_dim = .true.
          pio_ierr = PIO_def_dim(handle % pio_file, trim(dimname), PIO_unlimited, new_dimlist_node % dimhandle % dimid)
@@ -573,6 +664,7 @@ module mpas_io
          deallocate(new_dimlist_node)
          return
       end if
+#endif
 
       ! Keep dimension information
       if (.not. associated(handle % dimlist_head)) then
@@ -626,6 +718,9 @@ module mpas_io
       !
       ! See if we already have this variable in our list
       !
+#ifdef MPAS_DEBUG
+      call mpas_log_write('Looking for variable ' // trim(fieldname) // ' ... ')
+#endif
       found = .false.
       field_cursor => handle % fieldlist_head
       do while (associated(field_cursor))
@@ -636,6 +731,16 @@ module mpas_io
          end if
          field_cursor => field_cursor % next
       end do
+
+#ifdef SIONLIB
+      if ( (.not. found) .and. (handle % ioformat .eq. MPAS_IO_SIONLIB) ) then
+         ! For SIONlib data, the variable should have been found if it is already in the
+         ! file, because we read all metadata upfront when opening a file for reading.
+         call mpas_log_write('WARNING: Variable ' // trim(fieldname) // ' not in input file.', messageType=MPAS_LOG_WARN)
+         if (present(ierr)) ierr = MPAS_IO_ERR_SION
+         return
+      end if
+#endif
 
       !
       ! Otherwise, inquire through the file-level API and add it to the list
@@ -655,7 +760,7 @@ module mpas_io
             if (present(ierr)) ierr = MPAS_IO_ERR_PIO
             deallocate(new_fieldlist_node % fieldhandle)
             deallocate(new_fieldlist_node)
-            call mpas_log_write('Variable ' // trim(fieldname) // ' not in input file.', MPAS_LOG_WARN)
+            call mpas_log_write('Variable ' // trim(fieldname) // ' not in input file.', messageType=MPAS_LOG_WARN)
             return
          end if
 !call mpas_log_write('Inquired about variable ID $i.', intArgs=(/new_fieldlist_node % fieldhandle % fieldid/) )
@@ -715,7 +820,7 @@ module mpas_io
          ! Get information about dimensions
          do i=1,new_fieldlist_node % fieldhandle % ndims
             new_fieldlist_node % fieldhandle % dims(i) % dimid = dimids(i)
-            if (dimids(i) == handle % pio_unlimited_dimid) then
+            if (dimids(i) == handle % unlimited_dimid) then
                new_fieldlist_node % fieldhandle % dims(i) % is_unlimited_dim = .true.
                new_fieldlist_node % fieldhandle % has_unlimited_dim = .true.
             end if
@@ -826,6 +931,9 @@ module mpas_io
       integer, intent(in), optional :: precision
       integer, intent(out), optional :: ierr
 
+#ifdef SIONLIB
+      integer :: varid_run
+#endif
       integer :: i
       integer :: pio_ierr
       integer :: pio_type
@@ -879,12 +987,12 @@ module mpas_io
             if (ndims /= field_cursor % fieldhandle % ndims) then
                if (present(ierr)) ierr = MPAS_IO_ERR_REDEF_VAR
 !               call mpas_log_write('Field '//trim(fieldname)//' previously defined with conflicting number of dimensions: $i $i',&
-!                           MPAS_LOG_ERR, intArgs=(/ndims, field_cursor % fieldhandle % ndims/) )
+!                           messageType=MPAS_LOG_ERR, intArgs=(/ndims, field_cursor % fieldhandle % ndims/) )
             end if
             if (fieldtype /= field_cursor % fieldhandle % field_type) then
                if (present(ierr)) ierr = MPAS_IO_ERR_REDEF_VAR
 !               call mpas_log_write('Field '//trim(fieldname)//' previously defined with conflicting type: ', &
-!                           MPAS_LOG_ERR, intArgs=(/fieldtype, field_cursor % fieldhandle % field_type/) )
+!                           messageType=MPAS_LOG_ERR, intArgs=(/fieldtype, field_cursor % fieldhandle % field_type/) )
             end if
             return
          end if
@@ -894,8 +1002,11 @@ module mpas_io
 
       !
       ! If we're working with a preexisting file, see whether this variable isn't already
-      !    defined in the file; if it is, the type and dimensions should match the type and dimensions
-      !     specified in this call to define the variable, at which point we can add it to our local cache
+      ! defined in the file; if it is, the type and dimensions should match the type and dimensions
+      ! specified in this call to define the variable, at which point we can add it to our local cache
+#ifdef SIONLIB
+      ! This does not apply to SIONlib data, since handle % preexisting_file is always .false.
+#endif
       !
       if (handle % preexisting_file) then
          call MPAS_io_inq_var(handle, fieldname, inq_fieldtype, inq_ndims, inq_dimnames, ierr=pio_ierr)
@@ -973,7 +1084,7 @@ module mpas_io
             deallocate(new_fieldlist_node)
             deallocate(dimids)
             return
-!            call mpas_log_write('Error finding dimension '//trim(dimnames(i))//' for field '//trim(fieldname), MPAS_LOG_ERR)
+!            call mpas_log_write('Error finding dimension '//trim(dimnames(i))//' for field '//trim(fieldname), messageType=MPAS_LOG_ERR)
          end if
       end do
 
@@ -999,6 +1110,35 @@ module mpas_io
 !!!!!!!! PIO DOES NOT SUPPORT LOGICAL !!!!!!!!
       end if
 
+#ifdef SIONLIB
+      if (handle % ioformat == MPAS_IO_SIONLIB) then
+         ! Need to know which varid to assign, check all existing - this changes field_cursor!
+         varid_run = 0
+         field_cursor => handle % fieldlist_head
+         do while (associated(field_cursor))
+            varid_run = max(varid_run, field_cursor % fieldhandle % fieldid)
+            field_cursor => field_cursor % next
+         end do
+         varid_run = varid_run + 1
+         ! Use original field_type instead of pio_type
+         pio_type = new_fieldlist_node % fieldhandle % field_type
+         call MPAS_SION_def_var(handle, trim(fieldname), varid_run, ndims, dimids, pio_type, pio_ierr)
+         if (pio_ierr /= SIONLIB_noerr) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_SION
+            return
+         end if
+      else
+         if (ndims == 0) then
+            pio_ierr = PIO_def_var(handle % pio_file, trim(fieldname), pio_type, new_fieldlist_node % fieldhandle % field_desc)
+         else
+            pio_ierr = PIO_def_var(handle % pio_file, trim(fieldname), pio_type, dimids, new_fieldlist_node % fieldhandle % field_desc)
+         end if
+         if (pio_ierr /= PIO_noerr) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_PIO
+            return
+         end if
+      end if
+#else
       if (ndims == 0) then
          pio_ierr = PIO_def_var(handle % pio_file, trim(fieldname), pio_type, new_fieldlist_node % fieldhandle % field_desc)
       else
@@ -1008,9 +1148,19 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
       end if
+#endif
 
       ! Get the varid for use by put_att routines
+#ifdef SIONLIB
+      if (handle % ioformat == MPAS_IO_SIONLIB) then
+          new_fieldlist_node % fieldhandle % fieldid = varid_run
+          pio_ierr = PIO_noerr
+      else
+          pio_ierr = PIO_inq_varid(handle % pio_file, trim(fieldname), new_fieldlist_node % fieldhandle % fieldid)
+      end if
+#else
       pio_ierr = PIO_inq_varid(handle % pio_file, trim(fieldname), new_fieldlist_node % fieldhandle % fieldid)
+#endif
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -1083,13 +1233,14 @@ module mpas_io
    end subroutine MPAS_io_get_var_indices
 
 
-   subroutine MPAS_io_set_var_indices(handle, fieldname, indices, ierr)
+   subroutine MPAS_io_set_var_indices(handle, fieldname, indices, decomposed, ierr)
 
       implicit none
 
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       character (len=*), intent(in) :: fieldname
       integer, dimension(:), intent(in) :: indices
+      logical, intent(in) :: decomposed
       integer, intent(out), optional :: ierr
 
       type (fieldlist_type), pointer :: field_cursor
@@ -1102,6 +1253,11 @@ module mpas_io
       integer, dimension(:), pointer :: dimlist
       integer (kind=MPAS_IO_OFFSET_KIND), dimension(:), pointer :: compdof
       type (decomplist_type), pointer :: decomp_cursor, new_decomp
+#ifdef SIONLIB
+      integer*8 :: fieldsize
+      integer*8 :: chunksize
+      integer :: sion_ierr
+#endif
 
 !      call mpas_log_write('Called MPAS_io_set_var_indices()')
       if (present(ierr)) ierr = MPAS_IO_NOERR
@@ -1112,6 +1268,19 @@ module mpas_io
          return 
       end if
 
+#ifdef SIONLIB
+      ! If it is not a decomposed array, we don't need to set variable indices for
+      ! PIO data. However, for SIONlib data we need to calculate the required storage
+      ! for each variable (decomposed and non-decomposed), which happens further down
+      if (.not. handle % ioformat == MPAS_IO_SIONLIB .and. .not. decomposed) then
+         return
+      end if
+#else
+      ! If it is not a decomposed array, we don't need to set variable indices
+      if (.not. decomposed) then
+         return
+      end if
+#endif
 !      call mpas_log_write('Assigning $i indices for '//trim(fieldname), intArgs=(/size(indices)/) )
       !  
       ! Check whether the field has been defined
@@ -1129,6 +1298,55 @@ module mpas_io
       end if
 !call mpas_log_write(trim(fieldname)//' has been defined')
 
+#ifdef SIONLIB
+      ! Calculate the required storage (chunksize) for non-decomposed variables for SIONlib data
+      if (handle % ioformat == MPAS_IO_SIONLIB .and. .not. decomposed) then
+         fieldsize = 1
+         ! Dealing with character variable is tricky; PIO/NetCDF defines a StrLen dimension,
+         ! which is different from StrKIND defined as the default length of character strings.
+         ! In SIONlib, we currently support this via a nasty little hack, but other solutions
+         ! require much more work. We identify the StrLen dimension and substitute its length
+         ! with the hard-coded StrKIND value. The first dimension by convention is the length
+         ! of the string, which is thus not used and substituted with StrKIND in SIONlib.
+         if (field_cursor % fieldhandle % field_type == MPAS_IO_CHAR) then
+            ! DH*
+            do i=1,field_cursor % fieldhandle % ndims
+                if (i .eq. 1) then
+                    if (.not. trim(field_cursor % fieldhandle % dims(i) % dimname) == 'StrLen') then
+                        call mpas_log_write('ERROR - trouble calculating fieldsize for character array ' // trim(fieldname), messageType=MPAS_LOG_ERR)
+                        if (present(ierr)) ierr = MPAS_IO_ERR_SION
+                        return
+                    end if
+                    fieldsize = fieldsize * StrKIND
+                else if (.not. field_cursor % fieldhandle % dims(i) % is_unlimited_dim) then
+                    fieldsize = fieldsize * field_cursor % fieldhandle % dims(i) % dimsize
+                end if
+            end do
+            ! *DH
+         else
+            do i=1,field_cursor % fieldhandle % ndims
+               if (.not. field_cursor % fieldhandle % dims(i) % is_unlimited_dim) then
+                  fieldsize = fieldsize * field_cursor % fieldhandle % dims(i) % dimsize
+               end if
+            end do
+         end if
+         call MPAS_SION_chunksize(field_cursor % fieldhandle % field_type, fieldsize, chunksize, sion_ierr)
+         if (sion_ierr /= SIONLIB_noerr) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_SION
+            return
+         end if
+         if (handle % iomode == MPAS_IO_WRITE) then
+            call MPAS_SION_store_position_non_decomp(handle, field_cursor, fieldsize, chunksize, sion_ierr)
+            if (sion_ierr /= SIONLIB_noerr) then
+               if (present(ierr)) ierr = MPAS_IO_ERR_SION
+               return
+            end if
+         end if
+         return
+      end if
+#endif
+
+      ! DH* - check if this block is still needed (because of the additional decompsed argument)
       !
       ! If this is a scalar field, just return
       !
@@ -1138,7 +1356,7 @@ module mpas_io
 !call mpas_log_write('No need to create a decomposition for a 0d field...')
          return
       end if
-
+      ! *DH
 
       !
       ! Check whether a suitable decomposition already exists
@@ -1147,6 +1365,13 @@ module mpas_io
 !if (.not. associated(decomp_cursor)) call mpas_log_write('No existing decompositions to check...')
       early_return = 0
       DECOMP_LOOP: do while (associated(decomp_cursor))
+#ifdef SIONLIB
+         ! For SIONlib, we don't need the complicated PIO decomp description, and vice versa for PIO we don't need
+         ! the SIONlib chunksizes. Since the variable decomposition is created once per variable, which might get written
+         ! to both PIO and SIONlib formats (in different streams), we have to compute decompositions for each of them
+         sionlib_switch: if ( (handle % ioformat == MPAS_IO_SIONLIB .and. decomp_cursor % decomphandle % sionlib_type) .or. &
+                              (handle % ioformat /= MPAS_IO_SIONLIB .and. .not. decomp_cursor % decomphandle % sionlib_type) ) then
+#endif
          if (decomp_cursor % decomphandle % field_type == field_cursor % fieldhandle % field_type) then
          if (size(decomp_cursor % decomphandle % dims) == field_cursor % fieldhandle % ndims) then
 !call mpas_log_write('Number of dimensions matches...')
@@ -1212,6 +1437,9 @@ module mpas_io
             exit DECOMP_LOOP
          end if
          end if
+#ifdef SIONLIB
+         end if sionlib_switch
+#endif
          decomp_cursor => decomp_cursor % next
       end do DECOMP_LOOP
 
@@ -1220,6 +1448,18 @@ module mpas_io
       ! 
       call mpas_dmpar_min_int(handle % ioContext % dminfo, early_return, early_return_global)
       if (early_return_global == 1) then
+#ifdef SIONLIB
+         ! Add the previously calculated required amount of storage for this variable/decompostion
+         if (handle % ioformat == MPAS_IO_SIONLIB) then
+            if (handle % iomode == MPAS_IO_WRITE) then
+               call MPAS_SION_store_position_decomp(handle, field_cursor, sion_ierr)
+               if (sion_ierr /= SIONLIB_noerr) then
+                  if (present(ierr)) ierr = MPAS_IO_ERR_SION
+                  return
+               end if
+            end if
+         end if
+#endif
          return
       end if
 
@@ -1265,6 +1505,47 @@ module mpas_io
       end do
       new_decomp % decomphandle % dims(ndims) = field_cursor % fieldhandle % dims(ndims) % dimsize
       dimlist(ndims) = size(indices)
+
+#ifdef SIONLIB
+      ! For SIONlib data, only calculate the required amount of storage
+      ! for this decomposition (not required for PIO)
+      if (handle % ioformat == MPAS_IO_SIONLIB) then
+         call MPAS_SION_initdecomp(new_decomp, dimlist, sion_ierr)
+         if (sion_ierr /= SIONLIB_noerr) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_SION
+               deallocate(new_decomp % decomphandle % indices)
+               deallocate(new_decomp % decomphandle % dims)
+               deallocate(new_decomp % decomphandle)
+               deallocate(new_decomp)
+               deallocate(dimlist)
+            return
+         end if
+         ! Add new decomposition to the list
+         if (.not. associated(handle % ioContext % decomp_list)) then
+            handle % ioContext % decomp_list => new_decomp
+            !mpas_log_write('Adding first item to the decomp_list')
+         else
+            new_decomp % next => handle % ioContext % decomp_list
+            handle % ioContext % decomp_list => new_decomp
+            !mpas_log_write('Adding new decomp to the head of the list')
+         end if
+         !mpas_log_write('Setting decomp in fieldhandle')
+         field_cursor % fieldhandle % decomp => new_decomp % decomphandle
+         if (handle % iomode == MPAS_IO_WRITE) then
+            call MPAS_SION_store_position_decomp(handle, field_cursor, sion_ierr)
+            if (sion_ierr /= SIONLIB_noerr) then
+               if (present(ierr)) ierr = MPAS_IO_ERR_SION
+               return
+            end if
+         end if
+         deallocate(dimlist)
+         return
+      end if
+
+      ! This block is only executed if no suitable decomposition for PIO is found
+      new_decomp % decomphandle % sionlib_type = .false.
+#endif
+
       pd = pd * int(dimlist(ndims),MPAS_IO_OFFSET_KIND)
 
       allocate(compdof(pd)) 
@@ -1348,8 +1629,8 @@ module mpas_io
 
 
    subroutine MPAS_io_get_var_generic(handle, fieldname, intVal, intArray1d, intArray2d, intArray3d, intArray4d, &
-                                                        realVal, realArray1d, realArray2d, realArray3d, realArray4d, realArray5d, &
-                                                        charVal, charArray1d, ierr)
+                                      realVal, realArray1d, realArray2d, realArray3d, realArray4d, realArray5d, &
+                                      charVal, charArray1d, ierr)
 
       implicit none
 
@@ -1430,10 +1711,20 @@ module mpas_io
 
 !      call mpas_log_write('Checking for unlimited dim')
       if (field_cursor % fieldhandle % has_unlimited_dim) then
+#ifdef SIONLIB
+         ! This is not required for SIONlib data, only one frame per file
+         if (handle % ioformat .ne. MPAS_IO_SIONLIB) then
+#ifdef USE_PIO2
+            call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
+#else
+            call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
+#endif
+         end if
 #ifdef USE_PIO2
          call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
 #else
          call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
+#endif
 #endif
          start1(1) = handle % frame_number
          count1(1) = 1
@@ -1442,6 +1733,152 @@ module mpas_io
          start2(2) = handle % frame_number
          count2(2) = 1
       end if
+
+! Wrapping the entire read block in ifdef to make it more readable;
+! return at the end of the read_sionlib if statement for SIONlib data
+#ifdef SIONLIB
+      read_sionlib: if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+         if (present(realVal)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singleval = singleVal, ierr = pio_ierr)
+               realVal = real(singleVal,RKIND)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         doubleval = doubleVal, ierr = pio_ierr)
+               realVal = real(doubleVal,RKIND)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realval = realVal, ierr = pio_ierr)
+            end if
+         else if (present(intVal)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      intval = intVal, ierr = pio_ierr)
+         else if (present(charVal)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      charval = charVal, ierr = pio_ierr)
+         else if (present(realArray1d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray1d(size(realArray1d,1)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singlearray1d = singleArray1d, ierr = pio_ierr)
+               realArray1d(:) = real(singleArray1d(:),RKIND)
+               deallocate(singleArray1d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+               allocate(doubleArray1d(size(realArray1d,1)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         doublearray1d = doubleArray1d, ierr = pio_ierr)
+               realArray1d(:) = real(doubleArray1d(:),RKIND)
+               deallocate(doubleArray1d)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realarray1d = realArray1d, ierr = pio_ierr)
+            end if
+         else if (present(realArray2d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray2d(size(realArray2d,1), size(realArray2d,2)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singlearray2d = singleArray2d, ierr = pio_ierr)
+               realArray2d(:,:) = real(singleArray2d(:,:),RKIND)
+               deallocate(singleArray2d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray2d(size(realArray2d,1), size(realArray2d,2)))
+                call MPAS_SION_read_array(handle, field_cursor, &
+                                          doublearray2d = doubleArray2d, ierr = pio_ierr)
+                realArray2d(:,:) = real(doubleArray2d(:,:),RKIND)
+                deallocate(doubleArray2d)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realarray2d = realArray2d, ierr = pio_ierr)
+            end if
+         else if (present(realArray3d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray3d(size(realArray3d,1),size(realArray3d,2),size(realArray3d,3)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singlearray3d = singleArray3d, ierr = pio_ierr)
+               realArray3d(:,:,:) = real(singleArray3d(:,:,:),RKIND)
+               deallocate(singleArray3d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray3d(size(realArray3d,1),size(realArray3d,2),size(realArray3d,3)))
+                call MPAS_SION_read_array(handle, field_cursor, &
+                                          doublearray3d = doubleArray3d, ierr = pio_ierr)
+                realArray3d(:,:,:) = real(doubleArray3d(:,:,:),RKIND)
+                deallocate(doubleArray3d)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realarray3d = realArray3d, ierr = pio_ierr)
+            end if
+         else if (present(realArray4d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray4d(size(realArray4d,1),size(realArray4d,2),size(realArray4d,3),size(realArray4d,4)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singlearray4d = singleArray4d, ierr = pio_ierr)
+               realArray4d(:,:,:,:) = real(singleArray4d(:,:,:,:),RKIND)
+               deallocate(singleArray4d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray4d(size(realArray4d,1),size(realArray4d,2),size(realArray4d,3),size(realArray4d,4)))
+                call MPAS_SION_read_array(handle, field_cursor, &
+                                          doublearray4d = doubleArray4d, ierr = pio_ierr)
+                realArray4d(:,:,:,:) = real(doubleArray4d(:,:,:,:),RKIND)
+                deallocate(doubleArray4d)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realarray4d = realArray4d, ierr = pio_ierr)
+            end if
+         else if (present(realArray5d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray5d(size(realArray5d,1),size(realArray5d,2),size(realArray5d,3),size(realArray5d,4),size(realArray5d,5)))
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         singlearray5d = singleArray5d, ierr = pio_ierr)
+               realArray5d(:,:,:,:,:) = real(singleArray5d(:,:,:,:,:),RKIND)
+               deallocate(singleArray5d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray5d(size(realArray5d,1),size(realArray5d,2),size(realArray5d,3),size(realArray5d,4),size(realArray5d,5)))
+                call MPAS_SION_read_array(handle, field_cursor, &
+                                          doublearray5d = doubleArray5d, ierr = pio_ierr)
+                realArray5d(:,:,:,:,:) = real(doubleArray5d(:,:,:,:,:),RKIND)
+                deallocate(doubleArray5d)
+            else
+               call MPAS_SION_read_array(handle, field_cursor, &
+                                         realarray5d = realArray5d, ierr = pio_ierr)
+            end if
+         else if (present(intArray1d)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      intarray1d = intArray1d, ierr = pio_ierr)
+         else if (present(intArray2d)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      intarray2d = intArray2d, ierr = pio_ierr)
+         else if (present(intArray3d)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      intarray3d = intArray3d, ierr = pio_ierr)
+         else if (present(intArray4d)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      intarray4d = intArray4d, ierr = pio_ierr)
+         else if (present(charArray1d)) then
+            call MPAS_SION_read_array(handle, field_cursor, &
+                                      chararray1d = charArray1d, ierr = pio_ierr)
+         end if
+
+         if (pio_ierr /= SIONLIB_noerr) then
+             if (present(ierr)) ierr = MPAS_IO_ERR_SION
+         end if
+
+         return
+
+      end if read_sionlib
+#endif
 
 !      call mpas_log_write('Checking for real, int, char, etc')
       if (present(realVal)) then
@@ -2305,7 +2742,19 @@ module mpas_io
          return 
       end if
 
+#ifdef SIONLIB
+      if ( (handle % ioformat .eq. MPAS_IO_SIONLIB) .and. (.not. handle % data_mode) ) then
+         ! This enddef also triggers opening the SIONlib data file for writing, since all
+         ! required information for allocating the correct size of the chunksizes is known
+         call MPAS_SION_enddef(handle, trim(handle % filename), handle % ioContext % dminfo, MPAS_IO_WRITE, pio_ierr)
+         if (pio_ierr /= MPAS_IO_NOERR) then
+            if (present(ierr)) ierr = MPAS_IO_ERR_SION
+            return
+         end if
+      else if (.not. handle % data_mode) then
+#else
       if (.not. handle % data_mode) then
+#endif
          handle % data_mode = .true.
 
          pio_ierr = PIO_enddef(handle % pio_file)
@@ -2337,11 +2786,21 @@ module mpas_io
       end if
 
       if (field_cursor % fieldhandle % has_unlimited_dim) then
-
+#ifdef SIONLIB
+         ! Not required for SIONlib data, only one frame per file
+         if (handle % ioformat .ne. MPAS_IO_SIONLIB) then
+#ifdef USE_PIO2
+             call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
+#else
+             call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
+#endif
+         end if
+#else
 #ifdef USE_PIO2
          call PIO_setframe(handle % pio_file, field_cursor % fieldhandle % field_desc, handle % frame_number)
 #else
          call PIO_setframe(field_cursor % fieldhandle % field_desc, handle % frame_number)
+#endif
 #endif
          start1(1) = handle % frame_number
          count1(1) = 1
@@ -2353,6 +2812,153 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_NOERR
          return
       end if
+
+! Wrapping the entire write block in ifdef to make it more readable;
+! return at the end of the write_sionlib if statement for SIONlib data
+#ifdef SIONLIB
+      write_sionlib: if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+         if (present(realVal)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               singleVal = real(realVal,R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singleval = singleVal, ierr = pio_ierr)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+               doubleVal = real(realVal,R8KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          doubleval = doubleVal, ierr = pio_ierr)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realval = realVal, ierr = pio_ierr)
+            end if
+         else if (present(intVal)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       intval = intVal, ierr = pio_ierr)
+         else if (present(charVal)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       charval = charVal, ierr = pio_ierr)
+         else if (present(realArray1d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray1d(size(realArray1d)))
+               singleArray1d(:) = real(realArray1d(:),R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singlearray1d = singleArray1d, ierr = pio_ierr)
+               deallocate(singleArray1d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+               allocate(doubleArray1d(size(realArray1d)))
+               doubleArray1d(:) = real(realArray1d(:),R8KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          doublearray1d = doubleArray1d, ierr = pio_ierr)
+               deallocate(doubleArray1d)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realarray1d = realArray1d, ierr = pio_ierr)
+            end if
+         else if (present(realArray2d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray2d(size(realArray2d,1), size(realArray2d,2)))
+               singleArray2d(:,:) = real(realArray2d(:,:),R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singlearray2d = singleArray2d, ierr = pio_ierr)
+               deallocate(singleArray2d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray2d(size(realArray2d,1), size(realArray2d,2)))
+                doubleArray2d(:,:) = real(realArray2d(:,:),R8KIND)
+                call MPAS_SION_write_array(handle, field_cursor, &
+                                           doublearray2d = doubleArray2d, ierr = pio_ierr)
+                deallocate(doubleArray2d)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realarray2d = realArray2d, ierr = pio_ierr)
+            end if
+         else if (present(realArray3d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray3d(size(realArray3d,1), size(realArray3d,2), size(realArray3d,3)))
+               singleArray3d(:,:,:) = real(realArray3d(:,:,:),R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singlearray3d = singleArray3d, ierr = pio_ierr)
+               deallocate(singleArray3d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray3d(size(realArray3d,1), size(realArray3d,2), size(realArray3d,3)))
+                doubleArray3d(:,:,:) = real(realArray3d(:,:,:),R8KIND)
+                call MPAS_SION_write_array(handle, field_cursor, &
+                                           doublearray3d = doubleArray3d, ierr = pio_ierr)
+                deallocate(doubleArray3d)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realarray3d = realArray3d, ierr = pio_ierr)
+            end if
+         else if (present(realArray4d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray4d(size(realArray4d,1), size(realArray4d,2), size(realArray4d,3), size(realArray4d,4)))
+               singleArray4d(:,:,:,:) = real(realArray4d(:,:,:,:),R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singlearray4d = singleArray4d, ierr = pio_ierr)
+               deallocate(singleArray4d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray4d(size(realArray4d,1), size(realArray4d,2), size(realArray4d,3), size(realArray4d,4)))
+                doubleArray4d(:,:,:,:) = real(realArray4d(:,:,:,:),R8KIND)
+                call MPAS_SION_write_array(handle, field_cursor, &
+                                           doublearray4d = doubleArray4d, ierr = pio_ierr)
+                deallocate(doubleArray4d)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realarray4d = realArray4d, ierr = pio_ierr)
+            end if
+         else if (present(realArray5d)) then
+            if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
+               allocate(singleArray5d(size(realArray5d,1), size(realArray5d,2), size(realArray5d,3), size(realArray5d,4), size(realArray5d,5)))
+               singleArray5d(:,:,:,:,:) = real(realArray5d(:,:,:,:,:),R4KIND)
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          singlearray5d = singleArray5d, ierr = pio_ierr)
+               deallocate(singleArray5d)
+            else if ((field_cursor % fieldhandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
+                (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
+                allocate(doubleArray5d(size(realArray5d,1), size(realArray5d,2), size(realArray5d,3), size(realArray5d,4), size(realArray5d,5)))
+                doubleArray5d(:,:,:,:,:) = real(realArray5d(:,:,:,:,:),R8KIND)
+                call MPAS_SION_write_array(handle, field_cursor, &
+                                           doublearray5d = doubleArray5d, ierr = pio_ierr)
+                deallocate(doubleArray5d)
+            else
+               call MPAS_SION_write_array(handle, field_cursor, &
+                                          realarray5d = realArray5d, ierr = pio_ierr)
+            end if
+         else if (present(intArray1d)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       intarray1d = intArray1d, ierr = pio_ierr)
+         else if (present(intArray2d)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       intarray2d = intArray2d, ierr = pio_ierr)
+         else if (present(intArray3d)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       intarray3d = intArray3d, ierr = pio_ierr)
+         else if (present(intArray4d)) then
+            call MPAS_SION_write_array(handle, field_cursor, &
+                                       intarray4d = intArray4d, ierr = pio_ierr)
+         else if (present(charArray1d)) then
+             call MPAS_SION_write_array(handle, field_cursor, &
+                                        chararray1d = charArray1d, ierr = pio_ierr)
+         end if
+
+         if (pio_ierr /= SIONLIB_noerr) then
+             if (present(ierr)) ierr = MPAS_IO_ERR_SION
+         end if
+
+         return
+
+      end if write_sionlib
+
+#endif
 
       if (present(realVal)) then
          if ((field_cursor % fieldhandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
@@ -3209,6 +3815,16 @@ module mpas_io
          varid = PIO_global
       end if
 
+#ifdef SIONLIB
+      ! For SIONlib data, the attribute should have been found if it is already in the
+      ! file, because we read all metadata upfront when opening a file for reading.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          if (present(ierr)) ierr = MPAS_IO_ERR_SION
+          return
+      end if
+#endif
+
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
       if (pio_ierr /= PIO_noerr) then
@@ -3349,6 +3965,16 @@ module mpas_io
 
          varid = PIO_global
       end if
+
+#ifdef SIONLIB
+      ! For SIONlib data, the attribute should have been found if it is already in the
+      ! file, because we read all metadata upfront when opening a file for reading.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          if (present(ierr)) ierr = MPAS_IO_ERR_SION
+          return
+      end if
+#endif
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
@@ -3501,6 +4127,16 @@ module mpas_io
 
          varid = PIO_global
       end if
+
+#ifdef SIONLIB
+      ! For SIONlib data, the attribute should have been found if it is already in the
+      ! file, because we read all metadata upfront when opening a file for reading.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          if (present(ierr)) ierr = MPAS_IO_ERR_SION
+          return
+      end if
+#endif
 
       if (present(precision)) then
          local_precision = precision
@@ -3677,6 +4313,16 @@ module mpas_io
 
          varid = PIO_global
       end if
+
+#ifdef SIONLIB
+      ! For SIONlib data, the attribute should have been found if it is already in the
+      ! file, because we read all metadata upfront when opening a file for reading.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          if (present(ierr)) ierr = MPAS_IO_ERR_SION
+          return
+      end if
+#endif
 
       if (present(precision)) then
          local_precision = precision
@@ -3861,6 +4507,16 @@ module mpas_io
 
          varid = PIO_global
       end if
+
+#ifdef SIONLIB
+      ! For SIONlib data, the attribute should have been found if it is already in the
+      ! file, because we read all metadata upfront when opening a file for reading.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          if (present(ierr)) ierr = MPAS_IO_ERR_SION
+          return
+      end if
+#endif
 
       ! Query attribute value
       pio_ierr = PIO_inq_att(handle % pio_file, varid, attName, xtype, len)
@@ -4054,7 +4710,15 @@ module mpas_io
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+#ifdef SIONLIB
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_INT, intval=attValueLocal, ierr=pio_ierr)
+      else
+          pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+      end if
+#else
+     pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+#endif
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -4211,7 +4875,15 @@ module mpas_io
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+#ifdef SIONLIB
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_INTA, intarray1d=attValueLocal, ierr=pio_ierr)
+      else
+          pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+      end if
+#else
+          pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+#endif
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
          return
@@ -4371,13 +5043,37 @@ module mpas_io
       if ((new_attlist_node % attHandle % precision == MPAS_IO_SINGLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
          singleVal = real(attValueLocal,R4KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal) 
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REAL, singleval=singleVal, ierr=pio_ierr)
+         else
+             pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal)
+         end if
+#else
+         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal)
+#endif
       else if ((new_attlist_node % attHandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
          doubleVal = real(attValueLocal,R8KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal) 
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REAL, doubleval=doubleVal, ierr=pio_ierr)
+         else
+             pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal)
+         end if
+#else
+         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal)
+#endif
       else
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REAL, realval=attValueLocal, ierr=pio_ierr)
+         else
+             pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+         end if
+#else
+         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+#endif
       end if
 
       if (pio_ierr /= PIO_noerr) then
@@ -4549,16 +5245,40 @@ module mpas_io
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_SINGLE_PRECISION)) then
          allocate(singleVal(size(attValueLocal)))
          singleVal(:) = real(attValueLocal(:),R4KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal) 
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REALA, singlearray1d=singleVal, ierr=pio_ierr)
+         else
+            pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal)
+         end if
+#else
+         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, singleVal)
+#endif
          deallocate(singleVal)
       else if ((new_attlist_node % attHandle % precision == MPAS_IO_DOUBLE_PRECISION) .and. &
           (MPAS_IO_NATIVE_PRECISION /= MPAS_IO_DOUBLE_PRECISION)) then
          allocate(doubleVal(size(attValueLocal)))
          doubleVal(:) = real(attValueLocal(:),R8KIND)
-         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal) 
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REALA, doublearray1d=doubleVal, ierr=pio_ierr)
+         else
+            pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal)
+         end if
+#else
+         pio_ierr = PIO_put_att(handle % pio_file, varid, attName, doubleVal)
+#endif
          deallocate(doubleVal)
       else
+#ifdef SIONLIB
+         if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+             call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_REALA, realarray1d=attValueLocal, ierr=pio_ierr)
+         else
+            pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal)
+         end if
+#else
          pio_ierr = PIO_put_att(handle % pio_file, varid, attName, attValueLocal) 
+#endif
       end if
       if (pio_ierr /= PIO_noerr) then
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -4595,7 +5315,7 @@ module mpas_io
 
       if ( valLen > StrKind ) then
          call mpas_log_write('Attribute ''' // trim(attName) // ''' has a value longer than StrKIND. ' // &
-             'It will be cut to a length of $i', MPAS_LOG_WARN, intArgs=(/StrKIND/) )
+             'It will be cut to a length of $i', messageType=MPAS_LOG_WARN, intArgs=(/StrKIND/) )
          attValueLocal = trimmedVal(1:StrKIND)
       else
          attValueLocal = trimmedVal
@@ -4718,7 +5438,15 @@ module mpas_io
          end if
       end if
 
-      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal)) 
+#ifdef SIONLIB
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+          call MPAS_SION_put_att(handle, varid, attName, MPAS_ATT_TEXT, charval=attValueLocal, ierr=pio_ierr)
+      else
+          pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal))
+      end if
+#else
+      pio_ierr = PIO_put_att(handle % pio_file, varid, attName, trim(attValueLocal))
+#endif
       if (pio_ierr /= PIO_noerr) then
 
          if (present(ierr)) ierr = MPAS_IO_ERR_PIO
@@ -4728,6 +5456,9 @@ module mpas_io
          ! to enter define mode before writing the attribute. Note the PIO_redef documentation:
          !     'Entering and leaving netcdf define mode causes a file sync operation to occur, 
          !      these operations can be very expensive in parallel systems.'
+#ifdef SIONLIB
+         ! This is no problem for SIONlib files - preexisting files are overwritten
+#endif
          !
          if (handle % preexisting_file .and. .not. handle % data_mode) then
             pio_ierr = PIO_redef(handle % pio_file)
@@ -4803,9 +5534,21 @@ module mpas_io
          if (present(ierr)) ierr = MPAS_IO_ERR_UNINIT_HANDLE
          return 
       end if
-
+#ifdef SIONLIB
+      ! Because SIONlib files contain only one timestamp, syncing the
+      ! file (during writing) causes to close the file immediately.
+      if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
+         if (present(ierr)) then
+            call MPAS_SION_CLOSE(handle, ierr)
+        else
+            call MPAS_SION_CLOSE(handle)
+        end if
+      else
+         call PIO_syncfile(handle % pio_file)
+      end if
+#else
       call PIO_syncfile(handle % pio_file)
-
+#endif
    end subroutine MPAS_io_sync
 
 
@@ -4875,8 +5618,21 @@ module mpas_io
 
       handle % initialized = .false.
 
+#ifdef SIONLIB
+      if (handle % ioformat == MPAS_IO_SIONLIB) then
+         if (present(ierr)) then
+            call MPAS_SION_CLOSE(handle, ierr)
+         else
+            call MPAS_SION_CLOSE(handle)
+         end if
+      else
+!call mpas_log_write('MGD PIO_closefile')
+          call PIO_closefile(handle % pio_file)
+      end if
+#else
 !call mpas_log_write('MGD PIO_closefile')
       call PIO_closefile(handle % pio_file)
+#endif
 
    end subroutine MPAS_io_close
 
@@ -4903,7 +5659,13 @@ module mpas_io
 !if (.not. associated(decomp_del % decomphandle)) call mpas_log_write('OOPS... do not have decomphandle')
          deallocate(decomp_del % decomphandle % dims)
          deallocate(decomp_del % decomphandle % indices)
+#ifdef SIONLIB
+         if (.not. decomp_del % decomphandle % sionlib_type) then
+            call PIO_freedecomp(ioContext % pio_iosystem, decomp_del % decomphandle % pio_iodesc)
+         end if
+#else
          call PIO_freedecomp(ioContext % pio_iosystem, decomp_del % decomphandle % pio_iodesc)
+#endif
          deallocate(decomp_del % decomphandle)
          deallocate(decomp_del)
       end do
@@ -4945,50 +5707,62 @@ module mpas_io
          case (MPAS_IO_NOERR)
             ! ... do nothing ...
          case (MPAS_IO_ERR_INVALID_MODE)
-            call mpas_log_write('MPAS IO Error: Invalid file access mode', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Invalid file access mode', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_INVALID_FORMAT)
-            call mpas_log_write('MPAS IO Error: Invalid I/O format', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Invalid I/O format', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_LONG_FILENAME)
-            call mpas_log_write('MPAS IO Error: Filename too long', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Filename too long', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_UNINIT_HANDLE)
-            call mpas_log_write('MPAS IO Error: Uninitialized I/O handle', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Uninitialized I/O handle', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_PIO)
-            call mpas_log_write('MPAS IO Error: Bad return value from PIO', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Bad return value from PIO', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_DATA_MODE)
-            call mpas_log_write('MPAS IO Error: Cannot define in data mode', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Cannot define in data mode', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_NOWRITE)
-            call mpas_log_write('MPAS IO Error: File not opened for writing', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: File not opened for writing', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_REDEF_DIM)
-            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of dimension', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of dimension', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_REDEF_VAR)
-            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of field', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of field', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_UNDEFINED_DIM)
-            call mpas_log_write('MPAS IO Error: Field uses undefined dimension', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Field uses undefined dimension', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_UNDEFINED_VAR)
-            call mpas_log_write('MPAS IO Error: Undefined field', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Undefined field', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_REDEF_ATT)
-            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of attribute', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Inconsistent redefinition of attribute', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_WRONG_ATT_TYPE)
-            call mpas_log_write('MPAS IO Error: Wrong type for requested attribute', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Wrong type for requested attribute', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_NO_DECOMP)
-            call mpas_log_write('MPAS IO Error: Decomposition indices not set for field', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Decomposition indices not set for field', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_TWO_UNLIMITED_DIMS)
-            call mpas_log_write('MPAS IO Error: Defining more than one unlimited dimension', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Defining more than one unlimited dimension', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_WRONG_MODE)
-            call mpas_log_write('MPAS IO Error: Operation not permitted in this file mode', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Operation not permitted in this file mode', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_NO_UNLIMITED_DIM)
-            call mpas_log_write('MPAS IO Error: No unlimited dimension found in dataset', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: No unlimited dimension found in dataset', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_UNIMPLEMENTED)
-            call mpas_log_write('MPAS IO Error: Unimplemented functionality', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Unimplemented functionality', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_WOULD_CLOBBER)
-            call mpas_log_write('MPAS IO Error: Would clobber existing file', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Would clobber existing file', messageType=MPAS_LOG_ERR)
          case (MPAS_IO_ERR_NOEXIST_READ)
-            call mpas_log_write('MPAS IO Error: Attempting to read a file which does not exist.', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Attempting to read a file which does not exist.', messageType=MPAS_LOG_ERR)
+#ifdef SIONLIB
+         case (MPAS_IO_ERR_OPEN)
+            call mpas_log_write('MPAS IO Error: Bad return value from SIONlib on opening file.', messageType=MPAS_LOG_ERR)
+         case (MPAS_IO_ERR_CLOSE)
+            call mpas_log_write('MPAS IO Error: Bad return value from SIONlib on closing file.', messageType=MPAS_LOG_ERR)
+         case (MPAS_IO_ERR_ENDIANNESS)
+            call mpas_log_write('MPAS IO Error: Mismatch of endianness of SIONlib file and system.', messageType=MPAS_LOG_ERR)
+         case (MPAS_IO_ERR_FLUSH)
+            call mpas_log_write('MPAS IO Error: Bad return value from SIONlib on flushing file.', messageType=MPAS_LOG_ERR)
+         case (MPAS_IO_ERR_SION)
+            call mpas_log_write('MPAS IO Error: Bad return value from SIONlib.', messageType=MPAS_LOG_ERR)
+#endif
          case default
-            call mpas_log_write('MPAS IO Error: Unrecognized error code...', MPAS_LOG_ERR)
+            call mpas_log_write('MPAS IO Error: Unrecognized error code...', messageType=MPAS_LOG_ERR)
       end select
 
-      if (fatal .and. (ierr /= MPAS_IO_NOERR)) call mpas_log_write('ERROR In MPAS_IO', MPAS_LOG_CRIT)
+      if (fatal .and. (ierr /= MPAS_IO_NOERR)) call mpas_log_write('ERROR In MPAS_IO', messageType=MPAS_LOG_CRIT)
 
    end subroutine MPAS_io_err_mesg
  

@@ -1,6 +1,7 @@
 module mpas_typecast
 
    use mpas_kind_types
+   use mpas_abort, only : mpas_dmpar_global_abort
 
    implicit none
 
@@ -22,6 +23,17 @@ module mpas_typecast
 
 contains
 
+   subroutine check_buffersize(buffersize, target)
+!DIR$ ATTRIBUTES INLINE :: check_buffersize
+      implicit none
+
+      integer, intent(in) :: buffersize, target
+
+      if (target > buffersize) then
+         call mpas_dmpar_global_abort("Buffer overflow while encoding/decoding character buffer")
+      end if
+   end subroutine check_buffersize
+
    subroutine encode_character(buffer, cursor, value)
 !DIR$ ATTRIBUTES INLINE :: encode_character
 
@@ -34,6 +46,7 @@ contains
       integer :: length, i
 
       length = len(value)
+      call check_buffersize(size(buffer), cursor+length)
       do i=1,length
          buffer(cursor+i-1) = value(i:i)
       end do
@@ -51,7 +64,7 @@ contains
       integer, intent(in) :: value
 
       type :: data_t
-         integer :: x
+      integer :: x
       end type data_t
       type(data_t), target :: d
       character(len=1), dimension(:), allocatable :: enc
@@ -60,6 +73,7 @@ contains
 
       d % x = value
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = transfer(d, enc)
       buffer(cursor:cursor+length-1) = enc
@@ -87,6 +101,7 @@ contains
 
       d % x = value
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = transfer(d, enc)
       buffer(cursor:cursor+length-1) = enc
@@ -114,6 +129,7 @@ contains
 
       d % x = value
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = transfer(d, enc)
       buffer(cursor:cursor+length-1) = enc
@@ -141,6 +157,7 @@ contains
 
       d % x = value
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = transfer(d, enc)
       buffer(cursor:cursor+length-1) = enc
@@ -161,6 +178,7 @@ contains
       integer :: length, i
 
       length = len(value)
+      call check_buffersize(size(buffer), cursor+length)
       do i=1,length
          value(i:i) = buffer(cursor+i-1)
       end do
@@ -186,6 +204,7 @@ contains
       integer :: length
 
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = buffer(cursor:cursor+length-1)
       d = transfer(enc, d)
@@ -213,6 +232,7 @@ contains
       integer :: length
 
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = buffer(cursor:cursor+length-1)
       d = transfer(enc, d)
@@ -240,6 +260,7 @@ contains
       integer :: length
 
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = buffer(cursor:cursor+length-1)
       d = transfer(enc, d)
@@ -267,6 +288,7 @@ contains
       integer :: length
 
       length = size(transfer(d, encdummy))
+      call check_buffersize(size(buffer), cursor+length)
       allocate(enc(length))
       enc = buffer(cursor:cursor+length-1)
       d = transfer(enc, d)
