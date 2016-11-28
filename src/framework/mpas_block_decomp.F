@@ -25,6 +25,7 @@ module mpas_block_decomp
    use mpas_derived_types
    use mpas_io_units
    use mpas_log
+   use mpas_abort, only : mpas_dmpar_global_abort
 
    type graph
       integer :: nVerticesTotal
@@ -285,6 +286,66 @@ module mpas_block_decomp
       end if
 
    end subroutine mpas_block_decomp_cells_for_proc!}}}
+
+   !***********************************************************************
+   !
+   !  routine mpas_block_decomp_cells_for_proc_simple
+   !
+   !> \brief   Determines the blocks and their properties owner by a specific processor
+   !> \author  Dominikus Heinzeller
+   !> \date    09/16/16
+   !> \details
+   !>  This routine determines a list of global block id's this processor owns and
+   !>  their respective properties (offset, number of cells in block) for an already
+   !>  correctly distributed list of cells etc. (e.g. when bootstrapping from a
+   !>  SIONlib file); this routine is restricted to one block per processor (i.e. default).
+   !
+   !-----------------------------------------------------------------------
+      subroutine mpas_block_decomp_cells_for_proc_simple(dminfo, nCellsOwned, local_cell_list, indexTocellID, &
+                                                       & block_id, block_start, block_count, numBlocks, explicitProcDecomp, procFilePrefix)
+
+         implicit none
+
+         type (dm_info), intent(inout) :: dminfo !< Input: domain information
+         integer :: nCellsOwned !< Input: number of cells this processor owns
+         integer, dimension(:), pointer :: local_cell_list !< Output: list of processes this processor owns
+         integer, dimension(:), pointer :: indexTocellID !< Input: list of processes this processor owns
+         integer, dimension(:), pointer :: block_id !< Output: list of global block id's this processor owns
+         integer, dimension(:), pointer :: block_start !< Output: offset in local_cell_list for this blocks list of cells
+         integer, dimension(:), pointer :: block_count !< Output: number of cells in blocks
+
+         integer, intent(in) :: numBlocks !< Input: Number of blocks (from config_num_blocks)
+         logical, intent(in) :: explicitProcDecomp !< Input: Logical flag controlling if blocks are explicitly assigned to processors
+         character (len=*), intent(in) :: procFilePrefix !< Input: File prefix for processor decomposition
+         integer :: blocks_per_proc
+
+         if (numBlocks == 0 .or. numBlocks == dminfo % nProcs) then
+            dminfo % total_blocks = dminfo % nProcs
+         else
+            call mpas_dmpar_global_abort("ERROR, bootstrapping from SIONlib data with multiple blocks per MPI task is not supported")
+         end if
+
+         dminfo % explicitDecomp = explicitProcDecomp
+
+         allocate(local_cell_list(1:size(indexTocellID)))
+         local_cell_list = indexTocellID
+
+         call mpas_build_block_proc_list(dminfo, procFilePrefix)
+         call mpas_get_blocks_per_proc(dminfo, dminfo % my_proc_id, blocks_per_proc)
+
+         if (blocks_per_proc /= 1) then
+            call mpas_dmpar_global_abort("Logical error, should have exactly one block per proc")
+         end if
+
+         allocate(block_id(blocks_per_proc))
+         allocate(block_start(blocks_per_proc))
+         allocate(block_count(blocks_per_proc))
+         
+         block_id = dminfo % my_proc_id
+         block_start = 0
+         block_count = nCellsOwned
+
+      end subroutine mpas_block_decomp_cells_for_proc_simple
 
 !***********************************************************************
 !
