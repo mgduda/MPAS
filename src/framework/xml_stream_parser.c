@@ -1259,6 +1259,11 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Serial NetCDF");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
+			else if (strstr(iotype, "sionlib") != NULL) {
+				i_iotype = 7;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel SIONlib");
+				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+			}
 			else {
 				i_iotype = 0;
 				snprintf(msgbuf, MSGSIZE, "        *** unrecognized io_type specification; defaulting to Parallel-NetCDF");
@@ -1566,6 +1571,11 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 			else if (strstr(iotype, "netcdf") != NULL) {
 				i_iotype = 2;
 				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Serial NetCDF");
+				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+			}
+			else if (strstr(iotype, "sionlib") != NULL) {
+				i_iotype = 7;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel SIONlib");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else {
@@ -1962,6 +1972,11 @@ void xml_stream_get_attributes(char *fname, char *streamname, int *mpi_comm, cha
 				else if (strstr(xml_iotype, "netcdf") != NULL) {
 					sprintf(io_type, "%s", xml_iotype);
 					snprintf(msgbuf, MSGSIZE, "Using io_type Serial NetCDF for mesh stream");
+					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
+				}
+				else if (strstr(xml_iotype, "sionlib") != NULL) {
+					sprintf(io_type, "%s", xml_iotype);
+					snprintf(msgbuf, MSGSIZE, "Using io_type Parallel SIONlib for mesh stream");
 					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 				}
 				else {

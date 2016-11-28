@@ -12,7 +12,8 @@
    integer, parameter :: MPAS_IO_NETCDF   = 3, &
                          MPAS_IO_PNETCDF  = 4, &
                          MPAS_IO_NETCDF4  = 5, &
-                         MPAS_IO_PNETCDF5 = 6
+                         MPAS_IO_PNETCDF5 = 6, &
+                         MPAS_IO_SIONLIB  = 7
 
    ! Field and attribute types
    integer, parameter :: MPAS_IO_REAL     =  7,  &
@@ -55,13 +56,19 @@
                          MPAS_IO_ERR_UNIMPLEMENTED      = -18, &
                          MPAS_IO_ERR_WOULD_CLOBBER      = -19, &
                          MPAS_IO_ERR_NOEXIST_READ       = -20, &
-                         MPAS_IO_ERR_MISSING_DIM        = -21
+                         MPAS_IO_ERR_MISSING_DIM        = -21, &
+                         MPAS_IO_ERR_OPEN               = -22, &
+                         MPAS_IO_ERR_CLOSE              = -24, &
+                         MPAS_IO_ERR_ENDIANNESS         = -25, &
+                         MPAS_IO_ERR_FLUSH              = -26, &
+                         MPAS_IO_ERR_SION               = -27
 
    type MPAS_IO_Handle_type
       logical :: initialized = .false.
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
       type (file_desc_t) :: pio_file
+
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
@@ -75,6 +82,13 @@
       type (attlist_type), pointer :: attlist_head => null()
       type (attlist_type), pointer :: attlist_tail => null()
       type (mpas_io_context_type), pointer :: ioContext => null()
+
+      ! SIONlib properties
+      integer :: sidd = -1
+      character(1), dimension(:), allocatable :: metadata_buffer
+      integer :: metadata_cursor = 1
+      integer (kind=I8KIND) :: start_cursor = 0
+      integer (kind=I8KIND) :: data_cursor = 0
    end type MPAS_IO_Handle_type
 
    type decomphandle_type
@@ -82,17 +96,26 @@
       integer, dimension(:), pointer :: dims
       integer, dimension(:), pointer :: indices
       type (io_desc_t) :: pio_iodesc
+
+      ! SIONlib properties
+      integer (kind=I8KIND) :: sionlib_chunksize = 0
+      integer (kind=I8KIND) :: sionlib_fieldsize = 0
+      logical :: sionlib_type = .false.
    end type decomphandle_type
 
    type atthandle_type
       character (len=StrKIND) :: attName
       integer :: attType
+
       integer :: attValueInt
       integer :: precision
       integer, dimension(:), pointer :: attValueIntA => null()
       real (kind=RKIND) :: attValueReal
       real (kind=RKIND), dimension(:), pointer :: attValueRealA => null()
       character (len=StrKIND) :: attValueText
+
+      ! Used by SIONlib
+      integer :: fieldid
    end type atthandle_type
 
    type dimhandle_type
@@ -114,6 +137,11 @@
       type (attlist_type), pointer :: attlist_head => null()
       type (attlist_type), pointer :: attlist_tail => null()
       type (decomphandle_type), pointer :: decomp => null()
+
+      ! SIONlib properties
+      integer (kind=I8KIND) :: sionlib_position
+      integer (kind=I8KIND) :: sionlib_fieldsize
+      integer (kind=I8KIND) :: sionlib_chunksize
    end type fieldhandle_type
 
    type decomplist_type

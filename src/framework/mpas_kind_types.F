@@ -31,6 +31,7 @@ module mpas_kind_types
 
    integer, parameter :: StrKIND = 512
    integer, parameter :: ShortStrKIND = 64
+   integer, parameter :: HugeStrKIND = StrKIND*1000
 
    contains
 

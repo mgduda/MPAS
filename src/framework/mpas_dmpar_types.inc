@@ -17,6 +17,9 @@
      integer, dimension(:), allocatable :: block_proc_list
      integer, dimension(:), allocatable :: block_local_id_list
      !}}}
+
+     ! Used by SIONlib
+     integer :: nullcomm
    end type dm_info
 
 
