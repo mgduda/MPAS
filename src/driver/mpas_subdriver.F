@@ -272,6 +272,15 @@ module mpas_subdriver
          mesh_iotype = MPAS_IO_NETCDF
       else if (trim(iotype) == 'netcdf4') then
          mesh_iotype = MPAS_IO_NETCDF4
+      else if (trim(iotype) == 'sionlib') then
+         mesh_iotype = MPAS_IO_SIONLIB
+#ifndef SIONLIB
+         call mpas_log_write('*********************************************************************************', messageType=MPAS_LOG_ERR)
+         call mpas_log_write(' Error: Mesh stream '''//trim(mesh_stream)//''' is configured as SIONlib stream, ', messageType=MPAS_LOG_ERR)
+         call mpas_log_write('        but model was built without SIONlib support (-> see top-level Makefile). ', messageType=MPAS_LOG_ERR)
+         call mpas_log_write('*********************************************************************************', messageType=MPAS_LOG_ERR)
+         call mpas_dmpar_abort(domain_ptr % dminfo)
+#endif
       else
          mesh_iotype = MPAS_IO_PNETCDF
       end if
@@ -324,6 +333,11 @@ module mpas_subdriver
       ! Finalize the setup of blocks and fields
       !
       call mpas_bootstrap_framework_phase2(domain_ptr)
+
+      !
+      ! Add stream-dependent attributes, currently only required for SIONlib streams
+      !
+      call add_stream_dependent_attributes(domain_ptr)
 
       !
       ! Initialize core
@@ -473,5 +487,50 @@ module mpas_subdriver
       end do
 
    end subroutine add_stream_attributes
+
+
+   subroutine add_stream_dependent_attributes(domain)
+
+      use mpas_stream_manager, only : MPAS_stream_mgr_add_att, MPAS_stream_mgr_begin_iteration, MPAS_stream_mgr_get_next_stream
+      use mpas_pool_routines, only : mpas_pool_get_subpool, mpas_pool_get_dimension
+
+      implicit none
+
+      type (domain_type), intent(inout) :: domain
+
+      character (len=StrKIND) :: stream_id
+      integer :: stream_dir, stream_iotype
+      integer, pointer :: nCells, nEdges, nVertices
+      integer, pointer :: nCellsSolve, nEdgesSolve, nVerticesSolve
+      integer, pointer :: config_number_of_blocks
+
+      integer :: local_ierr
+
+      call MPAS_stream_mgr_begin_iteration(domain % streamManager)
+      do while (MPAS_stream_mgr_get_next_stream(domain % streamManager, streamID=stream_id, &
+                                               & directionProperty=stream_dir, ioTypeProperty=stream_iotype))
+         if ((stream_dir == MPAS_STREAM_INPUT_OUTPUT .or. stream_dir == MPAS_STREAM_OUTPUT) .and. &
+            & stream_iotype ==  MPAS_IO_SIONLIB) then
+             call mpas_log_write('Adding special global attributes for SIONlib stream ' // trim(stream_id))
+             !
+             call mpas_pool_get_config(domain % configs, 'config_number_of_blocks', config_number_of_blocks)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nCells', nCells)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nCellsSolve', nCellsSolve)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nEdges', nEdges)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nEdgesSolve', nEdgesSolve)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nVertices', nVertices)
+             call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nVerticesSolve', nVerticesSolve)
+             !
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nBlocks', config_number_of_blocks, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nCells', nCells, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nEdges', nEdges, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nVertices', nVertices, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nCellsSolve', nCellsSolve, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nEdgesSolve', nEdgesSolve, streamID=stream_id, ierr=local_ierr)
+             call MPAS_stream_mgr_add_att(domain % streamManager, 'nVerticesSolve', nVerticesSolve, streamID=stream_id, ierr=local_ierr)
+         end if
+      end do
+
+   end subroutine add_stream_dependent_attributes
 
 end module mpas_subdriver

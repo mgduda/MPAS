@@ -2942,7 +2942,7 @@ module mpas_stream_manager
            manager % ioContext => debugContext
 
 #ifdef SIONLIB
-           ! DH* 20161124 - check if this works/makes sense
+           ! DH* 20161124 - check if this works/makes sense, apparently this MPAS_io_init is never used?
            !sionlib_numfiles = config_sionlib_numfiles
            call MPAS_io_init(debugContext, 1, 1, 1)
 #else
@@ -5857,6 +5857,7 @@ subroutine stream_mgr_create_stream_c(manager_c, streamID_c, direction_c, filena
 
     if (iotype == MPAS_IO_SIONLIB) then
        STREAM_DEBUG_WRITE('Performing additional consistency checks for SIONlib file format ...')
+       ! DH* this implementation does not chatch the case filename_interval="none" and input/output interval being real, recurring intervals!
        if (trim(filename_interval) /= 'none') then
           call mpas_set_timeInterval(tempIntervalF, timeString=filename_interval)
           !if ( (trim(interval_in) /= 'none' .and. trim(interval_in) /= 'initial_only') .and. &

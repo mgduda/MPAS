@@ -330,7 +330,7 @@ module mpas_io
             ! For SIONlib, we only allow one frame per file - that means that local_truncate must be .true.;
             ! this check is actually performed in mpas_stream_manager.F -> stream_mgr_create_stream_c
             if (ioformat == MPAS_IO_SIONLIB) then
-               call mpas_log_write('MPAS I/O: ERROR - for SIONlib format, local-truncate must be true when writing to existing file '//trim(filename), messageType=MPAS_LOG_ERR)
+               call mpas_log_write('For SIONlib format, local-truncate must be true when writing to existing file '//trim(filename), messageType=MPAS_LOG_ERR)
                if (present(ierr)) ierr = MPAS_IO_ERR_WRONG_MODE
                return
             else
@@ -472,7 +472,7 @@ module mpas_io
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
          ! For SIONlib data, the dimension should have been found if it is already in the
          ! file, because we read all metadata upfront when opening a file for reading.
-         call mpas_log_write('WARNING: Dimension ' // trim(dimname) // ' not in input file.', messageType=MPAS_LOG_WARN)
+         call mpas_log_write('Dimension ' // trim(dimname) // ' not in input file.', messageType=MPAS_LOG_WARN)
          if (present(ierr)) ierr = MPAS_IO_ERR_MISSING_DIM
          dimsize = -1
          return
@@ -736,7 +736,7 @@ module mpas_io
       if ( (.not. found) .and. (handle % ioformat .eq. MPAS_IO_SIONLIB) ) then
          ! For SIONlib data, the variable should have been found if it is already in the
          ! file, because we read all metadata upfront when opening a file for reading.
-         call mpas_log_write('WARNING: Variable ' // trim(fieldname) // ' not in input file.', messageType=MPAS_LOG_WARN)
+         call mpas_log_write('Variable ' // trim(fieldname) // ' not in input file.', messageType=MPAS_LOG_WARN)
          if (present(ierr)) ierr = MPAS_IO_ERR_SION
          return
       end if
@@ -1313,7 +1313,7 @@ module mpas_io
             do i=1,field_cursor % fieldhandle % ndims
                 if (i .eq. 1) then
                     if (.not. trim(field_cursor % fieldhandle % dims(i) % dimname) == 'StrLen') then
-                        call mpas_log_write('ERROR - trouble calculating fieldsize for character array ' // trim(fieldname), messageType=MPAS_LOG_ERR)
+                        call mpas_log_write('Trouble calculating fieldsize for character array ' // trim(fieldname), messageType=MPAS_LOG_ERR)
                         if (present(ierr)) ierr = MPAS_IO_ERR_SION
                         return
                     end if
@@ -3819,7 +3819,7 @@ module mpas_io
       ! For SIONlib data, the attribute should have been found if it is already in the
       ! file, because we read all metadata upfront when opening a file for reading.
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
-          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          call mpas_log_write('Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
           if (present(ierr)) ierr = MPAS_IO_ERR_SION
           return
       end if
@@ -3970,7 +3970,7 @@ module mpas_io
       ! For SIONlib data, the attribute should have been found if it is already in the
       ! file, because we read all metadata upfront when opening a file for reading.
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
-          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          call mpas_log_write('Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
           if (present(ierr)) ierr = MPAS_IO_ERR_SION
           return
       end if
@@ -4132,7 +4132,7 @@ module mpas_io
       ! For SIONlib data, the attribute should have been found if it is already in the
       ! file, because we read all metadata upfront when opening a file for reading.
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
-          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          call mpas_log_write('Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
           if (present(ierr)) ierr = MPAS_IO_ERR_SION
           return
       end if
@@ -4318,7 +4318,7 @@ module mpas_io
       ! For SIONlib data, the attribute should have been found if it is already in the
       ! file, because we read all metadata upfront when opening a file for reading.
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
-          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          call mpas_log_write('Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
           if (present(ierr)) ierr = MPAS_IO_ERR_SION
           return
       end if
@@ -4512,7 +4512,7 @@ module mpas_io
       ! For SIONlib data, the attribute should have been found if it is already in the
       ! file, because we read all metadata upfront when opening a file for reading.
       if (handle % ioformat .eq. MPAS_IO_SIONLIB) then
-          call mpas_log_write('WARNING: Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
+          call mpas_log_write('Attribute ' // trim(attName) // ' not in input file.', messageType=MPAS_LOG_WARN)
           if (present(ierr)) ierr = MPAS_IO_ERR_SION
           return
       end if
