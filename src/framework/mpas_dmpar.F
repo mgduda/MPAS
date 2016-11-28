@@ -44,6 +44,7 @@ include 'mpif.h'
 #endif
    integer, parameter :: MPI_INTEGERKIND = MPI_INTEGER
    integer, parameter :: MPI_2INTEGERKIND = MPI_2INTEGER
+   integer, parameter :: MPI_INTEGER8KIND = MPI_INTEGER8
 
 #ifdef SINGLE_PRECISION
    integer, parameter :: MPI_REALKIND = MPI_REAL
@@ -78,8 +79,10 @@ include 'mpif.h'
    public :: mpas_dmpar_sum_int
    public :: mpas_dmpar_sum_real
    public :: mpas_dmpar_min_int
+   public :: mpas_dmpar_min_int8
    public :: mpas_dmpar_min_real
    public :: mpas_dmpar_max_int
+   public :: mpas_dmpar_max_int8
    public :: mpas_dmpar_max_real
    public :: mpas_dmpar_minloc_int
    public :: mpas_dmpar_minloc_real
@@ -262,7 +265,7 @@ include 'mpif.h'
 #endif
          call MPI_Comm_dup(MPI_COMM_WORLD, dminfo % comm, mpi_ierr)
       end if
-
+      dminfo % nullcomm = MPI_COMM_NULL
       ! Find out our rank and the total number of processors
       call MPI_Comm_rank(dminfo % comm, mpi_rank, mpi_ierr)
       call MPI_Comm_size(dminfo % comm, mpi_size, mpi_ierr)
@@ -294,6 +297,7 @@ include 'mpif.h'
 #else
       ! Set up single processor run, no MPI.
       dminfo % comm = 0
+      dminfo % nullcomm = 0
       dminfo % my_proc_id = IO_NODE
       dminfo % nprocs = 1
       dminfo % initialized_mpi = .false.
@@ -814,6 +818,38 @@ include 'mpif.h'
 
    end subroutine mpas_dmpar_min_int!}}}
 
+   !-----------------------------------------------------------------------
+   !  routine mpas_dmpar_max_int8
+   !
+   !> \brief MPAS dmpar minimum integer*8 routine.
+   !> \author Dom Heinzeller
+   !> \date   02/16/16
+   !> \details
+   !>  This routine returns the minimum integer*8 value across all processors in a communicator.
+   !
+   !-----------------------------------------------------------------------
+   subroutine mpas_dmpar_min_int8(dminfo, i, imax)!{{{
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo !< Input: Domain information
+      integer*8, intent(in) :: i !< Input: Integer value
+      integer*8, intent(out) :: imax !< Output: Minimum of integer values
+
+      integer :: mpi_ierr, threadNum
+
+      threadNum = mpas_threading_get_thread_num()
+
+      if ( threadNum == 0 ) then
+#ifdef _MPI
+         call MPI_Allreduce(i, imax, 1, MPI_INTEGER8KIND, MPI_MIN, dminfo % comm, mpi_ierr)
+#else
+         imax = i
+#endif
+      end if
+
+   end subroutine mpas_dmpar_min_int8!}}}
+
 !-----------------------------------------------------------------------
 !  routine mpas_dmpar_min_real
 !
@@ -877,6 +913,38 @@ include 'mpif.h'
       end if
 
    end subroutine mpas_dmpar_max_int!}}}
+
+   !-----------------------------------------------------------------------
+   !  routine mpas_dmpar_max_int8
+   !
+   !> \brief MPAS dmpar maximum integer*8 routine.
+   !> \author Dom Heinzeller
+   !> \date   02/16/16
+   !> \details
+   !>  This routine returns the maximum integer*8 value across all processors in a communicator.
+   !
+   !-----------------------------------------------------------------------
+   subroutine mpas_dmpar_max_int8(dminfo, i, imax)!{{{
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo !< Input: Domain information
+      integer*8, intent(in) :: i !< Input: Integer value
+      integer*8, intent(out) :: imax !< Output: Maximum of integer values
+
+      integer :: mpi_ierr, threadNum
+
+      threadNum = mpas_threading_get_thread_num()
+
+      if ( threadNum == 0 ) then
+#ifdef _MPI
+      call MPI_Allreduce(i, imax, 1, MPI_INTEGER8KIND, MPI_MAX, dminfo % comm, mpi_ierr)
+#else
+      imax = i
+#endif
+      end if
+
+   end subroutine mpas_dmpar_max_int8!}}}
 
 !-----------------------------------------------------------------------
 !  routine mpas_dmpar_max_real
