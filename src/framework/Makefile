@@ -4,6 +4,7 @@ DEPS := $(shell find ../core_$(CORE)/ -type f -name "*.xml" ! -name "*processed.
 TYPE_DEPS := $(shell find . -type f -name "*_types.inc")
 
 OBJS = mpas_kind_types.o \
+       mpas_typecast.o \
        mpas_framework.o \
        mpas_timer.o \
        mpas_timekeeping.o \
@@ -44,6 +45,7 @@ framework: $(OBJS)
 mpas_framework.o: mpas_dmpar.o \
                   mpas_io.o \
                   mpas_derived_types.o \
+                  mpas_typecast.o \
                   mpas_domain_routines.o \
                   mpas_field_routines.o \
                   mpas_pool_routines.o \
@@ -59,6 +61,8 @@ mpas_abort.o: mpas_kind_types.o mpas_io_units.o mpas_threading.o
 mpas_constants.o: mpas_kind_types.o
 
 mpas_log.o: mpas_derived_types.o mpas_io_units.o mpas_abort.o mpas_threading.o mpas_c_interfacing.o
+
+mpas_typecast.o: mpas_kind_types.o
 
 mpas_attlist.o: mpas_kind_types.o mpas_io_units.o mpas_derived_types.o
 
