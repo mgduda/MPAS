@@ -1849,7 +1849,8 @@ module atm_time_integration
       integer, dimension(:,:), pointer :: cellsOnEdge, edgesOnCell
       real (kind=RKIND), dimension(:,:), pointer :: edgesOnCell_sign
 
-      real (kind=RKIND), pointer :: epssm, smdiv, smdiv_p_forward
+      real (kind=RKIND), pointer :: epssm, smdiv_p_forward
+      real (kind=RKIND), dimension(:), pointer :: smdivScaled
 
       real (kind=RKIND), pointer :: cf1, cf2, cf3
 
@@ -1911,6 +1912,9 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'cf2', cf2)
       call mpas_pool_get_array(mesh, 'cf3', cf3)
 
+      ! smdiv is the 3D divergence-damping coefficients.
+      call mpas_pool_get_array(mesh, 'smdivScaled', smdivScaled) 
+
 ! redefine ru_p to be perturbation from time t, change 3b ! temporary
       call mpas_pool_get_array(diag, 'ru', ru)
       call mpas_pool_get_array(diag, 'ru_save', ru_save)
@@ -1919,9 +1923,7 @@ module atm_time_integration
       call mpas_pool_get_array(diag, 'rw_save', rw_save)
 
       ! epssm is the offcentering coefficient for the vertically implicit integration.
-      ! smdiv is the 3D divergence-damping coefficients.
       call mpas_pool_get_config(configs, 'config_epssm', epssm) 
-      call mpas_pool_get_config(configs, 'config_smdiv', smdiv) 
       call mpas_pool_get_config(configs, 'config_smdiv_p_forward', smdiv_p_forward) 
 
       call atm_advance_acoustic_step_work(nCells, nEdges, nCellsSolve, cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
@@ -1930,7 +1932,7 @@ module atm_time_integration
                                    rho_pp, cofwt, coftz, zxu, a_tri, alpha_tri, gamma_tri, dss, tend_ru, tend_rho, tend_rt, &
                                    tend_rw, zgrid, cofwr, cofwz, w, ru, ru_save, rw, rw_save, divergence_3d, fzm, fzp, rdzw, dcEdge, invDcEdge, &
                                    invAreaCell, cofrz, dvEdge, nEdgesOnCell, cellsOnEdge, edgesOnCell, edgesOnCell_sign, &
-                                   dts, small_step, epssm, smdiv, smdiv_p_forward, cf1, cf2, cf3 &
+                                   dts, small_step, epssm, smdivScaled, smdiv_p_forward, cf1, cf2, cf3 &
                                    )
 
    end subroutine atm_advance_acoustic_step
@@ -1942,7 +1944,7 @@ module atm_time_integration
                                    rho_pp, cofwt, coftz, zxu, a_tri, alpha_tri, gamma_tri, dss, tend_ru, tend_rho, tend_rt, &
                                    tend_rw, zgrid, cofwr, cofwz, w, ru, ru_save, rw, rw_save, divergence_3d, fzm, fzp, rdzw, dcEdge, invDcEdge, &
                                    invAreaCell, cofrz, dvEdge, nEdgesOnCell, cellsOnEdge, edgesOnCell, edgesOnCell_sign, &
-                                   dts, small_step, epssm, smdiv, smdiv_p_forward, cf1, cf2, cf3 &
+                                   dts, small_step, epssm, smdivScaled, smdiv_p_forward, cf1, cf2, cf3 &
                                    )
 
       use mpas_atm_dimensions
@@ -1993,6 +1995,8 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: rw
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: rw_save
 
+      real (kind=RKIND), dimension(nEdges+1) :: smdivScaled
+
       real (kind=RKIND), dimension(nVertLevels) :: fzm
       real (kind=RKIND), dimension(nVertLevels) :: fzp
       real (kind=RKIND), dimension(nVertLevels) :: rdzw
@@ -2008,7 +2012,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(maxEdges,nCells+1) :: edgesOnCell_sign
 
       integer, intent(in) :: small_step
-      real (kind=RKIND), intent(in) :: dts, epssm, smdiv, smdiv_p_forward, cf1, cf2, cf3
+      real (kind=RKIND), intent(in) :: dts, epssm, smdiv_p_forward, cf1, cf2, cf3
       real (kind=RKIND), dimension(nVertLevels) :: ts, rs
 
   
@@ -2063,7 +2067,7 @@ module atm_time_integration
                  pgrad = cqu(k,iEdge)*0.5*c2*(exner(k,cell1)+exner(k,cell2))*pgrad
                  pgrad = pgrad + 0.5*zxu(k,iEdge)*gravity*(rho_pp(k,cell1)+rho_pp(k,cell2))
                  ru_p(k,iEdge) = ru_p(k,iEdge) + dts*(tend_ru(k,iEdge) - pgrad) &
-                                  - smdiv*dcEdge(iEdge)*(divergence_3d(k,cell2)-divergence_3d(k,cell1))
+                                  - smdivScaled(iEdge)*dcEdge(iEdge)*(divergence_3d(k,cell2)-divergence_3d(k,cell1))
               end do
 
               ! accumulate ru_p for use later in scalar transport
@@ -2088,7 +2092,7 @@ module atm_time_integration
 
 !DIR$ IVDEP
               do k=1,nVertLevels
-                 ru_p(k,iEdge) = dts*tend_ru(k,iEdge) - smdiv*dcEdge(iEdge)*(tend_rho(k,cell2)-tend_rho(k,cell1))
+                 ru_p(k,iEdge) = dts*tend_ru(k,iEdge) - smdivScaled(iEdge)*dcEdge(iEdge)*(tend_rho(k,cell2)-tend_rho(k,cell1))
               end do
 !DIR$ IVDEP
               do k=1,nVertLevels

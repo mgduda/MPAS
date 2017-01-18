@@ -931,17 +931,20 @@ module atm_core
       integer :: iEdge, cell1, cell2
       integer, pointer :: nEdges
       integer, dimension(:,:), pointer :: cellsOnEdge
-      real (kind=RKIND), dimension(:), pointer :: meshDensity, meshScalingDel2, meshScalingDel4
+      real (kind=RKIND), dimension(:), pointer :: meshDensity, meshScalingDel2, meshScalingDel4, smdivScaled
       logical, pointer :: config_h_ScaleWithMesh
+      real (kind=RKIND), pointer :: config_smdiv
 
       call mpas_pool_get_array(mesh, 'meshDensity', meshDensity)
       call mpas_pool_get_array(mesh, 'meshScalingDel2', meshScalingDel2)
       call mpas_pool_get_array(mesh, 'meshScalingDel4', meshScalingDel4)
+      call mpas_pool_get_array(mesh, 'smdivScaled', smdivScaled)
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
 
       call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
 
       call mpas_pool_get_config(configs, 'config_h_ScaleWithMesh', config_h_ScaleWithMesh)
+      call mpas_pool_get_config(configs, 'config_smdiv', config_smdiv)
 
       !
       ! Compute the scaling factors to be used in the del2 and del4 dissipation
@@ -954,6 +957,7 @@ module atm_core
             cell2 = cellsOnEdge(2,iEdge)
             meshScalingDel2(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.25
             meshScalingDel4(iEdge) = 1.0 / ( (meshDensity(cell1) + meshDensity(cell2) )/2.0)**0.75
+            smdivScaled(iEdge) = config_smdiv * (0.5 * (meshDensity(cell1) + meshDensity(cell2)))**0.25
          end do
       end if
 
