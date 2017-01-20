@@ -126,7 +126,7 @@ module mpas_bootstrapping
       type (field1DInteger), pointer :: indexToEdgeID_Block
       type (field2DInteger), pointer :: cellsOnEdge_Block
 
-      integer, dimension(:), pointer :: local_cell_list
+      integer, dimension(:), pointer :: local_cell_list => null()
       integer, dimension(:), pointer :: block_id, block_start, block_count
       type (graph) :: partial_global_graph_info
 
@@ -137,6 +137,10 @@ module mpas_bootstrapping
       integer, pointer :: config_num_halos, config_number_of_blocks
       logical, pointer :: config_explicit_proc_decomp
       character (len=StrKIND), pointer :: config_block_decomp_file_prefix, config_proc_decomp_file_prefix
+      ! DH*
+      !character (len=StrKIND), pointer :: config_sionlib_decomp_file_prefix
+      character (len=StrKIND) :: config_sionlib_decomp_file_prefix = 'decomp.sl.'
+      ! *DH
       integer :: nHalos
 
       ! For bootstrapping off SIONlib data
@@ -154,6 +158,10 @@ module mpas_bootstrapping
       call mpas_pool_get_config(domain % configs, 'config_explicit_proc_decomp', config_explicit_proc_decomp)
       call mpas_pool_get_config(domain % configs, 'config_block_decomp_file_prefix', config_block_decomp_file_prefix)
       call mpas_pool_get_config(domain % configs, 'config_proc_decomp_file_prefix', config_proc_decomp_file_prefix)
+      ! DH*
+      !call mpas_pool_get_config(domain % configs, 'config_sionlib_decomp_file_prefix', config_sionlib_decomp_file_prefix)
+      !config_sionlib_decomp_file_prefix = 'decomp.sl.'
+      ! *DH
 
       nHalos = config_num_halos
 
@@ -311,6 +319,25 @@ module mpas_bootstrapping
             partial_global_graph_info % adjacencyList(:,:) = cellsOnCellField % array(:,:)
          end if
 
+         ! DH*
+         ! Under certain conditions, it is possible to provide a specialised SIONlib file that contains
+         ! pre-computed properties to shorten the bootstrapping process. At the moment, this includes
+         ! only the calculation of local_cell_list
+         if ( (config_number_of_blocks == 0 .or. config_number_of_blocks == domain % dminfo % nprocs) &
+            & .and. (.not. config_explicit_proc_decomp) ) then
+#ifdef MPAS_DEBUG
+            call mpas_log_write('-- entering mpas_read_local_cell_list_from_sionlib_file')
+#endif
+            call mpas_read_local_cell_list_from_sionlib_file(domain % dminfo, config_sionlib_decomp_file_prefix, local_cell_list, ierr)
+#ifdef MPAS_DEBUG
+            call mpas_log_write('-- returned from mpas_read_local_cell_list_from_sionlib_file with ierr = $i and associated(local_cell_list) = $l', &
+                                intArgs=(/ ierr /), logicArgs=(/ associated(local_cell_list) /) )
+#endif
+            if (ierr /= 0 .and. associated(local_cell_list)) deallocate(local_cell_list)
+            ierr = 0
+         end if
+         ! *DH
+
          ! TODO: Ensure (by renaming or exchanging) that initial cell range on each proc is contiguous
          !       This situation may occur when reading a restart file with cells/edges/vertices written
          !       in a scrambled order - but check if this breaks the simple bootstrapping from SIONlib
@@ -339,7 +366,7 @@ module mpas_bootstrapping
 
       call mpas_timer_start('setup blocks and halos')
 
-      ! DH* 20160916 - TODO a lot of these routines can be sped up for SIONlib data, since most
+      ! DH* TODO - a lot of these routines can be sped up for SIONlib data, since most
       ! of the data is already in the final format/order and doesn't need to be communicated
       !
       ! Transfer owned cells from local_cell_list into the indexToCellID_Block field (which may contain multiple blocks)
@@ -378,7 +405,7 @@ module mpas_bootstrapping
       call mpas_block_creator_build_edge_halos(nHalos, indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, &
                                                verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, &
                                                nVerticesSolveField)
-      ! *DH 20160916
+      ! *DH
 
       call mpas_timer_stop('setup blocks and halos')
 
@@ -481,8 +508,8 @@ module mpas_bootstrapping
       end if
 
       call mpas_timer_start('finalize block phase 1')
-     ! Allocate blocks, and copy indexTo arrays into blocks
-     call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
+      ! Allocate blocks, and copy indexTo arrays into blocks
+      call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
              nCellsSolveField, nEdgesSolveField, nVerticesSolveField, vertexDegree, maxEdges, &
              indexToCellID_Block, indexToEdgeID_Block, indexToVertexID_Block)
       call mpas_timer_stop('finalize block phase 1')
@@ -678,7 +705,7 @@ module mpas_bootstrapping
 
             call mpas_log_write(' ')
             call mpas_log_write('----- skipping inactive stream '''//trim(streamName)//'''')
-            
+
          end if
 
       end do
@@ -700,6 +727,153 @@ module mpas_bootstrapping
       call mpas_timer_stop('finalize block phase 2')
 
    end subroutine mpas_bootstrap_framework_phase2 !}}}
+
+
+   ! DH*
+   !***********************************************************************
+   !
+   !  routine mpas_read_local_cell_list_from_sionlib_file
+   !
+   !> \brief   Reads list of local cells from a special SIONlib file
+   !> \author  Dom Heinzeller
+   !> \date    29 January 2017
+   !> \details
+   !>  This routine reads the list of task-local cells from a special
+   !>  SIONlib file that can be produced by an offline, serial program.
+   !>  This offline program encodes the same information that is otherwise
+   !>  computed in mpas_block_decomp_cells_for_proc in mpas_block_decomp.F
+   !>  in a SIONlib file for a given number of MPI tasks and a given METIS
+   !>  graph decomposition.
+   !>  When this routine is used, the slow mpas_block_decomp_cells_for_proc
+   !>  routine is no longer required and the faster and less memory-consuming
+   !>  version mpas_block_decomp_cells_for_proc_simple can/must be used instead.
+   !
+   !-----------------------------------------------------------------------
+   subroutine mpas_read_local_cell_list_from_sionlib_file(dminfo, decompFilePrefix, localCellList, ierr)
+
+     use sion_f90
+     use sion_f90_mpi
+
+     implicit none
+
+     type (dm_info), intent(inout) :: dminfo !< Input: domain information
+     character(len=StrKIND), intent(in) :: decompFilePrefix !< Input: prefix of SIONlib decomposition file
+     integer, dimension(:), pointer :: localCellList !< Output: list of cells this processor owns
+     integer, intent(out) :: ierr !< Output: indicates whether local_cell_list was read successfully (0) or not (1)
+
+     ! Local variables
+     character(len=StrKIND) :: decompFile
+     character*2 :: SIONLIB_filemode = "rb"
+
+     integer :: SIONLIB_fsblksize = -1   ! autodetect
+     integer*8 :: SIONLIB_chunksize = 1073741824 ! 1GB, will be overwritten by value from file
+     integer :: SIONLIB_numfiles = 1
+
+     ! Maximum length of filename as for filename in mpas_io.F
+     character(len=1024) :: newfname
+     logical :: exists
+
+     integer*8 :: btoread, bread
+     integer :: f_endian, s_endian
+
+     integer :: sid
+
+     integer :: nProcs
+     integer :: nVertices
+
+     ierr = 1
+
+#ifdef MPAS_DEBUG
+     call mpas_log_write('Trying to read local_cell_list information directly from sionlib file with prefix ' // trim(decompFilePrefix))
+#endif
+
+     ! DH* TODO - use new routine (yet to create) that create filenames based on labels and process ids
+     if (dminfo % nprocs < 1E1) then
+         write(decompFile,'(a,i1)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E2) then
+         write(decompFile,'(a,i2)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E3) then
+         write(decompFile,'(a,i3)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E4) then
+         write(decompFile,'(a,i4)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E5) then
+         write(decompFile,'(a,i5)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E6) then
+         write(decompFile,'(a,i6)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E7) then
+         write(decompFile,'(a,i7)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E8) then
+         write(decompFile,'(a,i8)') trim(decompFilePrefix), dminfo % nprocs
+     else if (dminfo % nprocs < 1E9) then
+         write(decompFile,'(a,i9)') trim(decompFilePrefix), dminfo % nprocs
+     else
+         call mpas_log_write('ERROR, mpas_read_local_cell_list_from_sionlib_file only configured for less than 1E9 tasks', MPAS_LOG_ERR)
+         ierr = 1
+         return
+     end if
+     ! *DH
+
+     if (dminfo % my_proc_id == IO_NODE) then
+         inquire(file=trim(decompFile), exist=exists)
+     end if
+     call mpas_dmpar_bcast_logical(dminfo, exists)
+     if (.not. exists) then
+         ierr = 1
+         call mpas_log_write('File ' // trim(decompFile) // ' does not exist.')
+         return
+     end if
+
+#ifdef MPAS_DEBUG
+     call mpas_log_write('Trying to read local_cell_list information directly from sionlib file ' // trim(decompFile))
+#endif
+
+     call FSION_PAROPEN_MPI(trim(decompFile), SIONLIB_filemode, SIONLIB_numfiles, &
+                            dminfo % comm, dminfo % nullcomm, &
+                            SIONLIB_chunksize, SIONLIB_fsblksize, &
+                            dminfo % my_proc_id, newfname, sid)
+     if (sid .eq. -1) then
+         ierr = 1
+         call mpas_log_write('mpas_read_local_cell_list_from_sionlib_file failed for FSION_PAROPEN_MPI, return with ierr = 1', MPAS_LOG_ERR)
+         return
+     end if
+
+     ! Check that file endianness is identical to system endianness
+     call FSION_GET_FILE_ENDIANNESS(sid, f_endian)
+     call FSION_GET_ENDIANESS(s_endian)
+     if (f_endian .ne. s_endian) then
+         call mpas_log_write('mpas_read_local_cell_list_from_sionlib_file failed for endianness comparison, return with ierr = 1', MPAS_LOG_ERR)
+         ierr = 1
+         return
+     end if
+
+     btoread = kind(nVertices)
+     call FSION_COLL_FREAD_MPI(nVertices, 1_8, btoread, sid, bread)
+     if ( btoread .ne. bread ) then
+         call mpas_log_write('Error while reading nVertices from SIONlib file: btoread $i vs. bread $i', messageType=MPAS_LOG_ERR, intArgs=(/ int(btoread), int(bread) /) )
+         ierr = 1
+         return
+     end if
+
+#ifdef MPAS_DEBUG
+     call mpas_log_write('    nVertices: $i', intArgs=(/ nVertices /) )
+#endif
+
+     allocate(localCellList(1:nVertices))
+
+     btoread = kind(nVertices)*nVertices
+     call FSION_COLL_FREAD_MPI(localCellList(1), 1_8, btoread, sid, bread)
+     if ( btoread .ne. bread ) then
+         call mpas_log_write('Error while reading localCellList from SIONlib file: btoread $i vs. bread $i', messageType=MPAS_LOG_ERR, intArgs=(/ int(btoread), int(bread) /) )
+         ierr = 1
+         deallocate(localCellList)
+         return
+     end if
+
+     call FSION_PARCLOSE_MPI(sid, ierr)
+
+     ierr = 0
+
+   end subroutine mpas_read_local_cell_list_from_sionlib_file
 
 
    subroutine mpas_io_setup_cell_block_fields(inputHandle, nReadCells, readCellStart, readingBlock, maxEdges, indexToCellID, &
@@ -988,7 +1162,7 @@ module mpas_bootstrapping
      integer :: ierr
      logical :: decomposed = .true.
      integer, dimension(1:nEdges) :: local_edge_list
-
+     
      !
      ! Allocate and read fields that we will need in order to ultimately work out
      !   which cells/edges/vertices are owned by each block, and which are ghost
@@ -1151,13 +1325,13 @@ module mpas_bootstrapping
    !>  Given a pool containing the field indicated by the 'fieldName' argument,
    !>  this routine allocates the output array, 'dimNames', to the
    !>  dimensionality of the field and fills the array with the dimension names.
-   !>  
+   !>
    !>  If the specified field is a var_array, the dimNames array will have one
-   !>  fewer dimension than that of the var_array, and it will be filled with 
+   !>  fewer dimension than that of the var_array, and it will be filled with
    !>  the outer-most dimension names.
    !>
-   !>  If the specified field is is inactive (in a package sense) at the time 
-   !>  of the call to this routine, the dimNames array will be returned with 
+   !>  If the specified field is is inactive (in a package sense) at the time
+   !>  of the call to this routine, the dimNames array will be returned with
    !>  zero size.
    !
    !-----------------------------------------------------------------------

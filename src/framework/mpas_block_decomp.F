@@ -12,7 +12,7 @@
 !> \brief   This module contains routines related to the block decomposition.
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>   This module is repsonsible for reading the decomposition files, and determining which elements should live within which blocks.
 !>   It also provides interfaces to find out how blocks map to processors.
 !
@@ -45,7 +45,7 @@ module mpas_block_decomp
 !> \brief   Determines list of cells for a specific processor
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine determines a list of cells for each processor, and what blocks the live in.
 !
 !-----------------------------------------------------------------------
@@ -56,7 +56,8 @@ module mpas_block_decomp
 
       type (dm_info), intent(inout) :: dminfo !< Input: domain information
       type (graph), intent(in) :: partial_global_graph_info !< Input: Global graph information
-      integer, dimension(:), pointer :: local_cell_list !< Output: list of cells this processor owns, ordered by block
+      integer, dimension(:), pointer :: local_cell_list !< Input/output: list of cells this processor owns, ordered by block;
+                                                        !< parts of this routine are skipped if already associated and filled
       integer, dimension(:), pointer :: block_id !< Output: list of global block id's this processor owns
       integer, dimension(:), pointer :: block_start !< Output: offset in local_cell_list for this blocks list of cells
       integer, dimension(:), pointer :: block_count !< Output: number of cells in blocks
@@ -93,121 +94,147 @@ module mpas_block_decomp
       call mpas_get_blocks_per_proc(dminfo, dminfo % my_proc_id, blocks_per_proc)
 
       if(dminfo % total_blocks > 1) then
-        allocate(local_nvertices(dminfo % nprocs))
-        allocate(global_start(dminfo % nprocs))
-        allocate(global_list(partial_global_graph_info % nVerticesTotal))
 
-        if (dminfo % my_proc_id == IO_NODE) then
+        ! Check if local_cell_list is already defined from a previous
+        ! read of a block decomposition information in the mesh file
+        local_cell_list_already_defined: if (associated(local_cell_list)) then
 
-           iunit = 50 + dminfo % my_proc_id
-           if (dminfo % total_blocks < 10) then
-              write(filename,'(a,i1)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 100) then
-              write(filename,'(a,i2)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 1000) then
-              write(filename,'(a,i3)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 10000) then
-              write(filename,'(a,i4)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 100000) then
-              write(filename,'(a,i5)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 1000000) then
-              write(filename,'(a,i6)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 10000000) then
-              write(filename,'(a,i7)') trim(blockFilePrefix), dminfo % total_blocks
-           else if (dminfo % total_blocks < 100000000) then
-              write(filename,'(a,i8)') trim(blockFilePrefix), dminfo % total_blocks
-           end if
+          if (dminfo % explicitDecomp) then
+              call mpas_dmpar_global_abort("An error occurred in mpas_block_decomp_cells_for_proc. local_cell_list is", deferredAbort = .true.)
+              call mpas_dmpar_global_abort("associated, but the requirement dminfo % explicitDecomp = .false. is not met")
+          else if (dminfo % total_blocks /= dminfo % nProcs) then
+              call mpas_dmpar_global_abort("An error occurred in mpas_block_decomp_cells_for_proc. local_cell_list is", deferredAbort = .true.)
+              call mpas_dmpar_global_abort("associated, but the requirement dminfo % total_blocks = dminfo % nProcs is not met")
+          end if
 
-           open(unit=iunit, file=trim(filename), form='formatted', status='old', iostat=istatus)
+          allocate(local_block_list(1:size(local_cell_list)))
+          local_block_list(:) = dminfo % my_proc_id
 
-           if (istatus /= 0) then
-              call mpas_log_write('Could not open block decomposition file for $i blocks.', MPAS_LOG_ERR, intArgs=(/dminfo % total_blocks/) )
-              call mpas_log_write('Filename: '//trim(filename), MPAS_LOG_CRIT)
-           end if
+          allocate(local_nvertices(dminfo % nprocs))
+          local_nvertices(:) = 0
+          local_nvertices(dminfo % my_proc_id + 1) = size(local_cell_list)
 
-           local_nvertices(:) = 0
-           do i=1,partial_global_graph_info % nVerticesTotal
-              read(unit=iunit, fmt=*, iostat=err) global_block_id
+        else ! local_cell_list_already_defined
 
-              if ( err .ne. 0 ) then
-                 call mpas_log_write('Decomoposition file: ' // trim(filename) // ' contains less than $i cells', &
-                                      MPAS_LOG_CRIT, intArgs=(/partial_global_graph_info % nVerticesTotal/) )
-              end if
-              call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
-              local_nvertices(owning_proc+1) = local_nvertices(owning_proc+1) + 1
-           end do
+          allocate(local_nvertices(dminfo % nprocs))
+          allocate(global_start(dminfo % nprocs))
+          allocate(global_list(partial_global_graph_info % nVerticesTotal))
 
-           read(unit=iunit, fmt=*, iostat=err)
+          if (dminfo % my_proc_id == IO_NODE) then
 
-           if ( err == 0 ) then
-              call mpas_log_write('Decomposition file: ' // trim(filename) // ' contains more than $i cells', &
-                                   MPAS_LOG_CRIT, intArgs=(/partial_global_graph_info % nVerticesTotal/) )
-           end if
+             iunit = 50 + dminfo % my_proc_id
+             if (dminfo % total_blocks < 10) then
+                write(filename,'(a,i1)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 100) then
+                write(filename,'(a,i2)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 1000) then
+                write(filename,'(a,i3)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 10000) then
+                write(filename,'(a,i4)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 100000) then
+                write(filename,'(a,i5)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 1000000) then
+                write(filename,'(a,i6)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 10000000) then
+                write(filename,'(a,i7)') trim(blockFilePrefix), dminfo % total_blocks
+             else if (dminfo % total_blocks < 100000000) then
+                write(filename,'(a,i8)') trim(blockFilePrefix), dminfo % total_blocks
+             end if
 
-           global_start(1) = 1
-           do i=2,dminfo % nprocs
-              global_start(i) = global_start(i-1) + local_nvertices(i-1)
-           end do
+             open(unit=iunit, file=trim(filename), form='formatted', status='old', iostat=istatus)
 
-           rewind(unit=iunit)
+             if (istatus /= 0) then
+                call mpas_log_write('Could not open block decomposition file for $i blocks.', MPAS_LOG_ERR, intArgs=(/dminfo % total_blocks/) )
+                call mpas_log_write('Filename: '//trim(filename), MPAS_LOG_CRIT)
 
-           do i=1,partial_global_graph_info % nVerticesTotal
-              read(unit=iunit, fmt=*, iostat=err) global_block_id
-              call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
-              global_list(global_start(owning_proc+1)) = i
-              global_start(owning_proc+1) = global_start(owning_proc+1) + 1
-           end do
+             end if
 
-           global_start(1) = 0
-           do i=2,dminfo % nprocs
-              global_start(i) = global_start(i-1) + local_nvertices(i-1)
-           end do
+             local_nvertices(:) = 0
+             do i=1,partial_global_graph_info % nVerticesTotal
+                read(unit=iunit, fmt=*, iostat=err) global_block_id
 
-           call mpas_dmpar_bcast_ints(dminfo, dminfo % nprocs, local_nvertices)
-           allocate(local_cell_list(local_nvertices(dminfo % my_proc_id + 1)))
-           allocate(local_block_list(local_nvertices(dminfo % my_proc_id + 1)))
+                if ( err .ne. 0 ) then
+                   call mpas_log_write('Decomoposition file: ' // trim(filename) // ' contains less than $i cells', &
+                                        MPAS_LOG_CRIT, intArgs=(/partial_global_graph_info % nVerticesTotal/) )
 
-           call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
-                                   global_start, local_nvertices, global_list, local_cell_list)
+                end if
+                call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
+                local_nvertices(owning_proc+1) = local_nvertices(owning_proc+1) + 1
+             end do
 
-           ! Reset global start for second read of global_block_list
-           global_start(1) = 1
-           do i=2,dminfo % nprocs
-              global_start(i) = global_start(i-1) + local_nvertices(i-1)
-           end do
+             read(unit=iunit, fmt=*, iostat=err)
 
-           rewind(unit=iunit)
+             if ( err == 0 ) then
+                call mpas_log_write('Decomposition file: ' // trim(filename) // ' contains more than $i cells', &
+                                     MPAS_LOG_CRIT, intArgs=(/partial_global_graph_info % nVerticesTotal/) )
+             end if
 
-           do i=1,partial_global_graph_info % nVerticesTotal
-              read(unit=iunit, fmt=*) global_block_id
-              call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
-              global_list(global_start(owning_proc+1)) = global_block_id
-              global_start(owning_proc+1) = global_start(owning_proc+1) + 1
-           end do
+             global_start(1) = 1
+             do i=2,dminfo % nprocs
+                global_start(i) = global_start(i-1) + local_nvertices(i-1)
+             end do
 
-           ! Recompute global start after second read of global_block_list
-           global_start(1) = 0
-           do i=2,dminfo % nprocs
-              global_start(i) = global_start(i-1) + local_nvertices(i-1)
-           end do
+             rewind(unit=iunit)
 
-           call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
-                                   global_start, local_nvertices, global_list, local_block_list)
+             do i=1,partial_global_graph_info % nVerticesTotal
+                read(unit=iunit, fmt=*, iostat=err) global_block_id
+                call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
+                global_list(global_start(owning_proc+1)) = i
+                global_start(owning_proc+1) = global_start(owning_proc+1) + 1
+             end do
 
-           close(unit=iunit)
+             global_start(1) = 0
+             do i=2,dminfo % nprocs
+                global_start(i) = global_start(i-1) + local_nvertices(i-1)
+             end do
 
-        else
+             call mpas_dmpar_bcast_ints(dminfo, dminfo % nprocs, local_nvertices)
+             allocate(local_cell_list(local_nvertices(dminfo % my_proc_id + 1)))
+             allocate(local_block_list(local_nvertices(dminfo % my_proc_id + 1)))
 
-           call mpas_dmpar_bcast_ints(dminfo, dminfo % nprocs, local_nvertices)
-           allocate(local_cell_list(local_nvertices(dminfo % my_proc_id + 1)))
-           allocate(local_block_list(local_nvertices(dminfo % my_proc_id + 1)))
+             call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
+                                     global_start, local_nvertices, global_list, local_cell_list)
 
-           call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
-                                   global_start, local_nvertices, global_list, local_cell_list)
+             ! Reset global start for second read of global_block_list
+             global_start(1) = 1
+             do i=2,dminfo % nprocs
+                global_start(i) = global_start(i-1) + local_nvertices(i-1)
+             end do
 
-           call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
-                                   global_start, local_nvertices, global_list, local_block_list)
-        end if
+             rewind(unit=iunit)
+
+             do i=1,partial_global_graph_info % nVerticesTotal
+                read(unit=iunit, fmt=*) global_block_id
+                call mpas_get_owning_proc(dminfo, global_block_id, owning_proc)
+                global_list(global_start(owning_proc+1)) = global_block_id
+                global_start(owning_proc+1) = global_start(owning_proc+1) + 1
+             end do
+
+             ! Recompute global start after second read of global_block_list
+             global_start(1) = 0
+             do i=2,dminfo % nprocs
+                global_start(i) = global_start(i-1) + local_nvertices(i-1)
+             end do
+
+             call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
+                                     global_start, local_nvertices, global_list, local_block_list)
+
+             close(unit=iunit)
+
+          else
+
+             call mpas_dmpar_bcast_ints(dminfo, dminfo % nprocs, local_nvertices)
+             allocate(local_cell_list(local_nvertices(dminfo % my_proc_id + 1)))
+             allocate(local_block_list(local_nvertices(dminfo % my_proc_id + 1)))
+
+             call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
+                                     global_start, local_nvertices, global_list, local_cell_list)
+
+             call mpas_dmpar_scatter_ints(dminfo, dminfo % nprocs, local_nvertices(dminfo % my_proc_id + 1), &
+                                     global_start, local_nvertices, global_list, local_block_list)
+          end if
+
+        end if local_cell_list_already_defined
 
         if(blocks_per_proc == 0) then
            no_blocks = .true.
@@ -232,35 +259,43 @@ module mpas_block_decomp
              block_start = 0
              block_count = 0
            end do
-   
+
            do i = 1,local_nvertices(dminfo % my_proc_id +1)
              call mpas_get_local_block_id(dminfo, local_block_list(i), local_block_id)
-     
+
              block_id(local_block_id+1) = local_block_list(i)
-     
+
              sorted_local_cell_list(1, i) = local_block_list(i)
              sorted_local_cell_list(2, i) = local_cell_list(i)
-     
+
              block_count(local_block_id+1) = block_count(local_block_id+1) + 1
            end do
-   
+
            call mpas_quicksort(local_nvertices(dminfo % my_proc_id + 1), sorted_local_cell_list)
-   
+
            do i = 1, local_nvertices(dminfo % my_proc_id+1)
              local_cell_list(i) = sorted_local_cell_list(2, i)
            end do
-   
+
            do i = 2,blocks_per_proc
              block_start(i) = block_start(i-1) + block_count(i-1)
            end do
 
-           deallocate(sorted_local_cell_list)
-           deallocate(local_block_list)
-           deallocate(local_nvertices)
-           deallocate(global_start)
-           deallocate(global_list)
+           if (allocated(sorted_local_cell_list)) deallocate(sorted_local_cell_list)
+           if (allocated(local_block_list))  deallocate(local_block_list)
+           if (associated(local_nvertices)) deallocate(local_nvertices)
+           if (associated(global_start)) deallocate(global_start)
+           if (associated(global_list)) deallocate(global_list)
+
         end if
+
       else
+
+        ! This should not happen or at least has not been tested.
+        if (associated(local_cell_list)) then
+           call mpas_dmpar_global_abort("An error occurred in mpas_block_decomp_cells_for_proc. local_cell_list is", deferredAbort = .true.)
+           call mpas_dmpar_global_abort("associated, but the requirement dminfo % total_blocks > 1 is not met")
+        end if
 
         if (dminfo % my_proc_id == IO_NODE) then
            allocate(local_cell_list(partial_global_graph_info % nVerticesTotal))
@@ -340,7 +375,7 @@ module mpas_block_decomp
          allocate(block_id(blocks_per_proc))
          allocate(block_start(blocks_per_proc))
          allocate(block_count(blocks_per_proc))
-         
+
          block_id = dminfo % my_proc_id
          block_start = 0
          block_count = nCellsOwned
@@ -354,7 +389,7 @@ module mpas_block_decomp
 !> \brief   Partitions list of edges for a processor
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine partitions a list of edges for each processor, based on a list of owned cells.
 !>  Output edge list has 0-Halo edges first, followed by halo edges.
 !
@@ -379,7 +414,8 @@ module mpas_block_decomp
 
       do i=1,nCells
          ! OPTIMIZATION: Actually, if we can assume that all cellIDs are unique, the if-test is unnecessary
-         if (.not. mpas_hash_search(h, cellIDList(i))) call mpas_hash_insert(h, cellIDList(i))
+         !if (.not. mpas_hash_search(h, cellIDList(i))) call mpas_hash_insert(h, cellIDList(i))
+         call mpas_hash_insert(h, cellIDList(i))
       end do
 
       lastEdge = 0
@@ -423,7 +459,7 @@ module mpas_block_decomp
 !> \brief   Determines all edges in a block.
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine creates a list of all edges that are in a block, based on a list of owned cells.
 !
 !-----------------------------------------------------------------------
@@ -445,7 +481,7 @@ module mpas_block_decomp
 
       do i=1,nCells
          do j=1,nEdgesOnCell(i)
-            if (.not. mpas_hash_search(h, edgesOnCell(j,i))) call mpas_hash_insert(h, edgesOnCell(j,i)) 
+            if (.not. mpas_hash_search(h, edgesOnCell(j,i))) call mpas_hash_insert(h, edgesOnCell(j,i))
          end do
       end do
 
@@ -467,7 +503,7 @@ module mpas_block_decomp
                  return
                end if
                edgeList(k) = edgesOnCell(j,i)
-               call mpas_hash_insert(h, edgesOnCell(j,i)) 
+               call mpas_hash_insert(h, edgesOnCell(j,i))
             end if
          end do
       end do
@@ -488,7 +524,7 @@ module mpas_block_decomp
 !> \brief   Add halo to block
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine adds a halo layer to the block.
 !
 !-----------------------------------------------------------------------
@@ -518,7 +554,7 @@ module mpas_block_decomp
                end if
             end if
          end do
-      end do 
+      end do
 
 
       local_graph_with_halo % nVertices = local_graph_info % nVertices
@@ -537,10 +573,10 @@ module mpas_block_decomp
          if (mpas_hash_search(h, local_graph_info % vertexID(i))) &
            call mpas_log_write('block_decomp_add_halo: ' // &
              'There appear to be duplicates in vertexID list.', MPAS_LOG_CRIT)
-         call mpas_hash_insert(h, local_graph_info % vertexID(i)) 
-         local_graph_with_halo % vertexID(i) = local_graph_info % vertexID(i) 
-         local_graph_with_halo % nAdjacent(i) = local_graph_info % nAdjacent(i) 
-         local_graph_with_halo % adjacencyList(:,i) = local_graph_info % adjacencyList(:,i) 
+         call mpas_hash_insert(h, local_graph_info % vertexID(i))
+         local_graph_with_halo % vertexID(i) = local_graph_info % vertexID(i)
+         local_graph_with_halo % nAdjacent(i) = local_graph_info % nAdjacent(i)
+         local_graph_with_halo % adjacencyList(:,i) = local_graph_info % adjacencyList(:,i)
       end do
 
       k = local_graph_with_halo % ghostStart
@@ -557,7 +593,7 @@ module mpas_block_decomp
                end if
             end if
          end do
-      end do 
+      end do
       if (local_graph_with_halo % nVerticesTotal /= k-1) &
          call mpas_log_write('block_decomp_add_halo: ' // &
            'Somehow we don''t have the right number of total cells.', MPAS_LOG_CRIT)
@@ -573,7 +609,7 @@ module mpas_block_decomp
 !> \brief   Determine number of blocks per processor
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine returns the number of blocks a specific processor owns.
 !
 !-----------------------------------------------------------------------
@@ -590,9 +626,9 @@ module mpas_block_decomp
          blocks_per_proc_min = dminfo % total_blocks / dminfo % nProcs
          remaining_blocks = dminfo % total_blocks - (blocks_per_proc_min * dminfo % nProcs)
          even_blocks = dminfo % total_blocks - remaining_blocks
-  
+
          blocks_per_proc = blocks_per_proc_min
-  
+
          if(proc_number < remaining_blocks) then
            blocks_per_proc = blocks_per_proc + 1
          end if
@@ -623,7 +659,7 @@ module mpas_block_decomp
 !> \brief   Determine the local ID of a block
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine returns the local block ID on the owning processor.
 !
 !-----------------------------------------------------------------------
@@ -639,7 +675,7 @@ module mpas_block_decomp
          blocks_per_proc_min = dminfo % total_blocks / dminfo % nProcs
          remaining_blocks = dminfo % total_blocks - (blocks_per_proc_min * dminfo % nProcs)
          even_blocks = dminfo % total_blocks - remaining_blocks
-  
+
          if(global_block_number > even_blocks) then
              local_block_number = blocks_per_proc_min
          else
@@ -660,7 +696,7 @@ module mpas_block_decomp
 !> \brief   Determine the owning processor ID for a specific block.
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine returns the ID of the processor that owns a specific block.
 !
 !-----------------------------------------------------------------------
@@ -697,7 +733,7 @@ module mpas_block_decomp
 !> \brief   Build list of blocks per processor
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine builds the mapping of blocks to processors. Most useful when using an explicit decomposition.
 !
 !-----------------------------------------------------------------------
@@ -739,7 +775,7 @@ module mpas_block_decomp
             write(filename,'(a,i7)') trim(procFilePrefix), dminfo % nProcs
          else if (dminfo % nProcs < 100000000) then
             write(filename,'(a,i8)') trim(procFilePrefix), dminfo % nProcs
-         end if        
+         end if
 
          open(unit=iounit, file=trim(filename), form='formatted', status='old', iostat=istatus)
 
@@ -770,7 +806,7 @@ module mpas_block_decomp
 !> \brief   Destroy list of blocks per processor
 !> \author  Doug Jacobsen
 !> \date    03/26/13
-!> \details 
+!> \details
 !>  This routine destroys the mapping of blocks to processors.
 !
 !-----------------------------------------------------------------------
