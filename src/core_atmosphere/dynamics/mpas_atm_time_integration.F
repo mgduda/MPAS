@@ -201,11 +201,11 @@ module atm_time_integration
       dynamics_split = config_dynamics_split
       if (config_split_dynamics_transport) then
         dt_dynamics = dt/real(dynamics_split)
-        write(0,*) ' split dynamics-transport integration ',dynamics_split
+        !write(0,*) ' split dynamics-transport integration ',dynamics_split
       else
         dynamics_split = 1
         dt_dynamics = dt
-        write(0,*) ' coupled RK3 dynamics-transport integration '
+        !write(0,*) ' coupled RK3 dynamics-transport integration '
       end if
       if (.not. config_scalar_advection )  write(0,*) ' scalar advection turned off '
 
@@ -302,6 +302,25 @@ module atm_time_integration
                block => block % next
             end do
             if (debug) write(0,*) ' finished add physics tendencies '
+#endif
+
+#ifdef CAM_DYCORE
+            !write(stderrUnit,*) 'Adding physics tendencies from CAM'
+            block => domain % blocklist
+            do while (associated(block))
+               call mpas_pool_get_subpool(block % structs, 'mesh', mesh)
+               call mpas_pool_get_subpool(block % structs, 'state', state)
+               call mpas_pool_get_subpool(block % structs, 'diag', diag)
+               call mpas_pool_get_subpool(block % structs, 'tend', tend)
+               call mpas_pool_get_subpool(block % structs, 'tend_physics', tend_physics)
+               call cam_addtend( mesh, &
+                                 state,&
+                                 diag, &
+                                 tend, &
+                         tend_physics )
+               block => block % next
+            end do
+            !write(stderrUnit,*) 'Finished adding physics tendencies from CAM'
 #endif
 
             !***********************************
@@ -601,6 +620,14 @@ module atm_time_integration
 
          block => block % next
       end do
+#endif
+
+#ifdef CAM_DYCORE
+      ! 
+      ! Update surface_pressure field
+      ! 
+      block => domain % blocklist
+      call atm_update_psfc(mesh, state, 2, diag)
 #endif
 
       if (config_print_global_minmax_vel) then
@@ -1396,7 +1423,7 @@ module atm_time_integration
          ! the implicit Rayleigh damping on w (gravity-wave absorbing) 
 
          do k=2,nVertLevels
-            if (add_top_damp) dss(k,iCell) = 0.
+            !if (add_top_damp) dss(k,iCell) = 0.
             rw_p(k,iCell) = (rw_p(k,iCell)-dts*dss(k,iCell)*               &
                         (fzm(k)*zz (k,iCell)+fzp(k)*zz (k-1,iCell))        &
                         *(fzm(k)*rho_zz(k,iCell)+fzp(k)*rho_zz(k-1,iCell))       &
@@ -1748,7 +1775,9 @@ module atm_time_integration
 
 
 #ifndef DO_PHYSICS
+#ifndef CAM_DYCORE
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
+#endif
 #endif
 
       !
@@ -2103,7 +2132,9 @@ module atm_time_integration
       call mpas_pool_get_array(mesh, 'zgrid', zgrid)
 
 #ifndef DO_PHYSICS
+#ifndef CAM_DYCORE
       scalar_tend = 0.  !  testing purposes - we have no sources or sinks
+#endif
 #endif
 
       !  for positive-definite or monotonic option, we first update scalars using the tendency from sources other than
@@ -2586,7 +2617,8 @@ module atm_time_integration
       logical, pointer :: add_top_damp
       real (kind=RKIND), pointer :: zd, config_xnutr
       real (kind=RKIND) :: z, zt, dz, kdiffv
-      real (kind=RKIND), allocatable, dimension(:,:) :: dampk, dampkv
+      !real (kind=RKIND), allocatable, dimension(:,:) :: dampk, dampkv
+      real (kind=RKIND) :: dampk1, dampk2
 
       real (kind=RKIND) :: flux3, flux4
       real (kind=RKIND) :: q_im2, q_im1, q_i, q_ip1, ua, coef3
@@ -2722,11 +2754,11 @@ module atm_time_integration
 
 !      write(0,*) ' rk_step in compute_dyn_tend ',rk_step
 
-      allocate(dampk(nVertLevels, nCells+1))
-      allocate(dampkv(nVertLevels, nCells+1))
+      !allocate(dampk(nVertLevels, nCells+1))
+      !allocate(dampkv(nVertLevels, nCells+1))
 
-      dampk(:,:)  = 0.0
-      dampkv(:,:) = 0.0
+      !dampk(:,:)  = 0.0
+      !dampkv(:,:) = 0.0
 
       delsq_horiz_mixing = .false.
       if (config_horiz_mixing == "2d_smagorinsky" .and. (rk_step == 1 .or. rk_diffusion)) then
@@ -2753,19 +2785,19 @@ module atm_time_integration
                kdiff(k,iCell) = (c_s * config_len_disp)**2 * sqrt(d_diag(k)**2 + d_off_diag(k)**2)
                kdiff(k,iCell) = min(kdiff(k,iCell),(0.01*config_len_disp**2)/dt)
 
-               if (add_top_damp) then
-                 z = 0.5*(zgrid(k,iCell) + zgrid(k+1,iCell))
-                 dz= (zgrid(k+1,iCell) - zgrid(k,iCell))
-                 if (z > zd) then
-                    dampk(k,iCell) = config_len_disp**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
-                    !dampk(k,iCell) = areaCell(iCell)/dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
-                    dampkv(k,iCell)= dz**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
-                    ! set upper limit on vertical K (based on horizontal K)
-                    dampkv(k,iCell)= min(dampkv(k,iCell), dampk(k,iCell))
+               !if (add_top_damp) then
+               !  z = 0.5*(zgrid(k,iCell) + zgrid(k+1,iCell))
+               !  dz= (zgrid(k+1,iCell) - zgrid(k,iCell))
+               !  if (z > zd) then
+               !     dampk(k,iCell) = config_len_disp**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+               !     !dampk(k,iCell) = areaCell(iCell)/dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+               !     dampkv(k,iCell)= dz**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+               !     ! set upper limit on vertical K (based on horizontal K)
+               !     dampkv(k,iCell)= min(dampkv(k,iCell), dampk(k,iCell))
 
-                    kdiff(k,iCell) = max(kdiff(k,iCell), dampk(k,iCell)) 
-                 end if
-               end if
+               !     kdiff(k,iCell) = max(kdiff(k,iCell), dampk(k,iCell)) 
+               !  end if
+               !end if
 
             end do
          end do
@@ -3009,7 +3041,15 @@ module atm_time_integration
                   !
                   u_diffusion =   ( divergence(k,cell2)  - divergence(k,cell1) ) / dcEdge(iEdge)  &
                                  -( vorticity(k,vertex2) - vorticity(k,vertex1) ) / max(dvEdge(iEdge),0.25*dcEdge(iEdge))
-                  u_diffusion = rho_edge(k,iEdge)* 0.5*(kdiff(k,cell1)+kdiff(k,cell2)) * u_diffusion
+
+                  if (add_top_damp) then
+                     dampk1 = 0.
+                     z = 0.25*(zgrid(k,cell1) + zgrid(k,cell2) + zgrid(k+1,cell1) + zgrid(k+1,cell2))
+                     if (z > zd) dampk1 = 1./64.*config_len_disp**2./dt * config_xnutr * cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+                     u_diffusion = rho_edge(k,iEdge)* max( 0.5*(kdiff(k,cell1)+kdiff(k,cell2)), dampk1 ) * u_diffusion
+                  end if
+
+                  !u_diffusion = rho_edge(k,iEdge)* 0.5*(kdiff(k,cell1)+kdiff(k,cell2)) * u_diffusion
                   u_diffusion = u_diffusion * meshScalingDel2(iEdge)
  
                   tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + u_diffusion
@@ -3097,9 +3137,20 @@ module atm_time_integration
                !    relative to the rotational part.  The stability constraint on the divergence component is much less
                !    stringent than the rotational part, and this flexibility may be useful.
                !
-               u_diffusion =  rho_edge(k,iEdge) * ( config_del4u_div_factor * ( delsq_divergence(k,cell2)  - delsq_divergence(k,cell1) ) / dcEdge(iEdge)  &
-                           -( delsq_vorticity(k,vertex2) - delsq_vorticity(k,vertex1) ) / max(dvEdge(iEdge), 0.25*dcEdge(iEdge)) &
-                                                  )
+
+               if (add_top_damp) then
+                  dampk2 = 1.
+                  z = 0.25*(zgrid(k,cell1) + zgrid(k,cell2) + zgrid(k+1,cell1) + zgrid(k+1,cell2))
+                  if (z > zd) dampk2 = 1. + 2.*cos(0.5*pii*(zt-z)/(zt-zd))**2.0
+
+                  u_diffusion =  rho_edge(k,iEdge) * ( config_del4u_div_factor * dampk2 * ( delsq_divergence(k,cell2)  - delsq_divergence(k,cell1) ) / dcEdge(iEdge)  &
+                              -( delsq_vorticity(k,vertex2) - delsq_vorticity(k,vertex1) ) / max(dvEdge(iEdge), 0.25*dcEdge(iEdge)) &
+                                                     )
+               end if
+
+               !u_diffusion =  rho_edge(k,iEdge) * ( config_del4u_div_factor * ( delsq_divergence(k,cell2)  - delsq_divergence(k,cell1) ) / dcEdge(iEdge)  &
+               !            -( delsq_vorticity(k,vertex2) - delsq_vorticity(k,vertex1) ) / max(dvEdge(iEdge), 0.25*dcEdge(iEdge)) &
+               !                                   )
 
                u_diffusion = u_diffusion * meshScalingDel4(iEdge)
                tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) - h_mom_eddy_visc4 * u_diffusion
@@ -3116,7 +3167,8 @@ module atm_time_integration
       !
       !  vertical mixing for u - 2nd order filter in physical (z) space
       !
-      if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
+      !if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
+      if ( v_mom_eddy_visc2 > 0.0 ) then
 
          if (config_mix_full) then
 
@@ -3136,8 +3188,9 @@ module atm_time_integration
                   z0 = 0.5*(z2+z3)
                   zp = 0.5*(z3+z4)
 
-                  kdiffv = max(0.5*(dampkv(k,cell1)+dampkv(k,cell2)), v_mom_eddy_visc2)
-                  tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + rho_edge(k,iEdge) * kdiffv *(  &
+                  !kdiffv = max(0.5*(dampkv(k,cell1)+dampkv(k,cell2)), v_mom_eddy_visc2)
+                  !tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + rho_edge(k,iEdge) * kdiffv *(  &
+                  tend_u_euler(k,iEdge) = tend_u_euler(k,iEdge) + rho_edge(k,iEdge) * v_mom_eddy_visc2 *(  &
                                      (u(k+1,iEdge)-u(k  ,iEdge))/(zp-z0)                      &
                                     -(u(k  ,iEdge)-u(k-1,iEdge))/(z0-zm) )/(0.5*(zp-zm))
                end do
@@ -3466,12 +3519,14 @@ module atm_time_integration
 
       if (rk_step == 1 .or. rk_diffusion) then
 
-         if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
+         !if ( v_mom_eddy_visc2 > 0.0 .or. add_top_damp ) then
+         if ( v_mom_eddy_visc2 > 0.0 ) then
 
             do iCell = 1, nCellsSolve
             do k=2,nVertLevels
-               kdiffv = max(fzm(k)*dampkv(k,iCell)+fzp(k)*dampkv(k-1,iCell), v_mom_eddy_visc2)
-               tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + kdiffv*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
+               !kdiffv = max(fzm(k)*dampkv(k,iCell)+fzp(k)*dampkv(k-1,iCell), v_mom_eddy_visc2)
+               !tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + kdiffv*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
+               tend_w_euler(k,iCell) = tend_w_euler(k,iCell) + v_mom_eddy_visc2*0.5*(rho_zz(k,iCell)+rho_zz(k-1,iCell))*(  &
                                         (w(k+1,iCell)-w(k  ,iCell))*rdzw(k)                              &
                                        -(w(k  ,iCell)-w(k-1,iCell))*rdzw(k-1) )*rdzu(k)
             end do
@@ -3492,8 +3547,8 @@ module atm_time_integration
 
       deallocate(qtot)
 
-      deallocate(dampk)
-      deallocate(dampkv)
+      !deallocate(dampk)
+      !deallocate(dampkv)
 
 !----------- rhs for theta
 
@@ -4305,5 +4360,139 @@ module atm_time_integration
 
    end subroutine atm_rk_dynamics_substep_finish
 
+#ifdef CAM_DYCORE
+   subroutine cam_addtend(mesh, state, diag, tend, tend_physics)
+
+!      use mpas_atmphys_constants, only: R_d, R_v
+
+      implicit none
+
+      real (kind=RKIND), parameter :: R_d=287.0_RKIND, R_v=461.6_RKIND
+
+      type (mpas_pool_type), intent(in) :: mesh
+      type (mpas_pool_type), intent(in) :: state
+      type (mpas_pool_type), intent(in) :: diag
+      type (mpas_pool_type), intent(inout) :: tend_physics
+      type (mpas_pool_type), intent(inout) :: tend
+
+      real (kind=RKIND), dimension(:,:), pointer   :: theta_m, qv, mass, mass_edge, tend_theta, tend_u, cam_theta, cam_u
+      real (kind=RKIND), dimension(:,:,:), pointer :: tend_scalars, cam_scalars, scalars
+
+      real (kind=RKIND), dimension(:,:), allocatable :: theta, tend_th
+
+      integer, pointer :: nCells, nEdges, nCellsSolve, nEdgesSolve, nVertLevels, num_scalars, index_qv
+      integer:: iCell, iEdge, iScalar, k
+
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'nEdges', nEdges)
+      call mpas_pool_get_dimension(mesh, 'nEdgesSolve', nEdgesSolve)
+      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+
+      call mpas_pool_get_array(state, 'theta_m', theta_m, 1)
+      call mpas_pool_get_array(state, 'scalars', scalars, 1)
+      call mpas_pool_get_array(state, 'rho_zz', mass, 2)
+      call mpas_pool_get_array(diag,  'rho_edge', mass_edge)
+
+      call mpas_pool_get_array(tend_physics, 'u', cam_u)
+      call mpas_pool_get_array(tend_physics, 'theta', cam_theta)
+      call mpas_pool_get_array(tend_physics, 'scalars', cam_scalars)
+
+      call mpas_pool_get_array(tend, 'u', tend_u)
+      call mpas_pool_get_array(tend, 'theta_m', tend_theta)
+      call mpas_pool_get_array(tend, 'scalars_tend', tend_scalars)
+
+      call mpas_pool_get_dimension(state, 'num_scalars', num_scalars)
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+      !qv => scalars(index_qv,:,:)   
+
+
+      !
+      ! initialize the tendency for the potential temperature and all scalars
+      !
+      allocate(theta(nVertLevels,nCellsSolve)  )
+      allocate(tend_th(nVertLevels,nCellsSolve))
+      tend_th(:,:) = 0.
+      tend_scalars(:,:,:) = 0.
+
+      do iEdge = 1, nEdgesSolve
+         do k = 1, nVertLevels
+            tend_u(k,iEdge)=tend_u(k,iEdge)+cam_u(k,iEdge)*mass_edge(k,iEdge)
+         end do
+      end do
+
+      do iCell = 1, nCellsSolve
+         do k = 1, nVertLevels
+            tend_th(k,iCell)=tend_th(k,iCell)+cam_theta(k,iCell)*mass(k,iCell)
+            do iScalar=1,num_scalars
+               tend_scalars(iScalar,k,iCell)=tend_scalars(iScalar,k,iCell)+cam_scalars(iScalar,k,iCell)*mass(k,iCell)
+            end do
+         end do
+      end do
+
+      !
+      ! convert the tendency for the potential temperature to a tendency for modified potential temperature
+      !
+      do iCell = 1, nCellsSolve
+         do k = 1, nVertLevels
+            theta(k,iCell) = theta_m(k,iCell) / (1. + R_v/R_d * scalars(index_qv,k,iCell))
+            tend_th(k,iCell) = (1. + R_v/R_d * scalars(index_qv,k,iCell)) * tend_th(k,iCell) &
+                            + R_v/R_d * theta(k,iCell) * tend_scalars(index_qv,k,iCell)
+            tend_theta(k,iCell) = tend_theta(k,iCell) + tend_th(k,iCell)
+         end do
+      end do
+
+      deallocate(theta)
+      deallocate(tend_th)
+
+   end subroutine cam_addtend
+
+
+   subroutine atm_update_psfc(mesh, state, time_lev, diag)
+
+      implicit none
+
+      type (mpas_pool_type), intent(in) :: mesh
+      type (mpas_pool_type), intent(in) :: state
+      type (mpas_pool_type), intent(in) :: diag
+
+      integer,intent(in):: time_lev
+
+      real (kind=RKIND), dimension(:), pointer :: surface_pressure
+      real (kind=RKIND), dimension(:,:), pointer :: pressure_p, pressure_base, rho_zz
+      real (kind=RKIND), dimension(:,:), pointer :: zgrid, zz
+      real (kind=RKIND), dimension(:,:,:), pointer :: scalars
+
+      integer, pointer :: nCells, index_qv
+
+      integer :: iCell
+      real (kind=RKIND) :: dz1, dz2, rho1, rho2
+
+
+      call mpas_pool_get_dimension(mesh, 'nCells', nCells)
+      call mpas_pool_get_dimension(state, 'index_qv', index_qv)
+
+      call mpas_pool_get_array(mesh, 'zgrid', zgrid)
+      call mpas_pool_get_array(mesh, 'zz', zz)
+
+      call mpas_pool_get_array(diag, 'surface_pressure', surface_pressure)
+      call mpas_pool_get_array(diag, 'pressure_base', pressure_base)
+      call mpas_pool_get_array(diag, 'pressure_p', pressure_p)
+
+      call mpas_pool_get_array(state, 'rho_zz', rho_zz, time_lev)
+      call mpas_pool_get_array(state, 'scalars', scalars, time_lev)
+      !qv = scalars(index_qv,:,:)
+
+      do iCell = 1, nCells
+         dz1 = zgrid(2,iCell) - zgrid(1,iCell)
+         dz2 = zgrid(3,iCell) - zgrid(2,iCell)
+         rho1 = rho_zz(1,iCell) * zz(1,iCell) * (1.0 + scalars(index_qv,1,iCell))
+         rho2 = rho_zz(2,iCell) * zz(2,iCell) * (1.0 + scalars(index_qv,2,iCell))
+         surface_pressure(iCell) = 0.5*gravity*(zgrid(2,iCell)-zgrid(1,iCell)) * (rho1 + 0.5*(rho1 - rho2) * dz1/(dz1+dz2))
+         surface_pressure(iCell) = surface_pressure(iCell) + pressure_p(1,iCell) + pressure_base(1,iCell)
+      end do
+
+   end subroutine atm_update_psfc
+#endif
 
 end module atm_time_integration
