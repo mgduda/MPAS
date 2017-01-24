@@ -16,6 +16,7 @@ OBJS = mpas_kind_types.o \
        mpas_dmpar.o \
        mpas_decomp.o \
        mpas_io.o \
+       mpas_io_restart.o \
        mpas_io_streams.o \
        mpas_bootstrapping.o \
        mpas_io_units.o \

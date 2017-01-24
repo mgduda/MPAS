@@ -19,6 +19,7 @@
                 <dim name="R3"                 definition="3"/>
                 <dim name="nVertLevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
+#ifndef CAM_DYCORE
                 <dim name="nMonths"            definition="namelist:months"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
                 <dim name="nLags"              definition="namelist:input_soil_temperature_lag"/>
@@ -26,12 +27,19 @@
                 <dim name="nAerLevels"         definition="namelist:naerlev"/>
                 <dim name="cam_dim1"           definition="namelist:camdim1"/>
                 <dim name="nVertLevelsP2"      definition="nVertLevels+2"/>
+#endif
         </dims>
 
 
 <!-- **************************************************************************************** -->
 <!-- ************************************** Namelists *************************************** -->
 <!-- **************************************************************************************** -->
+#ifdef CAM_DYCORE
+        <packages>
+                <package  name="cam5"  description="CAM5 physics"/>
+        </packages>
+#endif
+
 
         <nml_record name="nhyd_model" in_defaults="true">
                 <nml_option name="config_time_integration"           type="character"     default_value="SRK3"        in_defaults="false"/>
@@ -76,7 +84,7 @@
         <nml_record name="damping" in_defaults="true">
                 <nml_option name="config_zd"                         type="real"          default_value="22000.0"/>
                 <nml_option name="config_xnutr"                      type="real"          default_value="0.2"/>
-                <nml_option name="config_add_diffusive_damping"      type="logical"       default_value="false"/>
+                <nml_option name="config_add_diffusive_damping"      type="logical"       default_value="true"/>
         </nml_record>
 
         <nml_record name="io" in_defaults="true">
@@ -101,6 +109,12 @@
                 <nml_option name="config_print_global_minmax_vel"    type="logical"       default_value="true"/>
                 <nml_option name="config_print_global_minmax_sca"    type="logical"       default_value="false"              in_defaults="false"/>
         </nml_record>
+
+#ifdef CAM_DYCORE
+        <nml_record name="physics">
+                <nml_option name="config_cam_physics"                type="character"     default_value="cam5"/>
+        </nml_record>
+#endif
 
 <!-- **************************************************************************************** -->
 <!-- *************************************** Streams **************************************** -->
@@ -187,6 +201,8 @@
 			<var name="rho_base"/>
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
+#ifndef CAM_DYCORE
+			<var name="ter"/>
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
 			<var name="mminlu"/>
@@ -194,7 +210,6 @@
 			<var name="shdmin"/>
 			<var name="shdmax"/>
 			<var name="snoalb"/>
-			<var name="ter"/>
 			<var name="albedo12m"/>
 			<var name="greenfrac"/>
 			<var name="sfc_albbck"/>
@@ -222,6 +237,7 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+#endif
 		</stream>
 
 		<stream name="restart" 
@@ -330,6 +346,7 @@
 			<var name="surface_pressure"/>
                         <var name="tend_sfc_pressure"/>
 			<var name="rt_diabatic_tend"/>
+#ifndef CAM_DYCORE
 			<var name="dcEdge_m"/>
 			<var name="nsteps_accum"/>
 			<var name="ndays_accum"/>
@@ -509,6 +526,7 @@
 			<var name="ol2"/>
 			<var name="ol3"/>
 			<var name="ol4"/>
+#endif
 		</stream>
 
 		<stream name="output" 
@@ -571,6 +589,7 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
+#ifndef CAM_DYCORE
 			<var name="i_rainnc"/>
 			<var name="rainnc"/>
 			<var name="precipw"/>
@@ -608,6 +627,7 @@
 			<var name="sh2o"/>
 			<var name="smois"/>
 			<var name="tslb"/>
+#endif			
 		</stream>
 
 		<stream name="diagnostics" 
@@ -617,11 +637,6 @@
                         runtime_format="separate_file">
 
 			<var name="xtime"/>
-			<var name="olrtoa"/>
-			<var name="rainc"/>
-			<var name="rainnc"/>
-			<var name="refl10cm_max"/>
-			<var name="precipw"/>
 			<var name="mslp"/>
 			<var name="temperature_200hPa"/>
 			<var name="temperature_500hPa"/>
@@ -641,8 +656,16 @@
 			<var name="vorticity_200hPa"/>
 			<var name="vorticity_500hPa"/>
 			<var name="vorticity_850hPa"/>
+#ifndef CAM_DYCORE
+			<var name="olrtoa"/>
+			<var name="rainc"/>
+			<var name="rainnc"/>
+			<var name="refl10cm_max"/>
+			<var name="precipw"/>
+#endif 
 		</stream>
 
+#ifndef CAM_DYCORE
 		<stream name="surface" 
                         type="input" 
                         filename_template="x1.40962.sfc_update.nc" 
@@ -653,6 +676,7 @@
 			<var name="sst"/>
 			<var name="xice"/>
 		</stream>
+#endif 
 	</streams>
 
 
@@ -754,8 +778,10 @@
                 <var name="east"                      type="real"     dimensions="R3 nCells"/>
                 <var name="north"                     type="real"     dimensions="R3 nCells"/>
 
+#ifndef CAM_DYCORE
                 <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
                 <var name="m_hybi"                    type="real"     dimensions="nAerLevels nCells"/>
+#endif
         </var_struct>
 
         <var_struct name="state" time_levs="2">
@@ -772,11 +798,39 @@
                         <var name="qv"      array_group="moist"/>
                         <var name="qc"      array_group="moist"/>
                         <var name="qr"      array_group="moist"/>
+#ifndef CAM_DYCORE
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
+#endif
+
+#ifdef CAM_DYCORE
+                        <var name="qnr"     array_group="conc"       packages="cam5"/>
+                        <var name="qni"     array_group="conc"       packages="cam5"/>
+                        <var name="aer1"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer2"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer3"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer4"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer5"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer6"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer7"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer8"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer9"    array_group="aerosol"    packages="cam5"/>
+                        <var name="aer10"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer11"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer12"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer13"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer14"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer15"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer16"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer17"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer18"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer19"   array_group="aerosol"    packages="cam5"/>
+                        <var name="aer20"   array_group="aerosol"    packages="cam5"/>
+#endif
                 </var_array>
 
+#ifndef CAM_DYCORE
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
                         <var name="sul"     array_group="aer_cam"/>
                         <var name="sslt"    array_group="aer_cam"/>
@@ -791,6 +845,7 @@
                         <var name="bg"      array_group="aer_cam"/>
                         <var name="volc"    array_group="aer_cam"/>
                 </var_array>
+#endif
         </var_struct>
 
         <var_struct name="diag" time_levs="1">
@@ -929,9 +984,36 @@
                         <var name="tend_qv"    name_in_code="qv"        array_group="moist"/>
                         <var name="tend_qc"    name_in_code="qc"        array_group="moist"/>
                         <var name="tend_qr"    name_in_code="qr"        array_group="moist"/>
+#ifndef CAM_DYCORE
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
+#endif
+
+#ifdef CAM_DYCORE
+                        <var name="tend_qnr"    name_in_code="qnr"      array_group="conc"       packages="cam5"/>
+                        <var name="tend_qni"    name_in_code="qni"      array_group="conc"       packages="cam5"/>
+                        <var name="tend_aer1"   name_in_code="aer1"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer2"   name_in_code="aer2"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer3"   name_in_code="aer3"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer4"   name_in_code="aer4"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer5"   name_in_code="aer5"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer6"   name_in_code="aer6"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer7"   name_in_code="aer7"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer8"   name_in_code="aer8"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer9"   name_in_code="aer9"     array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer10"  name_in_code="aer10"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer11"  name_in_code="aer11"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer12"  name_in_code="aer12"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer13"  name_in_code="aer13"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer14"  name_in_code="aer14"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer15"  name_in_code="aer15"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer16"  name_in_code="aer16"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer17"  name_in_code="aer17"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer18"  name_in_code="aer18"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer19"  name_in_code="aer19"    array_group="aerosol"    packages="cam5"/>
+                        <var name="tend_aer20"  name_in_code="aer20"    array_group="aerosol"    packages="cam5"/>
+#endif
                 </var_array>
         </var_struct>
 
@@ -943,6 +1025,7 @@
 <!-- ================================================================================================== -->
 
 
+#ifndef CAM_DYCORE
         <nml_record name="physics" in_defaults="true">
                 <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
                 <nml_option name="input_soil_data"                   type="character"     default_value="STAS"       in_defaults="false"/>
@@ -1573,4 +1656,51 @@
 		<var name="ol3"         type="real"     dimensions="nCells"/>
 		<var name="ol4"         type="real"     dimensions="nCells"/>
         </var_struct>
+#endif
+
+#ifdef CAM_DYCORE
+        <!--
+        <var_struct name="diag_physics" time_levs="1">
+                <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"/>
+        </var_struct>
+        !-->
+
+        <var_struct name="tend_physics" time_levs="1">
+                <!-- ================================================================================================== -->
+                <!--  Tendency arrays for CAM phys                                                                      -->
+                <!-- ================================================================================================== -->
+                <var name="u_cam_tend"      name_in_code="u"       type="real"   dimensions="nVertLevels nEdges Time"/>
+                <var name="ux_cam_tend"     name_in_code="ux"      type="real"   dimensions="nVertLevels nCells Time"/>
+                <var name="uy_cam_tend"     name_in_code="uy"      type="real"   dimensions="nVertLevels nCells Time"/>
+                <var name="theta_cam_tend"  name_in_code="theta"   type="real"   dimensions="nVertLevels nCells Time"/>
+                <var_array name="scalars_cam_tend" name_in_code="scalars" type="real" dimensions="nVertLevels nCells Time">
+                        <var name="qv_cam_tend"     name_in_code="qv"    array_group="moist"      />
+                        <var name="qc_cam_tend"     name_in_code="qc"    array_group="moist"      />
+                        <var name="qr_cam_tend"     name_in_code="qr"    array_group="moist"      />
+                        <var name="qnr_cam_tend"    name_in_code="qnr_c" array_group="conc"       packages="cam5"/>
+                        <var name="qni_cam_tend"    name_in_code="qni_c" array_group="conc"       packages="cam5"/>
+                        <var name="aer1_cam_tend"   name_in_code="aer1"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer2_cam_tend"   name_in_code="aer2"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer3_cam_tend"   name_in_code="aer3"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer4_cam_tend"   name_in_code="aer4"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer5_cam_tend"   name_in_code="aer5"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer6_cam_tend"   name_in_code="aer6"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer7_cam_tend"   name_in_code="aer7"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer8_cam_tend"   name_in_code="aer8"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer9_cam_tend"   name_in_code="aer9"  array_group="aerosol"    packages="cam5"/>
+                        <var name="aer10_cam_tend"  name_in_code="aer10" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer11_cam_tend"  name_in_code="aer11" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer12_cam_tend"  name_in_code="aer12" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer13_cam_tend"  name_in_code="aer13" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer14_cam_tend"  name_in_code="aer14" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer15_cam_tend"  name_in_code="aer15" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer16_cam_tend"  name_in_code="aer16" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer17_cam_tend"  name_in_code="aer17" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer18_cam_tend"  name_in_code="aer18" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer19_cam_tend"  name_in_code="aer19" array_group="aerosol"    packages="cam5"/>
+                        <var name="aer20_cam_tend"  name_in_code="aer20" array_group="aerosol"    packages="cam5"/>
+                </var_array>
+        </var_struct>
+
+#endif
 </registry>
