@@ -74,6 +74,9 @@
       type (fieldlist_type), pointer :: fieldlist_tail => null()
       type (attlist_type), pointer :: attlist_head => null()
       type (attlist_type), pointer :: attlist_tail => null()
+      !SHP-MPAS2
+      logical :: external_file_desc = .false.
+      logical :: restart = .false.
    end type MPAS_IO_Handle_type
 
    type decomphandle_type

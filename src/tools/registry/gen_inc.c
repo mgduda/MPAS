@@ -481,7 +481,7 @@ int parse_packages_from_registry(ezxml_t registry)/*{{{*/
 			packagename = ezxml_attr(package_xml, "name");
 			packagedesc = ezxml_attr(package_xml, "description");
 
-			fortprintf(fd, "      call mpas_pool_add_package(packagePool, '%sActive', .false.)\n", packagename);
+			fortprintf(fd, "      call mpas_pool_add_package(packagePool, '%sActive', .true.)\n", packagename);
 		}
 	}
 

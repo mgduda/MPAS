@@ -23,4 +23,7 @@
 
       ! Domain_type is a linked list
       type (domain_type), pointer :: next => null()
+
+      !SHP-MPAS2
+      character (len=StrKIND*2) :: history !< History attribute, read in from input file. 
    end type domain_type

@@ -56,5 +56,17 @@
       type (MPAS_IO_Handle_type) :: fileHandle
       type (att_list_type), pointer :: attList => null()
       type (field_list_type), pointer :: fieldList => null()
+      !SHP-MPAS2
+      integer :: framesPerFile
    end type MPAS_Stream_type
+
+  !SHP-MPAS2
+  type io_output_object
+     character (len=StrKIND) :: filename
+     integer :: stream
+
+     integer :: time
+
+     type (MPAS_Stream_type) :: io_stream
+  end type io_output_object
 
