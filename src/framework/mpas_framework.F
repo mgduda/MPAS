@@ -131,7 +131,9 @@ module mpas_framework
 
       call mpas_dmpar_finalize(dminfo)
 
+#ifndef MPAS_NO_ESMF_INIT
       call mpas_timekeeping_finalize()
+#endif
 
    end subroutine mpas_framework_finalize!}}}
 
