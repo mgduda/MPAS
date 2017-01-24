@@ -4986,6 +4986,12 @@ subroutine stream_mgr_create_stream_c(manager_c, streamID_c, direction_c, filena
                         MPAS_IO_NETCDF, MPAS_IO_PNETCDF, MPAS_IO_NETCDF4, MPAS_IO_PNETCDF5
     use mpas_io_units, only : stderrUnit
 
+!#ifdef CAM_DYCORE
+!    use cam_initfiles,    only: ncdata, rest_pfile
+!    use cam_control_mod,  only: initial_run
+!    use ioFileMod,        only: opnfil
+!#endif
+
     implicit none
 
     type (c_ptr) :: manager_c
@@ -5014,6 +5020,26 @@ subroutine stream_mgr_create_stream_c(manager_c, streamID_c, direction_c, filena
     call mpas_c_to_f_string(ref_time_c, reference_time)
     call mpas_c_to_f_string(rec_intv_c, record_interval)
     immutable = immutable_c
+
+!#ifdef CAM_DYCORE
+!    !SHP-CAM:: overwrite stream information only for input stream
+!    if ( streamID=='input' .or. streamID=='restart' ) then
+!
+!      if (initial_run) then
+!         filename(1:len(ncdata)) = ncdata(:)
+!         write (stderrUnit,*) 'SHP: This is intial_run.. open => ', filename
+!      else
+!         call opnfil(rest_pfile, 1000, 'f', status="old")
+!         read (1000, '(a)', iostat=ierr) filename
+!         if (ierr /= 0) then
+!           write(stderrUnit,*) 'Error:opening file for ', rest_pfile
+!         end if
+!         close(1000)
+!         write (stderrUnit,*) 'SHP: This is restart_run.. open => ', filename
+!      end if
+!
+!    end if
+!#endif
 
     if (precision_c == 4) then
         prec = MPAS_IO_SINGLE_PRECISION
