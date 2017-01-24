@@ -204,8 +204,11 @@ module mpas_io_streams
       call mpas_set_time(curr_time=startTime, dateTimeString=strTemp)
 
       do i=1,timeDim
+#ifndef CAM_DYCORE
+         !SHP-CAM:: read xtimes from namelist .. not from actual file
          write(strTemp, '(a)') trim(xtimes(i)(1:32))
 !write(stderrUnit,*) '... converted strTemp='//strTemp
+#endif
          call mpas_set_time(curr_time=sliceTime, dateTimeString=strTemp)
          if (seekPosition == MPAS_STREAM_EXACT_TIME) then
             if (sliceTime == startTime) then
