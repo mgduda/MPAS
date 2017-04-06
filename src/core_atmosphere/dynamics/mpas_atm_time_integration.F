@@ -2259,12 +2259,12 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:), pointer :: theta_m, ru_p,rtheta_pp, rtheta_pp_old
       real (kind=RKIND), dimension(:), pointer :: dcEdge
 
-      real (kind=RKIND), pointer :: smdiv
+      real (kind=RKIND), pointer :: smdiv, smdiv_length
 
       integer, dimension(:,:), pointer :: cellsOnEdge
       integer, pointer :: nCellsSolve
 
-      real (kind=RKIND) :: divCell1, divCell2, rdts
+      real (kind=RKIND) :: divCell1, divCell2, rdts, coef_divdamp
       integer :: cell1, cell2, iEdge, k
 
       call mpas_pool_get_array(mesh, 'cellsOnEdge', cellsOnEdge)
@@ -2276,8 +2276,11 @@ module atm_time_integration
 
       call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
       call mpas_pool_get_config(configs, 'config_smdiv', smdiv) 
+      call mpas_pool_get_config(configs, 'config_len_disp', smdiv_length)
 
         rdts = 1./dts
+        coef_divdamp = 2.*smdiv*smdiv_length*rdts
+
         do iEdge=edgeStart,edgeEnd ! MGD do we really just need edges touching owned cells?
  
            cell1 = cellsOnEdge(1,iEdge)
@@ -2289,10 +2292,18 @@ module atm_time_integration
 !DIR$ IVDEP
               do k=1,nVertLevels
 
-                 divCell1 = -(rtheta_pp(k,cell1)-rtheta_pp_old(k,cell1))*rdts
-                 divCell2 = -(rtheta_pp(k,cell2)-rtheta_pp_old(k,cell2))*rdts
-                 ru_p(k,iEdge) = ru_p(k,iEdge) + 2.*smdiv*dcEdge(iEdge)*(divCell2-divCell1) &
+!!  unscaled 3d divergence damping
+!!                 divCell1 = -(rtheta_pp(k,cell1)-rtheta_pp_old(k,cell1))*rdts
+!!                 divCell2 = -(rtheta_pp(k,cell2)-rtheta_pp_old(k,cell2))*rdts
+!!                 ru_p(k,iEdge) = ru_p(k,iEdge) + 2.*smdiv*dcEdge(iEdge)*(divCell2-divCell1) &
+!!                                                        /(theta_m(k,cell1)+theta_m(k,cell2))
+
+!!  scaled 3d divergence damping
+                 divCell1 = -(rtheta_pp(k,cell1)-rtheta_pp_old(k,cell1))
+                 divCell2 = -(rtheta_pp(k,cell2)-rtheta_pp_old(k,cell2))
+                 ru_p(k,iEdge) = ru_p(k,iEdge) + coef_divdamp*(divCell2-divCell1) &
                                                         /(theta_m(k,cell1)+theta_m(k,cell2))
+
               end do
            end if ! edges for block-owned cells
         end do ! end loop over edges
