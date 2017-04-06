@@ -1079,7 +1079,7 @@ module atm_core
       call mpas_pool_get_config(configs, 'config_zd', config_zd)
       call mpas_pool_get_config(configs, 'config_xnutr', config_xnutr)
 
-      dx_scale_power = 1.5
+      dx_scale_power = 1.0
       dss(:,:) = 0.0
       do iCell=1,nCells
          zt = zgrid(nVertLevels+1,iCell)
