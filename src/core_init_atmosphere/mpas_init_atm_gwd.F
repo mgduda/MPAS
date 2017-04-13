@@ -14,6 +14,8 @@ module mpas_init_atm_gwd
 
    private
 
+   integer, parameter :: I1KIND = selected_int_kind(2)
+
    real (kind=RKIND), parameter :: Re = 6371229.0_RKIND        ! Earth radius in MPAS-Atmosphere
    real (kind=RKIND), parameter :: Pi = 2.0_RKIND * asin(1.0_RKIND)
    real (kind=RKIND), parameter :: rad2deg = 180.0_RKIND / Pi
@@ -32,7 +34,13 @@ module mpas_init_atm_gwd
    real (kind=RKIND), dimension(:,:), pointer :: dxm   ! Size (meters) in zonal direction of a grid cell
    real (kind=RKIND) :: box_mean                       ! Mean value of topography in box
    integer :: nx, ny                                   ! Dimensions of box covering grid cell
+   integer (kind=I1KIND), dimension(:,:), pointer :: landuse         ! Global 30-arc-second landuse
+   integer (kind=I1KIND), dimension(:,:), pointer :: box_landuse     ! Subset of landuse covering a grid cell
 
+   integer (kind=I1KIND), parameter :: WATER = 16
+
+   real (kind=RKIND), dimension(:), pointer :: hlanduse ! MW: Dominant land mask (0 or 1 ) 
+   real (kind=RKIND) :: hc   !MW: critical height, hc = 1116.2 - 0.878 * var (used in OL calculations) 
 
    contains
 
@@ -80,8 +88,14 @@ module mpas_init_atm_gwd
       real (kind=RKIND), dimension(:), pointer :: elvmax, htheta, hgamma, hsigma
       character(len=StrKIND), pointer :: config_geog_data_path
 
+     ! MW: added variables for smoothing variance
+      integer, dimension(:,:), pointer:: cellsOnCell
+      real (kind=RKIND) :: sum_landuse, sum_var
+      
+
 
       allocate(topo(topo_x,topo_y))
+      allocate(landuse(topo_x,topo_y))
 
       call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
       call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
@@ -100,6 +114,7 @@ module mpas_init_atm_gwd
       call mpas_pool_get_array(mesh, 'lonCell', lonCell)
       call mpas_pool_get_array(mesh, 'nEdgesOnCell', nEdgesOnCell)
       call mpas_pool_get_array(mesh, 'edgesOnCell', edgesOnCell)
+      call mpas_pool_get_array(mesh, 'cellsOnCell', cellsOnCell)
       call mpas_pool_get_array(mesh, 'dcEdge', dcEdge)
       call mpas_pool_get_array(mesh, 'var2d', var2d)
       call mpas_pool_get_array(mesh, 'con', con)
@@ -116,11 +131,20 @@ module mpas_init_atm_gwd
 !      call mpas_pool_get_array(mesh, 'gamma', hgamma)
 !      call mpas_pool_get_array(mesh, 'sigma', hsigma)
 
+      allocate(hlanduse(nCells))  ! MW 
+
       iErr = read_global_30s_topo(config_geog_data_path)
       if (iErr /= 0) then
          write(stderrUnit,*) 'Error reading global 30-arc-sec topography for GWD statistics'
          return
       end if
+
+      iErr = read_global_30s_landuse(config_geog_data_path)
+      if (iErr /= 0) then
+         write(stderrUnit,*) 'Error reading global 30-arc-sec landuse for GWD statistics'
+         return
+      end if
+write(0,*) 'min/max landuse = ', minval(landuse), maxval(landuse)
 
       !
       ! It is possible that this code is called before the mesh fields have been scaled
@@ -183,17 +207,46 @@ module mpas_init_atm_gwd
          oa2(iCell) = get_oa2()
          oa3(iCell) = get_oa3()
          oa4(iCell) = get_oa4()
+
+         hc = 1116.2 - 0.878*var2d(iCell)   !MW: critical height to be used in OL
          ol1(iCell) = get_ol1()
          ol2(iCell) = get_ol2()
          ol3(iCell) = get_ol3()
          ol4(iCell) = get_ol4()
+
+         hlanduse(iCell) = get_dom_landuse()  ! MW: get dominant land use in cell
+
 !         elvmax(iCell) = get_elvmax()
 !         htheta(iCell) = get_htheta()
 !         hgamma(iCell) = get_hgamma()
 !         hsigma(iCell) = get_hsigma()
       end do
 
+
+      ! MW: smoothing variance at isolated points
+      do iCell = 1,nCells
+         sum_landuse = 0.0
+         sum_var     = 0.0
+         do i=1,nEdgesOnCell(iCell)
+             sum_landuse = sum_landuse + hlanduse(cellsOnCell(i,iCell)) 
+             sum_var     = sum_var     + var2d(cellsOnCell(i,iCell))
+         end do
+         if (iCell.eq.10000) write(0,*) 'sum_landuse, sum_var = ', sum_landuse, sum_var 
+
+         if (sum_landuse .eq. nEdgesOnCell(iCell) .and. hlanduse(iCell).eq.0.0) then
+             write(0,*) 'smoothing out a water point, iCell = ', iCell
+             var2d(iCell) = sum_var/nEdgesOnCell(iCell)
+         elseif (sum_landuse .eq. 0.0 .and. hlanduse(iCell).eq.1.0) then
+             write(0,*) 'smoothing out a land point, iCell = ', iCell
+             var2d(iCell) = sum_var/nEdgesOnCell(iCell) 
+         end if
+      end do
+
+
       deallocate(topo)
+      deallocate(landuse)
+ 
+      deallocate(hlanduse) ! MW
 
       iErr = 0
 
@@ -267,6 +320,101 @@ module mpas_init_atm_gwd
 
    !***********************************************************************
    !
+   !  function read_global_30s_landuse
+   !
+   !> \brief   Reads global 30-arc-second landuse into 'landuse' module variable
+   !> \author  Michael Duda
+   !> \date    14 March 2017
+   !> \details 
+   !>  This subroutine reads the global 30-arc-second USGS landuse from
+   !>   the subdirectory 'landuse_30s' of the path provided as an argument.
+   !
+   !-----------------------------------------------------------------------
+   function read_global_30s_landuse(path) result(iErr)
+
+      implicit none
+
+      character(len=*), intent(in) :: path
+
+      integer :: iErr
+
+      integer, parameter :: tile_x = 1200       ! x-dimension of each tile of global 30-arc-second landuse
+      integer, parameter :: tile_y = 1200       ! y-dimension of each tile of global 30-arc-second landuse
+
+      integer :: istatus
+      integer :: ix, iy
+      integer :: isigned, endian, wordsize, nx, ny, nz
+      real (kind=R4KIND) :: scalefactor
+      real (kind=R4KIND), dimension(:,:,:), allocatable :: tile
+      character(len=StrKIND) :: filename
+
+      allocate(tile(tile_x,tile_y,1))
+
+      isigned  = 1
+      endian   = 0
+      wordsize = 1
+      scalefactor = 1.0
+      nx = tile_x
+      ny = tile_y
+      nz = 1
+
+      do iy=1,topo_y,tile_y
+      do ix=1,topo_x,tile_x
+         write(filename,'(a,i5.5,a1,i5.5,a1,i5.5,a1,i5.5)') trim(path)//'/landuse_30s/', ix, '-', (ix+tile_x-1), '.', &
+                                                                                      iy, '-', (iy+tile_y-1)
+         call read_geogrid(filename, len_trim(filename), tile, nx, ny, nz, isigned, endian, &
+                           scalefactor, wordsize, istatus)
+         if (istatus /= 0) then
+            write(stderrUnit,*) 'Error reading landuse tile '//trim(filename)
+            iErr = 1
+            return
+         end if
+
+         landuse(ix:(ix+tile_x-1),iy:(iy+tile_y-1)) = int(tile(1:tile_x,1:tile_y,1), kind=I1KIND)
+
+      end do
+      end do
+
+      deallocate(tile)
+
+      iErr = 0
+
+   end function read_global_30s_landuse
+
+   !***********************************************************************
+   !
+   !  MW:function get dominant land use in cell 
+   !----------------------------------------------------------------------
+    real (kind=RKIND) function get_dom_landuse( )
+
+      implicit none
+
+      integer :: i, j      
+      real (kind=RKIND) :: xland
+      xland = 0.0
+
+      ! MW: get dominant land/water mask in the box
+      do j=1,ny
+      do i=1,nx
+         if (box_landuse(i,j) /= WATER) then
+            xland = xland + 1.0
+         end if
+      end do
+      end do
+      xland = xland / real(nx*ny,kind=RKIND)
+
+      if (xland >= 0.5_RKIND) then
+         get_dom_landuse = 1.0_RKIND
+      else
+         get_dom_landuse = 0.0_RKIND
+      end if 
+
+   end function get_dom_landuse 
+
+
+
+   !***********************************************************************
+   !
    !  subroutine get_box
    !
    !> \brief   Cuts out a rectangular box of data centered at a given (lat,lon)
@@ -294,6 +442,7 @@ module mpas_init_atm_gwd
       integer :: i, j, ii, jj, ic, jc
       real (kind=RKIND) :: sg_lat
 
+
       !
       ! Get number of points to extract in the zonal direction
       !
@@ -320,6 +469,9 @@ module mpas_init_atm_gwd
 
       if (associated(box)) deallocate(box)
       allocate(box(nx,ny))
+
+      if (associated(box_landuse)) deallocate(box_landuse)
+      allocate(box_landuse(nx,ny))
 
       if (associated(dxm)) deallocate(dxm)
       allocate(dxm(nx,ny))
@@ -351,6 +503,7 @@ module mpas_init_atm_gwd
          end do
  
          box(i,j) = topo(ii,jj)
+         box_landuse(i,j) = landuse(ii,jj)
          sg_lat = (start_lat + (real(jj-1,RKIND) + 0.5) / pts_per_degree) / rad2deg  ! Add 0.5 for cell center
          dxm(i,j) = sg_delta * cos(sg_lat)
          box_mean = box_mean + box(i,j)
@@ -358,10 +511,12 @@ module mpas_init_atm_gwd
       end do
       end do
 
+
       !
       ! Compute mean topography in the extracted box
       !
       box_mean = box_mean / real(nx*ny, RKIND)
+
 
    end subroutine get_box
 
@@ -400,7 +555,7 @@ module mpas_init_atm_gwd
    !
    !  function get_con
    !
-   !> \brief   Computes orographic convexityof sub-grid-scale terrain
+   !> \brief   Computes orographic convexity of sub-grid-scale terrain
    !> \author  Michael Duda
    !> \date    29 May 2015
    !> \details 
@@ -411,25 +566,64 @@ module mpas_init_atm_gwd
       implicit none
 
       integer :: i, j
-      real (kind=RKIND) :: s2, s4, var
+      real (kind=RKIND) :: s2, s4, var, xland, mean_land, mean_water, oro
 
       s2 = 0.0
       s4 = 0.0
+      mean_land = 0.0
+      mean_water = 0.0
+      xland = 0.0
+
+      !
+      ! Compute grid-box mean
+      !
+      do j=1,ny
+         do i=1,nx
+            if (box_landuse(i,j) /= WATER) then
+               xland = xland + 1.0
+               mean_land = mean_land + box(i,j)
+            else
+               mean_water = mean_water + box(i,j)
+            end if
+         end do
+      end do
+      if (xland > 0.0) then
+         mean_land = mean_land / xland
+      end if
+      if (xland < real(nx*ny,kind=RKIND)) then
+         mean_water = mean_water / (real(nx*ny,kind=RKIND) - xland)
+      end if
+      xland = xland / real(nx*ny,kind=RKIND)
+ 
+      if (xland >= 0.5_RKIND) then
+         oro = mean_land
+      else
+         oro = mean_water
+      end if
 
       do j=1,ny
          do i=1,nx
             s2 = s2 + (box(i,j) - box_mean)**2
-            s4 = s4 + (box(i,j) - box_mean)**4
+            s4 = s4 + (box(i,j) - oro)**4
          end do
       end do
 
       var = s2 / real(nx*ny,RKIND)
- 
-      if (abs(var) < 1.0e-5) then
+
+     !MW if (abs(var) < 1.0e-5) then
+      if ( sqrt(var) < 1.0 ) then  ! MW
          get_con = 0.0
       else
          get_con = s4 / (var**2 * real(nx*ny,RKIND))
       end if
+
+      !
+      ! MW. Zero-ing all convexity statistics over dominantly water points.
+      !
+      if (xland < 0.5_RKIND ) then
+         get_con = 0.0
+      end if
+
 
    end function get_con
 
@@ -621,7 +815,8 @@ module mpas_init_atm_gwd
 
       do j=ny/4,3*ny/4
          do i=1,nx
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
@@ -654,7 +849,8 @@ module mpas_init_atm_gwd
 
       do j=1,ny
          do i=nx/4,3*nx/4
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
@@ -687,13 +883,15 @@ module mpas_init_atm_gwd
 
       do j=1,ny/2
          do i=1,nx/2
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
       do j=ny/2+1,ny
          do i=nx/2+1,nx
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
@@ -726,13 +924,15 @@ module mpas_init_atm_gwd
 
       do j=ny/2+1,ny
          do i=1,nx/2
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
       do j=1,ny/2
          do i=nx/2+1,nx
-            if (box(i,j) > box_mean) nw = nw + 1
+            !if (box(i,j) > box_mean) nw = nw + 1
+            if (box(i,j) > hc) nw = nw + 1
             nt = nt + 1
          end do
       end do
