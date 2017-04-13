@@ -8,12 +8,10 @@
 !=================================================================================================================
  module mpas_atmphys_todynamics
  use mpas_kind_types
- use mpas_derived_types
  use mpas_pool_routines
  use mpas_dmpar
 
  use mpas_atmphys_constants, only: R_d,R_v,degrad
- use mpas_atmphys_vars, only: pbl_scheme,convection_scheme
 
  implicit none
  private
@@ -52,6 +50,11 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2016-04-11.
 ! * in subroutine physics_get_tend_work, added the option cu_ntiedtke in the calculation of rucuten_Edge.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-10-28.
+! * in subroutine physics_get_tend_work, added the option bl_mynn_wrf390 for the calculation of the PBL
+!   tendencies when using the PBL parameterization from WRF 3.9.0.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-03-06.
+! * in subroutine physics_get_tend_work, added the option cu_grell_freitas_wrf390 for the calculation of the
+!   u- and v- convective tendencies when using the Grell-Freitas parameterization from WRF 3.9.0.
 
 
  contains
@@ -530,9 +533,9 @@
        enddo
        enddo
 
-       pbl_select: select case (trim(pbl_scheme))
+       pbl_select: select case (trim(config_pbl_scheme))
 
-          case("bl_mynn")
+          case('bl_mynn','bl_mynn_wrf390')
 
              do i = 1, nCellsSolve
              do k = 1, nVertLevels
@@ -557,7 +560,7 @@
        enddo
        enddo
 
-        convection_select: select case(convection_scheme)
+        convection_select: select case(config_convection_scheme)
 
            case('cu_grell_freitas')
 
@@ -714,9 +717,9 @@
        enddo
        enddo
 
-       pbl_select: select case (trim(pbl_scheme))
+       pbl_select: select case (trim(config_pbl_scheme))
 
-          case("bl_mynn")
+          case('bl_mynn','bl_mynn_wrf390')
 
              do i = 1, nCellsSolve
              do k = 1, nVertLevels
@@ -741,7 +744,7 @@
        enddo
        enddo
 
-        convection_select: select case(convection_scheme)
+        convection_select: select case(config_convection_scheme)
 
            case('cu_kain_fritsch')
               do i = 1, nCellsSolve
@@ -751,7 +754,7 @@
               enddo
               enddo
     
-           case('cu_tiedtke','cu_ntiedtke')
+           case('cu_tiedtke','cu_ntiedtke','cu_grell_freitas_wrf390')
               if (rk_step == 1 .and. dynamics_substep == 1) then
                  call tend_toEdges(block,mesh,rucuten,rvcuten,rucuten_Edge)
                  

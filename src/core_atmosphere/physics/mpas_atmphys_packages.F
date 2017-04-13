@@ -117,7 +117,8 @@
  cu_kain_fritsch_in  = .false.
  cu_tiedtke_in       = .false.
 
- if(config_convection_scheme=='cu_grell_freitas') then
+ if(config_convection_scheme=='cu_grell_freitas' .or. &
+    config_convection_scheme=='cu_grell_freitas_wrf390') then
     cu_grell_freitas_in = .true.
  elseif(config_convection_scheme == 'cu_kain_fritsch') then
     cu_kain_fritsch_in = .true.
@@ -152,7 +153,8 @@
  bl_mynn_in = .false.
  bl_ysu_in  = .false.
 
- if(config_pbl_scheme=='bl_mynn') then
+ if(config_pbl_scheme == 'bl_mynn' .or. &
+    config_pbl_scheme == 'bl_mynn_wrf390') then
     bl_mynn_in = .true.
  elseif(config_pbl_scheme == 'bl_ysu') then
     bl_ysu_in = .true.

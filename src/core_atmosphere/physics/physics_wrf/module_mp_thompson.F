@@ -11,7 +11,10 @@
 !     Laura D. Fowler (laura@ucar.edu) / 2016-10-29.
 !   * in subroutine mp_gt_driver, moved the initialization of variables Nt_c and mu_c
 !     before initialization of local mixing ratios and number concentrations.
-!     Laura D. Fowler (lara@ucar.edu) / 2916-12-30.
+!     Laura D. Fowler (laura@ucar.edu) / 2016-12-30.
+!   * in subroutine freezeH2O, modified the calculation of the variable prob, following
+!     Greg Thompson for the release of WRF version 3.9.0.
+!     Laura D. Fowler (laura@ucar.edu) / 2017-03-27.
 
 
 !+---+-----------------------------------------------------------------+
@@ -61,7 +64,7 @@
       MODULE module_mp_thompson
 
       use mpas_kind_types
-      use mpas_atmphys_functions
+      use mpas_atmphys_functions, only: gammp,wgamma,rslf,rsif
       use mpas_atmphys_utilities
       use module_mp_radar
 
@@ -1453,6 +1456,11 @@
       CHARACTER*256:: mp_debug
       INTEGER:: nu_c
 
+!     modifications proposed by Ted Mansell for MPAS.
+!     Laura D. Fowler (laura@ucar.edu) / 2017-03-27.
+      real, parameter:: mvd_r_breakup = 1.e-3
+!...  end modifications.
+
 !+---+
 
 
@@ -2217,7 +2225,15 @@
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
 !..Put in explicit drop break-up due to collisions.
-            pnr_rcg(k) = -5.*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)         ! RAIN2M
+!...  modifications to drop break-up due to collision of rain collecting graupel, ad-hoc
+!     change proposed by Ted Mansell for MPAS: basically reduces rain breakup in graupel
+!     collisions when the mean volume diameter of rain is less than 1mm.
+!     Laura D. Fowler (laura@ucar.edu) / 2017-03-27.
+            if ( mvd_r(k) > mvd_r_breakup ) then
+              pnr_rcg(k) = -5.0*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)       ! RAIN2M
+            else
+              pnr_rcg(k) = -3.0*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)       ! RAIN2M
+            endif
            endif
           endif
          endif
@@ -3854,7 +3870,9 @@
                do n2 = nbr, 1, -1
                   N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+!..Modifications made by Greg Thompson for release of WRF version 3.9.0.
+!                 prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   if (massr(n2) .lt. xm0g) then
                      sumn1 = sumn1 + prob*N_r(n2)
                      sum1 = sum1 + prob*N_r(n2)*massr(n2)
@@ -3880,7 +3898,9 @@
                sumn2 = 0.0d0
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+!..Modifications made by Greg Thompson for release of WRF version 3.9.0.
+!                 prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
                   sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
                   sum1 = sum1 + prob*N_c(n)*massc(n)
@@ -4270,7 +4290,7 @@
 
       end subroutine table_ccnAct
 #endif
-!^L
+!
 !+---+-----------------------------------------------------------------+
 !..Retrieve fraction of CCN that gets activated given the model temp,
 !.. vertical velocity, and available CCN concentration.  The lookup

@@ -8,7 +8,6 @@
 !=================================================================================================================
  module mpas_atmphys_driver_convection
  use mpas_kind_types
- use mpas_derived_types
  use mpas_pool_routines
 
  use mpas_atmphys_constants
@@ -17,6 +16,7 @@
 
 !wrf physics:
  use module_cu_gf
+ use module_cu_gf_wrf390
  use module_cu_kfeta
  use module_cu_tiedtke
  use module_cu_ntiedtke
@@ -88,19 +88,29 @@
 ! * for the kain_fritsch parameterization of convection, change the definition of dx_p to match that used in the
 !   Grell-Freitas and "new Tiedtke" parameterization.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-10-18.
+! * since we removed the local variable convection_scheme from mpas_atmphys_vars.F, now defines convection_scheme
+!   as a pointer to config_convection_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2917-02-16.
 
 
  contains
 
 
 !=================================================================================================================
- subroutine allocate_convection
+ subroutine allocate_convection(configs)
 !=================================================================================================================
 
-!local variables:
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local variables and pointers:
+ character(len=StrKIND),pointer:: convection_scheme
+
  integer:: i,k,j
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  if(.not.allocated(cu_act_flag)) allocate(cu_act_flag(ims:ime,jms:jme)       )
  if(.not.allocated(rthcuten_p) ) allocate(rthcuten_p(ims:ime,kms:kme,jms:jme))
@@ -130,7 +140,7 @@
 
  convection_select: select case(convection_scheme)
 
-    case ("cu_grell_freitas")
+    case ("cu_grell_freitas","cu_grell_freitas_wrf390")
        if(.not.allocated(ht_p)           ) allocate(ht_p(ims:ime,jms:jme)               )
        if(.not.allocated(cubot_p)        ) allocate(cubot_p(ims:ime,jms:jme)            )
        if(.not.allocated(cutop_p)        ) allocate(cutop_p(ims:ime,jms:jme)            )
@@ -252,8 +262,18 @@
  end subroutine allocate_convection
 
 !=================================================================================================================
- subroutine deallocate_convection
+ subroutine deallocate_convection(configs)
 !=================================================================================================================
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ character(len=StrKIND),pointer:: convection_scheme
+
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  if(allocated(cu_act_flag)) deallocate(cu_act_flag)
  if(allocated(rthcuten_p) ) deallocate(rthcuten_p )
@@ -265,7 +285,7 @@
 
  convection_select: select case(convection_scheme)
 
-    case ("cu_grell_freitas")
+    case ("cu_grell_freitas","cu_grell_freitas_wrf390")
        if(allocated(ht_p)           ) deallocate(ht_p           )
        if(allocated(cubot_p)        ) deallocate(cubot_p        )
        if(allocated(cutop_p)        ) deallocate(cutop_p        )
@@ -347,6 +367,8 @@
 
 !local pointers:
  logical,pointer:: config_do_restart
+ character(len=StrKIND),pointer:: convection_scheme
+
  integer,pointer:: nCells
  real(kind=RKIND),dimension(:),pointer:: nca
 
@@ -356,7 +378,8 @@
 !-----------------------------------------------------------------------------------------------------------------
 
  call mpas_pool_get_dimension(mesh,'nCells',nCells)
- call mpas_pool_get_config(configs,'config_do_restart',config_do_restart)
+ call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  convection_select: select case(convection_scheme)
 
@@ -401,7 +424,11 @@
 
 !local pointers:
  logical,pointer:: config_do_restart
+ logical,pointer:: gfconv_deepc,gfconv_midlc,gfconv_shalc
+ integer,pointer:: gfconv_closure_deepc,gfconv_closure_midlc,gfconv_closure_shalc
+
  integer,pointer:: gfconv_closure_deep,gfconv_closure_shallow
+ character(len=StrKIND),pointer:: convection_scheme
  real(kind=RKIND),pointer:: len_disp
 
 !variables specific to Kain_Fritsch parameterization:
@@ -417,8 +444,9 @@
 
  call mpas_pool_get_config(configs,'config_gfconv_closure_deep',gfconv_closure_deep)
  call mpas_pool_get_config(configs,'config_gfconv_closure_shallow',gfconv_closure_shallow)
- call mpas_pool_get_config(configs,'config_len_disp',len_disp)
- call mpas_pool_get_config(configs,'config_do_restart',config_do_restart)
+ call mpas_pool_get_config(configs,'config_len_disp'         ,len_disp         )
+ call mpas_pool_get_config(configs,'config_do_restart'       ,config_do_restart)
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
 !initialize instantaneous precipitation, and copy convective tendencies from the dynamics to
 !the physics grid:
@@ -474,6 +502,51 @@
              ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme      , &
              its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte        &
                             )
+
+    case ("cu_grell_freitas_wrf390")
+       write(0,*)
+       write(0,*) '--- enter subroutine cu_grell_freitas_wrf390:'
+       call mpas_pool_get_config(configs,'config_gfconv_deepc',gfconv_deepc)
+       call mpas_pool_get_config(configs,'config_gfconv_midlc',gfconv_midlc)
+       call mpas_pool_get_config(configs,'config_gfconv_shalc',gfconv_shalc)
+       call mpas_pool_get_config(configs,'config_gfconv_closure_deepc',gfconv_closure_deepc)
+       call mpas_pool_get_config(configs,'config_gfconv_closure_midlc',gfconv_closure_midlc)
+       call mpas_pool_get_config(configs,'config_gfconv_closure_shalc',gfconv_closure_shalc)
+       write(0,*) 'gfconv_deepc = ',gfconv_deepc
+       write(0,*) 'gfconv_midlc = ',gfconv_midlc
+       write(0,*) 'gfconv_shalc = ',gfconv_shalc
+       write(0,*) 'gfconv_closure_deepc = ',gfconv_closure_deepc
+       write(0,*) 'gfconv_closure_midlc = ',gfconv_closure_midlc
+       write(0,*) 'gfconv_closure_shalc = ',gfconv_closure_shalc
+
+       call cu_grell_freitas_wrf390( &
+               dt        = dt_dyn               , dx       = dx_p                    , &
+               area      = area_p               , u        = u_p                     , &
+               v         = v_p                  , w        = w_p                     , &
+               t         = t_p                  , q        = qv_p                    , &
+               rho       = rho_p                , p        = pres_hyd_p              , &
+               pi        = pi_p                 , p8w      = pres2_hyd_p             , &
+               dz8w      = dz_p                 , ht       = ht_p                    , &
+               xland     = xland_p              , hfx      = hfx_p                   , &
+               qfx       = qfx_p                , kpbl     = kpbl_p                  , &
+               rthraten  = rthraten_p           , rthften  = rthdynten_p             , &
+               rqvften   = rqvdynten_p          , rqvblten = rqvblten_p              , &
+               rthblten  = rthblten_p           , do_deepc = gfconv_deepc            , &
+               do_midlc  = gfconv_midlc         , do_shalc = gfconv_shalc            , &
+               ichoice   = gfconv_closure_deepc , ichoice_m = gfconv_closure_midlc   , &
+               ichoice_s = gfconv_closure_shalc , xmb_total = xmb_total_p            , &
+               xmb_shalc = xmb_shallow_p        , rthcuten  = rthcuten_p             , &
+               rqvcuten  = rqvcuten_p           , rqccuten  = rqicuten_p             , &
+               rqicuten  = rqicuten_p           , rucuten   = rucuten_p              , &
+               rvcuten   = rvcuten_p            , gdc       = qccu_p                 , &
+               gdc2      = qicu_p               , pratec    = pratec_p               , &
+               raincv    = raincv_p             ,                                      &
+               ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde , &
+               ims = ims , ime = ime , jms = jms , jme = jme , kms = kds , kme = kme , &
+               its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte   &
+                                   )
+       write(0,*) '--- end subroutine cu_grell_freitas_wrf390.'
+       write(0,*)
 
     case ("cu_kain_fritsch")
        if(itimestep == 1) then
@@ -568,7 +641,7 @@
 
 !copy instantaneous and accumulated precipitation, convective tendencies, and "other" arrays
 !specific to convection parameterization back to the dynamics grid:
- call convection_to_MPAS(diag_physics,tend_physics,its,ite)
+ call convection_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 
 !write(0,*) '--- end subroutine driver_convection.'
 !write(0,*)
@@ -590,6 +663,7 @@
  real(kind=RKIND),intent(in):: dt_dyn
 
 !local pointers:
+ character(len=StrKIND),pointer:: convection_scheme
  integer,dimension(:),pointer:: kpbl,k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
  real(kind=RKIND),dimension(:),pointer  :: areaCell,meshDensity
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
@@ -608,6 +682,8 @@
  real(kind=RKIND),pointer:: len_disp
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  call mpas_pool_get_array(diag_physics,'cuprec',cuprec)
  call mpas_pool_get_array(diag_physics,'raincv',raincv)
@@ -632,7 +708,7 @@
 
  convection_select: select case(convection_scheme)
 
-    case ("cu_grell_freitas")
+    case ("cu_grell_freitas","cu_grell_freitas_wrf390")
        call mpas_pool_get_config(configs,'config_len_disp',len_disp)
 
        call mpas_pool_get_array(mesh,'areaCell'   ,areaCell   )
@@ -812,10 +888,11 @@
  end subroutine convection_from_MPAS
 
 !=================================================================================================================
- subroutine convection_to_MPAS(diag_physics,tend_physics,its,ite)
+ subroutine convection_to_MPAS(configs,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
+ type(mpas_pool_type),intent(in):: configs
  integer,intent(in):: its,ite
 
 !inout arguments:
@@ -826,6 +903,7 @@
  integer:: i,k,j
 
 !local pointers:
+ character(len=StrKIND),pointer:: convection_scheme
  integer,dimension(:),pointer:: k22_shallow,kbcon_shallow,ktop_shallow,ktop_deep
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
  real(kind=RKIND),dimension(:),pointer  :: xmb_total,xmb_shallow
@@ -835,6 +913,8 @@
  real(kind=RKIND),dimension(:,:),pointer:: rucuten,rvcuten
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  call mpas_pool_get_array(diag_physics,'cuprec',cuprec)
  call mpas_pool_get_array(diag_physics,'raincv',raincv)
@@ -859,7 +939,7 @@
 
  convection_select: select case(convection_scheme)
 
-    case ("cu_grell_freitas")
+    case ("cu_grell_freitas","cu_grell_freitas_wrf390")
        call mpas_pool_get_array(diag_physics,'cubot'        ,cubot        )
        call mpas_pool_get_array(diag_physics,'cutop'        ,cutop        )
        call mpas_pool_get_array(diag_physics,'xmb_total'    ,xmb_total    )
@@ -936,10 +1016,11 @@
  end subroutine convection_to_MPAS
 
 !=================================================================================================================
- subroutine update_convection_step1(diag_physics,tend_physics,its,ite)
+ subroutine update_convection_step1(configs,diag_physics,tend_physics,its,ite)
 !=================================================================================================================
 
 !input arguments:
+ type(mpas_pool_type),intent(in):: configs
  integer,intent(in):: its,ite
 
 !inout arguments:
@@ -947,6 +1028,7 @@
  type(mpas_pool_type),intent(inout):: tend_physics
 
 !local pointers:
+ character(len=StrKIND),pointer:: convection_scheme
  real(kind=RKIND),dimension(:),pointer  :: nca,cubot,cutop,cuprec,raincv
  real(kind=RKIND),dimension(:,:),pointer:: rthcuten,rqvcuten,rqccuten,rqicuten,rqrcuten,rqscuten
 
@@ -954,6 +1036,8 @@
  integer:: i,k
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_convection_scheme',convection_scheme)
 
  convection_select: select case(convection_scheme)
 

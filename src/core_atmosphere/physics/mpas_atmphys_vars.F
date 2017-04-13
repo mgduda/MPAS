@@ -67,22 +67,44 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2016-10-21.
 ! * moved the declarations of arrays delta_p,wstar_p,uoce_p,and voce_p since they are now used in both modules
 !   module_bl_ysu.F and module_bl_mynn.F.
-!   Laura D. Fowler (laura@ucar.edu) / 20016-10-27.
+!   Laura D. Fowler (laura@ucar.edu) / 2016-10-27.
+! * added the variable opt_thcnd (option to treat thermal conductivity in NoahLSM). added additional options and
+!   arrays to run the Noah LSM scheme from WRF version 3.9.0.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-01-27.
+! * removed the initialization local variable gwdo_scheme. gwdo_scheme is no longer needed and can be replaced
+!   with config_gwdo_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable lsm_scheme. lsm_scheme is no longer needed and can be replaced
+!   with config_lsm_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable sfclayer_scheme. sfclayer_scheme is no longer needed and can be
+!   replaced with config_sfclayer_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable pbl_scheme. pbl_scheme is no longer needed and can be replaced
+!   replaced with config_pbl_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable radt_cld_scheme. radt_cld_scheme is no longer needed and can be
+!   replaced replaced with config_radt_cld_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable radt_lw_scheme. radt_lw_scheme is no longer needed and can be
+!   replaced replaced with config_radt_lw_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable radt_sw_scheme. radt_sw_scheme is no longer needed and can be
+!   replaced replaced with config_radt_sw_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable convection_scheme. convection_scheme is no longer needed and can be
+!   replaced replaced with config_convection_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * removed the initialization local variable microp_scheme. microp_scheme is no longer needed and can be
+!   replaced replaced with config_microp_scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-16.
+! * add variables and arrays needed to the parameterization of seaice in the updated Noah land surface scheme.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-19.
+! * changed the option seaice_albedo_opt from 0 to 2 so that we can initialize the surface albedo over seaice
+!   cells using the surface background albedo (see initialization of sfc_albedo_seaice in subroutine
+!   landuse_init_forMPAS).
+!   Laura D. Fowler (laura@ucar.edu) / 2017-03-02.
 
-
-!=================================================================================================================
-!list of physics parameterizations:
-!=================================================================================================================
-
- character(len=StrKIND),public:: microp_scheme
- character(len=StrKIND),public:: convection_scheme
- character(len=StrKIND),public:: gwdo_scheme
- character(len=StrKIND),public:: lsm_scheme
- character(len=StrKIND),public:: pbl_scheme
- character(len=StrKIND),public:: radt_cld_scheme
- character(len=StrKIND),public:: radt_lw_scheme
- character(len=StrKIND),public:: radt_sw_scheme
- character(len=StrKIND),public:: sfclayer_scheme
 
 !=================================================================================================================
 !wrf-variables:these variables are needed to keep calls to different physics parameterizations
@@ -154,6 +176,7 @@
     qg_p               !graupel mixing ratio                                                [kg/kg]
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
+    nc_p,             &!
     ni_p,             &!
     nr_p               !
 
@@ -325,11 +348,7 @@
  real(kind=RKIND),dimension(:,:),allocatable:: &
     ctopo_p,          &!correction to topography                                                               [-]
     ctopo2_p,         &!correction to topography 2                                                             [-]
-    hpbl_p,           &!PBL height                                                                             [m]
-    delta_p,          &!
-    wstar_p,          &!
-    uoce_p,           &!
-    voce_p             !
+    hpbl_p
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     exch_p             !exchange coefficient                                                                   [-]
@@ -348,14 +367,48 @@
     kzq_p              !
 
 !... MYNN PBL scheme (module_bl_mynn.F):
+ integer,parameter:: spp_pbl       = 0          !generate array with random perturbations (0=off,1=on).
  integer,parameter:: grav_settling = 0
+ integer,parameter:: icloud_bl     = 0          !no coupling of subgrid-scale clouds with radiation.
 
- logical,parameter:: bl_mynn_tkeadvect = .false.!
- integer,parameter:: bl_mynn_tkebudget = 0      !
- integer,parameter:: bl_mynn_cloudpdf  = 0      !
+ logical,parameter:: bl_mynn_tkeadvect = .false.!default off; = .true. do MYNN tke advection.
+ integer,parameter:: bl_mynn_tkebudget = 0      !0, default off; = 1 adds MYNN tke budget terms to output.
+!integer,parameter:: bl_mynn_cloudpdf  = 0      !switch to different cloud PDFs to represent subgrid clouds.
+!                                               != 0: Sommeria and Deardorf (1977),original.
+!                                               != 1: Kuwano et al (2010).
+!                                               != 2: Chaboureau and Bechtold (2002).
+ integer,parameter:: bl_mynn_cloudmix  = 1      !option to activate mixing of qc and qi in MYNN.
+                                                != 0: no mixing of qc and qi.
+                                                != 1: mixing of qc and qi.
+ integer,parameter:: bl_mynn_mixlength = 1      !option to change mixing length formulation in MYNN.
+                                                != 0: Nakanishi and Niino (2009),original.
+                                                != 1: RAP/HRRR (default,including BouLac in free atmosphere),
+                                                != 2: experimental (follows Ito et al., 2015,BLM). Well tested
+                                                !     with the edmf options.
+ integer,parameter:: bl_mynn_mixqt     = 0      != 0: mix moisture species separately.
+                                                != 1: mix total water.
+
+!edmf options:
+!integer,parameter:: bl_mynn_edmf      = 0      !option to activate mass-flux scheme (=0:regular MYNN).
+!                                               != 0: no edmf,regular MYNN.
+!                                               != 1: for StEM.
+!                                               != 2: for TEMF.
+ integer,parameter:: bl_mynn_edmf_mom  = 0      !option to activate momentum transport (bl_mynn_edmf >0).
+                                                != 0: option is turned off.
+                                                != 1: option is turned on.
+ integer,parameter:: bl_mynn_edmf_tke  = 0      !option to activate TKE transport (bl_mynn_edmf >0).
+                                                != 0: option is turned off.
+                                                != 1: option is turned on.
+ integer,parameter:: bl_mynn_edmf_part = 0      !option activate areal partitioning of ed and mf.
+                                                != 0: option is turned off.
+                                                != 1: option is turned on.
 
  real(kind=RKIND),dimension(:,:),allocatable:: &
-    vdfg_p             !
+    delta_p,          &
+    uoce_p,           &!
+    voce_p,           &!
+    vdfg_p,           &!
+    wstar_p            !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
     dqke_p,           &!
@@ -368,7 +421,15 @@
     tkepbl_p           !
 
  real(kind=RKIND),dimension(:,:,:),allocatable:: &
-    rniblten_p         !
+    rniblten_p,       &!
+    edmfa_p,          &!
+    edmfw_p,          &!
+    edmfqt_p,         &!
+    edmfthl_p,        &!
+    edmfent_p,        &!
+    edmfqc_p,         &!
+    qcbl_p,           &!
+    cldfrabl_p         !
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of gravity wave drag over orography:
@@ -453,6 +514,34 @@
     tsq_p,            &!liquid water potential temperature variance                                          [K^2]
     sh3d_p,           &!stability function for heat                                                            [-]
     elpbl_p            !length scale from PBL                                                                  [m]
+
+!=================================================================================================================
+!... variables and arrays related to parameterization of seaice:
+!=================================================================================================================
+
+ integer,parameter:: &
+    seaice_albedo_opt    = 2           !option to set albedo over sea ice.
+                                       !0 = seaice albedo is constant set in seaice_albedo_default.
+                                       !1 = seaice albedo is f(Tair,Tskin,Tsnow), following Mill (2011).
+                                       !2 = seaice albedo is read in from input variable albsi.
+ integer,parameter:: &
+    seaice_thickness_opt = 0           !option for treating seaice thickness.
+                                       !0 = seaice thickness is constant set in seaice_thickness_default.
+                                       !1 = seaice_thickness is read in from input variable icedepth.
+ integer,parameter:: &
+    seaice_snowdepth_opt = 0           !option for treating snow depth on sea ice.
+                                       !0=snow depth is bounded by seaice_snowdepth_min and seaice_snowdepth_max.
+
+ real(kind=RKIND),parameter:: &
+    seaice_albedo_default     = 0.65 ,&!default value of seaice albedo for seaice_albedo_opt=0.
+    seaice_thickness_default  = 3.0,  &!default value of seaice thickness for seaice_thickness_opt=0
+    seaice_snowdepth_max      = 1.e10,&!maximum allowed accumulation of snow (m) on sea ice.
+    seaice_snowdepth_min      = 0.001  !minimum snow depth (m) on sea ice.
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    albsi_p,          &!surface albedo over seaice                                                             [-]
+    snowsi_p,         &!snow depth over seaice                                                                 [m]
+    icedepth_p         !seaice thickness                                                                       [m]
 
 !=================================================================================================================
 !... variables and arrays related to parameterization of short-wave radiation:
@@ -583,6 +672,13 @@
     ua_phys=.false.    !option to activate UA Noah changes: a different snow-cover physics in the land-surface
                        !scheme. That option is not currently implemented in MPAS.
 
+ integer,parameter:: &
+    opt_thcnd = 1      !option to treat thermal conductivity in NoahLSM (new option implemented in WRF 3.8.0).
+                       != 1, original (default).
+                       != 2, McCumber and Pielke for silt loam and sandy loam.
+ integer,parameter:: &
+    fasdas = 0         !for WRF surface data assimilation system (not used in MPAS).
+
  integer,public:: &
     sf_surface_physics !used to define the land surface scheme by a number instead of name. It
                        !is only needed in module_ra_rrtmg_sw.F to define the spectral surface
@@ -634,6 +730,29 @@
     alswvisdif_p,     &!diffuse-beam surface albedo in visible spectrum                                        [-]
     alswnirdir_p,     &!direct-beam surface albedo in near-IR spectrum                                         [-]
     alswnirdif_p       !diffuse-beam surface albedo in near-IR spectrum                                        [-]
+
+!.. arrays needed to run UA Noah changes (different snow-cover physics):
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    flxsnow_p,        &!energy added to sensible heat flux when ua_phys=true                               [W m-2]
+    fvbsnow_p,        &!fraction of vegetation with snow beneath when ua_phys=true                             [-]
+    fbursnow_p,       &!fraction of canopy buried when ua_phys=true                                            [-]
+    fgsnsnow_p         !fraction of ground snow cover when ua_phys=true                                        [-]
+
+!.. arrays needed in the argument list in the call to the Noah LSM urban parameterization: note that these arrays
+!.. are initialized to zero since we do not run an urban model:
+ integer,dimension(:,:),allocatable:: &
+    utype_urb_p        !urban type                                                                             [-]
+
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    frc_urb_p,        &!urban fraction                                                                         [-]
+    ust_urb_p          !urban u* in similarity theory                                                        [m/s]
+
+!.. arrays needed in the argument list in the call to the Noah LSM hydrology model: note that these arrays are
+!.. initialized to zero since we do not run a hydrology model:
+ real(kind=RKIND),dimension(:,:),allocatable:: &
+    infxsrt_p,        &!timestep infiltration excess                                                          [mm]
+    sfcheadrt_p,      &!surface water detph                                                                   [mm]
+    soldrain_p         !soil column drainage                                                                  [mm]
 
 !=================================================================================================================
 !.. variables and arrays related to surface characteristics:

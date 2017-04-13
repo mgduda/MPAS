@@ -8,7 +8,6 @@
 !=================================================================================================================
  module mpas_atmphys_interface
  use mpas_kind_types
- use mpas_derived_types
  use mpas_pool_routines
 
  use mpas_atmphys_constants
@@ -65,14 +64,27 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2016-04-11.
 ! * corrected the calculation of the surface pressure, mainly extrapolation of the air density to the surface.
 !   Laura D. Fowler (laura@ucar.edu) / 2016-04-25.
+! * added the initialization of local variables needed in the parameterization of the MYNN surface layer scheme
+!   and planetary boundary layer scheme from WRF 3.9.0.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-02-08.
 
 
  contains
 
 
 !=================================================================================================================
- subroutine allocate_forall_physics
+ subroutine allocate_forall_physics(configs)
 !=================================================================================================================
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ character(len=StrKIND),pointer:: pbl_scheme
+
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
  if(.not.allocated(psfc_p) ) allocate(psfc_p(ims:ime,jms:jme)         )
  if(.not.allocated(ptop_p) ) allocate(ptop_p(ims:ime,jms:jme)         )
@@ -106,7 +118,8 @@
  if(.not.allocated(qg_p)   ) allocate(qg_p(ims:ime,kms:kme,jms:jme)   )
 
  pbl_select: select case (trim(pbl_scheme))
-    case("bl_mynn")
+    case("bl_mynn","bl_mynn_wrf390")
+       if(.not.allocated(nc_p)) allocate(nc_p(ims:ime,kms:kme,jms:jme))
        if(.not.allocated(ni_p)) allocate(ni_p(ims:ime,kms:kme,jms:jme))
 
     case default
@@ -125,8 +138,18 @@
  end subroutine allocate_forall_physics
 
 !=================================================================================================================
- subroutine deallocate_forall_physics
+ subroutine deallocate_forall_physics(configs)
 !=================================================================================================================
+
+!input arguments:
+ type(mpas_pool_type),intent(in):: configs
+
+!local pointers:
+ character(len=StrKIND),pointer:: pbl_scheme
+
+!-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
  if(allocated(psfc_p)  ) deallocate(psfc_p  )
  if(allocated(ptop_p)  ) deallocate(ptop_p  )
@@ -160,7 +183,8 @@
  if(allocated(qg_p)    ) deallocate(qg_p    )
 
  pbl_select: select case (trim(pbl_scheme))
-    case("bl_mynn")
+    case("bl_mynn","bl_mynn_wrf390")
+       if(allocated(nc_p)) deallocate(nc_p)
        if(allocated(ni_p)) deallocate(ni_p)
 
     case default
@@ -178,10 +202,11 @@
  end subroutine deallocate_forall_physics
 
 !=================================================================================================================
- subroutine MPAS_to_physics(mesh,state,time_lev,diag,diag_physics,its,ite)
+ subroutine MPAS_to_physics(configs,mesh,state,time_lev,diag,diag_physics,its,ite)
 !=================================================================================================================
 
 !input variables:
+ type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag
@@ -193,8 +218,10 @@
  type(mpas_pool_type),intent(inout):: diag_physics
 
 !local pointers:
+ character(len=StrKIND),pointer:: pbl_scheme
+
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
- integer,pointer:: index_ni
+ integer,pointer:: index_nc,index_ni
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
  real(kind=RKIND),dimension(:),pointer    :: fzm,fzp,rdzw
@@ -203,7 +230,7 @@
  real(kind=RKIND),dimension(:,:),pointer  :: zz,exner,pressure_b,rtheta_p,rtheta_b
  real(kind=RKIND),dimension(:,:),pointer  :: rho_zz,theta_m,pressure_p,u,v,w
  real(kind=RKIND),dimension(:,:),pointer  :: qv,qc,qr,qi,qs,qg
- real(kind=RKIND),dimension(:,:),pointer  :: ni
+ real(kind=RKIND),dimension(:,:),pointer  :: nc,ni
  real(kind=RKIND),dimension(:,:,:),pointer:: scalars
 
 !local variables:
@@ -224,6 +251,8 @@
 !write(0,*) 'kts=',kts,' kte=',kte
 
 !initialization:
+ call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
+
  call mpas_pool_get_array(mesh,'latCell',latCell)
  call mpas_pool_get_array(mesh,'lonCell',lonCell)
  call mpas_pool_get_array(mesh,'fzm'    ,fzm    )
@@ -295,13 +324,16 @@
  enddo
 
  pbl_select: select case (trim(pbl_scheme))
-    case("bl_mynn")
+    case("bl_mynn","bl_mynn_wrf390")
+       call mpas_pool_get_dimension(state,'index_nc',index_nc)
        call mpas_pool_get_dimension(state,'index_ni',index_ni)
+       nc => scalars(index_nc,:,:)
        ni => scalars(index_ni,:,:)
 
        do j = jts,jte
        do k = kts,kte
        do i = its,ite
+          nc_p(i,k,j) = max(0.,nc(k,i))
           ni_p(i,k,j) = max(0.,ni(k,i))
        enddo
        enddo
@@ -446,10 +478,11 @@
  end subroutine MPAS_to_physics
 
 !=================================================================================================================
- subroutine microphysics_from_MPAS(mesh,state,time_lev,diag,diag_physics,its,ite)
+ subroutine microphysics_from_MPAS(configs,mesh,state,time_lev,diag,diag_physics,its,ite)
 !=================================================================================================================
 
 !input variables:
+ type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
  type(mpas_pool_type),intent(in):: state
  type(mpas_pool_type),intent(in):: diag
@@ -459,6 +492,7 @@
  integer:: time_lev
 
 !local pointers:
+ character(len=StrKIND),pointer:: microp_scheme
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_ni,index_nr
  real(kind=RKIND),dimension(:),pointer    :: nt_c,mu_c
@@ -475,6 +509,8 @@
  integer:: i,k,j
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
 
  call mpas_pool_get_array(mesh,'zgrid',zgrid)
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
@@ -585,10 +621,11 @@
  end subroutine microphysics_from_MPAS
 
 !=================================================================================================================
- subroutine microphysics_to_MPAS(mesh,state,time_lev,diag,diag_physics,tend,itimestep,its,ite)
+ subroutine microphysics_to_MPAS(configs,mesh,state,time_lev,diag,diag_physics,tend,itimestep,its,ite)
 !=================================================================================================================
 
 !input variables:
+ type(mpas_pool_type),intent(in):: configs
  type(mpas_pool_type),intent(in):: mesh
 
  integer,intent(in):: itimestep,time_lev
@@ -601,6 +638,7 @@
  type(mpas_pool_type),intent(inout):: diag_physics
 
 !local pointers:
+ character(len=StrKIND),pointer:: microp_scheme
  integer,pointer:: index_qv,index_qc,index_qr,index_qi,index_qs,index_qg
  integer,pointer:: index_ni,index_nr
  real(kind=RKIND),dimension(:),pointer    :: surface_pressure,tend_sfc_pressure
@@ -620,6 +658,8 @@
  real(kind=RKIND):: rho1,rho2,tem1,tem2
 
 !-----------------------------------------------------------------------------------------------------------------
+
+ call mpas_pool_get_config(configs,'config_microp_scheme',microp_scheme)
 
  call mpas_pool_get_array(mesh,'zz'   ,zz   )
  call mpas_pool_get_array(mesh,'zgrid',zgrid)

@@ -15,7 +15,6 @@
  module mpas_atmphys_lsm_noahinit
  use mpas_dmpar
  use mpas_kind_types
- use mpas_derived_types
  use mpas_pool_routines
 
  use mpas_atmphys_constants
@@ -43,6 +42,10 @@
 !   Laura D. Fowler (laura@ucar.edu) / 2014-03-21.
 ! * added "use mpas_kind_types" at the top of the module.
 !   Laura D. Fowler (laura@ucar.edu) / 2014-09-18.
+! * in subroutine soil_veg_gen_parm, modified reading the updated file VEGPARM.TBL so that we can update the NOAH
+!   land surface scheme.added the categories low_density_residential,high_density_residential,and high_intensity_
+!   industrial.added the variables ztopvtbl and zbotvtbl.
+!   Laura D. Fowler (laura@ucar.edu) / 2017-01-25.
 
 
  contains
@@ -211,7 +214,7 @@
  character(len=*),intent(inout):: mminlu, mminsl
 
 !local variables:
- character*128:: mess , message
+ character(len=128):: mess,message
 
  integer,parameter:: open_ok = 0
  integer:: lumatch,iindex,lc,num_slope
@@ -264,7 +267,7 @@
           lumatch=1
        else
           call physics_message('    skipping over lutype = ' // trim ( lutype ))
-          do lc = 1, lucats+12
+          do lc = 1, lucats+20
              read(16,*)
           enddo
        endif
@@ -284,16 +287,19 @@
        size(z0maxtbl)     < lucats .or. &
        size(albedomintbl) < lucats .or. &
        size(albedomaxtbl) < lucats .or. &
+       size(ztopvtbl)     < lucats .or. &
+       size(zbotvtbl)     < lucats .or. &
        size(emissmintbl ) < lucats .or. &
        size(emissmaxtbl ) < lucats) then
-!      call wrf_error_fatal('table sizes too small for value of lucats in module_sf_noahdrv.f')
+       call physics_error_fatal('table sizes too small for value of lucats in module_sf_noahdrv.f')
     endif
 
     if(lutype.eq.mminlu)then
        do lc = 1, lucats
-          read(16,*) iindex,shdtbl(lc),nrotbl(lc),rstbl(lc),rgltbl(lc),hstbl(lc),snuptbl(lc), &
-                     maxalb(lc),laimintbl(lc),laimaxtbl(lc),emissmintbl(lc),emissmaxtbl(lc),  &
-                     albedomintbl(lc),albedomaxtbl(lc),z0mintbl(lc),z0maxtbl(lc)
+          read(16,*) iindex,shdtbl(lc),nrotbl(lc),rstbl(lc),rgltbl(lc),hstbl(lc),snuptbl(lc),  &
+                     maxalb(lc),laimintbl(lc),laimaxtbl(lc),emissmintbl(lc),emissmaxtbl(lc),   &
+                     albedomintbl(lc),albedomaxtbl(lc),z0mintbl(lc),z0maxtbl(lc),ztopvtbl(lc), &
+                     zbotvtbl(lc)
        enddo
        read (16,*)
        read (16,*)topt_data
@@ -307,6 +313,14 @@
        read (16,*)bare
        read (16,*)
        read (16,*)natural
+       read (16,*)
+       read (16,*)
+       read (16,*)
+       read (16,*)low_density_residential
+       read (16,*)
+       read (16,*)high_density_residential
+       read (16,*)
+       read (16,*)high_intensity_industrial
     endif
 
     2002 continue
@@ -335,6 +349,8 @@
  DM_BCAST_REALS(emissmaxtbl)
  DM_BCAST_REALS(albedomintbl)
  DM_BCAST_REALS(albedomaxtbl)
+ DM_BCAST_REALS(ztopvtbl)
+ DM_BCAST_REALS(zbotvtbl)
  DM_BCAST_REALS(maxalb)
  DM_BCAST_REAL(topt_data)
  DM_BCAST_REAL(cmcmax_data)
@@ -342,6 +358,9 @@
  DM_BCAST_REAL(rsmax_data)
  DM_BCAST_INTEGER(bare)
  DM_BCAST_INTEGER(natural)
+ DM_BCAST_INTEGER(low_density_residential)
+ DM_BCAST_INTEGER(high_density_residential)
+ DM_BCAST_INTEGER(high_intensity_industrial)
 
 !write(0,*) ' LUTYPE  = ',trim(lutype)
 !write(0,*) ' LUCATS  = ',lucats
@@ -354,14 +373,18 @@
 !write(0,*) ' RSMAX_DATA  = ',rsmax_data
 !write(0,*) ' BARE        = ',bare
 !write(0,*) ' NATURAL     = ',natural
+!write(0,*) ' LOW_DENSITY_RESIDENTIAL   = ',low_density_residential
+!write(0,*) ' HIGH_DENSITY_RESIDENTIAL  = ',high_density_residential
+!write(0,*) ' HIGH_INTENSITY_INDUSTRIAL = ',high_intensity_industrial
 
 !write(0,*)
 !do lc = 1, lucats
 !   write(0,101) lc,shdtbl(lc),float(nrotbl(lc)),rstbl(lc),rgltbl(lc),hstbl(lc),snuptbl(lc), &
 !                maxalb(lc),laimintbl(lc),laimaxtbl(lc),emissmintbl(lc),emissmaxtbl(lc),     &
-!                albedomintbl(lc),albedomaxtbl(lc),z0mintbl(lc),z0maxtbl(lc)
+!                albedomintbl(lc),albedomaxtbl(lc),z0mintbl(lc),z0maxtbl(lc),ztopvtbl(lc),   &
+!                zbotvtbl(lc)
 !enddo
-!101 format(i4,15(3x,f9.5))
+!101 format(i4,20(3x,f9.5))
  write(0,*) '    end read VEGPARM.TBL'
 
 !read in soil properties from soilparm.tbl:

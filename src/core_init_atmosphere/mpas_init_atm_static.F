@@ -45,8 +45,7 @@
  character(len=StrKIND+1) :: geog_data_path      ! same as config_geog_data_path, but guaranteed to have a trailing slash
  character(len=StrKIND+1) :: geog_sub_path       ! subdirectory names in config_geog_data_path, with trailing slash
 
- integer:: isice_lu,iswater_lu,ismax_lu
-
+ integer:: ismax_lu
  integer:: nx,ny,nz
  integer:: endian,isigned,istatus,wordsize
  integer:: i,j,k
@@ -64,6 +63,7 @@
  real(kind=RKIND),dimension(:,:),allocatable  :: maxsnowalb
  real(kind=RKIND),dimension(:,:,:),allocatable:: vegfra
 
+ integer, pointer :: isice_lu,iswater_lu
  integer, pointer :: nCells, nEdges, nVertices, maxEdges
  logical, pointer :: on_a_sphere
  real (kind=RKIND), pointer :: sphere_radius
@@ -142,6 +142,8 @@
  call mpas_pool_get_array(mesh, 'ter', ter)
  call mpas_pool_get_array(mesh, 'lu_index', lu_index)
  call mpas_pool_get_array(mesh, 'mminlu', mminlu)
+ call mpas_pool_get_array(mesh, 'isice_lu', isice_lu)
+ call mpas_pool_get_array(mesh, 'iswater_lu', iswater_lu)
  call mpas_pool_get_array(mesh, 'soilcat_top', soilcat_top)
  call mpas_pool_get_array(mesh, 'soilcat_bot', soilcat_bot)
  call mpas_pool_get_array(mesh, 'landmask', landmask)
@@ -961,10 +963,18 @@ if (rarray(i,j,1) == 0) cycle
     !... uniform 10242 mesh:
     if(mindcEdge .ge. 200000._RKIND .and. maxdcEdge .lt. 260000._RKIND) then
        dir_gwdo = 'orogwd_2deg'
+    !... uniform 40962 mesh:
     elseif(mindcEdge .ge. 90000._RKIND .and. maxdcEdge .lt. 150000_RKIND) then
        dir_gwdo = 'orogwd_1deg'
+    !... uniform 163842 mesh:
     elseif(mindcEdge .ge. 40000._RKIND .and. maxdcEdge .lt. 70000._RKIND) then
        dir_gwdo = 'orogwd_30m'
+    !... uniform 655362 mesh:
+    elseif(mindcEdge .ge. 20000._RKIND .and. maxdcEdge .lt. 40000._RKIND) then
+       dir_gwdo = 'orogwd_20m'
+    !... uniform 2621442 mesh:
+    elseif(mindcEdge .ge. 10000._RKIND .and. maxdcEdge .lt. 20000._RKIND) then
+       dir_gwdo = 'orogwd_10m'
     else
        write(0,*)
 !      write(mess,*) 'GWDO: Interpolation not available. The initialization will abort'
