@@ -1,4 +1,4 @@
-MODEL_FORMULATION = 
+MODEL_FORMULATION = -DCONST_INNER_DIMS -DCONST_NVERTLEVELS=55 -DCONST_MAXEDGES=7 -DCONST_MAXEDGES2=14 -DCONST_NUM_SCALARS=9
 
 
 dummy:
@@ -144,10 +144,10 @@ ifort:
 	"CC_SERIAL = icc" \
 	"CXX_SERIAL = icpc" \
 	"FFLAGS_PROMOTION = -real-size 64" \
-	"FFLAGS_OPT = -O3 -convert big_endian -FR" \
-	"CFLAGS_OPT = -O3" \
-	"CXXFLAGS_OPT = -O3" \
-	"LDFLAGS_OPT = -O3" \
+	"FFLAGS_OPT = -xHost -align array64byte -O3 -convert big_endian -FR" \
+	"CFLAGS_OPT = -xHost -O3" \
+	"CXXFLAGS_OPT = -xHost -O3" \
+	"LDFLAGS_OPT = -xHost -align array64byte -O3" \
 	"FFLAGS_DEBUG = -g -convert big_endian -FR -CU -CB -check all -fpe0 -traceback" \
 	"CFLAGS_DEBUG = -g -traceback" \
 	"CXXFLAGS_DEBUG = -g -traceback" \
