@@ -24,7 +24,7 @@ module isobaric_diagnostics
 
     private
 
-    logical :: need_mslp, &
+    logical :: need_mslp, need_height_1000, &
                need_relhum_200, need_relhum_250, need_relhum_500, need_relhum_700, need_relhum_850, need_relhum_925, &
                need_dewpoint_200, need_dewpoint_250, need_dewpoint_500, need_dewpoint_700, need_dewpoint_850, need_dewpoint_925, &
                need_temp_200, need_temp_250, need_temp_500, need_temp_700, need_temp_850, need_temp_925, &
@@ -174,6 +174,8 @@ module isobaric_diagnostics
         need_height_925 = MPAS_field_will_be_written('height_925hPa')
         need_height = need_height .or. need_height_925
         need_any_diags = need_any_diags .or. need_height_925
+        need_height_1000 = MPAS_field_will_be_written('height_1000hPa')
+        need_any_diags = need_any_diags .or. need_height_1000
         need_uzonal_200 = MPAS_field_will_be_written('uzonal_200hPa')
         need_uzonal = need_uzonal .or. need_uzonal_200
         need_any_diags = need_any_diags .or. need_uzonal_200
@@ -357,6 +359,7 @@ module isobaric_diagnostics
        !--------------------
        
         real (kind=RKIND), dimension(:), pointer :: mslp
+        real (kind=RKIND), dimension(:), pointer :: height_1000hPa
        
         real (kind=RKIND), dimension(:,:), allocatable :: pressure, pressureCp1, pressure2, pressure_v, temperature
         real (kind=RKIND), dimension(:,:), allocatable :: dewpoint
@@ -467,6 +470,7 @@ module isobaric_diagnostics
         call mpas_pool_get_array(diag, 'vorticity_925hPa', vorticity_925hPa)
        
         call mpas_pool_get_array(diag, 'mslp', mslp)
+        call mpas_pool_get_array(diag, 'height_1000hPa', height_1000hPa)
        
         if(.not.allocated(pressure)    ) allocate(pressure(nVertLevels,nCells)      )
         if(.not.allocated(pressureCp1) ) allocate(pressureCp1(nVertLevels,nCells+1) )
@@ -553,7 +557,7 @@ module isobaric_diagnostics
            enddo
         enddo
        
-        if (NEED_TEMP .or. NEED_RELHUM .or. NEED_DEWPOINT .or. need_mslp) then
+        if (NEED_TEMP .or. NEED_RELHUM .or. NEED_DEWPOINT .or. need_mslp .or. need_height_1000) then
            !calculation of temperature at cell centers:
             do iCell = 1,nCells
             do k = 1,nVertLevels
@@ -787,9 +791,9 @@ module isobaric_diagnostics
         if(allocated(pressureCp1) ) deallocate(pressureCp1 )
         if(allocated(pressure_v)  ) deallocate(pressure_v  )
        
-        if (need_mslp) then
-            !... compute SLP (requires temp, height, pressure, qvapor)
-             call compute_slp(nCells, nVertLevels, num_scalars, temperature, height, pressure, index_qv, scalars, mslp)
+        if (need_mslp .or. need_height_1000) then
+            !... compute SLP (requires temp, height, pressure, qvapor )
+             call compute_slp(nCells, nVertLevels, num_scalars, temperature, height, pressure, index_qv, scalars, mslp, height_1000hPa)
              mslp(:) = mslp(:) * 100.0   ! Convert from hPa to Pa
             !... alternative way
             !do iCell = 1, nCells
@@ -990,7 +994,7 @@ module isobaric_diagnostics
     end subroutine interp_tofixed_pressure
    
 
-    subroutine compute_slp(ncol,nlev_in,nscalars,t,height,p,index_qv,scalars,slp)
+    subroutine compute_slp(ncol,nlev_in,nscalars,t,height,p,index_qv,scalars,slp,z1000)
    
        implicit none
    
@@ -1007,7 +1011,7 @@ module isobaric_diagnostics
        real(kind=RKIND), intent(in), dimension(nscalars,nlev_in,ncol) :: scalars
       
       !output arguments:
-       real(kind=RKIND), intent(out), dimension(ncol) :: slp
+       real(kind=RKIND), intent(out), dimension(ncol) :: slp, z1000
       
       !local variables:
        integer :: icol, k, kcount
@@ -1026,6 +1030,7 @@ module isobaric_diagnostics
        real(kind=RKIND), dimension(:), allocatable :: t_surf, t_msl
        real(kind=RKIND) :: plo , phi , tlo, thi , zlo , zhi
        real(kind=RKIND) :: p_at_pconst , t_at_pconst , z_at_pconst, z_half_lowest
+       real(kind=RKIND) :: tv1, tavg, pavg, rhoavg, rrhog, ptmp
       
        logical :: l1, l2, l3, found
       
@@ -1033,69 +1038,83 @@ module isobaric_diagnostics
       ! level to extrapolate a surface pressure and temperature, which is supposed
       ! to reduce the effect of the diurnal heating cycle in the pressure field.
       
-       if (.not.allocated(level))  allocate(level(ncol))
+!      if (.not.allocated(level))  allocate(level(ncol))
        if (.not.allocated(t_surf)) allocate(t_surf(ncol))
        if (.not.allocated(t_msl))  allocate(t_msl(ncol))
+
+!      do icol = 1 , ncol
+!         level(icol) = -1
+!     
+!         k = 1
+!         found = .false.
+!         do while ( (.not. found) .and. (k.le.nlev_in))
+!               if ( p(k,icol) .lt. p(1,icol)-pconst ) then
+!                  level(icol) = k
+!                  found = .true.
+!               end if
+!               k = k+1
+!         end do
+!     
+!         if ( level(icol) .eq. -1 ) then
+!            write(0,*) 'Troubles finding level ', pconst,' above ground.'
+!            write(0,*) 'Problems first occur at (',icol,')'
+!            write(0,*) 'Surface pressure = ',p(1,icol),' hPa.'
+!            write(0,*) '*** MSLP field will not be computed'
+!            slp(:) = 0.0
+!            return
+!         end if
       
-       do icol = 1 , ncol
-          level(icol) = -1
-      
-          k = 1
-          found = .false.
-          do while ( (.not. found) .and. (k.le.nlev_in))
-                if ( p(k,icol) .lt. p(1,icol)-pconst ) then
-                   level(icol) = k
-                   found = .true.
-                end if
-                k = k+1
-          end do
-      
-          if ( level(icol) .eq. -1 ) then
-             write(0,*) 'Troubles finding level ', pconst,' above ground.'
-             write(0,*) 'Problems first occur at (',icol,')'
-             write(0,*) 'Surface pressure = ',p(1,icol),' hPa.'
-             write(0,*) '*** MSLP field will not be computed'
-             slp(:) = 0.0
-             return
-          end if
-      
-       end do
+!      end do
       
       ! Get temperature PCONST hPa above surface.  Use this to extrapolate
       ! the temperature at the surface and down to sea level.
       
        do icol = 1 , ncol
       
-          klo = max ( level(icol) - 1 , 1      )
-          khi = min ( klo + 1        , nlev_in - 1 )
+!         klo = max ( level(icol) - 1 , 1      )
+!         khi = min ( klo + 1        , nlev_in - 1 )
       
-          if ( klo .eq. khi ) then
-             write(0,*) 'Trapping levels are weird.'
-             write(0,*) 'icol = ',icol
-             write(0,*) 'klo = ',klo,', khi = ',khi, ': and they should not be equal.'
-             write(0,*) '*** MSLP field will not be computed'
-             slp(:) = 0.0
-             return
-          end if
+!         if ( klo .eq. khi ) then
+!            write(0,*) 'Trapping levels are weird.'
+!            write(0,*) 'icol = ',icol
+!            write(0,*) 'klo = ',klo,', khi = ',khi, ': and they should not be equal.'
+!            write(0,*) '*** MSLP field will not be computed'
+!            slp(:) = 0.0
+!            return
+!         end if
       
-          plo = p(klo,icol)
-          phi = p(khi,icol)
-          tlo = t(klo,icol) * (1. + 0.608 * scalars(index_qv,klo,icol))
-          thi = t(khi,icol) * (1. + 0.608 * scalars(index_qv,khi,icol))
-          zlo = 0.5*(height(klo,icol)+height(klo+1,icol))
-          zhi = 0.5*(height(khi,icol)+height(khi+1,icol))
+!         plo = p(klo,icol)
+!         phi = p(khi,icol)
+!         tlo = t(klo,icol) * (1. + 0.608 * scalars(index_qv,klo,icol))
+!         thi = t(khi,icol) * (1. + 0.608 * scalars(index_qv,khi,icol))
+!         zlo = 0.5*(height(klo,icol)+height(klo+1,icol))
+!         zhi = 0.5*(height(khi,icol)+height(khi+1,icol))
       
-          p_at_pconst = p(1,icol) - pconst
-          t_at_pconst = thi-(thi-tlo)*log(p_at_pconst/phi)*log(plo/phi)
-          z_at_pconst = zhi-(zhi-zlo)*log(p_at_pconst/phi)*log(plo/phi)
-      
-          t_surf(icol) = t_at_pconst*(p(1,icol)/p_at_pconst)**(gamma*rr/grav)
-          t_msl(icol) = t_at_pconst+gamma*z_at_pconst
-      !   if (icol.eq.500) then
-      !      write(0,*) plo,phi,tlo,thi,zlo,zhi,p_at_pconst,t_at_pconst,z_at_pconst
-      !      write(0,*) t_surf(icol),t_msl(icol),level(icol),klo,khi
-      !      write(0,*) height(klo,icol),height(khi,icol),height(khi+1,icol)
-      !   endif
+!         p_at_pconst = p(1,icol) - pconst
+!         t_at_pconst = thi-(thi-tlo)*log(p_at_pconst/phi)*log(plo/phi)
+! wrong   z_at_pconst = zhi-(zhi-zlo)*log(p_at_pconst/phi)*log(plo/phi)
+! ww
+!         z_at_pconst = (p_at_pconst-phi)*(zlo-zhi)/(plo-phi) + zhi
+!         t_surf(icol) = t_at_pconst*(p(1,icol)/p_at_pconst)**(gamma*rr/grav)
+!         t_msl(icol) = t_at_pconst+gamma*z_at_pconst
+
+! adapting from UPP/NGMSLP
+! virtual temp tv at first model level
+          tv1 = t(1,icol)*(1. + 0.608*scalars(index_qv,1,icol))
+! compute tv at ground and sea level
+          z_half_lowest=0.5*(height(1,icol)+height(2,icol))
+          t_surf(icol) = tv1 + (z_half_lowest-height(1,icol))*gamma
+          t_msl(icol)  = tv1 + z_half_lowest*gamma
+
+!         if (icol.eq.54.or.icol.eq.384.or.icol.eq.391) then
+!            write(0,*) '*** MSLP field is computed'
+!            write(0,*) icol,klo,khi,level(icol)
+!            write(0,*) plo,phi,tlo,thi,zlo,zhi
+!            write(0,*) t_surf(icol),t_msl(icol),p_at_pconst,t_at_pconst,z_at_pconst1,z_at_pconst
+!            write(0,*) height(klo,icol),height(khi,icol),height(khi+1,icol)
+!            write(0,*) icol,tv1,t_surf(icol),t_msl(icol),t(1,icol),scalars(index_qv,1,icol)
+!            write(0,*) icol,height(1,icol),height(2,icol),z_half_lowest
+!         endif
       
        end do
       
@@ -1120,11 +1139,22 @@ module isobaric_diagnostics
       
        do icol = 1 , ncol
           z_half_lowest=0.5*(height(1,icol)+height(2,icol))
-          slp(icol) = p(1,icol) * exp((2.*grav*z_half_lowest)/ &
-                                    (rr*(t_msl(icol)+t_surf(icol))))
+          tavg         =0.5*(t_msl(icol)+t_surf(icol))
+!         slp(icol) = p(1,icol) * exp((2.*grav*z_half_lowest)/ &
+!                                   (rr*(t_msl(icol)+t_surf(icol))))
+          slp(icol) = p(1,icol) * exp((grav*z_half_lowest)/(rr*tavg))
+!         if (icol.eq.54.or.icol.eq.384.or.icol.eq.391) then
+!            write(0,*) icol,p(1,icol),slp(icol)
+!         endif
+       ! estimate 1000 mb height
+          ptmp   = 0.5*(log(p(1,icol))+log(slp(icol)))
+          pavg = exp(ptmp)
+          rhoavg = pavg/(rr*tavg)
+          rrhog  = 1./(rhoavg*grav)
+          z1000(icol) = (slp(icol)-1000.)*rrhog
        end do
       
-       if (allocated(level))  deallocate(level)
+!      if (allocated(level))  deallocate(level)
        if (allocated(t_surf)) deallocate(t_surf)
        if (allocated(t_msl))  deallocate(t_msl)
    

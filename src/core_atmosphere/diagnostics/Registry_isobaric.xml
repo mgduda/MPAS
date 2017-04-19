@@ -88,6 +88,9 @@
         <var name="height_925hPa" type="real" dimensions="nCells Time" units="m"
              description="Geometric height interpolated to 925 hPa"/>
 
+        <var name="height_1000hPa" type="real" dimensions="nCells Time" units="m"
+             description="Geometric height interpolated/extrapolated to 1000 hPa"/>
+
         <var name="uzonal_200hPa" type="real" dimensions="nCells Time" units="m s^{-1}"
              description="Reconstructed zonal wind at cell centers, vertically interpolated to 200 hPa"/>
 
