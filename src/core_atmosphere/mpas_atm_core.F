@@ -458,6 +458,7 @@ module atm_core
       use mpas_derived_types, only : MPAS_STREAM_LATEST_BEFORE, MPAS_STREAM_INPUT, MPAS_STREAM_INPUT_OUTPUT
       use mpas_timer
       use mpas_atm_diagnostics_manager, only : mpas_atm_diag_update, mpas_atm_diag_compute, mpas_atm_diag_reset
+      use mpas_sort, only : mpas_quicksort
    
       implicit none
    
@@ -486,6 +487,16 @@ module atm_core
       real (kind=R8KIND) :: diag_start_time, diag_stop_time
       real (kind=R8KIND) :: input_start_time, input_stop_time
       real (kind=R8KIND) :: output_start_time, output_stop_time
+
+      ! For self monitoring
+      real (kind=RKIND), pointer :: config_max_median_time
+      integer, pointer :: config_median_sample_size
+      real (kind=R8KIND), dimension(:), allocatable :: integration_times
+      real (kind=RKIND), dimension(:), allocatable :: integration_times_sorted
+      integer :: times_index = 0
+      logical :: have_enough_times = .false.
+      character (len=StrKIND) :: slowmsg
+
       
       ierr = 0
       
@@ -550,6 +561,11 @@ module atm_core
       call mpas_pool_get_subpool(block_ptr % structs, 'diag', diag)
       call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
 
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_max_median_time', config_max_median_time)
+      call mpas_pool_get_config(domain % blocklist % configs, 'config_median_sample_size', config_median_sample_size)
+      allocate(integration_times(config_median_sample_size))
+      allocate(integration_times_sorted(config_median_sample_size))
+
       ! During integration, time level 1 stores the model state at the beginning of the
       !   time step, and time level 2 stores the state advanced dt in time by timestep(...)
       itimestep = 1
@@ -597,6 +613,33 @@ module atm_core
          call mpas_dmpar_get_time(integ_stop_time)
          call mpas_timer_stop("time integration")   
          write(0,'(a,f9.4,a)') ' Timing for integration step: ', (integ_stop_time - integ_start_time), ' s'
+
+
+         !
+         ! If the model is running much more slowly than expected, stop the run
+         !
+         call mpas_timer_start('self_monitoring')
+         times_index = times_index + 1
+         integration_times(times_index) = (integ_stop_time - integ_start_time)
+         times_index = mod(times_index, config_median_sample_size)
+         if (times_index == 0) then
+            have_enough_times = .true.
+         end if
+         if (have_enough_times) then
+            integration_times_sorted(:) = real(integration_times(:), kind=RKIND)
+            call mpas_quicksort(config_median_sample_size, integration_times_sorted)
+            if (integration_times_sorted((config_median_sample_size/2)+1) > config_max_median_time) then
+               open(22,file='ABORTED_SLOW_RUN')
+               close(22)
+
+               call mpas_dmpar_global_abort('Stopping an excessively slow model run:', deferredAbort=.true.)
+               write(slowmsg,'(a,i4,a,f9.4,a)') 'Median time for the last ', config_median_sample_size, ' timesteps was ', &
+                                integration_times_sorted((config_median_sample_size/2)+1), ' s'
+               call mpas_dmpar_global_abort(trim(slowmsg))
+            end if
+         end if
+         call mpas_timer_stop('self_monitoring')
+
 
          ! Move time level 2 fields back into time level 1 for next time step
          call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
@@ -700,6 +743,8 @@ module atm_core
          call mpas_pool_get_subpool(block_ptr % structs, 'diag_physics', diag_physics)
 
       end do
+
+      deallocate(integration_times)
    
    end function atm_core_run
    
