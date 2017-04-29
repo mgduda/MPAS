@@ -1593,7 +1593,6 @@ module mpas_block_creator
 
                         if ( real1DField % isPersistent ) then
                            allocate(real1DField % array(real1DField % dimSizes(1)))
-                           real1DField % array(:) = real1DField % defaultValue
                         end if
                      end if
                   end do
@@ -1613,7 +1612,6 @@ module mpas_block_creator
 
                         if ( real2DField % isPersistent ) then
                            allocate(real2DField % array(real2DField % dimSizes(1), real2DField % dimSizes(2)))
-                           real2DField % array(:,:) = real2DField % defaultValue
                         end if
                      end if
                   end do
@@ -1633,7 +1631,6 @@ module mpas_block_creator
 
                         if ( real3DField % isPersistent ) then
                            allocate(real3DField % array(real3DField % dimSizes(1), real3DField % dimSizes(2), real3DField % dimSizes(3)))
-                           real3DField % array(:,:,:) = real3DField % defaultValue
                         end if
                      end if
                   end do
@@ -1654,7 +1651,6 @@ module mpas_block_creator
                         if ( real4DField % isPersistent ) then
                            allocate(real4DField % array(real4DField % dimSizes(1), real4DField % dimSizes(2), &
                                                         real4DField % dimSizes(3), real4DField % dimSizes(4)))
-                           real4DField % array(:,:,:,:) = real4DField % defaultValue
                         end if
                      end if
                   end do
@@ -1676,7 +1672,6 @@ module mpas_block_creator
                            allocate(real5DField % array(real5DField % dimSizes(1), real5DField % dimSizes(2), &
                                                         real5DField % dimSizes(3), real5DField % dimSizes(4), &
                                                         real5DField % dimSizes(5)))
-                           real5DField % array(:,:,:,:,:) = real5DField % defaultValue
                         end if
                      end if
                   end do
@@ -1698,7 +1693,6 @@ module mpas_block_creator
 
                         if ( int1DField % isPersistent ) then
                            allocate(int1DField % array(int1DField % dimSizes(1)))
-                           int1DField % array(:) = int1DField % defaultValue
                         end if
                      end if
                   end do
@@ -1718,7 +1712,6 @@ module mpas_block_creator
 
                         if ( int2DField % isPersistent ) then
                            allocate(int2DField % array(int2DField % dimSizes(1), int2DField % dimSizes(2)))
-                           int2DField % array(:,:) = int2DField % defaultValue
                         end if
                      end if
                   end do
@@ -1738,7 +1731,6 @@ module mpas_block_creator
 
                         if ( int3DField % isPersistent ) then
                            allocate(int3DField % array(int3DField % dimSizes(1), int3DField % dimSizes(2), int3DField % dimSizes(3)))
-                           int3DField % array(:,:,:) = int3DField % defaultValue
                         end if
                      end if
                   end do
@@ -1760,7 +1752,6 @@ module mpas_block_creator
 
                         if ( char1DField % isPersistent ) then
                            allocate(char1DField % array(char1DField % dimSizes(1)))
-                           char1DField % array(:) = char1DField % defaultValue
                         end if
                      end if
                   end do

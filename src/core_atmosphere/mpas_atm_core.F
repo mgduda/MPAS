@@ -62,6 +62,12 @@ module atm_core
 
 
       !
+      ! Handle initialization and first-touch
+      !
+      call mpas_atm_field_init(domain % blocklist % allFields, domain % blocklist % dimensions)
+
+
+      !
       ! Set up inner dimensions used by arrays in optimized dynamics routines
       !
       call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
@@ -1257,6 +1263,395 @@ module atm_core
       zb3_cell(:,:,:) = config_coef_3rd_order * zb3_cell(:,:,:)
 
    end subroutine atm_couple_coef_3rd_order
+
+
+   recursive subroutine mpas_atm_field_init(currentPool, dimensionPool)
+
+#ifdef MPAS_OPENMP
+      use omp_lib
+#endif
+      use mpas_pool_routines
+
+      implicit none
+
+      type (mpas_pool_type), pointer :: currentPool
+      type (mpas_pool_type), pointer :: dimensionPool
+
+      type (mpas_pool_type), pointer :: subPool
+      type (mpas_pool_iterator_type) :: poolItr
+
+      type (field1DReal), pointer :: real1DField
+      type (field2DReal), pointer :: real2DField
+      type (field3DReal), pointer :: real3DField
+      type (field4DReal), pointer :: real4DField
+      type (field5DReal), pointer :: real5DField
+      type (field1DInteger), pointer :: int1DField
+      type (field2DInteger), pointer :: int2DField
+      type (field3DInteger), pointer :: int3DField
+      type (field1DChar), pointer :: char1DField
+
+      integer :: iThread
+      integer :: timeLev
+      integer, pointer :: tempDim
+
+      integer :: nThreads
+      integer, dimension(:), pointer :: cellThreadStart => null(), cellThreadEnd => null()
+      integer, dimension(:), pointer :: edgeThreadStart => null(), edgeThreadEnd => null()
+      integer, dimension(:), pointer :: vertexThreadStart => null(), vertexThreadEnd => null()
+
+#ifdef MPAS_OPENMP
+!$OMP PARALLEL
+!$OMP MASTER
+      nThreads = OMP_get_num_threads()
+!$OMP END MASTER
+!$OMP END PARALLEL
+#else
+      nThreads = 1
+#endif
+
+      call mpas_pool_get_dimension(dimensionPool, 'cellThreadStart', cellThreadStart)
+      call mpas_pool_get_dimension(dimensionPool, 'cellThreadEnd', cellThreadEnd)
+      call mpas_pool_get_dimension(dimensionPool, 'edgeThreadStart', edgeThreadStart)
+      call mpas_pool_get_dimension(dimensionPool, 'edgeThreadEnd', edgeThreadEnd)
+      call mpas_pool_get_dimension(dimensionPool, 'vertexThreadStart', vertexThreadStart)
+      call mpas_pool_get_dimension(dimensionPool, 'vertexThreadEnd', vertexThreadEnd)
+
+      call mpas_pool_begin_iteration(currentPool)
+      do while ( mpas_pool_get_next_member(currentPool, poolItr) )
+         if ( poolItr % memberType == MPAS_POOL_SUBPOOL ) then
+            call mpas_pool_get_subpool(currentPool, poolItr % memberName, subPool)
+            call mpas_atm_field_init(subPool, dimensionPool)
+         else if ( poolItr % memberType == MPAS_POOL_FIELD ) then
+            if (index(trim(poolItr % memberName), 'indexTo') /= 0 .or. index(trim(poolItr % memberName), 'OwnedIndices') /= 0) then
+               cycle
+            end if
+            if ( poolItr % dataType == MPAS_POOL_REAL ) then
+               if ( poolItr % nDims == 1 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, real1DField, timeLev)
+
+                     if ( real1DField % isActive ) then
+                         call mpas_pool_get_dimension(dimensionPool, real1DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( real1DField % isPersistent ) then
+                           if (real1DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real1DField % array(cellThreadStart(iThread):cellThreadEnd(iThread)) = real1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real1DField % array(tempDim+1) = real1DField % defaultValue
+                           else if (real1DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real1DField % array(edgeThreadStart(iThread):edgeThreadEnd(iThread)) = real1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real1DField % array(tempDim+1) = real1DField % defaultValue
+                           else if (real1DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real1DField % array(vertexThreadStart(iThread):vertexThreadEnd(iThread)) = real1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real1DField % array(tempDim+1) = real1DField % defaultValue
+                           else
+                              real1DField % array(:) = real1DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 2 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, real2DField, timeLev)
+
+                     if ( real2DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, real2DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( real2DField % isPersistent ) then
+                           if (real2DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real2DField % array(:,cellThreadStart(iThread):cellThreadEnd(iThread)) = real2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real2DField % array(:,tempDim+1) = real2DField % defaultValue
+                           else if (real2DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real2DField % array(:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = real2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real2DField % array(:,tempDim+1) = real2DField % defaultValue
+                           else if (real2DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real2DField % array(:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = real2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real2DField % array(:,tempDim+1) = real2DField % defaultValue
+                           else
+                              real2DField % array(:,:) = real2DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 3 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, real3DField, timeLev)
+
+                     if ( real3DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, real3DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( real3DField % isPersistent ) then
+                           if (real3DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real3DField % array(:,:,cellThreadStart(iThread):cellThreadEnd(iThread)) = real3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real3DField % array(:,:,tempDim+1) = real3DField % defaultValue
+                           else if (real3DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real3DField % array(:,:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = real3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real3DField % array(:,:,tempDim+1) = real3DField % defaultValue
+                           else if (real3DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real3DField % array(:,:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = real3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real3DField % array(:,:,tempDim+1) = real3DField % defaultValue
+                           else
+                              real3DField % array(:,:,:) = real3DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 4 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, real4DField, timeLev)
+
+                     if ( real4DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, real4DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( real4DField % isPersistent ) then
+                           if (real4DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real4DField % array(:,:,:,cellThreadStart(iThread):cellThreadEnd(iThread)) = real4DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real4DField % array(:,:,:,tempDim+1) = real4DField % defaultValue
+                           else if (real4DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real4DField % array(:,:,:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = real4DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real4DField % array(:,:,:,tempDim+1) = real4DField % defaultValue
+                           else if (real4DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real4DField % array(:,:,:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = real4DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real4DField % array(:,:,:,tempDim+1) = real4DField % defaultValue
+                           else
+                              real4DField % array(:,:,:,:) = real4DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 5 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, real5DField, timeLev)
+
+                     if ( real5DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, real5DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( real5DField % isPersistent ) then
+                           if (real5DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real5DField % array(:,:,:,:,cellThreadStart(iThread):cellThreadEnd(iThread)) = real5DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real5DField % array(:,:,:,:,tempDim+1) = real5DField % defaultValue
+                           else if (real5DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real5DField % array(:,:,:,:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = real5DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real5DField % array(:,:,:,:,tempDim+1) = real5DField % defaultValue
+                           else if (real5DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 real5DField % array(:,:,:,:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = real5DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              real5DField % array(:,:,:,:,tempDim+1) = real5DField % defaultValue
+                           else
+                              real5DField % array(:,:,:,:,:) = real5DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               end if
+            else if ( poolItr % dataType == MPAS_POOL_INTEGER ) then
+               if ( poolItr % nDims == 1 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, int1DField, timeLev)
+
+                     if ( int1DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, int1DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( int1DField % isPersistent ) then
+                           if (int1DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 int1DField % array(cellThreadStart(iThread):cellThreadEnd(iThread)) = int1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int1DField % array(tempDim+1) = int1DField % defaultValue
+                           else if (int1DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 int1DField % array(edgeThreadStart(iThread):edgeThreadEnd(iThread)) = int1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int1DField % array(tempDim+1) = int1DField % defaultValue
+                           else if (int1DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=1,nThreads
+                                 int1DField % array(vertexThreadStart(iThread):vertexThreadEnd(iThread)) = int1DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int1DField % array(tempDim+1) = int1DField % defaultValue
+                           else
+                              int1DField % array(:) = int1DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 2 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, int2DField, timeLev)
+
+                     if ( int2DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, int2DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( int2DField % isPersistent ) then
+                           if (int2DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=2,nThreads
+                                 int2DField % array(:,cellThreadStart(iThread):cellThreadEnd(iThread)) = int2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int2DField % array(:,tempDim+1) = int2DField % defaultValue
+                           else if (int2DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=2,nThreads
+                                 int2DField % array(:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = int2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int2DField % array(:,tempDim+1) = int2DField % defaultValue
+                           else if (int2DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=2,nThreads
+                                 int2DField % array(:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = int2DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int2DField % array(:,tempDim+1) = int2DField % defaultValue
+                           else
+                              int2DField % array(:,:) = int2DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               else if ( poolItr % nDims == 3 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, int3DField, timeLev)
+
+                     if ( int3DField % isActive ) then
+                        call mpas_pool_get_dimension(dimensionPool, int3DField % dimNames(poolItr % nDims), tempDim)
+
+                        if ( int3DField % isPersistent ) then
+                           if (int3DField % dimNames(poolItr % nDims) == 'nCells') then
+!$OMP PARALLEL DO
+                              do iThread=3,nThreads
+                                 int3DField % array(:,:,cellThreadStart(iThread):cellThreadEnd(iThread)) = int3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int3DField % array(:,:,tempDim+1) = int3DField % defaultValue
+                           else if (int3DField % dimNames(poolItr % nDims) == 'nEdges') then
+!$OMP PARALLEL DO
+                              do iThread=3,nThreads
+                                 int3DField % array(:,:,edgeThreadStart(iThread):edgeThreadEnd(iThread)) = int3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int3DField % array(:,:,tempDim+1) = int3DField % defaultValue
+                           else if (int3DField % dimNames(poolItr % nDims) == 'nVertices') then
+!$OMP PARALLEL DO
+                              do iThread=3,nThreads
+                                 int3DField % array(:,:,vertexThreadStart(iThread):vertexThreadEnd(iThread)) = int3DField % defaultValue
+                              end do
+!$OMP END PARALLEL DO
+                              ! Garbage element
+                              int3DField % array(:,:,tempDim+1) = int3DField % defaultValue
+                           else
+                              int3DField % array(:,:,:) = int3DField % defaultValue
+                           end if
+                        end if
+                     end if
+                  end do
+               end if
+            else if ( poolItr % dataType == MPAS_POOL_CHARACTER ) then
+               if ( poolItr % nDims == 1 ) then
+                  do timeLev = 1, poolItr % nTimeLevels
+                     call mpas_pool_get_field(currentPool, poolItr % memberName, char1DField, timeLev)
+
+                     if ( char1DField % isActive ) then
+
+                        if ( char1DField % isPersistent ) then
+                           char1DField % array(:) = char1DField % defaultValue
+                        end if
+                     end if
+                  end do
+               end if
+            else
+            end if
+         end if
+      end do
+
+   end subroutine mpas_atm_field_init
 
 
 end module atm_core
