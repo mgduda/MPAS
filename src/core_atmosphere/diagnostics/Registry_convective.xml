@@ -5,7 +5,7 @@
 <var_struct name="diag" time_levs="1">
 
         <var name="cape"                   type="real"     dimensions="nCells Time" units="J kg^{-1}"
-             description="Convective available potential energy"/>
+             description="MU-CAPE"/>
 
         <var name="cin"                    type="real"     dimensions="nCells Time" units="J kg^{-1}"
              description="Convective inhibition"/>
