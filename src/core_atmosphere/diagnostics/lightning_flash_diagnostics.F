@@ -21,7 +21,8 @@
  implicit none
  private
  public:: lightning_diagnostics_setup,   &
-          lightning_diagnostics_compute
+          lightning_diagnostics_compute, &
+          need_lightning_diagnostics
 
  logical,pointer,public:: config_lightning_flash
  type(mpas_pool_type),pointer,public :: diag_lightning
@@ -69,15 +70,10 @@
 
  end subroutine lightning_diagnostics_setup
 
-!-----------------------------------------------------------------------------------------------------------------
- subroutine lightning_diagnostics_compute()
+ function need_lightning_diagnostics() result(need_any_diags)
 
 !local variables:
  logical:: need_any_diags
-
-!-----------------------------------------------------------------------------------------------------------------
-!write(0,*)
- write(0,*) '--- enter subroutine lightning_diagnostics_compute:'
 
  need_any_diags   = .false.
 
@@ -104,8 +100,18 @@
  need_npiceflx_fr = mpas_field_will_be_written('npice_massflux_flashrate')
  need_any_diags   = need_any_diags .or. need_npiceflx_fr
 
- if(need_any_diags) &
-    call lightning_diagnostics(mesh,state,1,diag,diag_physics,sfc_input,diag_lightning)
+ return
+
+ end function need_lightning_diagnostics
+
+!-----------------------------------------------------------------------------------------------------------------
+ subroutine lightning_diagnostics_compute()
+
+!-----------------------------------------------------------------------------------------------------------------
+!write(0,*)
+ write(0,*) '--- enter subroutine lightning_diagnostics_compute:'
+
+ call lightning_diagnostics(mesh,state,1,diag,diag_physics,sfc_input,diag_lightning)
 
  write(0,*) '--- end subroutine lightning_diagnostics_compute:'
  write(0,*)
