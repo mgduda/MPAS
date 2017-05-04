@@ -5,10 +5,10 @@
 <var_struct name="diag" time_levs="1">
 
         <var name="cape"                   type="real"     dimensions="nCells Time" units="J kg^{-1}"
-             description="MU-CAPE"/>
+             description="CAPE (most unstable parcel)"/>
 
         <var name="cin"                    type="real"     dimensions="nCells Time" units="J kg^{-1}"
-             description="Convective inhibition"/>
+             description="CIN (most unstable parcel)"/>
 
         <var name="lcl"                    type="real"     dimensions="nCells Time" units="m"
              description="Lifted condensation level"/>
