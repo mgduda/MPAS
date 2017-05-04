@@ -24,6 +24,12 @@
           lightning_diagnostics_compute, &
           need_lightning_diagnostics
 
+! add-ons and modifications to sourcecode:
+! ----------------------------------------
+! * corrected the calculation of the lightning flash rate as a function od the ice path.
+!   laura D. Fowler (laura@ucar.edu) / 2017-05-03.
+
+
  logical,pointer,public:: config_lightning_flash
  type(mpas_pool_type),pointer,public :: diag_lightning
 
@@ -49,6 +55,7 @@
 
 !-----------------------------------------------------------------------------------------------------------------
  subroutine lightning_diagnostics_setup(all_pools,simulation_clock)
+!-----------------------------------------------------------------------------------------------------------------
 
  type(MPAS_pool_type),pointer :: all_pools
  type(MPAS_clock_type),pointer:: simulation_clock
@@ -70,6 +77,7 @@
 
  end subroutine lightning_diagnostics_setup
 
+!-----------------------------------------------------------------------------------------------------------------
  function need_lightning_diagnostics() result(need_any_diags)
 
 !local variables:
@@ -106,7 +114,6 @@
 
 !-----------------------------------------------------------------------------------------------------------------
  subroutine lightning_diagnostics_compute()
-
 !-----------------------------------------------------------------------------------------------------------------
 !write(0,*)
  write(0,*) '--- enter subroutine lightning_diagnostics_compute:'
@@ -234,8 +241,8 @@
        enddo
        twp   = iwp(iCell)+swp(iCell)+gwp(iCell)
        frate = 33.33*twp - 0.17 !frate is in fl./km2/day).
-       iwp_fr(iCell) = iwp_fr(iCell)*area(iCell)*1.e-06/1440.
-       iwp_fr(iCell) = max(frate,0._RKIND)
+       frate = max(frate,0._RKIND)
+       iwp_fr(iCell) = frate*area(iCell)*1.e-06/1440.
     enddo
     write(0,*) '--- end ice path flash rate'
  endif
