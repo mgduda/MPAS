@@ -607,6 +607,13 @@ module atm_core
          call mpas_advance_clock(clock)
          currTime = mpas_get_clock_time(clock, MPAS_NOW, ierr)
 
+         !
+         ! If we completed the last timestep, validate the model results before writing
+         ! output streams (to allow us to write validation fields to the last model output)
+         !
+         if (mpas_is_clock_stop_time(clock)) then
+            call mpas_atm_validation(domain)
+         end if
 
          call mpas_dmpar_get_time(diag_start_time)
 
@@ -1258,6 +1265,188 @@ module atm_core
 
    end subroutine atm_couple_coef_3rd_order
 
+
+   subroutine mpas_atm_validation(domain)
+
+      implicit none
+
+      type (domain_type), intent(in) :: domain
+
+      type (mpas_pool_type), pointer :: mesh
+      type (mpas_pool_type), pointer :: state
+      type (mpas_pool_type), pointer :: diag
+      type (mpas_pool_type), pointer :: validation
+
+      real(kind=RKIND), parameter :: threshold = 1.0e-2
+
+      integer :: k
+      integer, pointer :: nCellsSolve
+      integer, pointer :: nVertLevels
+      integer :: nCellsGlobal
+      real(kind=RKIND) :: fieldMin
+      real(kind=RKIND) :: fieldMax
+      real(kind=RKIND) :: fieldStddev
+      real(kind=RKIND), dimension(:,:), pointer :: zgrid
+      real(kind=RKIND), dimension(:,:), pointer :: rho_zz
+      real(kind=RKIND), dimension(:,:), pointer :: zz
+      real(kind=RKIND), dimension(:,:), pointer :: pressure_p
+      real(kind=RKIND), dimension(:,:), pointer :: pressure_base
+      real(kind=RKIND), dimension(:,:), pointer :: uReconstructZonal
+      real(kind=RKIND), dimension(:,:), pointer :: uReconstructMeridional
+      real(kind=RKIND), dimension(:), pointer :: surface_pressure
+      real(kind=RKIND), dimension(:), pointer :: meridionalMin
+      real(kind=RKIND), dimension(:), pointer :: meridionalMax
+      real(kind=RKIND), dimension(:), pointer :: meridionalStddev
+      real(kind=RKIND), pointer :: psfcMin
+      real(kind=RKIND), pointer :: psfcMax
+      real(kind=RKIND), pointer :: psfcStddev
+
+
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'mesh', mesh)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'state', state)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'diag', diag)
+      call mpas_pool_get_subpool(domain % blocklist % structs, 'validation', validation)
+
+      call mpas_pool_get_dimension(mesh, 'nCellsSolve', nCellsSolve)
+      call mpas_pool_get_dimension(mesh, 'nVertLevels', nVertLevels)
+
+      call mpas_pool_get_array(mesh, 'zgrid', zgrid)
+      call mpas_pool_get_array(mesh, 'zz', zz)
+      call mpas_pool_get_array(state, 'rho_zz', rho_zz, 1)
+      call mpas_pool_get_array(diag, 'uReconstructZonal', uReconstructZonal)
+      call mpas_pool_get_array(diag, 'uReconstructMeridional', uReconstructMeridional)
+      call mpas_pool_get_array(diag, 'surface_pressure', surface_pressure)
+      call mpas_pool_get_array(diag, 'pressure_p', pressure_p)
+      call mpas_pool_get_array(diag, 'pressure_base', pressure_base)
+      call mpas_pool_get_array(validation, 'meridionalMin', meridionalMin)
+      call mpas_pool_get_array(validation, 'meridionalMax', meridionalMax)
+      call mpas_pool_get_array(validation, 'meridionalStddev', meridionalStddev)
+      call mpas_pool_get_array(validation, 'psfcMin', psfcMin)
+      call mpas_pool_get_array(validation, 'psfcMax', psfcMax)
+      call mpas_pool_get_array(validation, 'psfcStddev', psfcStddev)
+
+      call mpas_dmpar_sum_int(domain % dminfo, nCellsSolve, nCellsGlobal)
+
+      call compute_psfc(nCellsSolve, zgrid, rho_zz, zz, pressure_p, pressure_base, surface_pressure)
+
+      write(0,'(a)') '****************************************************************'
+      write(0,'(a)') '****                Begin validation output                *****'
+      write(0,'(a)') '****************************************************************'
+
+      write(0,'(a)') ''
+      write(0,'(a)') 'Meridional wind'
+      do k=1,nVertLevels
+         call mpas_atm_min_max_stddev(domain % dminfo, uReconstructMeridional(k,:), nCellsSolve, nCellsGlobal, fieldMin, fieldMax, fieldStddev)
+         if (abs((fieldMin - meridionalMin(k))/meridionalMin(k)) < threshold .and. &
+             abs((fieldMax - meridionalMax(k))/meridionalMax(k)) < threshold .and. &
+             abs((fieldStddev - meridionalStddev(k))/meridionalStddev(k)) < threshold) then
+
+            write(0,'(a,i2,a)') 'Level ', k, ' SUCCESS'
+
+         else
+
+            write(0,'(a,i2,a,f9.6,1x,f9.6,1x,f9.6)') 'Level ', k, ' FAIL ', &
+                      (fieldMin - meridionalMin(k))/meridionalMin(k), &
+                      (fieldMax - meridionalMax(k))/meridionalMax(k), &
+                      (fieldStddev - meridionalStddev(k))/meridionalStddev(k)
+
+         end if
+         meridionalMin(k) = fieldMin
+         meridionalMax(k) = fieldMax
+         meridionalStddev(k) = fieldStddev
+      end do
+
+      write(0,'(a)') ''
+      write(0,'(a)') 'Surface pressure'
+      call mpas_atm_min_max_stddev(domain % dminfo, surface_pressure(:), nCellsSolve, nCellsGlobal, fieldMin, fieldMax, fieldStddev)
+      if (abs((fieldMin - psfcMin)/psfcMin) < threshold .and. &
+          abs((fieldMax - psfcMax)/psfcMax) < threshold .and. &
+          abs((fieldStddev - psfcStddev)/psfcStddev) < threshold) then
+
+         write(0,'(a)') 'PSFC SUCCESS'
+
+      else
+
+         write(0,'(a,f9.6,1x,f9.6,1x,f9.6)') 'PSFC FAIL ', &
+                   (fieldMin - psfcMin)/psfcMin, &
+                   (fieldMax - psfcMax)/psfcMax, &
+                   (fieldStddev - psfcStddev)/psfcStddev
+
+      end if
+      psfcMin = fieldMin
+      psfcMax = fieldMax
+      psfcStddev = fieldStddev
+
+      write(0,'(a)') '****************************************************************'
+      write(0,'(a)') '****                 End validation output                 *****'
+      write(0,'(a)') '****************************************************************'
+
+   end subroutine mpas_atm_validation
+
+
+   subroutine compute_psfc(nCellsSolve, zgrid, rho_zz, zz, pressure_p, pressure_base, surface_pressure)
+
+      implicit none
+
+      integer, intent(in) :: nCellsSolve
+      real(kind=RKIND), dimension(:,:), intent(in) :: zgrid
+      real(kind=RKIND), dimension(:,:), intent(in) :: rho_zz
+      real(kind=RKIND), dimension(:,:), intent(in) :: zz
+      real(kind=RKIND), dimension(:,:), intent(in) :: pressure_p
+      real(kind=RKIND), dimension(:,:), intent(in) :: pressure_base
+      real(kind=RKIND), dimension(:), intent(out) :: surface_pressure
+
+      integer :: i
+      real(kind=RKIND) :: tem1, tem2, rho1, rho2
+
+
+      do i=1,nCellsSolve
+         tem1 = zgrid(2,i)-zgrid(1,i)
+         tem2 = zgrid(3,i)-zgrid(2,i)
+         rho1 = rho_zz(1,i) * zz(1,i)
+         rho2 = rho_zz(2,i) * zz(2,i)
+         surface_pressure(i) = 0.5*9.806*(zgrid(2,i)-zgrid(1,i)) * (rho1 - 0.5*(rho2-rho1)*tem1/(tem1+tem2))
+         surface_pressure(i) = surface_pressure(i) + pressure_p(1,i) + pressure_base(1,i)
+      end do
+
+   end subroutine compute_psfc
+
+
+   subroutine mpas_atm_min_max_stddev(dminfo, field, nCellsSolve, nCellsGlobal, fieldMin, fieldMax, fieldStddev)
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo
+      real(kind=RKIND), dimension(:), intent(in) :: field
+      integer, intent(in) :: nCellsSolve
+      integer, intent(in) :: nCellsGlobal
+      real(kind=RKIND), intent(out) :: fieldMin
+      real(kind=RKIND), intent(out) :: fieldMax
+      real(kind=RKIND), intent(out) :: fieldStddev
+
+      real(kind=RKIND) :: localMin, localMax
+      real(kind=RKIND) :: globalMin, globalMax
+      real(kind=R8KIND) :: localSum, localSum2
+      real(kind=R8KIND) :: globalSum, globalSum2
+      real(kind=R8KIND), dimension(nCellsSolve) :: field_double
+
+
+      field_double(:) = real(field(1:nCellsSolve),kind=R8KIND)
+      localMin = minval(field(1:nCellsSolve))
+      localMax = maxval(field(1:nCellsSolve))
+      localSum = sum(field_double(1:nCellsSolve))
+      localSum2 = sum(field_double(1:nCellsSolve)**2)
+
+      call mpas_dmpar_min_real(dminfo, localMin, globalMin)
+      call mpas_dmpar_max_real(dminfo, localMax, globalMax)
+      call mpas_dmpar_sum_double(dminfo, localSum, globalSum)
+      call mpas_dmpar_sum_double(dminfo, localSum2, globalSum2)
+
+      fieldMin = globalMin
+      fieldMax = globalMax
+      fieldStddev = sqrt((globalSum2 - (globalSum**2 / real(nCellsGlobal,kind=R8KIND)))/real(nCellsGlobal-1,kind=R8KIND))
+
+   end subroutine mpas_atm_min_max_stddev
 
 end module atm_core
 

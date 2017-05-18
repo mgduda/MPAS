@@ -71,6 +71,7 @@ include 'mpif.h'
    public :: mpas_dmpar_bcast_chars
    public :: mpas_dmpar_sum_int
    public :: mpas_dmpar_sum_real
+   public :: mpas_dmpar_sum_double
    public :: mpas_dmpar_min_int
    public :: mpas_dmpar_min_real
    public :: mpas_dmpar_max_int
@@ -756,6 +757,38 @@ include 'mpif.h'
       end if
 
    end subroutine mpas_dmpar_sum_real!}}}
+
+!-----------------------------------------------------------------------
+!  routine mpas_dmpar_sum_double
+!
+!> \brief MPAS dmpar sum double routine.
+!> \author Michael Duda
+!> \date   03/26/13
+!> \details
+!>  This routine sums (Allreduce) double values across all processors in a communicator.
+!
+!-----------------------------------------------------------------------
+   subroutine mpas_dmpar_sum_double(dminfo, r, rsum)!{{{
+
+      implicit none
+
+      type (dm_info), intent(in) :: dminfo !< Input: Domain information
+      real(kind=R8KIND), intent(in) :: r !< Input: Real values to be summed
+      real(kind=R8KIND), intent(out) :: rsum  !< Output: Sum of reals for output
+
+      integer :: mpi_ierr, threadNum
+
+      threadNum = mpas_threading_get_thread_num()
+
+      if ( threadNum == 0 ) then
+#ifdef _MPI
+         call MPI_Allreduce(r, rsum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, dminfo % comm, mpi_ierr)
+#else
+         rsum = r
+#endif
+      end if
+
+   end subroutine mpas_dmpar_sum_double!}}}
 
 !-----------------------------------------------------------------------
 !  routine mpas_dmpar_min_int

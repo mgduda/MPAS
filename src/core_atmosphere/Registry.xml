@@ -485,6 +485,7 @@
 			<var name="ol3"/>
 			<var name="ol4"/>
 			<var name="h_oml_initial"/>
+			<var_struct name="validation"/>
 		</stream>
 
 		<stream name="restart" 
@@ -1672,6 +1673,15 @@
                              description="Tendency of rain number concentration"
                              packages="mp_thompson_in"/>
                 </var_array>
+        </var_struct>
+
+        <var_struct name="validation" time_levs="1">
+                <var name="meridionalMin" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Global minimum of uReconstructMeridional at each model level"/>
+                <var name="meridionalMax" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Global maximum of uReconstructMeridional at each model level"/>
+                <var name="meridionalStddev" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Standard deviation of uReconstructMeridional at each model level"/>
+                <var name="psfcMin" type="real" dimensions="" units="Pa" description="Global minimum of surface pressure"/>
+                <var name="psfcMax" type="real" dimensions="" units="Pa" description="Global maximum of surface pressure"/>
+                <var name="psfcStddev" type="real" dimensions="" units="Pa" description="Standard deviation of surface pressure"/>
         </var_struct>
 
 

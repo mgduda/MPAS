@@ -514,6 +514,7 @@
                         <var name="q2" packages="met_stage_out"/>
 			<var name="rh2" packages="met_stage_out"/>
                         <var name="t2m" packages="met_stage_out"/>
+			<var_struct name="validation"/>
 		</stream>
 
 		<stream name="surface" 
@@ -739,5 +740,14 @@
 
         <var_struct name="diag_physics" time_levs="1">
                 <var name="precipw"                           type="real"     dimensions="nCells Time"/>
+        </var_struct>
+
+        <var_struct name="validation" time_levs="1">
+                <var name="meridionalMin" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Global minimum of uReconstructMeridional at each model level"/>
+                <var name="meridionalMax" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Global maximum of uReconstructMeridional at each model level"/>
+                <var name="meridionalStddev" type="real" dimensions="nVertLevels" units="m s^{-2}" description="Standard deviation of uReconstructMeridional at each model level"/>
+                <var name="psfcMin" type="real" dimensions="" units="Pa" description="Global minimum of surface pressure"/>
+                <var name="psfcMax" type="real" dimensions="" units="Pa" description="Global maximum of surface pressure"/>
+                <var name="psfcStddev" type="real" dimensions="" units="Pa" description="Standard deviation of surface pressure"/>
         </var_struct>
 </registry>
