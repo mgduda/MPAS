@@ -30,7 +30,7 @@ post_build:
 
 physcore: mpas_atm_dimensions.o
 	( cd physics; $(MAKE) all )
-	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a )
+	( mkdir libphys; cd libphys; ar -x ../physics/libphys.a; ar -x ../physics/libphys_wrf.a; ar -x ../physics/libphys_ccpp.a )
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*TBL .)
 	( cd ../..; ln -sf ./src/core_atmosphere/physics/physics_wrf/files/*DATA* .)
 

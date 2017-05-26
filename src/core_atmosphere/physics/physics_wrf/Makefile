@@ -21,7 +21,6 @@ OBJS = \
 	module_mp_radar.o              \
 	module_mp_thompson.o           \
 	module_mp_thompson_cldfra3.o   \
-	module_mp_wsm6.o               \
 	module_ra_cam.o                \
 	module_ra_cam_support.o        \
 	module_ra_rrtmg_lw.o           \
@@ -38,7 +37,7 @@ OBJS = \
 	module_sf_urban.o
 
 physics_wrf: $(OBJS)
-	ar -ru ./../libphys.a $(OBJS)
+	ar -ru ./../libphys_wrf.a $(OBJS)
 
 # DEPENDENCIES:
 module_bl_mynn.o: \

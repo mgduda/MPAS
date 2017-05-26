@@ -44,13 +44,16 @@ OBJS = \
 
 OBJS_dyn = mpas_atmphys_interface.o
 
-all: lookup_tables core_physics_init core_physics_wrf core_dyn core_physics
+all: lookup_tables core_physics_init core_physics_wrf core_physics_ccpp core_dyn core_physics
 
 lookup_tables:
 	./checkout_data_files.sh
 
 core_physics_wrf:
 	(cd physics_wrf; make all COREDEF="$(COREDEF)")
+
+core_physics_ccpp:
+	(cd physics_ccpp; make all COREDEF="$(COREDEF)")
 
 core_dyn: $(OBJS_dyn)
 	ar -ru libphys.a $(OBJS_dyn)
@@ -124,7 +127,7 @@ mpas_atmphys_driver_microphysics.o: \
 	mpas_atmphys_vars.o \
 	./physics_wrf/module_mp_kessler.o \
 	./physics_wrf/module_mp_thompson.o \
-	./physics_wrf/module_mp_wsm6.o
+	./physics_ccpp/module_mp_wsm6.o
 
 mpas_atmphys_driver_oml.o: \
 	mpas_atmphys_constants.o \
@@ -236,7 +239,7 @@ clean:
 	$(RM) $@ $*.mod
 ifeq "$(GEN_F90)" "true"
 	$(CPP) $(CPPFLAGS) $(COREDEF) $(HYDROSTATIC) $(CPPINCLUDES) $< > $*.f90
-	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../../framework -I../../operators -I./physics_wrf -I../../external/esmf_time_f90
+	$(FC) $(FFLAGS) -c $*.f90 $(FCINCLUDES) -I.. -I../../framework -I../../operators -I./physics_wrf -I./physics_ccpp -I../../external/esmf_time_f90
 else
-	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../../framework -I../../operators -I./physics_wrf -I../../external/esmf_time_f90
+	$(FC) $(CPPFLAGS) $(COREDEF) $(HYDROSATIC) $(FFLAGS) -c $*.F $(CPPINCLUDES) $(FCINCLUDES) -I.. -I../../framework -I../../operators -I./physics_wrf -I./physics_ccpp -I../../external/esmf_time_f90
 endif
