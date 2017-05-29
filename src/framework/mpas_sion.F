@@ -295,7 +295,6 @@ contains
    end subroutine MPAS_SION_def_var
 
    subroutine MPAS_SION_initdecomp(decomp, dimlist, ierr)
-!DIR$ ATTRIBUTES INLINE :: MPAS_SION_initdecomp
 
       implicit none
 
@@ -315,6 +314,7 @@ contains
 
       decomp % decomphandle % sionlib_type = .true.
 
+      !DIR$ ATTRIBUTES INLINE :: MPAS_SION_initdecomp
    end subroutine MPAS_SION_initdecomp
 
    subroutine MPAS_SION_chunksize(vartype, varsize, chunksize, ierr)
@@ -1517,7 +1517,6 @@ contains
    end subroutine MPAS_SION_read_array
 
    subroutine MPAS_SION_set_cursor(handle, position, ierr)
-!DIR$ ATTRIBUTES INLINE :: MPAS_SION_set_cursor
 
       implicit none
 
@@ -1553,6 +1552,7 @@ contains
       end if
       ierr = SIONLIB_noerr
 
+      !DIR$ ATTRIBUTES INLINE :: MPAS_SION_set_cursor
    end subroutine MPAS_SION_set_cursor
 
 #else

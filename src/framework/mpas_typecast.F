@@ -24,7 +24,7 @@ module mpas_typecast
 contains
 
    subroutine check_buffersize(buffersize, target)
-!DIR$ ATTRIBUTES INLINE :: check_buffersize
+
       implicit none
 
       integer, intent(in) :: buffersize, target
@@ -32,10 +32,10 @@ contains
       if (target > buffersize) then
          call mpas_dmpar_global_abort("Buffer overflow while encoding/decoding character buffer")
       end if
+      !DIR$ ATTRIBUTES INLINE :: check_buffersize
    end subroutine check_buffersize
 
    subroutine encode_character(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: encode_character
 
       implicit none
 
@@ -51,11 +51,10 @@ contains
          buffer(cursor+i-1) = value(i:i)
       end do
       cursor = cursor + length
-
+      !DIR$ ATTRIBUTES INLINE :: encode_character
    end subroutine encode_character
 
    subroutine encode_ikind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: encode_ikind
 
       implicit none
 
@@ -79,11 +78,10 @@ contains
       buffer(cursor:cursor+length-1) = enc
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: encode_ikind
    end subroutine encode_ikind
 
    subroutine encode_i8kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: encode_i8kind
 
       implicit none
 
@@ -107,11 +105,10 @@ contains
       buffer(cursor:cursor+length-1) = enc
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: encode_i8kind
    end subroutine encode_i8kind
 
    subroutine encode_r4kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: encode_r4kind
 
       implicit none
 
@@ -135,11 +132,10 @@ contains
       buffer(cursor:cursor+length-1) = enc
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: encode_r4kind
    end subroutine encode_r4kind
 
    subroutine encode_r8kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: encode_r8kind
 
       implicit none
 
@@ -163,11 +159,10 @@ contains
       buffer(cursor:cursor+length-1) = enc
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: encode_r8kind
    end subroutine encode_r8kind
 
    subroutine decode_character(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: decode_character
 
       implicit none
 
@@ -183,11 +178,10 @@ contains
          value(i:i) = buffer(cursor+i-1)
       end do
       cursor = cursor + length
-
+      !DIR$ ATTRIBUTES INLINE :: decode_character
    end subroutine decode_character
 
    subroutine decode_ikind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: decode_ikind
 
       implicit none
 
@@ -211,11 +205,10 @@ contains
       value = d % x
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: decode_ikind
    end subroutine decode_ikind
 
    subroutine decode_i8kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: decode_i8kind
 
       implicit none
 
@@ -239,11 +232,10 @@ contains
       value = d % x
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: decode_i8kind
    end subroutine decode_i8kind
 
    subroutine decode_r4kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: decode_r4kind
 
       implicit none
 
@@ -267,11 +259,10 @@ contains
       value = d % x
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: decode_r4kind
    end subroutine decode_r4kind
 
    subroutine decode_r8kind(buffer, cursor, value)
-!DIR$ ATTRIBUTES INLINE :: decode_r8kind
 
       implicit none
 
@@ -295,7 +286,7 @@ contains
       value = d % x
       cursor = cursor + length
       deallocate(enc)
-
+      !DIR$ ATTRIBUTES INLINE :: decode_r8kind
    end subroutine decode_r8kind
 
 end module mpas_typecast
