@@ -67,15 +67,15 @@ module mpas_block_decomp
       character (len=*), intent(in) :: blockFilePrefix, & !< Input: File prefix for block decomposition
                                        procFilePrefix !< Input: File prefix for processor decomposition
 
-      integer, dimension(:), pointer :: global_list
-      integer, dimension(:), pointer :: global_start
+      integer, dimension(:), pointer :: global_list => null()
+      integer, dimension(:), pointer :: global_start => null()
 
       integer, dimension(:), allocatable :: local_block_list
       integer, dimension(:,:), allocatable :: sorted_local_cell_list
 
       integer :: i, global_block_id, local_block_id, owning_proc, iunit, istatus
       integer :: blocks_per_proc, err
-      integer, dimension(:), pointer :: local_nvertices
+      integer, dimension(:), pointer :: local_nvertices => null()
       character (len=StrKIND) :: filename
 
       logical :: no_blocks

@@ -127,7 +127,7 @@ module mpas_bootstrapping
       type (field2DInteger), pointer :: cellsOnEdge_Block
 
       integer, dimension(:), pointer :: local_cell_list => null()
-      integer, dimension(:), pointer :: block_id, block_start, block_count
+      integer, dimension(:), pointer :: block_id, block_start, block_count => null()
       type (graph) :: partial_global_graph_info
 
       type (MPAS_Time_type) :: startTime
