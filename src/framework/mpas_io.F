@@ -9,13 +9,16 @@ module mpas_io
 
    use mpas_derived_types
    use mpas_attlist
-   use mpas_dmpar
+   use mpas_dmpar, only : mpas_dmpar_bcast_logical, mpas_dmpar_bcast_int, mpas_dmpar_bcast_ints, mpas_dmpar_bcast_real, &
+                          mpas_dmpar_bcast_reals, mpas_dmpar_bcast_char, mpas_dmpar_bcast_chars, mpas_dmpar_min_int, &
+                          mpas_dmpar_sum_int, IO_NODE
    use mpas_log
 
    use pio
    use piolib_mod
    use pionfatt_mod
    use pio_types
+
 
 #ifdef SINGLE_PRECISION
    integer, parameter :: PIO_REALKIND = PIO_REAL

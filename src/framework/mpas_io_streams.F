@@ -16,13 +16,18 @@ module mpas_io_streams
 #define REAL_IO_TYPE MPAS_IO_DOUBLE
 #endif
 
-   use mpas_attlist
+   use mpas_attlist, only : mpas_deallocate_attlist
    use mpas_derived_types
-   use mpas_pool_routines
+   use mpas_pool_routines, only : mpas_pool_get_dimension, mpas_pool_get_array
    use mpas_kind_types, only : StrKIND
-   use mpas_timekeeping
-   use mpas_io
+   use mpas_timekeeping, only : mpas_set_time, mpas_set_timeInterval, abs, operator(-), operator(+), operator(.eq.), &
+                                operator(.lt.), operator(.le.), operator(.ge.), operator(.gt.)
+   use mpas_io, only : MPAS_io_open, MPAS_io_close, MPAS_io_err_mesg, MPAS_io_inq_dim, MPAS_io_inq_var, MPAS_io_set_frame, &
+                       MPAS_io_get_var, mpas_io_def_dim, mpas_io_def_var, MPAS_io_set_var_indices, MPAS_io_handle_dminfo, &
+                       MPAS_io_would_clobber_records, MPAS_io_put_var, MPAS_io_sync, MPAS_io_get_att, MPAS_io_put_att
+   use mpas_dmpar, only : IO_NODE
    use mpas_log
+
 
    interface MPAS_streamAddField
       module procedure MPAS_streamAddField_0dInteger

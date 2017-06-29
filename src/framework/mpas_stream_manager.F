@@ -5,16 +5,25 @@ module mpas_stream_manager
 #define STREAM_WARNING_WRITE(M) call mpas_log_write( M , messageType=MPAS_LOG_WARN)
 #define STREAM_ERROR_WRITE(M) call mpas_log_write( M , messageType=MPAS_LOG_ERR)
 
-    use mpas_kind_types
+    use mpas_kind_types, only : RKIND
     use mpas_derived_types
     use mpas_field_routines
-    use mpas_pool_routines
-    use mpas_timekeeping
+    use mpas_pool_routines, only : mpas_pool_create_pool, mpas_pool_destroy_pool, mpas_pool_clone_pool, mpas_pool_set_error_level, &
+                                   mpas_pool_get_error_level, mpas_pool_get_config, mpas_pool_get_dimension, &
+                                   mpas_pool_get_next_member, mpas_pool_begin_iteration, mpas_pool_get_field, &
+                                   mpas_pool_get_field_info, mpas_pool_config_type, mpas_pool_get_subpool, mpas_pool_add_package, &
+                                   mpas_pool_get_package, mpas_pool_remove_package, mpas_pool_add_config, mpas_pool_remove_config
+    use mpas_timekeeping, only : mpas_get_clock_time, mpas_is_alarm_defined, mpas_is_alarm_ringing, mpas_reset_clock_alarm, &
+                                 mpas_set_time, mpas_set_timeInterval, mpas_get_time, mpas_get_timeInterval, mpas_alarm_interval, &
+                                 operator(.lt.), operator(.gt.), operator(+), operator(-), operator(.eq.), operator(.ge.), &
+                                 operator(.ne.)
     use mpas_log
-    use mpas_io_streams
+    use mpas_io_streams, only : MPAS_createStream, MPAS_closeStream, MPAS_seekStream, MPAS_readStream, MPAS_writeStream, &
+                                MPAS_writeStreamAtt, MPAS_streamTime
     use mpas_stream_list
-    use mpas_sort
-    use mpas_threading
+    use mpas_sort, only : mpas_quicksort, mpas_binary_search
+    use mpas_threading, only : mpas_threading_get_thread_num
+    use mpas_abort, only : mpas_dmpar_global_abort
 
 
     public :: MPAS_stream_mgr_init, &
@@ -2678,6 +2687,9 @@ module mpas_stream_manager
     !-----------------------------------------------------------------------
     subroutine MPAS_stream_mgr_block_write(manager, writeBlock, streamID, timeLevel, mgLevel, forceWriteNow, writeTime, ierr) !{{{
 
+        use mpas_io, only : mpas_io_init, mpas_io_finalize
+        use mpas_dmpar, only : mpas_dmpar_init, mpas_dmpar_finalize
+
         implicit none
 
         type (MPAS_streamManager_type), intent(inout) :: manager
@@ -2848,6 +2860,8 @@ module mpas_stream_manager
     !
     !-----------------------------------------------------------------------
     subroutine write_stream(manager, stream, blockID, timeLevel, mgLevel, forceWritenow, writeTime, ierr) !{{{
+
+        use mpas_timekeeping, only : mpas_expand_string
 
         implicit none
 
@@ -3351,6 +3365,8 @@ module mpas_stream_manager
     !-----------------------------------------------------------------------
     subroutine read_stream(manager, stream, timeLevel, mgLevel, forceReadNow, when, whence, actualWhen, ierr) !{{{
 
+        use mpas_timekeeping, only : mpas_expand_string
+
         implicit none
 
         type (MPAS_streamManager_type), intent(inout) :: manager
@@ -3765,7 +3781,7 @@ module mpas_stream_manager
     !-----------------------------------------------------------------------
     subroutine MPAS_stream_mesg(level, mesg)!{{{
         
-        use mpas_dmpar
+        use mpas_abort, only : mpas_dmpar_global_abort
 
         implicit none
 
@@ -3800,6 +3816,8 @@ module mpas_stream_manager
     !>  NOTE: This routine does not support streamID regular expressions
     !-----------------------------------------------------------------------
     subroutine mpas_get_stream_filename(manager, streamID, when, blockID, filename, ierr) !{{{
+
+        use mpas_timekeeping, only : mpas_expand_string
 
         implicit none
 
@@ -3878,6 +3896,8 @@ module mpas_stream_manager
     !-----------------------------------------------------------------------
     subroutine mpas_build_stream_filename(ref_time, when, filename_interval, filename_template, blockID, filename, ierr) !{{{
 
+        use mpas_timekeeping, only : mpas_expand_string, mpas_interval_division
+
         implicit none
 
         type (MPAS_Time_type), intent(in) :: ref_time
@@ -3954,6 +3974,8 @@ module mpas_stream_manager
     !>  It will then generate a stream type based on this pool, and return that.
     !-----------------------------------------------------------------------
     subroutine build_stream(stream, direction, allFields, allPackages, timeLevelIn, mgLevelIn, ierr) !{{{
+
+        use mpas_io_streams, only : MPAS_streamAddField
 
         implicit none
 
@@ -4147,6 +4169,8 @@ module mpas_stream_manager
     !>  from / write to the specified time level.
     !-----------------------------------------------------------------------
     subroutine update_stream(stream, allFields, timeLevelIn, mgLevelIn, ierr) !{{{
+
+        use mpas_io_streams, only : MPAS_streamUpdateField
 
         implicit none
 
@@ -4404,6 +4428,8 @@ module mpas_stream_manager
     !
     !-----------------------------------------------------------------------
     subroutine exch_all_halos(allFields, streamFields, timeLevel, ierr) !{{{
+
+        use mpas_dmpar, only : mpas_dmpar_field_halo_exch
 
         implicit none
 
