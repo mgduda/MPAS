@@ -27,7 +27,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field5DReal), pointer :: prev, next
@@ -60,7 +60,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field4DReal), pointer :: prev, next
@@ -94,7 +94,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field3DReal), pointer :: prev, next
@@ -127,7 +127,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field2DReal), pointer :: prev, next
@@ -160,7 +160,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field1DReal), pointer :: prev, next
@@ -190,7 +190,7 @@
       logical :: hasTimeDimension
       logical :: isActive
       logical :: isVarArray
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field0DReal), pointer :: prev, next
@@ -223,7 +223,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field3DInteger), pointer :: prev, next
@@ -256,7 +256,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field2DInteger), pointer :: prev, next
@@ -289,7 +289,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field1DInteger), pointer :: prev, next
@@ -319,7 +319,7 @@
       logical :: hasTimeDimension
       logical :: isActive
       logical :: isVarArray
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field0DInteger), pointer :: prev, next
@@ -352,7 +352,7 @@
       logical :: isActive
       logical :: isVarArray
       logical :: isPersistent
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field1DChar), pointer :: prev, next
@@ -382,7 +382,7 @@
       logical :: hasTimeDimension
       logical :: isActive
       logical :: isVarArray
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field0DChar), pointer :: prev, next
@@ -412,7 +412,7 @@
       logical :: hasTimeDimension
       logical :: isActive
       logical :: isVarArray
-      type (att_lists_type), dimension(:), pointer :: attLists => null()     
+      type (att_lists_type), dimension(:), pointer :: attLists => null()
 
       ! Pointers to the prev and next blocks for this field on this task
       type (field0DLogical), pointer :: prev, next
