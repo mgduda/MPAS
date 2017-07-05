@@ -5508,6 +5508,10 @@ module mpas_pool_routines
             iterator % nTimeLevels = inPool % iterator % data % contentsTimeLevs
          else if (iterator % memberType == MPAS_POOL_DIMENSION) then
             iterator % nDims = inPool % iterator % data % contentsDims
+            iterator % nTimeLevels = 0
+         else if (iterator % memberType == MPAS_POOL_CONFIG) then
+            iterator % nDims = inPool % iterator % data % contentsDims
+            iterator % nTimeLevels = 0
          else
             iterator % nDims = 0
             iterator % nTimeLevels = 0
