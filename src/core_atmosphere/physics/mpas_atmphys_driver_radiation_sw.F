@@ -318,6 +318,7 @@
 !local pointers:
  logical,pointer:: config_o3climatology
  character(len=StrKIND),pointer:: radt_sw_scheme
+ character(len=StrKIND),pointer:: microp_scheme
  logical,pointer:: config_microp_re
 
  real(kind=RKIND),dimension(:),pointer    :: latCell,lonCell
@@ -332,6 +333,7 @@
 
  call mpas_pool_get_config(configs,'config_o3climatology' ,config_o3climatology)
  call mpas_pool_get_config(configs,'config_radt_sw_scheme',radt_sw_scheme      )
+ call mpas_pool_get_config(configs,'config_microp_scheme' ,microp_scheme       )
  call mpas_pool_get_config(configs,'config_microp_re'     ,config_microp_re    )
 
  call mpas_pool_get_array(mesh,'latCell',latCell)
