@@ -4,7 +4,7 @@ MODEL_FORMULATION =
 dummy:
 	( $(MAKE) error )
 
-xlf:
+xlf:   # BUILDTARGET IBM XLF compilers
 	( $(MAKE) all \
 	"FC_PARALLEL = mpxlf90" \
 	"CC_PARALLEL = mpcc" \
@@ -29,7 +29,7 @@ xlf:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI" )
  
-ftn:
+ftn:   # BUILDTARGET not sure what this is for
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
 	"CC_PARALLEL = cc" \
@@ -50,7 +50,7 @@ ftn:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
-titan-cray:
+titan-cray:   # BUILDTARGET Oak Ridge Titan
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
 	"CC_PARALLEL = cc" \
@@ -68,7 +68,7 @@ titan-cray:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
-pgi:
+pgi:   # BUILDTARGET PGI compiler suite
 	( $(MAKE) all \
 	"FC_PARALLEL = mpif90" \
 	"CC_PARALLEL = mpicc" \
@@ -160,7 +160,7 @@ ifort:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
-ifort-scorep:
+ifort-scorep: # BUILDTARGET Intel compiler suite with ScoreP profiling library
 	( $(MAKE) all \
 	"FC_PARALLEL = scorep --compiler mpif90" \
 	"CC_PARALLEL = scorep --compiler mpicc" \
@@ -235,7 +235,7 @@ gfortran:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
-gfortran-clang:
+gfortran-clang: # BUILDTARGET Perhaps the longest target name?
 	( $(MAKE) all \
 	"FC_PARALLEL = mpif90" \
 	"CC_PARALLEL = mpicc -cc=clang" \
@@ -281,7 +281,7 @@ g95:
 	"OPENMP = $(OPENMP)" \
 	"CPPFLAGS = $(MODEL_FORMULATION) -D_MPI -DUNDERSCORE" )
 
-pathscale-nersc:
+pathscale-nersc:  # BUILDTARGET This one is 15 chars long...
 	( $(MAKE) all \
 	"FC_PARALLEL = ftn" \
 	"CC_PARALLEL = cc" \
@@ -778,11 +778,8 @@ errmsg:
 	@echo ""
 	@echo "Usage: $(MAKE) target CORE=[core] [options]"
 	@echo ""
-	@echo "Example targets:"
-	@echo "    ifort"
-	@echo "    gfortran"
-	@echo "    xlf"
-	@echo "    pgi"
+	@echo "Available Targets:"
+	@grep BUILDTARGET Makefile | grep -v grep | sed -e 's/#[[:blank:]]*BUILDTARGET[[:blank:]]*/#/' | sed -e 's/:[[:blank:]]*#/:#/' | sed -e 's/://' | awk 'BEGIN {FS="#"}{printf ("    %-15s - %s\n", $$1, $$2)}'
 	@echo ""
 	@echo "Availabe Cores:"
 	@cd src; ls -d core_* | grep ".*" | sed "s/core_/    /g"
