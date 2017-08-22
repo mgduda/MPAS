@@ -12,6 +12,7 @@
 !     Laura D. Fowler (laura@ucar.edu) / 2016-10-17.
 
 !=================================================================================================================
+! Updates to v0.3
 #ifdef SINGLE_PRECISION
 #  define VREC vsrec
 #  define VSQRT vssqrt
