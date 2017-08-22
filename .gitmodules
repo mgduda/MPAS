@@ -1,3 +1,0 @@
-[submodule "src/core_atmosphere/physics/physics_ccpp"]
-	path = src/core_atmosphere/physics/physics_ccpp
-	url = /dev/shm/physics_ccpp
