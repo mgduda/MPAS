@@ -57,6 +57,7 @@
       
  real(kind=4):: scalefactor
  real(kind=4),dimension(:,:,:),allocatable:: rarray
+ real(kind=4),dimension(:,:,:),allocatable:: superarray
 
  real(kind=RKIND):: lat,lon,x,y
  real(kind=RKIND):: lat_pt,lon_pt
@@ -231,6 +232,7 @@
  wordsize = 2
  scalefactor = 1.0
  allocate(rarray(nx,ny,nz))
+ allocate(superarray(2*nx,2*ny,nz))
  allocate(nhs(nCells))
  nhs(:) = 0
  ter(:) = 0.0
@@ -248,18 +250,22 @@
                          scalefactor,wordsize,istatus)
        call init_atm_check_read_error(istatus, fname)
 
+       call supersample_tile(nx, ny, rarray, superarray)
+
        iPoint = 1
-       do j=4,ny-3
-       do i=4,nx-3
-          lat_pt = -89.99583  + (jTileStart + j - 5) * 0.0083333333
-          lon_pt = -179.99583 + (iTileStart + i - 5) * 0.0083333333
+       do j=7,2*ny-6
+       do i=7,2*nx-6
+!          lat_pt = -89.99583  + (jTileStart + j - 5) * 0.0083333333
+!          lon_pt = -179.99583 + (iTileStart + i - 5) * 0.0083333333
+          lat_pt = -89.99791667  + (2*(jTileStart-1) + j - 7) * 0.0041666667
+          lon_pt = -179.99791667 + (2*(iTileStart-1) + i - 7) * 0.0041666667
           lat_pt = lat_pt * PI / 180.0
           lon_pt = lon_pt * PI / 180.0
 
           iPoint = nearest_cell(lat_pt,lon_pt,iPoint,nCells,maxEdges, &
                                 nEdgesOnCell,cellsOnCell, &
                                 latCell,lonCell)
-          ter(iPoint) = ter(iPoint) + rarray(i,j,1)
+          ter(iPoint) = ter(iPoint) + superarray(i,j,1)
           nhs(iPoint) = nhs(iPoint) + 1
        end do
        end do
@@ -271,6 +277,7 @@
     ter(iCell) = ter(iCell) / real(nhs(iCell))
  end do
  deallocate(rarray)
+ deallocate(superarray)
  deallocate(nhs)
  write(0,*) '--- end interpolate TER'
 
@@ -299,6 +306,7 @@
  wordsize = 1
  scalefactor = 1.0
  allocate(rarray(nx,ny,nz))
+ allocate(superarray(2*nx,2*ny,nz))
  allocate(ncat(ismax_lu,nCells))
  ncat(:,:) = 0
  lu_index(:) = 0.0
@@ -316,23 +324,27 @@
                          scalefactor,wordsize,istatus)
        call init_atm_check_read_error(istatus, fname)
 
+       call supersample_tile(nx, ny, rarray, superarray)
+
        iPoint = 1
-       do j=1,ny
-       do i=1,nx
+       do j=1,2*ny
+       do i=1,2*nx
 !
 ! The MODIS dataset appears to have zeros at the South Pole, possibly other places, too
 !
-if (rarray(i,j,1) == 0) cycle
+if (superarray(i,j,1) == 0) cycle
 
-          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
-          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+!          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
+!          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+          lat_pt = -89.99791667  + (2*(jTileStart-1) + j - 1) * 0.0041666667
+          lon_pt = -179.99791667 + (2*(iTileStart-1) + i - 1) * 0.0041666667
           lat_pt = lat_pt * PI / 180.0
           lon_pt = lon_pt * PI / 180.0
 
           iPoint = nearest_cell(lat_pt,lon_pt,iPoint,nCells,maxEdges, &
                                 nEdgesOnCell,cellsOnCell, &
                                 latCell,lonCell)
-          ncat(int(rarray(i,j,1)),iPoint) = ncat(int(rarray(i,j,1)),iPoint) + 1
+          ncat(int(superarray(i,j,1)),iPoint) = ncat(int(superarray(i,j,1)),iPoint) + 1
        end do
        end do
 
@@ -348,6 +360,7 @@ if (rarray(i,j,1) == 0) cycle
     end do
  end do
  deallocate(rarray)
+ deallocate(superarray)
  deallocate(ncat)
  write(0,*) '--- end interpolate LU_INDEX'
 
@@ -363,6 +376,7 @@ if (rarray(i,j,1) == 0) cycle
  wordsize    = 1
  scalefactor = 1.0
  allocate(rarray(nx,ny,nz))
+ allocate(superarray(2*nx,2*ny,nz))
  allocate(ncat(16,nCells))
  ncat(:,:) = 0
  soilcat_top(:) = 0.0
@@ -380,18 +394,22 @@ if (rarray(i,j,1) == 0) cycle
                          scalefactor,wordsize,istatus)
        call init_atm_check_read_error(istatus, fname)
 
+       call supersample_tile(nx, ny, rarray, superarray)
+
        iPoint = 1
-       do j=1,ny
-       do i=1,nx
-          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
-          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+       do j=1,2*ny
+       do i=1,2*nx
+!          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
+!          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+          lat_pt = -89.99791667  + (2*(jTileStart-1) + j - 1) * 0.0041666667
+          lon_pt = -179.99791667 + (2*(iTileStart-1) + i - 1) * 0.0041666667
           lat_pt = lat_pt * PI / 180.0
           lon_pt = lon_pt * PI / 180.0
 
           iPoint = nearest_cell(lat_pt,lon_pt,iPoint,nCells,maxEdges, &
                                 nEdgesOnCell,cellsOnCell, &
                                 latCell,lonCell)
-          ncat(int(rarray(i,j,1)),iPoint) = ncat(int(rarray(i,j,1)),iPoint) + 1
+          ncat(int(superarray(i,j,1)),iPoint) = ncat(int(superarray(i,j,1)),iPoint) + 1
        end do
        end do
 
@@ -407,6 +425,7 @@ if (rarray(i,j,1) == 0) cycle
     end do
  end do
  deallocate(rarray)
+ deallocate(superarray)
  deallocate(ncat)
  write(0,*) '--- end interpolate SOILCAT_TOP'
 
@@ -422,6 +441,7 @@ if (rarray(i,j,1) == 0) cycle
  wordsize = 1
  scalefactor = 1.0
  allocate(rarray(nx,ny,nz))
+ allocate(superarray(2*nx,2*ny,nz))
  allocate(ncat(16,nCells))
  ncat(:,:) = 0
  soilcat_bot(:) = 0.0
@@ -439,18 +459,22 @@ if (rarray(i,j,1) == 0) cycle
                          scalefactor,wordsize,istatus)
        call init_atm_check_read_error(istatus, fname)
 
+       call supersample_tile(nx, ny, rarray, superarray)
+
        iPoint = 1
-       do j=1,ny
-       do i=1,nx
-          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
-          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+       do j=1,2*ny
+       do i=1,2*nx
+!          lat_pt = -89.99583  + (jTileStart + j - 2) * 0.0083333333
+!          lon_pt = -179.99583 + (iTileStart + i - 2) * 0.0083333333
+          lat_pt = -89.99791667  + (2*(jTileStart-1) + j - 1) * 0.0041666667
+          lon_pt = -179.99791667 + (2*(iTileStart-1) + i - 1) * 0.0041666667
           lat_pt = lat_pt * PI / 180.0
           lon_pt = lon_pt * PI / 180.0
 
           iPoint = nearest_cell(lat_pt,lon_pt,iPoint,nCells,maxEdges, &
                                 nEdgesOnCell,cellsOnCell, &
                                 latCell,lonCell)
-          ncat(int(rarray(i,j,1)),iPoint) = ncat(int(rarray(i,j,1)),iPoint) + 1
+          ncat(int(superarray(i,j,1)),iPoint) = ncat(int(superarray(i,j,1)),iPoint) + 1
        end do
        end do
 
@@ -466,6 +490,7 @@ if (rarray(i,j,1) == 0) cycle
     end do
  end do
  deallocate(rarray)
+ deallocate(superarray)
  deallocate(ncat)
  write(0,*) '--- end interpolate SOILCAT_BOT'
 
@@ -830,6 +855,7 @@ if (rarray(i,j,1) == 0) cycle
 
  real(kind=4):: scalefactor
  real(kind=4),dimension(:,:,:),allocatable:: rarray
+ real(kind=4),dimension(:,:,:),allocatable:: superarray
 
  real(kind=RKIND):: lat,lon,x,y
  real(kind=RKIND):: lat_pt,lon_pt
@@ -891,14 +917,19 @@ if (rarray(i,j,1) == 0) cycle
  wordsize    = 4
  scalefactor = 1.0
 
- dx = 0.00833333
- dy = 0.00833333
+! dx = 0.00833333
+! dy = 0.00833333
+ dx = 0.004166667
+ dy = 0.004166667
  known_x = 1.0
  known_y = 1.0
- known_lat = -59.99583
- known_lon = -179.99583
+! known_lat = -59.99583
+! known_lon = -179.99583
+  known_lat = -59.99791667
+  known_lon = -179.99791667
   
  allocate(rarray(nx,ny,nz))
+ allocate(superarray(2*nx,2*ny,nz))
  allocate(nhs(nCells))
  nhs(:) = 0
  rarray(:,:,:) = 0._RKIND
@@ -915,18 +946,20 @@ if (rarray(i,j,1) == 0) cycle
                          scalefactor,wordsize,istatus)
        call init_atm_check_read_error(istatus,fname)
 
+       call supersample_tile(nx, ny, rarray, superarray)
+
        iPoint = 1
-       do j = 1,ny
-       do i = 1,nx
-          lat_pt = known_lat + (jTileStart + j - 2) * dy
-          lon_pt = known_lon + (iTileStart + i - 2) * dx
+       do j = 1,2*ny
+       do i = 1,2*nx
+          lat_pt = known_lat + (2*(jTileStart-1) + j - 1) * dy
+          lon_pt = known_lon + (2*(iTileStart-1) + i - 1) * dx
           lat_pt = lat_pt * PI / 180.0
           lon_pt = lon_pt * PI / 180.0
 
           iPoint = nearest_cell(lat_pt,lon_pt,iPoint,nCells,maxEdges, &
                                 nEdgesOnCell,cellsOnCell, &
                                 latCell,lonCell)
-          varsso(iPoint) = varsso(iPoint) + rarray(i,j,1)
+          varsso(iPoint) = varsso(iPoint) + superarray(i,j,1)
           nhs(iPoint) = nhs(iPoint) + 1
        enddo
        enddo
@@ -939,6 +972,7 @@ if (rarray(i,j,1) == 0) cycle
        varsso(iCell) = varsso(iCell) / real(nhs(iCell))
  enddo
  deallocate(rarray)
+ deallocate(superarray)
  deallocate(nhs)
  write(0,*) '--- end interpolate VARSSO'
 
@@ -2086,6 +2120,29 @@ if (rarray(i,j,1) == 0) cycle
  sphere_distance = 2.*radius*asin(arg1)
 
  end function sphere_distance
+
+
+ subroutine supersample_tile(nx, ny, intile, outtile)
+
+    implicit none
+
+    integer, intent(in) :: nx, ny
+    real(kind=4), dimension(nx, ny), intent(in) :: intile
+    real(kind=4), dimension(2*nx, 2*ny), intent(out) :: outtile
+
+    integer :: i, j
+
+    do j=1,ny
+    do i=1,nx
+       outtile(2*(i-1)+1,2*(j-1)+1) = intile(i,j)
+       outtile(2*(i-1)+2,2*(j-1)+1) = intile(i,j)
+       outtile(2*(i-1)+2,2*(j-1)+2) = intile(i,j)
+       outtile(2*(i-1)+1,2*(j-1)+2) = intile(i,j)
+    end do
+    end do
+
+ end subroutine supersample_tile
+
 
 !==================================================================================================
  end module mpas_init_atm_static
