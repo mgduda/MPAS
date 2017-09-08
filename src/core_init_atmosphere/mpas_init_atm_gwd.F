@@ -308,6 +308,9 @@ module mpas_init_atm_gwd
       !
       ny = ceiling((180.0 * dx * pts_per_degree) / (Pi * Re))
 
+nx = nx * 2
+ny = ny * 2
+
       !
       ! Find coordinates in global topography array of the box center
       !
@@ -329,11 +332,11 @@ module mpas_init_atm_gwd
       ! the periodicity in the longitude coordinate, as well as the poles
       !
       box_mean = 0.0
-      do j=1,ny
-      do i=1,nx
+      do j=1,ny/2
+      do i=1,nx/2
 
-         ii = i - nx/2 + ic
-         jj = j - ny/2 + jc
+         ii = i - nx/4 + ic
+         jj = j - ny/4 + jc
 
          if (jj <= 0) then
             jj = -jj + 1
@@ -350,10 +353,16 @@ module mpas_init_atm_gwd
             ii = ii - topo_x
          end do
  
-         box(i,j) = topo(ii,jj)
+         box(2*(i-1)+1,2*(j-1)+1) = topo(ii,jj)
+         box(2*(i-1)+2,2*(j-1)+1) = topo(ii,jj)
+         box(2*(i-1)+2,2*(j-1)+2) = topo(ii,jj)
+         box(2*(i-1)+1,2*(j-1)+2) = topo(ii,jj)
          sg_lat = (start_lat + (real(jj-1,RKIND) + 0.5) / pts_per_degree) / rad2deg  ! Add 0.5 for cell center
-         dxm(i,j) = sg_delta * cos(sg_lat)
-         box_mean = box_mean + box(i,j)
+         dxm(2*(i-1)+1,2*(j-1)+1) = sg_delta * cos(sg_lat)
+         dxm(2*(i-1)+2,2*(j-1)+1) = sg_delta * cos(sg_lat)
+         dxm(2*(i-1)+2,2*(j-1)+2) = sg_delta * cos(sg_lat)
+         dxm(2*(i-1)+1,2*(j-1)+2) = sg_delta * cos(sg_lat)
+         box_mean = box_mean + box(2*(i-1)+1,2*(j-1)+1)
 
       end do
       end do
@@ -361,7 +370,7 @@ module mpas_init_atm_gwd
       !
       ! Compute mean topography in the extracted box
       !
-      box_mean = box_mean / real(nx*ny, RKIND)
+      box_mean = 4.0_RKIND * box_mean / real(nx*ny, RKIND)
 
    end subroutine get_box
 
