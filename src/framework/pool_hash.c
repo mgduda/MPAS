@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
-#ifdef UNDERSCORE
+#if (defined(UNDERSCORE) || defined(FORTRANUNDERSCORE))
 #define pool_hash pool_hash_
 #else
-#ifdef DOUBLEUNDERSCORE
+#if (defined(DOUBLEUNDERSCORE) || defined(FORTRANDOUBLEUNDERSCORE))
 #define pool_hash pool_hash__
 #endif
 #endif

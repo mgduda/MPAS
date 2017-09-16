@@ -9,11 +9,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef UNDERSCORE
+#if (defined(UNDERSCORE) || defined(FORTRANUNDERSCORE))
 #define gen_random gen_random_
 #define seed_random seed_random_
 #else
-#ifdef DOUBLEUNDERSCORE
+#if (defined(DOUBLEUNDERSCORE) || defined(FORTRANDOUBLEUNDERSCORE))
 #define gen_random gen_random__
 #define seed_random seed_random__
 #endif

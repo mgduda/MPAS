@@ -15,11 +15,11 @@
 #endif
 #endif
 
-#ifdef UNDERSCORE
+#if (defined(UNDERSCORE) || defined(FORTRANUNDERSCORE))
 #define open_streams open_streams_
 #define close_streams close_streams_
 #else
-#ifdef DOUBLEUNDERSCORE
+#if (defined(DOUBLEUNDERSCORE) || defined(FORTRANDOUBLEUNDERSCORE))
 #define open_streams open_streams__
 #define close_streams close_streams__
 #endif

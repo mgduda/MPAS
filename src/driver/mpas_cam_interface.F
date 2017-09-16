@@ -4,13 +4,16 @@ module mpas_cam_interface
    use mpas_io
    use mpas_dmpar
    use mpas_constants
-   use atm_core
    use mpas_derived_types
    use mpas_pool_routines
    use mpas_io_units, only : stdoutUnit, stderrUnit
    use mpas_framework
    use mpas_kind_types
+
+#ifdef CAM_DYCORE
+   use atm_core
    use atm_core_interface
+#endif
 
    type (core_type), pointer :: corelist => null()
    type (dm_info), pointer :: dminfo
@@ -24,6 +27,7 @@ module mpas_cam_interface
 
    contains
 
+#ifdef CAM_DYCORE
    subroutine mpas_init1(mpi_comm, phys_dt, PIOFileDesc)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! SUBROUTINE MPAS_INIT1
@@ -44,11 +48,9 @@ module mpas_cam_interface
       use mpas_bootstrapping, only : mpas_bootstrap_framework_phase1, mpas_bootstrap_framework_phase2
       use mpas_timekeeping
 
-!#ifdef CAM_DYCORE
-!      use cam_initfiles,    only: ncdata, rest_pfile
-!      use cam_control_mod,  only: initial_run
-!      use ioFileMod,        only: opnfil
-!#endif 
+      use cam_initfiles,    only: ncdata, rest_pfile
+      use cam_control_mod,  only: initial_run
+      use ioFileMod,        only: opnfil
    
       implicit none
 
@@ -223,20 +225,18 @@ module mpas_cam_interface
       !    mesh fields, build halos and allocate blocks in the domain
       !
 
-!#ifdef CAM_DYCORE
-!      !SHP-CAM:: re-setup for initial/restart information 
-!      write (0,*) 'SHP:: initial_run? ->', initial_run
-!      call mpas_pool_get_config(domain_ptr % configs, 'config_do_restart', config_do_restart)
-!      write (0,*) 'SHP:: do_restart? ->', config_do_restart
-!
-!      if (initial_run) then
-!         config_do_restart = .false.
-!         write (0,*) 'SHP:: do_restart? ', config_do_restart
-!      else
-!         config_do_restart = .true.
-!         write (0,*) 'SHP:: do_restart? ', config_do_restart
-!      end if
-!#endif
+      !SHP-CAM:: re-setup for initial/restart information 
+      write (0,*) 'SHP:: initial_run? ->', initial_run
+      call mpas_pool_get_config(domain_ptr % configs, 'config_do_restart', config_do_restart)
+      write (0,*) 'SHP:: do_restart? ->', config_do_restart
+
+      if (initial_run) then
+         config_do_restart = .false.
+         write (0,*) 'SHP:: do_restart? ', config_do_restart
+      else
+         config_do_restart = .true.
+         write (0,*) 'SHP:: do_restart? ', config_do_restart
+      end if
 
       ierr = domain_ptr % core % get_mesh_stream(domain_ptr % configs, mesh_stream)
       if ( ierr /= 0 ) then
@@ -270,21 +270,19 @@ module mpas_cam_interface
          mesh_iotype = MPAS_IO_PNETCDF
       end if
 
-!#ifdef CAM_DYCORE
-!      !SHP-CAM:: re-setup for mesh stream (from CAM)
-!      if (initial_run) then
-!         mesh_filename_temp(1:len(ncdata)) = ncdata(:)
-!         write (0,*) 'SHP:: initial_run ', mesh_filename_temp
-!      else
-!         call opnfil(rest_pfile, 1000, 'f', status="old")
-!         read (1000, '(a)', iostat=ierr) mesh_filename_temp
-!         if (ierr /= 0) then
-!           write(stderrUnit,*) 'Error:opening file for ', rest_pfile 
-!         end if
-!         close(1000)
-!         write (0,*) 'SHP:: restart_run', mesh_filename_temp  
-!      end if
-!#endif
+      !SHP-CAM:: re-setup for mesh stream (from CAM)
+      if (initial_run) then
+         mesh_filename_temp(1:len(ncdata)) = ncdata(:)
+         write (0,*) 'SHP:: initial_run ', mesh_filename_temp
+      else
+         call opnfil(rest_pfile, 1000, 'f', status="old")
+         read (1000, '(a)', iostat=ierr) mesh_filename_temp
+         if (ierr /= 0) then
+           write(stderrUnit,*) 'Error:opening file for ', rest_pfile 
+         end if
+         close(1000)
+         write (0,*) 'SHP:: restart_run', mesh_filename_temp  
+      end if
 
       start_time = mpas_get_clock_time(domain_ptr % clock, MPAS_START_TIME, ierr)
       if ( trim(ref_time_temp) == 'initial_time' ) then
@@ -310,18 +308,16 @@ module mpas_cam_interface
       dt_dynamics = dt_physics / ceiling(dt_physics / dt)
       n_subcycle_steps = ceiling(dt_physics / dt)
 
-!#ifdef CAM_DYCORE
-!      !SHP-CAM:: re-setup for clock information for restart_run 
-!      !          MPAS restart_run start on (+ phys_dt) step.
-!      !          So, we need some trick to create MPAS output on regular clock time.
-!      !          MGD & SHP quite don't understand why CAM's time for output and restart files are different. 
-!      if (.not. initial_run) then
-!        do j=1,n_subcycle_steps
-!          call mpas_advance_clock(domain_ptr % clock)
-!        end do
-!        currTime = mpas_get_clock_time(domain_ptr % clock, MPAS_NOW, ierr)
-!      end if
-!#endif
+      !SHP-CAM:: re-setup for clock information for restart_run 
+      !          MPAS restart_run start on (+ phys_dt) step.
+      !          So, we need some trick to create MPAS output on regular clock time.
+      !          MGD & SHP quite don't understand why CAM's time for output and restart files are different. 
+      if (.not. initial_run) then
+        do j=1,n_subcycle_steps
+          call mpas_advance_clock(domain_ptr % clock)
+        end do
+        currTime = mpas_get_clock_time(domain_ptr % clock, MPAS_NOW, ierr)
+      end if
 
       write(stderrUnit, *) ' ** Attempting to bootstrap MPAS framework using stream: ', trim(mesh_stream)
       call mpas_bootstrap_framework_phase1(domain_ptr, mesh_filename, mesh_iotype)
@@ -1575,6 +1571,6 @@ module mpas_cam_interface
       az = az * mi
 
    end subroutine r3_normalize 
-
+#endif
 
 end module mpas_cam_interface

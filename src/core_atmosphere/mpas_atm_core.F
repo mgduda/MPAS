@@ -136,9 +136,9 @@ module atm_core
 
       use mpas_timekeeping
 
-!#ifdef CAM_DYCORE
-!      use time_manager , only: get_curr_date
-!#endif
+#ifdef CAM_DYCORE
+      use time_manager , only: get_curr_date
+#endif
 
       implicit none
 
@@ -156,10 +156,10 @@ module atm_core
       character (len=StrKIND), pointer :: config_stop_time
       character (len=StrKIND) :: startTimeStamp
 
-!#ifdef CAM_DYCORE
-!      integer :: YYYY,MM,DD,TOD
-!      type (MPAS_Time_Type) :: cam_time
-!#endif
+#ifdef CAM_DYCORE
+      integer :: YYYY,MM,DD,TOD
+      type (MPAS_Time_Type) :: cam_time
+#endif
 
       ierr = 0
 
@@ -177,13 +177,13 @@ module atm_core
         startTimeStamp = config_start_time
       end if
 
-!#ifdef CAM_DYCORE
-!      !SHP-CAM
-!      call get_curr_date(YYYY,MM,DD,TOD)
-!      call mpas_set_time(cam_time, YYYY, MM, DD, S=0, ierr=local_err)
-!      !call mpas_set_time(cam_time, YYYY, MM, DD, S=TOD, ierr=local_err)
-!      call mpas_get_time(cam_time, dateTimeString=startTimeStamp, ierr=local_err)
-!#endif
+#ifdef CAM_DYCORE
+      !SHP-CAM
+      call get_curr_date(YYYY,MM,DD,TOD)
+      call mpas_set_time(cam_time, YYYY, MM, DD, S=0, ierr=local_err)
+      !call mpas_set_time(cam_time, YYYY, MM, DD, S=TOD, ierr=local_err)
+      call mpas_get_time(cam_time, dateTimeString=startTimeStamp, ierr=local_err)
+#endif
 
       call mpas_set_time(curr_time=startTime, dateTimeString=startTimeStamp, ierr=local_err)
       call mpas_set_timeInterval(timeStep, dt=config_dt, ierr=local_err)

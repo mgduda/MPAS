@@ -19,7 +19,7 @@
                 <dim name="R3"                 definition="3"/>
                 <dim name="nVertLevels"/>
                 <dim name="nVertLevelsP1"      definition="nVertLevels+1"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
                 <dim name="nMonths"            definition="namelist:months"/>
                 <dim name="nSoilLevels"        definition="namelist:num_soil_layers"/>
                 <dim name="nLags"              definition="namelist:input_soil_temperature_lag"/>
@@ -34,7 +34,7 @@
 <!-- **************************************************************************************** -->
 <!-- ************************************** Namelists *************************************** -->
 <!-- **************************************************************************************** -->
-#ifdef CAM_DYCORE
+#ifdef MPAS_CAM
         <packages>
                 <package  name="cam5"  description="CAM5 physics"/>
         </packages>
@@ -110,7 +110,7 @@
                 <nml_option name="config_print_global_minmax_sca"    type="logical"       default_value="false"              in_defaults="false"/>
         </nml_record>
 
-#ifdef CAM_DYCORE
+#ifdef MPAS_CAM
         <nml_record name="physics">
                 <nml_option name="config_cam_physics"                type="character"     default_value="cam5"/>
         </nml_record>
@@ -201,7 +201,7 @@
 			<var name="rho_base"/>
 			<var name="theta_base"/>
 			<var name="surface_pressure"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
 			<var name="ter"/>
 			<var name="isltyp"/>
 			<var name="ivgtyp"/>
@@ -346,7 +346,7 @@
 			<var name="surface_pressure"/>
                         <var name="tend_sfc_pressure"/>
 			<var name="rt_diabatic_tend"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
 			<var name="dcEdge_m"/>
 			<var name="nsteps_accum"/>
 			<var name="ndays_accum"/>
@@ -589,7 +589,7 @@
 			<var name="ke"/>
 			<var name="uReconstructZonal"/>
 			<var name="uReconstructMeridional"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
 			<var name="i_rainnc"/>
 			<var name="rainnc"/>
 			<var name="precipw"/>
@@ -656,7 +656,7 @@
 			<var name="vorticity_200hPa"/>
 			<var name="vorticity_500hPa"/>
 			<var name="vorticity_850hPa"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
 			<var name="olrtoa"/>
 			<var name="rainc"/>
 			<var name="rainnc"/>
@@ -665,7 +665,7 @@
 #endif 
 		</stream>
 
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
 		<stream name="surface" 
                         type="input" 
                         filename_template="x1.40962.sfc_update.nc" 
@@ -778,7 +778,7 @@
                 <var name="east"                      type="real"     dimensions="R3 nCells"/>
                 <var name="north"                     type="real"     dimensions="R3 nCells"/>
 
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
                 <!-- Arrays needed only in the CAM LW and SW radiation codes: Aerosols -->
                 <var name="m_hybi"                    type="real"     dimensions="nAerLevels nCells"/>
 #endif
@@ -798,13 +798,13 @@
                         <var name="qv"      array_group="moist"/>
                         <var name="qc"      array_group="moist"/>
                         <var name="qr"      array_group="moist"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
                         <var name="qi"      array_group="moist"/>
                         <var name="qs"      array_group="moist"/>
                         <var name="qg"      array_group="moist"/>
 #endif
 
-#ifdef CAM_DYCORE
+#ifdef MPAS_CAM
                         <var name="qnr"     array_group="conc"       packages="cam5"/>
                         <var name="qni"     array_group="conc"       packages="cam5"/>
                         <var name="aer1"    array_group="aerosol"    packages="cam5"/>
@@ -830,7 +830,7 @@
 #endif
                 </var_array>
 
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
                 <var_array name="aerosols" type="real" dimensions="nAerLevels nCells Time">
                         <var name="sul"     array_group="aer_cam"/>
                         <var name="sslt"    array_group="aer_cam"/>
@@ -984,13 +984,13 @@
                         <var name="tend_qv"    name_in_code="qv"        array_group="moist"/>
                         <var name="tend_qc"    name_in_code="qc"        array_group="moist"/>
                         <var name="tend_qr"    name_in_code="qr"        array_group="moist"/>
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
                         <var name="tend_qi"    name_in_code="qi"        array_group="moist"/>
                         <var name="tend_qs"    name_in_code="qs"        array_group="moist"/>
                         <var name="tend_qg"    name_in_code="qg"        array_group="moist"/>
 #endif
 
-#ifdef CAM_DYCORE
+#ifdef MPAS_CAM
                         <var name="tend_qnr"    name_in_code="qnr"      array_group="conc"       packages="cam5"/>
                         <var name="tend_qni"    name_in_code="qni"      array_group="conc"       packages="cam5"/>
                         <var name="tend_aer1"   name_in_code="aer1"     array_group="aerosol"    packages="cam5"/>
@@ -1025,7 +1025,7 @@
 <!-- ================================================================================================== -->
 
 
-#ifndef CAM_DYCORE
+#ifndef MPAS_CAM
         <nml_record name="physics" in_defaults="true">
                 <!-- NAMELIST VARIABLES ADDED FOR INITIALIZATION OF SURFACE CHARACTERISTICS: -->
                 <nml_option name="input_soil_data"                   type="character"     default_value="STAS"       in_defaults="false"/>
@@ -1658,7 +1658,7 @@
         </var_struct>
 #endif
 
-#ifdef CAM_DYCORE
+#ifdef MPAS_CAM
         <!--
         <var_struct name="diag_physics" time_levs="1">
                 <var name="relhum"        type="real"     dimensions="nVertLevels nCells Time"/>
