@@ -13,6 +13,12 @@ module atm_core
    use mpas_log, only : mpas_log_write
 
    type (MPAS_Clock_type), pointer :: clock
+   type (mpas_coupler_type), pointer :: mpas_cpl
+
+   ! Eventually, we need a cleaner way to define roles, but for now, assume we have
+   !   defined two roles in mpas_atm_core_interface.F, and that these correspond to
+   !   a "radiation" role and a "gpu" role
+   integer, parameter :: ROLE_GPU = 0, ROLE_RADIATION = 1
 
 
    contains
@@ -75,6 +81,7 @@ module atm_core
       ! Set "local" clock to point to the clock contained in the domain type
       !
       clock => domain % clock
+      mpas_cpl => domain % mpas_cpl
 
 
       call mpas_pool_get_config(domain % blocklist % configs, 'config_do_restart', config_do_restart)
@@ -486,6 +493,15 @@ module atm_core
       real (kind=R8KIND) :: output_start_time, output_stop_time
       
       ierr = 0
+
+
+      if (mpas_cpl % role() == ROLE_GPU) then
+         call mpas_log_write('*** Handling dynamics work on GPUs...')
+      end if
+      if (mpas_cpl % role() == ROLE_RADIATION) then
+         call mpas_log_write('*** Handling radiation on CPUs...')
+      end if
+
       
       ! Eventually, dt should be domain specific
       call mpas_pool_get_config(domain % blocklist % configs, 'config_dt', dt)
@@ -521,19 +537,23 @@ module atm_core
 
       call mpas_dmpar_get_time(diag_stop_time)
 
-      call mpas_dmpar_get_time(output_start_time)
-      call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
-      call mpas_dmpar_get_time(output_stop_time)
-      if (ierr /= MPAS_STREAM_MGR_NOERR .and. &
-          ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_FILE .and. &
-          ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_REC) then
-         call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_ERR)
-         call mpas_log_write('Error writing one or more output streams',                                         messageType=MPAS_LOG_ERR)
-         call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_CRIT)
+      if (mpas_cpl % role() == ROLE_GPU) then
+         call mpas_dmpar_get_time(output_start_time)
+         call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
+         call mpas_dmpar_get_time(output_stop_time)
+         if (ierr /= MPAS_STREAM_MGR_NOERR .and. &
+             ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_FILE .and. &
+             ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_REC) then
+            call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_ERR)
+            call mpas_log_write('Error writing one or more output streams',                                         messageType=MPAS_LOG_ERR)
+            call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_CRIT)
+         end if
+         if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
+            call mpas_log_write('Timing for stream output: $r s', realArgs=(/real(output_stop_time - output_start_time, kind=RKIND)/))
+         end if
       end if
       if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
          call mpas_log_write('Timing for diagnostic computation: $r s', realArgs=(/real(diag_stop_time - diag_start_time, kind=RKIND)/))
-         call mpas_log_write('Timing for stream output: $r s', realArgs=(/real(output_stop_time - output_start_time, kind=RKIND)/))
       end if
 
       call mpas_atm_diag_reset()
@@ -641,19 +661,23 @@ module atm_core
          end if
          call mpas_dmpar_get_time(diag_stop_time)
 
-         call mpas_dmpar_get_time(output_start_time)
-         call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
-         call mpas_dmpar_get_time(output_stop_time)
-         if (ierr /= MPAS_STREAM_MGR_NOERR .and. &
-             ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_FILE .and. &
-             ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_REC) then
-            call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_ERR)
-            call mpas_log_write('Error writing one or more output streams',                                         messageType=MPAS_LOG_ERR)
-            call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_CRIT)
+         if (mpas_cpl % role() == ROLE_GPU) then
+            call mpas_dmpar_get_time(output_start_time)
+            call mpas_stream_mgr_write(domain % streamManager, ierr=ierr)
+            call mpas_dmpar_get_time(output_stop_time)
+            if (ierr /= MPAS_STREAM_MGR_NOERR .and. &
+                ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_FILE .and. &
+                ierr /= MPAS_STREAM_MGR_ERR_CLOBBER_REC) then
+               call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_ERR)
+               call mpas_log_write('Error writing one or more output streams',                                         messageType=MPAS_LOG_ERR)
+               call mpas_log_write('********************************************************************************', messageType=MPAS_LOG_CRIT)
+            end if
+            if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
+               call mpas_log_write('Timing for stream output: $r s', realArgs=(/real(output_stop_time - output_start_time, kind=RKIND)/))
+            end if
          end if
          if (MPAS_stream_mgr_ringing_alarms(domain % streamManager, direction=MPAS_STREAM_OUTPUT, ierr=ierr)) then
             call mpas_log_write('Timing for diagnostic computation: $r s', realArgs=(/real(diag_stop_time - diag_start_time, kind=RKIND)/))
-            call mpas_log_write('Timing for stream output: $r s', realArgs=(/real(output_stop_time - output_start_time, kind=RKIND)/))
          end if
 
          ! reset any diagnostics here
