@@ -688,7 +688,6 @@ module mpas_bootstrapping
 
 
 #ifdef SIONLIB
-   ! DH*
    !***********************************************************************
    !
    !  routine mpas_read_local_cell_list_from_sionlib_file
@@ -722,17 +721,17 @@ module mpas_bootstrapping
 
      ! Local variables
      character(len=StrKIND) :: decompFile
-     character*2 :: SIONLIB_filemode = "rb"
+     character(len=2) :: SIONLIB_filemode = 'rb'
 
      integer :: SIONLIB_fsblksize = -1   ! autodetect
-     integer*8 :: SIONLIB_chunksize = 1073741824 ! 1GB, will be overwritten by value from file
+     integer (kind=I8KIND) :: SIONLIB_chunksize = 1073741824 ! 1GB, will be overwritten by value from file
      integer :: SIONLIB_numfiles = 1
 
      ! Maximum length of filename as for filename in mpas_io.F
      character(len=1024) :: newfname
      logical :: exists
 
-     integer*8 :: btoread, bread
+     integer (kind=I8KIND) :: btoread, bread
      integer :: f_endian, s_endian
 
      integer :: sid
@@ -746,7 +745,7 @@ module mpas_bootstrapping
      call mpas_log_write('Trying to read local_cell_list information directly from sionlib file with prefix ' // trim(decompFilePrefix))
 #endif
 
-     ! DH* TODO - use new routine (yet to create) that create filenames based on labels and process ids
+     ! TODO - use new routine (yet to create) that create filenames based on labels and process ids
      if (dminfo % nprocs < 1E1) then
          write(decompFile,'(a,i1)') trim(decompFilePrefix), dminfo % nprocs
      else if (dminfo % nprocs < 1E2) then
@@ -770,7 +769,6 @@ module mpas_bootstrapping
          ierr = 1
          return
      end if
-     ! *DH
 
      if (dminfo % my_proc_id == IO_NODE) then
          inquire(file=trim(decompFile), exist=exists)

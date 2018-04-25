@@ -68,7 +68,6 @@
       logical :: preexisting_file = .false.
       logical :: data_mode = .false.
       type (file_desc_t) :: pio_file
-
       character (len=StrKIND) :: filename
       integer :: iomode
       integer :: ioformat
@@ -106,7 +105,6 @@
    type atthandle_type
       character (len=StrKIND) :: attName
       integer :: attType
-
       integer :: attValueInt
       integer :: precision
       integer, dimension(:), pointer :: attValueIntA => null()

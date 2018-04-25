@@ -9,6 +9,7 @@ module mpas_sion
    use sion_f90_mpi
 
    implicit none
+
 ! Enable debugging information
 #define SIONLIB_DEBUG
 
@@ -26,8 +27,8 @@ module mpas_sion
    ! The chunksize for data files is only used for reading (and will be
    ! overwritten by the SIONlib open routine), for writing the correct
    ! size of the chunksizes is calculated on the fly.
-   integer*8, private :: SIONLIB_metadata_buffer_size = 81920 ! 80kB
-   integer*8, private :: SIONLIB_chunksize_data = 1073741824  ! 1GB, will be overwritten for read and write
+   integer (kind=I8KIND), private :: SIONLIB_metadata_buffer_size = 81920 ! 80kB
+   integer (kind=I8KIND), private :: SIONLIB_chunksize_data = 1073741824  ! 1GB, will be overwritten for read and write
    integer,   private :: SIONLIB_fsblksize = -1               ! autodetect
 
    ! Likewise, the number of sionlib files is controlled by the
@@ -38,6 +39,8 @@ module mpas_sion
    integer, parameter :: SIONLIB_noerr         = 0            ! PIO_noerr
    integer, parameter :: SIONLIB_err           = -53          ! PIO_RETURN_ERROR
    integer, parameter :: SIONlib_global        = 0            ! PIO_global
+
+   integer, parameter :: HugeStrKIND = 1000
 
 contains
 
@@ -114,8 +117,8 @@ contains
       integer, intent(in) :: mode
       integer, intent(out) :: ierr
 
-      integer*8 :: position, count
-      integer*8 :: chunksize_max
+      integer (kind=I8KIND) :: position, count
+      integer (kind=I8KIND) :: chunksize_max
 
       if (handle % sidd /= -1) then
          call mpas_log_write('ERROR in MPAS_SION_open: SIONlib file ' // trim(filename) // ' is already opened', messageType=MPAS_LOG_ERR)
@@ -177,7 +180,7 @@ contains
       integer, intent(in) :: comm
       integer, intent(inout) :: nullcomm
       integer, intent(in) :: proc_id
-      integer*8, intent(inout) :: chunksize
+      integer (kind=I8KIND), intent(inout) :: chunksize
       integer, intent(in) :: mode
 
       integer, intent(out) :: ierr
@@ -322,8 +325,8 @@ contains
       implicit none
 
       integer, intent(in) :: vartype
-      integer*8, intent(in) :: varsize
-      integer*8, intent(out) :: chunksize
+      integer (kind=I8KIND), intent(in) :: varsize
+      integer (kind=I8KIND), intent(out) :: chunksize
       integer, intent(out) :: ierr
 
       ierr = SIONLIB_noerr
@@ -356,8 +359,8 @@ contains
 
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       type (fieldlist_type), pointer, intent(inout) :: field_cursor
-      integer*8, intent(in) :: fieldsize
-      integer*8, intent(in) :: chunksize
+      integer (kind=I8KIND), intent(in) :: fieldsize
+      integer (kind=I8KIND), intent(in) :: chunksize
       integer, intent(inout) :: ierr
 
       integer :: cursor_start
@@ -482,7 +485,7 @@ contains
       integer, intent(out) :: ierr
 
       integer :: checksum
-      integer*8 :: count, position
+      integer (kind=I8KIND) :: count, position
       character (len=StrKIND) :: padded_charval
       character (len=HugeStrKIND) :: padded_charval_huge
       integer :: ichar
@@ -490,7 +493,7 @@ contains
 #ifdef SIONLIB_PREPEND_VARIABLE_PROPERTIES
       integer :: varid
       integer :: vartype
-      integer*8 :: varsize
+      integer (kind=I8KIND) :: varsize
 #endif
 
       ! Get current position in file and check that it matches
@@ -782,10 +785,10 @@ contains
       ! Category of metadata, read buffers and general variables
       integer :: sion_eof
       character (len=3) :: category
-      integer*8 :: count
+      integer (kind=I8KIND) :: count
       integer :: clength
       logical :: found
-      integer*8 :: test_start_cursor
+      integer (kind=I8KIND) :: test_start_cursor
 
       ! Dimensions
       type (dimlist_type), pointer :: dim_cursor
@@ -801,9 +804,9 @@ contains
       integer :: ndims
       integer, dimension(:), allocatable :: dimids
       integer :: vartype
-      integer*8 :: position
-      integer*8 :: varsize
-      integer*8 :: chunksize
+      integer (kind=I8KIND) :: position
+      integer (kind=I8KIND) :: varsize
+      integer (kind=I8KIND) :: chunksize
 
       ! Attributes
       type (attlist_type), pointer :: att_cursor
@@ -1285,9 +1288,9 @@ contains
 
          type (MPAS_IO_Handle_type), intent(inout) :: handle
          integer, intent(in) :: varid
-         integer*8, intent(in) :: position
-         integer*8, intent(in) :: varsize
-         integer*8, intent(in) :: chunksize
+         integer (kind=I8KIND), intent(in) :: position
+         integer (kind=I8KIND), intent(in) :: varsize
+         integer (kind=I8KIND), intent(in) :: chunksize
          integer, intent(out) :: ierr
 
          logical :: found
@@ -1360,11 +1363,11 @@ contains
 
       integer   :: varid
       integer   :: vartype
-      integer*8 :: position
-      integer*8 :: varsize
-      integer*8 :: chunksize
+      integer (kind=I8KIND) :: position
+      integer (kind=I8KIND) :: varsize
+      integer (kind=I8KIND) :: chunksize
       integer :: checksum
-      integer*8 :: count
+      integer (kind=I8KIND) :: count
       character (len=StrKIND) :: padded_charval
       character (len=HugeStrKIND) :: padded_charval_huge
       integer :: ichar
@@ -1372,7 +1375,7 @@ contains
 #ifdef SIONLIB_PREPEND_VARIABLE_PROPERTIES
       integer   :: varid_test
       integer   :: vartype_test
-      integer*8 :: varsize_test
+      integer (kind=I8KIND) :: varsize_test
 #endif
 
       varid     = field_cursor % fieldhandle % fieldid
@@ -1521,10 +1524,10 @@ contains
       implicit none
 
       type (MPAS_IO_Handle_type), intent(inout) :: handle
-      integer*8, intent(in) :: position
+      integer (kind=I8KIND), intent(in) :: position
       integer, intent(out) :: ierr
 
-      integer*8 :: current
+      integer (kind=I8KIND) :: current
 
       current = FSION_GET_POSITION(handle % sidd)
       if (current == position) then

@@ -2942,8 +2942,8 @@ module mpas_stream_manager
            manager % ioContext => debugContext
 
 #ifdef SIONLIB
-           ! DH* 20161124 - check if this works/makes sense, apparently this MPAS_io_init is never used?
            !sionlib_numfiles = config_sionlib_numfiles
+           ! TODO: check if this works/makes sense, apparently this MPAS_io_init is never used?
            call MPAS_io_init(debugContext, 1, 1, 1)
 #else
            call MPAS_io_init(debugContext, 1, 1)

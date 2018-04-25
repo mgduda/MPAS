@@ -821,11 +821,11 @@ include 'mpif.h'
    !-----------------------------------------------------------------------
    !  routine mpas_dmpar_max_int8
    !
-   !> \brief MPAS dmpar minimum integer*8 routine.
+   !> \brief MPAS dmpar minimum integer(kind=I8KIND) routine.
    !> \author Dom Heinzeller
    !> \date   02/16/16
    !> \details
-   !>  This routine returns the minimum integer*8 value across all processors in a communicator.
+   !>  This routine returns the minimum integer(kind=I8KIND) value across all processors in a communicator.
    !
    !-----------------------------------------------------------------------
    subroutine mpas_dmpar_min_int8(dminfo, i, imax)!{{{
@@ -833,8 +833,8 @@ include 'mpif.h'
       implicit none
 
       type (dm_info), intent(in) :: dminfo !< Input: Domain information
-      integer*8, intent(in) :: i !< Input: Integer value
-      integer*8, intent(out) :: imax !< Output: Minimum of integer values
+      integer(kind=I8KIND), intent(in) :: i !< Input: Integer value
+      integer(kind=I8KIND), intent(out) :: imax !< Output: Minimum of integer values
 
       integer :: mpi_ierr, threadNum
 
@@ -917,11 +917,11 @@ include 'mpif.h'
    !-----------------------------------------------------------------------
    !  routine mpas_dmpar_max_int8
    !
-   !> \brief MPAS dmpar maximum integer*8 routine.
+   !> \brief MPAS dmpar maximum integer(kind=I8KIND) routine.
    !> \author Dom Heinzeller
    !> \date   02/16/16
    !> \details
-   !>  This routine returns the maximum integer*8 value across all processors in a communicator.
+   !>  This routine returns the maximum integer(kind=I8KIND) value across all processors in a communicator.
    !
    !-----------------------------------------------------------------------
    subroutine mpas_dmpar_max_int8(dminfo, i, imax)!{{{
@@ -929,8 +929,8 @@ include 'mpif.h'
       implicit none
 
       type (dm_info), intent(in) :: dminfo !< Input: Domain information
-      integer*8, intent(in) :: i !< Input: Integer value
-      integer*8, intent(out) :: imax !< Output: Maximum of integer values
+      integer(kind=I8KIND), intent(in) :: i !< Input: Integer value
+      integer(kind=I8KIND), intent(out) :: imax !< Output: Maximum of integer values
 
       integer :: mpi_ierr, threadNum
 

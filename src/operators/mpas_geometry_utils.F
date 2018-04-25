@@ -150,7 +150,6 @@ module mpas_geometry_utils
 !      arc_length = sqrt(r) * 2.0 * asin(c/(2.0*r))
       mpas_arc_length = r * 2.0 * asin(c/(2.0*r))
 
-      !DIR$ ATTRIBUTES INLINE :: mpas_arc_length
    end function mpas_arc_length!}}}
 
 
@@ -688,7 +687,6 @@ module mpas_geometry_utils
         mpas_triangle_signed_area_sphere = -mpas_triangle_signed_area_sphere
       end if
 
-      !DIR$ ATTRIBUTES INLINE :: mpas_triangle_signed_area_sphere
    end function mpas_triangle_signed_area_sphere !}}}
 
 

@@ -1254,8 +1254,8 @@ module mpas_io
       integer (kind=MPAS_IO_OFFSET_KIND), dimension(:), pointer :: compdof
       type (decomplist_type), pointer :: decomp_cursor, new_decomp
 #ifdef SIONLIB
-      integer*8 :: fieldsize
-      integer*8 :: chunksize
+      integer(kind=I8KIND) :: fieldsize
+      integer(kind=I8KIND) :: chunksize
       integer :: sion_ierr
 #endif
 
@@ -1309,7 +1309,6 @@ module mpas_io
          ! with the hard-coded StrKIND value. The first dimension by convention is the length
          ! of the string, which is thus not used and substituted with StrKIND in SIONlib.
          if (field_cursor % fieldhandle % field_type == MPAS_IO_CHAR) then
-            ! DH*
             do i=1,field_cursor % fieldhandle % ndims
                 if (i .eq. 1) then
                     if (.not. trim(field_cursor % fieldhandle % dims(i) % dimname) == 'StrLen') then
@@ -1322,7 +1321,6 @@ module mpas_io
                     fieldsize = fieldsize * field_cursor % fieldhandle % dims(i) % dimsize
                 end if
             end do
-            ! *DH
          else
             do i=1,field_cursor % fieldhandle % ndims
                if (.not. field_cursor % fieldhandle % dims(i) % is_unlimited_dim) then
@@ -1346,9 +1344,9 @@ module mpas_io
       end if
 #endif
 
-      ! DH* - check if this block is still needed (because of the additional decompsed argument)
       !
       ! If this is a scalar field, just return
+      ! TODO: check if this block is still needed (because of the additional decompsed argument)
       !
       if (field_cursor % fieldhandle % ndims == 0 .or. &
           (field_cursor % fieldhandle % ndims == 1 .and. field_cursor % fieldhandle % has_unlimited_dim) .or. &
@@ -1356,7 +1354,6 @@ module mpas_io
 !call mpas_log_write('No need to create a decomposition for a 0d field...')
          return
       end if
-      ! *DH
 
       !
       ! Check whether a suitable decomposition already exists

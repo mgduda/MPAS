@@ -510,9 +510,9 @@ module mpas_subdriver
       do while (MPAS_stream_mgr_get_next_stream(domain % streamManager, streamID=stream_id, &
                                                & directionProperty=stream_dir, ioTypeProperty=stream_iotype))
          if ((stream_dir == MPAS_STREAM_INPUT_OUTPUT .or. stream_dir == MPAS_STREAM_OUTPUT) .and. &
-            & stream_iotype ==  MPAS_IO_SIONLIB) then
+              stream_iotype ==  MPAS_IO_SIONLIB) then
              call mpas_log_write('Adding special global attributes for SIONlib stream ' // trim(stream_id))
-             !
+
              call mpas_pool_get_config(domain % configs, 'config_number_of_blocks', config_number_of_blocks)
              call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nCells', nCells)
              call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nCellsSolve', nCellsSolve)
@@ -520,7 +520,7 @@ module mpas_subdriver
              call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nEdgesSolve', nEdgesSolve)
              call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nVertices', nVertices)
              call mpas_pool_get_dimension(domain % blocklist % dimensions, 'nVerticesSolve', nVerticesSolve)
-             !
+
              call MPAS_stream_mgr_add_att(domain % streamManager, 'nBlocks', config_number_of_blocks, streamID=stream_id, ierr=local_ierr)
              call MPAS_stream_mgr_add_att(domain % streamManager, 'nCells', nCells, streamID=stream_id, ierr=local_ierr)
              call MPAS_stream_mgr_add_att(domain % streamManager, 'nEdges', nEdges, streamID=stream_id, ierr=local_ierr)
