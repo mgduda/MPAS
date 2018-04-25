@@ -17,8 +17,6 @@ module mpas_bootstrapping
    use mpas_timekeeping
    use mpas_io_streams
    use mpas_log
-   use mpas_timer
-   use mpas_abort, only : mpas_dmpar_global_abort
 
 
    integer :: readCellStart, readCellEnd, nReadCells
@@ -137,7 +135,6 @@ module mpas_bootstrapping
       integer, pointer :: config_num_halos, config_number_of_blocks
       logical, pointer :: config_explicit_proc_decomp
       character (len=StrKIND), pointer :: config_block_decomp_file_prefix, config_proc_decomp_file_prefix
-      character (len=StrKIND) :: config_sionlib_decomp_file_prefix = 'decomp.sl.'
       integer :: nHalos
 
       ! For bootstrapping off SIONlib data
@@ -152,6 +149,7 @@ module mpas_bootstrapping
       call mpas_pool_get_config(domain % configs, 'config_proc_decomp_file_prefix', config_proc_decomp_file_prefix)
 
       nHalos = config_num_halos
+
 
       inputHandle = MPAS_io_open(trim(mesh_filename), MPAS_IO_READ, mesh_iotype, domain % ioContext, ierr=ierr)
       if (ierr /= MPAS_IO_NOERR) then
@@ -185,38 +183,38 @@ module mpas_bootstrapping
 
          call MPAS_io_get_att(inputHandle, 'nBlocks', config_number_of_blocks_in_file, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required attribute config_number_of_blocks not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required attribute config_number_of_blocks not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          else if (config_number_of_blocks_in_file .ne. config_number_of_blocks) then
-            call mpas_dmpar_global_abort("Attribute config_number_of_blocks in SIONlib file differs from namelist config, not supported")
+            call mpas_log_write('Attribute config_number_of_blocks in SIONlib file differs from namelist config, not supported', messageType=MPAS_LOG_CRIT)
          end if
 
          call MPAS_io_get_att(inputHandle, 'nCells', nCellsTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nCells not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nCells not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
          call MPAS_io_get_att(inputHandle, 'nEdges', nEdgesTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nEdges found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nEdges found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
          call MPAS_io_get_att(inputHandle, 'nVertices', nVerticesTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nVertices not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nVertices not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
          call MPAS_io_get_att(inputHandle, 'nCellsSolve', nCellsSolveTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nCellsSolve not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nCellsSolve not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
          call MPAS_io_get_att(inputHandle, 'nEdgesSolve', nEdgesSolveTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nEdgesSolve not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nEdgesSolve not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
          call MPAS_io_get_att(inputHandle, 'nVerticesSolve', nVerticesSolveTaskLocal, ierr=ierr)
          if (ierr /= MPAS_IO_NOERR) then
-            call mpas_dmpar_global_abort("Required task-local attribute nVerticesSolve not found for bootstrapping from SIONlib file")
+            call mpas_log_write('Required task-local attribute nVerticesSolve not found for bootstrapping from SIONlib file', messageType=MPAS_LOG_CRIT)
          end if
 
          call mpas_io_setup_cell_block_fields_simple(inputHandle, nCellsSolveTaskLocal, readingBlock, maxEdges, &
-                                              indexTocellIDField, nEdgesOnCellField, cellsOnCellField, edgesOnCellField, &
+                                              indexToCellIDField, nEdgesOnCellField, cellsOnCellField, edgesOnCellField, &
                                               verticesOnCellField, nHalos)
 
          call mpas_io_setup_edge_block_fields_simple(inputHandle, nEdgesSolveTaskLocal, readingBlock, maxEdges, &
@@ -225,6 +223,9 @@ module mpas_bootstrapping
          call mpas_io_setup_vertex_block_fields_simple(inputHandle, nVerticesSolveTaskLocal, readingBlock, vertexDegree, &
                                               indexToVertexIDField, cellsOnVertexField, nHalos)
 
+         nReadCells = nCellsSolveTaskLocal
+         nReadEdges = nEdgesSolveTaskLocal
+         nReadVertices = nVerticesSolveTaskLocal
       else
          !
          ! Determine the range of cells/edges/vertices that a processor will initially read
@@ -256,83 +257,38 @@ module mpas_bootstrapping
 
       end if
 
-      if ( (mesh_iotype == MPAS_IO_SIONLIB) .and. (config_number_of_blocks .eq. 0 &
-                                             &.or. config_number_of_blocks .eq. domain % dminfo % nprocs)) then
-         !
-         ! Set up a graph derived data type describing the connectivity for the cells
-         !   based on the data read from the SIONlib files read by this process; this
-         !   has only been tested to work if the number of blocks is identical to the
-         !   number of processors (MPI tasks) or zero (which implies the same). This
-         !   requires significantly less amount than the traditional bootstrapping,
-         !   since every processor is reading his cells/edges/vertices straight from
-         !   the file. indexTocellIDField % array serves as substitute for local_cell_list
-         !   that is otherwise read from the graph decompositioning file.
 
-         call mpas_block_decomp_cells_for_proc_simple(domain % dminfo, nCellsSolveTaskLocal, local_cell_list, indexTocellIDField % array, &
-                                                    & block_id, block_start, block_count, config_number_of_blocks, &
-                                                    & config_explicit_proc_decomp, config_proc_decomp_file_prefix)
+      ! Set up a graph derived data type describing the connectivity for the cells
+      !   that were read by this process
+      ! A partial description is passed to the block decomp module by each process,
+      !   and the block decomp module returns with a list of global cell indices
+      !   that belong to the block on this process
+      !
 
-      else
+      partial_global_graph_info % nVertices = nReadCells
+      partial_global_graph_info % nVerticesTotal = nCells
+      partial_global_graph_info % maxDegree = maxEdges
+      partial_global_graph_info % ghostStart = nVertices+1
+      allocate(partial_global_graph_info % vertexID(nReadCells))
+      allocate(partial_global_graph_info % nAdjacent(nReadCells))
+      allocate(partial_global_graph_info % adjacencyList(maxEdges, nReadCells))
 
-         ! Set up a graph derived data type describing the connectivity for the cells
-         !   that were read by this process
-         ! A partial description is passed to the block decomp module by each process,
-         !   and the block decomp module returns with a list of global cell indices
-         !   that belong to the block on this process
-         !
+      partial_global_graph_info % vertexID(:) = indexToCellIDField % array(:)
+      partial_global_graph_info % nAdjacent(:) = nEdgesOnCellField % array(:)
+      partial_global_graph_info % adjacencyList(:,:) = cellsOnCellField % array(:,:)
 
-         if (mesh_iotype == MPAS_IO_SIONLIB) then
-            partial_global_graph_info % nVerticesTotal = nCells
-            call mpas_dmpar_global_abort("Bootstrapping from SIONlib files with multiple blocks per processor is not supported")
-         else
-            partial_global_graph_info % nVertices = nReadCells
-            partial_global_graph_info % nVerticesTotal = nCells
-            partial_global_graph_info % maxDegree = maxEdges
-            partial_global_graph_info % ghostStart = nVertices+1
-            allocate(partial_global_graph_info % vertexID(nReadCells))
-            allocate(partial_global_graph_info % nAdjacent(nReadCells))
-            allocate(partial_global_graph_info % adjacencyList(maxEdges, nReadCells))
+      ! TODO: Ensure (by renaming or exchanging) that initial cell range on each proc is contiguous
+      !       This situation may occur when reading a restart file with cells/edges/vertices written
+      !       in a scrambled order
 
-            partial_global_graph_info % vertexID(:) = indexToCellIDField % array(:)
-            partial_global_graph_info % nAdjacent(:) = nEdgesOnCellField % array(:)
-            partial_global_graph_info % adjacencyList(:,:) = cellsOnCellField % array(:,:)
-         end if
+      !
+      ! Determine which cells are owned by this process. Currently, this routine just reads a graph.info.part.*
+      !    file, but in principle it could call some online, distributed mesh partitioning library.
+      !
+      call mpas_block_decomp_cells_for_proc(domain % dminfo, partial_global_graph_info, local_cell_list, block_id, block_start, &
+                                            block_count, config_number_of_blocks, config_explicit_proc_decomp, &
+                                            config_block_decomp_file_prefix, config_proc_decomp_file_prefix)
 
-#ifdef SIONLIB
-         ! Under certain conditions, it is possible to provide a specialised SIONlib file that contains
-         ! pre-computed properties to shorten the bootstrapping process. At the moment, this includes
-         ! only the calculation of local_cell_list
-         if ( (config_number_of_blocks == 0 .or. config_number_of_blocks == domain % dminfo % nprocs) &
-            & .and. (.not. config_explicit_proc_decomp) ) then
-            call mpas_read_local_cell_list_from_sionlib_file(domain % dminfo, config_sionlib_decomp_file_prefix, local_cell_list, ierr)
-            if (ierr /= 0 .and. associated(local_cell_list)) deallocate(local_cell_list)
-            ierr = 0
-         end if
-#endif
-
-         ! TODO: Ensure (by renaming or exchanging) that initial cell range on each proc is contiguous
-         !       This situation may occur when reading a restart file with cells/edges/vertices written
-         !       in a scrambled order - but check if this breaks the simple bootstrapping from SIONlib
-         !       data (don't think so, but...)
-
-         !
-         ! Determine which cells are owned by this process
-         !
-         !
-         ! Determine which cells are owned by this process. Currently, this routine just reads a graph.info.part.*
-         !    file, but in principle it could call some online, distributed mesh partitioning library.
-         !
-         call mpas_block_decomp_cells_for_proc(domain % dminfo, partial_global_graph_info, local_cell_list, block_id, block_start, &
-                                               block_count, config_number_of_blocks, config_explicit_proc_decomp, &
-                                               config_block_decomp_file_prefix, config_proc_decomp_file_prefix)
-
-         if (mesh_iotype /= MPAS_IO_SIONLIB) then
-            deallocate(partial_global_graph_info % vertexID)
-            deallocate(partial_global_graph_info % nAdjacent)
-            deallocate(partial_global_graph_info % adjacencyList)
-         end if
-
-      end if
 
 
       !
@@ -471,8 +427,8 @@ module mpas_bootstrapping
          domain % y_period = 0
       end if
 
-      ! Allocate blocks, and copy indexTo arrays into blocks
-      call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
+     ! Allocate blocks, and copy indexTo arrays into blocks
+     call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
              nCellsSolveField, nEdgesSolveField, nVerticesSolveField, vertexDegree, maxEdges, &
              indexToCellID_Block, indexToEdgeID_Block, indexToVertexID_Block)
 
@@ -666,7 +622,7 @@ module mpas_bootstrapping
 
             call mpas_log_write(' ')
             call mpas_log_write('----- skipping inactive stream '''//trim(streamName)//'''')
-
+            
          end if
 
       end do
@@ -685,153 +641,6 @@ module mpas_bootstrapping
       call mpas_pool_destroy_pool(readableDimensions)
 
    end subroutine mpas_bootstrap_framework_phase2 !}}}
-
-
-#ifdef SIONLIB
-   !***********************************************************************
-   !
-   !  routine mpas_read_local_cell_list_from_sionlib_file
-   !
-   !> \brief   Reads list of local cells from a special SIONlib file
-   !> \author  Dom Heinzeller
-   !> \date    29 January 2017
-   !> \details
-   !>  This routine reads the list of task-local cells from a special
-   !>  SIONlib file that can be produced by an offline, serial program.
-   !>  This offline program encodes the same information that is otherwise
-   !>  computed in mpas_block_decomp_cells_for_proc in mpas_block_decomp.F
-   !>  in a SIONlib file for a given number of MPI tasks and a given METIS
-   !>  graph decomposition.
-   !>  When this routine is used, the slow mpas_block_decomp_cells_for_proc
-   !>  routine is no longer required and the faster and less memory-consuming
-   !>  version mpas_block_decomp_cells_for_proc_simple can/must be used instead.
-   !
-   !-----------------------------------------------------------------------
-   subroutine mpas_read_local_cell_list_from_sionlib_file(dminfo, decompFilePrefix, localCellList, ierr)
-
-     use sion_f90
-     use sion_f90_mpi
-
-     implicit none
-
-     type (dm_info), intent(inout) :: dminfo !< Input: domain information
-     character(len=StrKIND), intent(in) :: decompFilePrefix !< Input: prefix of SIONlib decomposition file
-     integer, dimension(:), pointer :: localCellList !< Output: list of cells this processor owns
-     integer, intent(out) :: ierr !< Output: indicates whether local_cell_list was read successfully (0) or not (1)
-
-     ! Local variables
-     character(len=StrKIND) :: decompFile
-     character(len=2) :: SIONLIB_filemode = 'rb'
-
-     integer :: SIONLIB_fsblksize = -1   ! autodetect
-     integer (kind=I8KIND) :: SIONLIB_chunksize = 1073741824 ! 1GB, will be overwritten by value from file
-     integer :: SIONLIB_numfiles = 1
-
-     ! Maximum length of filename as for filename in mpas_io.F
-     character(len=1024) :: newfname
-     logical :: exists
-
-     integer (kind=I8KIND) :: btoread, bread
-     integer :: f_endian, s_endian
-
-     integer :: sid
-
-     integer :: nProcs
-     integer :: nVertices
-
-     ierr = 1
-
-#ifdef MPAS_DEBUG
-     call mpas_log_write('Trying to read local_cell_list information directly from sionlib file with prefix ' // trim(decompFilePrefix))
-#endif
-
-     ! TODO - use new routine (yet to create) that create filenames based on labels and process ids
-     if (dminfo % nprocs < 1E1) then
-         write(decompFile,'(a,i1)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E2) then
-         write(decompFile,'(a,i2)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E3) then
-         write(decompFile,'(a,i3)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E4) then
-         write(decompFile,'(a,i4)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E5) then
-         write(decompFile,'(a,i5)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E6) then
-         write(decompFile,'(a,i6)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E7) then
-         write(decompFile,'(a,i7)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E8) then
-         write(decompFile,'(a,i8)') trim(decompFilePrefix), dminfo % nprocs
-     else if (dminfo % nprocs < 1E9) then
-         write(decompFile,'(a,i9)') trim(decompFilePrefix), dminfo % nprocs
-     else
-         call mpas_log_write('ERROR, mpas_read_local_cell_list_from_sionlib_file only configured for less than 1E9 tasks', MPAS_LOG_ERR)
-         ierr = 1
-         return
-     end if
-
-     if (dminfo % my_proc_id == IO_NODE) then
-         inquire(file=trim(decompFile), exist=exists)
-     end if
-     call mpas_dmpar_bcast_logical(dminfo, exists)
-     if (.not. exists) then
-         ierr = 1
-         call mpas_log_write('File ' // trim(decompFile) // ' does not exist.')
-         return
-     end if
-
-#ifdef MPAS_DEBUG
-     call mpas_log_write('Trying to read local_cell_list information directly from sionlib file ' // trim(decompFile))
-#endif
-
-     call FSION_PAROPEN_MPI(trim(decompFile), SIONLIB_filemode, SIONLIB_numfiles, &
-                            dminfo % comm, dminfo % nullcomm, &
-                            SIONLIB_chunksize, SIONLIB_fsblksize, &
-                            dminfo % my_proc_id, newfname, sid)
-     if (sid .eq. -1) then
-         ierr = 1
-         call mpas_log_write('mpas_read_local_cell_list_from_sionlib_file failed for FSION_PAROPEN_MPI, return with ierr = 1', MPAS_LOG_ERR)
-         return
-     end if
-
-     ! Check that file endianness is identical to system endianness
-     call FSION_GET_FILE_ENDIANNESS(sid, f_endian)
-     call FSION_GET_ENDIANESS(s_endian)
-     if (f_endian .ne. s_endian) then
-         call mpas_log_write('mpas_read_local_cell_list_from_sionlib_file failed for endianness comparison, return with ierr = 1', MPAS_LOG_ERR)
-         ierr = 1
-         return
-     end if
-
-     btoread = kind(nVertices)
-     call FSION_COLL_FREAD_MPI(nVertices, 1_8, btoread, sid, bread)
-     if ( btoread .ne. bread ) then
-         call mpas_log_write('Error while reading nVertices from SIONlib file: btoread $i vs. bread $i', messageType=MPAS_LOG_ERR, intArgs=(/ int(btoread), int(bread) /) )
-         ierr = 1
-         return
-     end if
-
-#ifdef MPAS_DEBUG
-     call mpas_log_write('    nVertices: $i', intArgs=(/ nVertices /) )
-#endif
-
-     allocate(localCellList(1:nVertices))
-
-     btoread = kind(nVertices)*nVertices
-     call FSION_COLL_FREAD_MPI(localCellList(1), 1_8, btoread, sid, bread)
-     if ( btoread .ne. bread ) then
-         call mpas_log_write('Error while reading localCellList from SIONlib file: btoread $i vs. bread $i', messageType=MPAS_LOG_ERR, intArgs=(/ int(btoread), int(bread) /) )
-         ierr = 1
-         deallocate(localCellList)
-         return
-     end if
-
-     call FSION_PARCLOSE_MPI(sid, ierr)
-
-     ierr = 0
-
-   end subroutine mpas_read_local_cell_list_from_sionlib_file
-#endif
 
 
    subroutine mpas_io_setup_cell_block_fields(inputHandle, nReadCells, readCellStart, readingBlock, maxEdges, indexToCellID, &
@@ -1283,13 +1092,13 @@ module mpas_bootstrapping
    !>  Given a pool containing the field indicated by the 'fieldName' argument,
    !>  this routine allocates the output array, 'dimNames', to the
    !>  dimensionality of the field and fills the array with the dimension names.
-   !>
+   !>  
    !>  If the specified field is a var_array, the dimNames array will have one
-   !>  fewer dimension than that of the var_array, and it will be filled with
+   !>  fewer dimension than that of the var_array, and it will be filled with 
    !>  the outer-most dimension names.
    !>
-   !>  If the specified field is is inactive (in a package sense) at the time
-   !>  of the call to this routine, the dimNames array will be returned with
+   !>  If the specified field is is inactive (in a package sense) at the time 
+   !>  of the call to this routine, the dimNames array will be returned with 
    !>  zero size.
    !
    !-----------------------------------------------------------------------
