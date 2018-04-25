@@ -137,10 +137,7 @@ module mpas_bootstrapping
       integer, pointer :: config_num_halos, config_number_of_blocks
       logical, pointer :: config_explicit_proc_decomp
       character (len=StrKIND), pointer :: config_block_decomp_file_prefix, config_proc_decomp_file_prefix
-      ! DH*
-      !character (len=StrKIND), pointer :: config_sionlib_decomp_file_prefix
       character (len=StrKIND) :: config_sionlib_decomp_file_prefix = 'decomp.sl.'
-      ! *DH
       integer :: nHalos
 
       ! For bootstrapping off SIONlib data
@@ -150,22 +147,12 @@ module mpas_bootstrapping
 
       call mpas_pool_get_config(domain % configs, 'config_num_halos', config_num_halos)
       call mpas_pool_get_config(domain % configs, 'config_number_of_blocks', config_number_of_blocks)
-      ! Sanity check - running with less blocks than MPI tasks doesn't make any sense and breaks a lot of routines
-      if (config_number_of_blocks > 0 .and. config_number_of_blocks < domain % dminfo % nprocs) then
-         call mpas_dmpar_global_abort("Error, config_number_of_blocks is smaller than number of processors")
-      end if
-      !
       call mpas_pool_get_config(domain % configs, 'config_explicit_proc_decomp', config_explicit_proc_decomp)
       call mpas_pool_get_config(domain % configs, 'config_block_decomp_file_prefix', config_block_decomp_file_prefix)
       call mpas_pool_get_config(domain % configs, 'config_proc_decomp_file_prefix', config_proc_decomp_file_prefix)
-      ! DH*
-      !call mpas_pool_get_config(domain % configs, 'config_sionlib_decomp_file_prefix', config_sionlib_decomp_file_prefix)
-      !config_sionlib_decomp_file_prefix = 'decomp.sl.'
-      ! *DH
 
       nHalos = config_num_halos
 
-      call mpas_timer_start('reading mesh fields')
       inputHandle = MPAS_io_open(trim(mesh_filename), MPAS_IO_READ, mesh_iotype, domain % ioContext, ierr=ierr)
       if (ierr /= MPAS_IO_NOERR) then
          call mpas_log_write('Could not open input file '''//trim(mesh_filename)//''' to read mesh fields', MPAS_LOG_CRIT)
@@ -227,9 +214,7 @@ module mpas_bootstrapping
          if (ierr /= MPAS_IO_NOERR) then
             call mpas_dmpar_global_abort("Required task-local attribute nVerticesSolve not found for bootstrapping from SIONlib file")
          end if
-         call mpas_timer_stop('reading mesh fields')
 
-         call mpas_timer_start('setup block fields')
          call mpas_io_setup_cell_block_fields_simple(inputHandle, nCellsSolveTaskLocal, readingBlock, maxEdges, &
                                               indexTocellIDField, nEdgesOnCellField, cellsOnCellField, edgesOnCellField, &
                                               verticesOnCellField, nHalos)
@@ -239,7 +224,6 @@ module mpas_bootstrapping
 
          call mpas_io_setup_vertex_block_fields_simple(inputHandle, nVerticesSolveTaskLocal, readingBlock, vertexDegree, &
                                               indexToVertexIDField, cellsOnVertexField, nHalos)
-         call mpas_timer_stop('setup block fields')
 
       else
          !
@@ -254,13 +238,11 @@ module mpas_bootstrapping
 
          call mpas_dmpar_get_index_range(domain % dminfo, 1, nVertices, readVertexStart, readVertexEnd)
          nReadVertices = readVertexEnd - readVertexStart + 1
-         call mpas_timer_stop('reading mesh fields')
          !
          ! Allocate and read fields that we will need in order to ultimately work out
          !   which cells/edges/vertices are owned by each block, and which are ghost
          !
 
-         call mpas_timer_start('setup block fields')
          call mpas_io_setup_cell_block_fields(inputHandle, nReadCells, readCellStart, readingBlock, maxEdges, &
                                               indexTocellIDField, xCellField, yCellField, zCellField, nEdgesOnCellField, &
                                               cellsOnCellField, edgesOnCellField, verticesOnCellField, nHalos)
@@ -271,7 +253,6 @@ module mpas_bootstrapping
          call mpas_io_setup_vertex_block_fields(inputHandle, nReadVertices, readVertexStart, readingBlock, vertexDegree, &
                                                 indexToVertexIDField, xVertexField, yVertexField, zVertexField, cellsOnVertexField, &
                                                 nHalos)
-         call mpas_timer_stop('setup block fields')
 
       end if
 
@@ -287,11 +268,9 @@ module mpas_bootstrapping
          !   the file. indexTocellIDField % array serves as substitute for local_cell_list
          !   that is otherwise read from the graph decompositioning file.
 
-         call mpas_timer_start('setup block decomposition')
          call mpas_block_decomp_cells_for_proc_simple(domain % dminfo, nCellsSolveTaskLocal, local_cell_list, indexTocellIDField % array, &
                                                     & block_id, block_start, block_count, config_number_of_blocks, &
                                                     & config_explicit_proc_decomp, config_proc_decomp_file_prefix)
-         call mpas_timer_stop('setup block decomposition')
 
       else
 
@@ -319,24 +298,17 @@ module mpas_bootstrapping
             partial_global_graph_info % adjacencyList(:,:) = cellsOnCellField % array(:,:)
          end if
 
-         ! DH*
+#ifdef SIONLIB
          ! Under certain conditions, it is possible to provide a specialised SIONlib file that contains
          ! pre-computed properties to shorten the bootstrapping process. At the moment, this includes
          ! only the calculation of local_cell_list
          if ( (config_number_of_blocks == 0 .or. config_number_of_blocks == domain % dminfo % nprocs) &
             & .and. (.not. config_explicit_proc_decomp) ) then
-#ifdef MPAS_DEBUG
-            call mpas_log_write('-- entering mpas_read_local_cell_list_from_sionlib_file')
-#endif
             call mpas_read_local_cell_list_from_sionlib_file(domain % dminfo, config_sionlib_decomp_file_prefix, local_cell_list, ierr)
-#ifdef MPAS_DEBUG
-            call mpas_log_write('-- returned from mpas_read_local_cell_list_from_sionlib_file with ierr = $i and associated(local_cell_list) = $l', &
-                                intArgs=(/ ierr /), logicArgs=(/ associated(local_cell_list) /) )
-#endif
             if (ierr /= 0 .and. associated(local_cell_list)) deallocate(local_cell_list)
             ierr = 0
          end if
-         ! *DH
+#endif
 
          ! TODO: Ensure (by renaming or exchanging) that initial cell range on each proc is contiguous
          !       This situation may occur when reading a restart file with cells/edges/vertices written
@@ -346,7 +318,6 @@ module mpas_bootstrapping
          !
          ! Determine which cells are owned by this process
          !
-         call mpas_timer_start('setup block decomposition')
          !
          ! Determine which cells are owned by this process. Currently, this routine just reads a graph.info.part.*
          !    file, but in principle it could call some online, distributed mesh partitioning library.
@@ -360,14 +331,10 @@ module mpas_bootstrapping
             deallocate(partial_global_graph_info % nAdjacent)
             deallocate(partial_global_graph_info % adjacencyList)
          end if
-         call mpas_timer_stop('setup block decomposition')
 
       end if
 
-      call mpas_timer_start('setup blocks and halos')
 
-      ! DH* TODO - a lot of these routines can be sped up for SIONlib data, since most
-      ! of the data is already in the final format/order and doesn't need to be communicated
       !
       ! Transfer owned cells from local_cell_list into the indexToCellID_Block field (which may contain multiple blocks)
       !
@@ -405,9 +372,6 @@ module mpas_bootstrapping
       call mpas_block_creator_build_edge_halos(nHalos, indexToCellID_Block, nEdgesOnCell_Block, nCellsSolveField, &
                                                verticesOnCell_Block, indexToVertexID_Block, cellsOnVertex_Block, &
                                                nVerticesSolveField)
-      ! *DH
-
-      call mpas_timer_stop('setup blocks and halos')
 
       !
       ! Before we can allocate blocks, we need the attributes on_a_sphere and sphere_radius so
@@ -507,12 +471,10 @@ module mpas_bootstrapping
          domain % y_period = 0
       end if
 
-      call mpas_timer_start('finalize block phase 1')
       ! Allocate blocks, and copy indexTo arrays into blocks
       call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
              nCellsSolveField, nEdgesSolveField, nVerticesSolveField, vertexDegree, maxEdges, &
              indexToCellID_Block, indexToEdgeID_Block, indexToVertexID_Block)
-      call mpas_timer_stop('finalize block phase 1')
 
       call MPAS_io_close(inputHandle, ierr)
 
@@ -614,7 +576,6 @@ module mpas_bootstrapping
       call mpas_log_write(' ')
       call mpas_log_write(' ')
 
-      call mpas_timer_start('read dimensions from input streams')
       ! Reading dimensions from streams
       call mpas_log_write('Reading dimensions from input streams ...')
       call mpas_stream_mgr_begin_iteration(domain % streamManager)
@@ -714,21 +675,19 @@ module mpas_bootstrapping
       call mpas_log_write('----- done reading dimensions from input streams -----')
       call mpas_log_write(' ')
       call mpas_log_write(' ')
-      call mpas_timer_stop('read dimensions from input streams')
 
       call mpas_pool_set_error_level(err_level)
 
-      call mpas_timer_start('finalize block phase 2')
       ! Allocate blocks, and copy indexTo arrays into blocks
       call mpas_block_creator_finalize_block_phase2(domain % streamManager, domain % blocklist, readableDimensions)
       call mpas_link_fields(domain)
 
       call mpas_pool_destroy_pool(readableDimensions)
-      call mpas_timer_stop('finalize block phase 2')
 
    end subroutine mpas_bootstrap_framework_phase2 !}}}
 
 
+#ifdef SIONLIB
    ! DH*
    !***********************************************************************
    !
@@ -874,6 +833,7 @@ module mpas_bootstrapping
      ierr = 0
 
    end subroutine mpas_read_local_cell_list_from_sionlib_file
+#endif
 
 
    subroutine mpas_io_setup_cell_block_fields(inputHandle, nReadCells, readCellStart, readingBlock, maxEdges, indexToCellID, &

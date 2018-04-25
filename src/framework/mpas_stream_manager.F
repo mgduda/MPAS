@@ -3142,10 +3142,6 @@ module mpas_stream_manager
                if ( stream % filename_interval /= 'none' ) then
                    call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
                    call mpas_build_stream_filename(stream % referenceTime, writeTime, filename_interval, stream % filename_template, blockID, stream % filename, ierr=local_ierr)
-               else if (final_input_only .or. final_output_only) then
-                   now_time = mpas_get_clock_time(manager % streamClock, MPAS_NOW, ierr=local_ierr)
-                   call mpas_get_time(now_time, dateTimeString=time_string)
-                   call mpas_expand_string(time_string, blockID, stream % filename_template, stream % filename)
                else
                    call mpas_get_time(stream % referenceTime, dateTimeString=time_string)
                    call mpas_expand_string(time_string, blockID, stream % filename_template, stream % filename)
@@ -3218,10 +3214,6 @@ module mpas_stream_manager
                if ( stream % filename_interval /= 'none' ) then
                    call mpas_set_timeInterval(filename_interval, timeString=stream % filename_interval)
                    call mpas_build_stream_filename(stream % referenceTime, writeTime, filename_interval, stream % filename_template, blockID, temp_filename, ierr=local_ierr)
-               else if (final_input_only .or. final_output_only) then
-                   now_time = mpas_get_clock_time(manager % streamClock, MPAS_NOW, ierr=local_ierr)
-                   call mpas_get_time(now_time, dateTimeString=time_string)
-                   call mpas_expand_string(time_string, blockID, stream % filename_template, temp_filename)
                else
                    call mpas_get_time(stream % referenceTime, dateTimeString=time_string)
                    call mpas_expand_string(time_string, blockID, stream % filename_template, temp_filename)
@@ -5772,11 +5764,13 @@ subroutine stream_mgr_create_stream_c(manager_c, streamID_c, direction_c, filena
                                         MPAS_STREAM_PROPERTY_FILENAME_INTV, MPAS_STREAM_PROPERTY_REF_TIME, &
                                         MPAS_STREAM_PROPERTY_RECORD_INTV, MPAS_STREAM_PROPERTY_PRECISION, &
                                         MPAS_STREAM_PROPERTY_CLOBBER, MPAS_STREAM_CLOBBER_NEVER, MPAS_STREAM_CLOBBER_APPEND, &
-                                        MPAS_STREAM_CLOBBER_TRUNCATE, MPAS_STREAM_CLOBBER_OVERWRITE, MPAS_STREAM_PROPERTY_IOTYPE
+                                        MPAS_STREAM_CLOBBER_TRUNCATE, MPAS_STREAM_CLOBBER_OVERWRITE, MPAS_STREAM_PROPERTY_IOTYPE, &
+                                        MPAS_TimeInterval_type
     use mpas_stream_manager, only : MPAS_stream_mgr_create_stream, MPAS_stream_mgr_set_property
     use mpas_kind_types, only : StrKIND
     use mpas_derived_types, only : MPAS_LOG_ERR
     use mpas_log
+    use mpas_timekeeping
     use mpas_io, only : MPAS_IO_SINGLE_PRECISION, MPAS_IO_DOUBLE_PRECISION, MPAS_IO_NATIVE_PRECISION, &
                         MPAS_IO_NETCDF, MPAS_IO_PNETCDF, MPAS_IO_NETCDF4, MPAS_IO_PNETCDF5, &
                         MPAS_IO_SIONLIB
@@ -5853,58 +5847,6 @@ subroutine stream_mgr_create_stream_c(manager_c, streamID_c, direction_c, filena
 #endif
     else
        iotype = MPAS_IO_PNETCDF
-    end if
-
-    if (iotype == MPAS_IO_SIONLIB) then
-       STREAM_DEBUG_WRITE('Performing additional consistency checks for SIONlib file format ...')
-       ! DH* this implementation does not chatch the case filename_interval="none" and input/output interval being real, recurring intervals!
-       if (trim(filename_interval) /= 'none') then
-          call mpas_set_timeInterval(tempIntervalF, timeString=filename_interval)
-          !if ( (trim(interval_in) /= 'none' .and. trim(interval_in) /= 'initial_only') .and. &
-          if ( (trim(interval_in) /= 'none' .and. trim(interval_in) /= 'initial_only' .and. trim(interval_in) /= 'final_only') .and. &
-             & (trim(interval_out) /= 'none' .and. trim(interval_out) /= 'initial_only' .and. trim(interval_out) /= 'final_only') ) then
-             call mpas_set_timeInterval(tempIntervalI, timeString=interval_in)
-             call mpas_set_timeInterval(tempIntervalO, timeString=interval_out)
-             if ( ((tempIntervalI .le. tempIntervalO) .and. (tempInterValF .gt. tempIntervalI)) .or. &
-                & (tempIntervalF .gt. tempIntervalO) ) then
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                call mpas_log_write(' Error: Filename interval is larger than input or output interval for SIONlib ', MPAS_LOG_ERR)
-                call mpas_log_write('        stream '''//trim(streamID)//''' (only one time stamp per file allowed).', MPAS_LOG_ERR)
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                ierr_c = 1
-                return
-             end if
-          !else if (trim(interval_in) /= 'none' .and. trim(interval_in) /= 'initial_only') then
-          else if (trim(interval_in) /= 'none' .and. trim(interval_in) /= 'initial_only' .and. trim(interval_in) /= 'final_only') then
-             call mpas_set_timeInterval(tempIntervalI, timeString=interval_in)
-             if (tempIntervalF .gt. tempIntervalI) then
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                call mpas_log_write(' Error: Filename interval is larger than input interval for SIONlib ', MPAS_LOG_ERR)
-                call mpas_log_write('        stream '''//trim(streamID)//''' (only one time stamp per file allowed).', MPAS_LOG_ERR)
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                ierr_c = 1
-                return
-             end if
-          else if (trim(interval_out) /= 'none' .and. trim(interval_out) /= 'initial_only' .and. trim(interval_out) /= 'final_only') then
-             call mpas_set_timeInterval(tempIntervalO, timeString=interval_out)
-             if (tempIntervalF .gt. tempIntervalO) then
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                call mpas_log_write(' Error: Filename interval is larger than output interval for SIONlib ', MPAS_LOG_ERR)
-                call mpas_log_write('        stream '''//trim(streamID)//''' (only one time stamp per file allowed).', MPAS_LOG_ERR)
-                call mpas_log_write('******************************************************************************', MPAS_LOG_ERR)
-                ierr_c = 1
-                return
-             end if
-          end if
-       end if
-       if (clobber_mode == MPAS_STREAM_CLOBBER_APPEND .or. clobber_mode == MPAS_STREAM_CLOBBER_OVERWRITE) then
-          call mpas_log_write('***********************************************************************************', MPAS_LOG_ERR)
-          call mpas_log_write(' Error: Invalid clobber mode for stream '''//trim(streamID)//''' in SIONlib format.', MPAS_LOG_ERR)
-          call mpas_log_write('        Allowed values are "never_modify", "truncate" or "replace_files" - abort.  ', MPAS_LOG_ERR)
-          call mpas_log_write('***********************************************************************************', MPAS_LOG_ERR)
-          ierr_c = 1
-          return
-       end if
     end if
 
     STREAM_DEBUG_WRITE('Creating stream from c...')
