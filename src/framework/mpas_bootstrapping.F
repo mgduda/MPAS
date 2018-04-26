@@ -264,7 +264,6 @@ module mpas_bootstrapping
       !   and the block decomp module returns with a list of global cell indices
       !   that belong to the block on this process
       !
-
       partial_global_graph_info % nVertices = nReadCells
       partial_global_graph_info % nVerticesTotal = nCells
       partial_global_graph_info % maxDegree = maxEdges
@@ -426,6 +425,7 @@ module mpas_bootstrapping
          domain % x_period = 0
          domain % y_period = 0
       end if
+
 
      ! Allocate blocks, and copy indexTo arrays into blocks
      call mpas_block_creator_finalize_block_phase1(nHalos, domain % blocklist, &
@@ -688,6 +688,7 @@ module mpas_bootstrapping
      call mpas_dmpar_init_multihalo_exchange_list(indexToCellID % recvList, nHalos)
      call mpas_dmpar_init_multihalo_exchange_list(indexToCellID % copyList, nHalos)
      nullify(indexToCellID % next)
+
 
      ! Number of cell/edges/vertices adjacent to each cell
      allocate(nEdgesOnCell)
