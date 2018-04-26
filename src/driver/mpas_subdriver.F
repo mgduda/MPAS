@@ -276,10 +276,10 @@ module mpas_subdriver
          mesh_iotype = MPAS_IO_SIONLIB
 #ifndef SIONLIB
          call mpas_log_write('*********************************************************************************', messageType=MPAS_LOG_ERR)
-         call mpas_log_write(' Error: Mesh stream '''//trim(mesh_stream)//''' is configured as SIONlib stream, ', messageType=MPAS_LOG_ERR)
-         call mpas_log_write('        but model was built without SIONlib support (-> see top-level Makefile). ', messageType=MPAS_LOG_ERR)
+         call mpas_log_write(' Mesh stream '''//trim(mesh_stream)//''' is defined with io_type="sionlib",',       messageType=MPAS_LOG_ERR)
+         call mpas_log_write(' but MPAS was not built with SIONlib support.',                                     messageType=MPAS_LOG_ERR)
          call mpas_log_write('*********************************************************************************', messageType=MPAS_LOG_ERR)
-         call mpas_dmpar_abort(domain_ptr % dminfo)
+         call mpas_log_write('Stopping in mpas_init.', messageType=MPAS_LOG_CRIT)
 #endif
       else
          mesh_iotype = MPAS_IO_PNETCDF

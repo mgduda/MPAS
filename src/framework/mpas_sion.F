@@ -11,7 +11,7 @@ module mpas_sion
    implicit none
 
 ! Enable debugging information
-#define SIONLIB_DEBUG
+!define SIONLIB_DEBUG
 
 
 ! Enables prepending variable ID and variable size to the data block for

@@ -1260,8 +1260,8 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else if (strstr(iotype, "sionlib") != NULL) {
-				i_iotype = 7;
-				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel SIONlib");
+				i_iotype = 4;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "SIONlib");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else {
@@ -1574,8 +1574,8 @@ void xml_stream_parser(char *fname, void *manager, int *mpi_comm, int *status)
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else if (strstr(iotype, "sionlib") != NULL) {
-				i_iotype = 7;
-				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "Parallel SIONlib");
+				i_iotype = 4;
+				snprintf(msgbuf, MSGSIZE, "        %-20s%s", "I/O type:", "SIONlib");
 				mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 			}
 			else {
@@ -1976,7 +1976,7 @@ void xml_stream_get_attributes(char *fname, char *streamname, int *mpi_comm, cha
 				}
 				else if (strstr(xml_iotype, "sionlib") != NULL) {
 					sprintf(io_type, "%s", xml_iotype);
-					snprintf(msgbuf, MSGSIZE, "Using io_type Parallel SIONlib for mesh stream");
+					snprintf(msgbuf, MSGSIZE, "Using io_type SIONlib for mesh stream");
 					mpas_log_write_c(msgbuf, "MPAS_LOG_OUT");
 				}
 				else {

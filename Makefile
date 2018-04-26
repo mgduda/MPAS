@@ -455,7 +455,7 @@ ifneq "$(SIONLIB)" ""
 	FCINCLUDES += `$(SIONLIB)/bin/sionconfig --mpi --cflags --f90`
 	LIBS += `$(SIONLIB)/bin/sionconfig --mpi --libs --f90`
 	override CPPFLAGS += -DSIONLIB
-	SIONLIB_MESSAGE="MPAS was compiled with SIONlib support in $(SIONLIB)"
+	SIONLIB_MESSAGE="MPAS was compiled with SIONlib support using $(SIONLIB)"
 else
 	SIONLIB_MESSAGE="MPAS was compiled without SIONlib support"
 endif
@@ -818,9 +818,10 @@ errmsg:
 	@echo "    USE_PIO2=true - links with the PIO 2 library. Default is to use the PIO 1.x library."
 	@echo "    PRECISION=single - builds with default single-precision real kind. Default is to use double-precision."
 	@echo ""
-	@echo "Ensure that NETCDF, PNETCDF, PIO, and PAPI (if USE_PAPI=true) are environment variables that point"
-	@echo "to the absolute paths for the libraries. Also, to get support of reading and writing SIONlib data"
-	@echo "compiled into the code, the environment variable SIONLIB must be set accordingly."
+	@echo "Ensure that NETCDF, PNETCDF, PIO, and PAPI (if USE_PAPI=true) are environment variables"
+	@echo "that point to the absolute paths for the libraries. Additionally, to enable support for"
+	@echo "reading and writing SIONlib format, the environment variable SIONLIB must be set to the absolute"
+	@echo "path of the SIONlib installation."
 	@echo ""
 ifdef CORE
 	exit 1

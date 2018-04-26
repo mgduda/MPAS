@@ -151,7 +151,7 @@
 		<nml_option name="config_sionlib_numfiles" type="integer" default_value="1" units="unitless"
 					description="Numer of separate SIONlib filesStride between file I/O tasks"
 					possible_values="Integer valued, $\geq$ 1 and $\leq$ \# MPI tasks"
-					mode="forward;analysis"
+					mode="forward;analysis;init"
 		/>
 	</nml_record>
 	<nml_record name="decomposition" mode="forward;analysis;init">
