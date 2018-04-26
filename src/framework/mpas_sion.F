@@ -1,12 +1,13 @@
 module mpas_sion
 
-#ifdef SIONLIB
    use mpas_dmpar, only : mpas_dmpar_max_int8
    use mpas_derived_types
    use mpas_typecast
    use mpas_log
+#ifdef SIONLIB
    use sion_f90
    use sion_f90_mpi
+#endif
 
    implicit none
 
@@ -52,6 +53,7 @@ contains
       integer, intent(in) :: io_numfiles
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
 #ifdef SIONLIB_DEBUG
       call mpas_log_write(' Called MPAS_SION_init')
 #endif
@@ -64,6 +66,7 @@ contains
          SIONLIB_numfiles = io_numfiles
          ierr = SIONLIB_noerr
       end if
+#endif
 
    end subroutine MPAS_SION_init
 
@@ -77,6 +80,7 @@ contains
       integer, intent(in) :: mode
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       ierr = SIONLIB_noerr
 
       ! Open a SIONlib file. For reading open the file directly. For
@@ -104,6 +108,7 @@ contains
                                  SIONLIB_chunksize_data, ierr)
          handle % start_cursor = FSION_GET_POSITION(handle % sidd)
       end if
+#endif
 
    end subroutine MPAS_SION_open
 
@@ -120,6 +125,7 @@ contains
       integer (kind=I8KIND) :: position, count
       integer (kind=I8KIND) :: chunksize_max
 
+#ifdef SIONLIB
       if (handle % sidd /= -1) then
          call mpas_log_write('ERROR in MPAS_SION_open: SIONlib file ' // trim(filename) // ' is already opened', messageType=MPAS_LOG_ERR)
          ierr = MPAS_IO_ERR_OPEN
@@ -168,6 +174,7 @@ contains
       call mpas_log_write('MPAS_SION_enddef -- wrote $i bytes of SIONlib metadata to disk, new position is now $i', &
                           intArgs=(/ int(count), int(FSION_GET_POSITION(handle % sidd)) /) )
 #endif
+#endif
 
    end subroutine MPAS_SION_enddef
 
@@ -185,6 +192,7 @@ contains
 
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       ! Maximum length of filename as for filename in mpas_io.F
       character(len=1024) :: newfname
       integer :: f_endian, s_endian
@@ -225,6 +233,7 @@ contains
 #ifdef SIONLIB_DEBUG
       call mpas_log_write('Opening file ' // trim(filename) // ' in mode "' // trim(cmode) // '" as set of $i files', intArgs=(/ SIONLIB_numfiles /))
 #endif
+#endif
 
    end subroutine MPAS_SION_open_file
 
@@ -238,6 +247,7 @@ contains
       integer, intent(in) :: dimsize
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer :: cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
@@ -256,6 +266,7 @@ contains
       else
           ierr = SIONLIB_err
       end if
+#endif
 
    end subroutine MPAS_SION_def_dim
 
@@ -271,6 +282,7 @@ contains
       integer, intent(in) :: vartype
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer :: idim, cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
@@ -294,6 +306,7 @@ contains
       else
           ierr = SIONLIB_err
       end if
+#endif
 
    end subroutine MPAS_SION_def_var
 
@@ -305,6 +318,7 @@ contains
       integer, dimension(:), pointer, intent(in) :: dimlist
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       ierr = SIONLIB_noerr
 
       ! Now calculate the chunksize for this given decomposition type, using
@@ -316,6 +330,7 @@ contains
       if (ierr /= SIONLIB_noerr) return
 
       decomp % decomphandle % sionlib_type = .true.
+#endif
 
       !DIR$ ATTRIBUTES INLINE :: MPAS_SION_initdecomp
    end subroutine MPAS_SION_initdecomp
@@ -329,6 +344,7 @@ contains
       integer (kind=I8KIND), intent(out) :: chunksize
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       ierr = SIONLIB_noerr
 
       if (vartype == MPAS_IO_REAL) then
@@ -350,6 +366,7 @@ contains
                   kind(vartype)*2 + & ! varid and vartype
                   kind(varsize)*1     ! varsize
 #endif
+#endif
 
    end subroutine MPAS_SION_chunksize
 
@@ -363,6 +380,7 @@ contains
       integer (kind=I8KIND), intent(in) :: chunksize
       integer, intent(inout) :: ierr
 
+#ifdef SIONLIB
       integer :: cursor_start
       integer :: checksum
 
@@ -396,6 +414,7 @@ contains
           ierr = SIONLIB_err
           return
       end if
+#endif
    end subroutine MPAS_SION_store_position_non_decomp
 
    subroutine MPAS_SION_store_position_decomp(handle, field_cursor, ierr)
@@ -406,6 +425,7 @@ contains
       type (fieldlist_type), pointer, intent(inout) :: field_cursor
       integer, intent(inout) :: ierr
 
+#ifdef SIONLIB
       integer :: cursor_start
       integer :: checksum
 
@@ -441,6 +461,7 @@ contains
           ierr = SIONLIB_err
           return
       end if
+#endif
    end subroutine MPAS_SION_store_position_decomp
 
    subroutine MPAS_SION_write_array(handle, field_cursor, &
@@ -484,6 +505,7 @@ contains
 
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer :: checksum
       integer (kind=I8KIND) :: count, position
       character (len=StrKIND) :: padded_charval
@@ -622,6 +644,7 @@ contains
       else
           ierr = SIONLIB_err
       end if
+#endif
 
    end subroutine MPAS_SION_write_array
 
@@ -647,6 +670,7 @@ contains
 
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer :: iatt, cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
@@ -723,6 +747,7 @@ contains
       else
           ierr = SIONLIB_err
       end if
+#endif
 
    end subroutine MPAS_SION_put_att
 
@@ -732,6 +757,8 @@ contains
 
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out), optional :: ierr
+
+#ifdef SIONLIB
       integer :: local_ierr
 
       ! Sync files to disk
@@ -739,6 +766,7 @@ contains
          call FSION_FLUSH(handle % sidd, local_ierr)
          if ((local_ierr.ne.1) .and. present(ierr)) ierr = MPAS_IO_ERR_FLUSH
       end if
+#endif
 
    end subroutine MPAS_SION_sync
 
@@ -748,6 +776,8 @@ contains
 
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out), optional :: ierr
+
+#ifdef SIONLIB
       integer :: local_ierr
 
       if (handle % sidd == -1) then
@@ -772,6 +802,7 @@ contains
 
       ! Reset file handle id to default/uninitialised value
       handle % sidd = -1
+#endif
 
    end subroutine MPAS_SION_close
 
@@ -782,6 +813,7 @@ contains
       type (MPAS_IO_Handle_type), intent(inout) :: handle
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       ! Category of metadata, read buffers and general variables
       integer :: sion_eof
       character (len=3) :: category
@@ -1320,6 +1352,7 @@ contains
 
       end subroutine MPAS_SION_read_metadata_set_pos
 
+#endif
    end subroutine MPAS_SION_read_metadata
 
    subroutine MPAS_SION_read_array(handle, field_cursor, &
@@ -1361,6 +1394,7 @@ contains
       character (len=*),  dimension(:), intent(out), optional :: chararray1d
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer   :: varid
       integer   :: vartype
       integer (kind=I8KIND) :: position
@@ -1516,6 +1550,7 @@ contains
       end if
 
       ierr = SIONLIB_noerr
+#endif
 
    end subroutine MPAS_SION_read_array
 
@@ -1527,6 +1562,7 @@ contains
       integer (kind=I8KIND), intent(in) :: position
       integer, intent(out) :: ierr
 
+#ifdef SIONLIB
       integer (kind=I8KIND) :: current
 
       current = FSION_GET_POSITION(handle % sidd)
@@ -1554,16 +1590,9 @@ contains
          return
       end if
       ierr = SIONLIB_noerr
+#endif
 
       !DIR$ ATTRIBUTES INLINE :: MPAS_SION_set_cursor
    end subroutine MPAS_SION_set_cursor
-
-#else
-
-   ! DH*
-   ! Should we implement a SIONLIB stub implementation here?
-   ! *DH
-
-#endif
 
 end module mpas_sion

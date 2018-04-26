@@ -2941,13 +2941,7 @@ module mpas_stream_manager
            backupContext => manager % ioContext
            manager % ioContext => debugContext
 
-#ifdef SIONLIB
-           !sionlib_numfiles = config_sionlib_numfiles
-           ! TODO: check if this works/makes sense, apparently this MPAS_io_init is never used?
            call MPAS_io_init(debugContext, 1, 1, 1)
-#else
-           call MPAS_io_init(debugContext, 1, 1)
-#endif
 
            ! Setup the backup pools, and swap the manager's allFields / allStructs pools
            backupAllFields => manager % allFields

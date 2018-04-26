@@ -94,7 +94,7 @@ mpas_block_creator.o: mpas_dmpar.o mpas_hash.o mpas_sort.o mpas_io_units.o mpas_
 
 mpas_sion.o: mpas_dmpar.o mpas_derived_types.o mpas_typecast.o mpas_log.o
 
-mpas_io.o: mpas_dmpar.o mpas_attlist.o mpas_log.o
+mpas_io.o: mpas_dmpar.o mpas_attlist.o mpas_log.o mpas_sion.o
 
 mpas_io_streams.o: mpas_attlist.o mpas_derived_types.o mpas_timekeeping.o mpas_io.o mpas_pool_routines.o add_field_indices.inc mpas_log.o $(DEPS)
 

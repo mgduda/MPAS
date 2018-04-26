@@ -90,9 +90,7 @@ module mpas_framework
       call mpas_pool_get_config(domain % configs, 'config_calendar_type', config_calendar_type)
       call mpas_pool_get_config(domain % configs, 'config_pio_num_iotasks', config_pio_num_iotasks)
       call mpas_pool_get_config(domain % configs, 'config_pio_stride', config_pio_stride)
-#ifdef SIONLIB
       call mpas_pool_get_config(domain % configs, 'config_sionlib_numfiles', config_sionlib_numfiles)
-#endif
 
       if (present(calendar)) then
          call mpas_timekeeping_init(calendar)
@@ -106,12 +104,8 @@ module mpas_framework
          pio_num_iotasks = domain % dminfo % nprocs
       end if
       domain % ioContext % dminfo => domain % dminfo
-#ifdef SIONLIB
       sionlib_numfiles = config_sionlib_numfiles
       call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride, sionlib_numfiles, io_system)
-#else
-      call MPAS_io_init(domain % ioContext, pio_num_iotasks, pio_stride, io_system)
-#endif
 
    end subroutine mpas_framework_init_phase2!}}}
 
