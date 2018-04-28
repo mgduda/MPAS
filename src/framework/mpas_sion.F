@@ -134,7 +134,7 @@ contains
 
 #ifdef SIONLIB_PREPEND_VARIABLE_PROPERTIES
       ! This will be tested during reading for consistency checking
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'dbg')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'dbg')
 #endif
 
       ! Gather global maximum of all chunksizes stored in form of current data_cursor
@@ -154,9 +154,9 @@ contains
       handle % start_cursor = FSION_GET_POSITION(handle % sidd)
 
       ! All metadata collected, write the metadata buffer to the file
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'cur')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, handle % start_cursor)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'eof')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'cur')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, handle % start_cursor)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'eof')
 #ifdef SIONLIB_DEBUG
       call mpas_log_write('MPAS_SION_enddef -- metadata cursor is $i', intArgs=(/ handle % metadata_cursor /) )
 #endif
@@ -251,11 +251,11 @@ contains
       integer :: cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'dim')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, dimid)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(dimname)))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, trim(dimname))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, dimsize)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'dim')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, dimid)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(dimname)))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, trim(dimname))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, dimsize)
       checksum = 3 + kind(dimid) + kind(len(trim(dimname))) + len(trim(dimname)) + kind(dimsize)
 
 #ifdef SIONLIB_DEBUG
@@ -286,15 +286,15 @@ contains
       integer :: idim, cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'var')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, varid)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(varname)))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, trim(varname))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, ndims)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'var')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, varid)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(varname)))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, trim(varname))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, ndims)
       do idim=1,ndims
-         call encode(handle % metadata_buffer, handle % metadata_cursor, dimids(idim))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, dimids(idim))
       end do
-      call encode(handle % metadata_buffer, handle % metadata_cursor, vartype)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, vartype)
       checksum = 3 + kind(varid) + kind(len(trim(varname))) + len(trim(varname)) + kind(ndims) &
                & + ndims*kind(ndims) + kind(vartype)
 
@@ -395,11 +395,11 @@ contains
       handle % data_cursor = handle % data_cursor + chunksize
       ! Encode metadata
       cursor_start = handle % metadata_cursor
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'pos')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % fieldid)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % sionlib_position)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, fieldsize)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, chunksize)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'pos')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % fieldid)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % sionlib_position)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, fieldsize)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, chunksize)
       checksum = 3 + kind(field_cursor % fieldhandle % fieldid) + &
                & kind(field_cursor % fieldhandle % sionlib_position) + &
                & kind(fieldsize) + &
@@ -442,11 +442,11 @@ contains
       handle % data_cursor = handle % data_cursor + field_cursor % fieldhandle % decomp % sionlib_chunksize
       ! Encode metadata
       cursor_start = handle % metadata_cursor
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'pos')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % fieldid)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % sionlib_position)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % decomp % sionlib_fieldsize)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % decomp % sionlib_chunksize)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'pos')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % fieldid)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % sionlib_position)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % decomp % sionlib_fieldsize)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, field_cursor % fieldhandle % decomp % sionlib_chunksize)
       checksum = 3 + kind(field_cursor % fieldhandle % fieldid) + &
                & kind(field_cursor % fieldhandle % sionlib_position)  + &
                & kind(field_cursor % fieldhandle % decomp % sionlib_fieldsize) + &
@@ -674,64 +674,64 @@ contains
       integer :: iatt, cursor_start, checksum
 
       cursor_start = handle % metadata_cursor
-      call encode(handle % metadata_buffer, handle % metadata_cursor, 'att')
-      call encode(handle % metadata_buffer, handle % metadata_cursor, varid)
-      call encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(attname)))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, trim(attname))
-      call encode(handle % metadata_buffer, handle % metadata_cursor, atttype)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 'att')
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, varid)
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(attname)))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, trim(attname))
+      call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, atttype)
       ! Encode native precision for all variables other than single/double
       if (present(singleval) .or. present(singlearray1d)) then
-          call encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_SINGLE_PRECISION)
+          call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_SINGLE_PRECISION)
       else if (present(doubleval) .or. present(doublearray1d)) then
-          call encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_DOUBLE_PRECISION)
+          call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_DOUBLE_PRECISION)
       else
-          call encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_NATIVE_PRECISION)
+          call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, MPAS_IO_NATIVE_PRECISION)
       end if
       checksum = 3 + kind(varid) + kind(len(trim(attname))) + len(trim(attname)) + kind(atttype) + kind(MPAS_IO_NATIVE_PRECISION)
 
       if (present(intval)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, 1)
-         call encode(handle % metadata_buffer, handle % metadata_cursor, intval)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 1)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, intval)
          checksum = checksum + kind(1) + kind(intval)
       else if (present(intarray1d)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, size(intarray1d))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, size(intarray1d))
          do iatt=1,size(intarray1d)
-            call encode(handle % metadata_buffer, handle % metadata_cursor, intarray1d(iatt))
+            call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, intarray1d(iatt))
          end do
          checksum = checksum + kind(1) + size(intarray1d)*kind(intarray1d(1))
       else if (present(realval)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, 1)
-         call encode(handle % metadata_buffer, handle % metadata_cursor, realval)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 1)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, realval)
          checksum = checksum + kind(1) + kind(realval)
       else if (present(realarray1d)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, size(realarray1d))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, size(realarray1d))
          do iatt=1,size(realarray1d)
-            call encode(handle % metadata_buffer, handle % metadata_cursor, realarray1d(iatt))
+            call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, realarray1d(iatt))
          end do
          checksum = checksum + kind(1) + size(realarray1d)*kind(realarray1d(1))
       else if (present(singleval)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, 1)
-         call encode(handle % metadata_buffer, handle % metadata_cursor, singleval)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 1)
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, singleval)
          checksum = checksum + kind(1) + kind(singleval)
       else if (present(singlearray1d)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, size(singlearray1d))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, size(singlearray1d))
          do iatt=1,size(singlearray1d)
-            call encode(handle % metadata_buffer, handle % metadata_cursor, singlearray1d(iatt))
+            call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, singlearray1d(iatt))
          end do
          checksum = checksum + kind(1) + size(singlearray1d)*kind(singlearray1d(1))
      else if (present(doubleval)) then
-        call encode(handle % metadata_buffer, handle % metadata_cursor, 1)
-        call encode(handle % metadata_buffer, handle % metadata_cursor, doubleval)
+        call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, 1)
+        call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, doubleval)
         checksum = checksum + kind(1) + kind(doubleval)
      else if (present(doublearray1d)) then
-        call encode(handle % metadata_buffer, handle % metadata_cursor, size(doublearray1d))
+        call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, size(doublearray1d))
         do iatt=1,size(doublearray1d)
-           call encode(handle % metadata_buffer, handle % metadata_cursor, doublearray1d(iatt))
+           call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, doublearray1d(iatt))
         end do
          checksum = checksum + kind(1) + size(doublearray1d)*kind(doublearray1d(1))
       else if (present(charval)) then
-         call encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(charval)))
-         call encode(handle % metadata_buffer, handle % metadata_cursor, trim(charval))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, len(trim(charval)))
+         call mpas_encode(handle % metadata_buffer, handle % metadata_cursor, trim(charval))
          checksum = checksum + kind(len(trim(charval))) + len(trim(charval))
       else
           call mpas_log_write('MPAS_SION_put_att_generic: no value specified for attribute ' // trim(attname), messageType=MPAS_LOG_ERR)
@@ -887,13 +887,13 @@ contains
       end if
 
       do
-         call decode(handle % metadata_buffer, handle % metadata_cursor, category)
+         call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, category)
          if (trim(category) == 'dim') then
-            call decode(handle % metadata_buffer, handle % metadata_cursor, dimid)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, clength)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, dimname(1:clength))
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, dimid)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, clength)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, dimname(1:clength))
             dimname(clength+1:) = ' '
-            call decode(handle % metadata_buffer, handle % metadata_cursor, dimsize)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, dimsize)
 #ifdef SIONLIB_DEBUG
             call mpas_log_write('Reading dimension data ...')
             call mpas_log_write('clength               = $i', intArgs=(/ clength /) )
@@ -905,31 +905,31 @@ contains
             call MPAS_SION_read_metadata_def_dim(handle, trim(dimname), dimid, dimsize)
 
          else if (trim(category) == 'att') then
-            call decode(handle % metadata_buffer, handle % metadata_cursor, varid)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, clength)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, attname(1:clength))
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, varid)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, clength)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, attname(1:clength))
             attname(clength+1:) = ' '
-            call decode(handle % metadata_buffer, handle % metadata_cursor, atttype)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, atttype)
             ! Decode precision in file, ignored for non-real attributes
-            call decode(handle % metadata_buffer, handle % metadata_cursor, precision)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, attlength)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, precision)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, attlength)
             if (atttype == MPAS_ATT_INT) then
-               call decode(handle % metadata_buffer, handle % metadata_cursor, intval)
+               call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, intval)
                call MPAS_SION_read_metadata_def_att(handle, trim(attname), varid, atttype, intval=intval, ierr=ierr)
             else if (atttype == MPAS_ATT_INTA) then
                allocate(intarray(attlength))
                do iatt=1,attlength
-                  call decode(handle % metadata_buffer, handle % metadata_cursor, intarray(iatt))
+                  call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, intarray(iatt))
                end do
                call MPAS_SION_read_metadata_def_att(handle, trim(attname), varid, atttype, intarray=intarray, ierr=ierr)
                deallocate(intarray)
             else if (atttype == MPAS_ATT_REAL) then
-               !call decode(handle % metadata_buffer, handle % metadata_cursor, realval)
+               !call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, realval)
                if (precision == MPAS_IO_SINGLE_PRECISION) then
-                   call decode(handle % metadata_buffer, handle % metadata_cursor, singleval)
+                   call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, singleval)
                    realval = real(singleval, RKIND)
                else if (precision == MPAS_IO_DOUBLE_PRECISION) then
-                   call decode(handle % metadata_buffer, handle % metadata_cursor, doubleval)
+                   call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, doubleval)
                    realval = real(doubleval, RKIND)
                else
                    call mpas_log_write('Invalid attribute precision encountered in file for attribute ' // trim(attname), messageType=MPAS_LOG_ERR)
@@ -942,14 +942,14 @@ contains
                if (precision == MPAS_IO_SINGLE_PRECISION) then
                    allocate(singlearray(attlength))
                    do iatt=1,attlength
-                      call decode(handle % metadata_buffer, handle % metadata_cursor, singlearray(iatt))
+                      call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, singlearray(iatt))
                    end do
                    realarray(:) = real(singlearray(:), RKIND)
                    deallocate(singlearray)
                else if (precision == MPAS_IO_DOUBLE_PRECISION) then
                   allocate(doublearray(attlength))
                   do iatt=1,attlength
-                     call decode(handle % metadata_buffer, handle % metadata_cursor, doublearray(iatt))
+                     call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, doublearray(iatt))
                   end do
                   realarray(:) = real(doublearray(:), RKIND)
                   deallocate(doublearray)
@@ -961,7 +961,7 @@ contains
                call MPAS_SION_read_metadata_def_att(handle, trim(attname), varid, atttype, realarray=realarray, ierr=ierr)
                deallocate(realarray)
             else if (atttype == MPAS_ATT_TEXT) then
-               call decode(handle % metadata_buffer, handle % metadata_cursor, charval(1:attlength))
+               call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, charval(1:attlength))
                charval(attlength+1:) = ' '
                call MPAS_SION_read_metadata_def_att(handle, trim(attname), varid, atttype, charval=charval, ierr=ierr)
             else
@@ -1005,18 +1005,18 @@ contains
             if (ierr /= SIONLIB_noerr) exit
 
          else if (trim(category) == 'var') then
-            call decode(handle % metadata_buffer, handle % metadata_cursor, varid)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, clength)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, varname(1:clength))
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, varid)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, clength)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, varname(1:clength))
             varname(clength+1:) = ' '
-            call decode(handle % metadata_buffer, handle % metadata_cursor, ndims)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, ndims)
             if (ndims .gt. 0) then
                allocate(dimids(1:ndims))
                do idim=1,ndims
-                  call decode(handle % metadata_buffer, handle % metadata_cursor, dimids(idim))
+                  call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, dimids(idim))
                end do
             end if
-            call decode(handle % metadata_buffer, handle % metadata_cursor, vartype)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, vartype)
 #ifdef SIONLIB_DEBUG
             call mpas_log_write('Reading variable metadata ... ')
             call mpas_log_write('varid                    = $i', intArgs=(/ varid /) )
@@ -1040,10 +1040,10 @@ contains
             if (ierr /= SIONLIB_noerr) exit
 
          else if (trim(category) == 'pos') then
-            call decode(handle % metadata_buffer, handle % metadata_cursor, varid)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, position)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, varsize)
-            call decode(handle % metadata_buffer, handle % metadata_cursor, chunksize)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, varid)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, position)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, varsize)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, chunksize)
 
 #ifdef SIONLIB_DEBUG
             call mpas_log_write('Reading variable position metadata ... ')
@@ -1055,7 +1055,7 @@ contains
             call MPAS_SION_read_metadata_set_pos(handle, varid, position, varsize, chunksize, ierr)
             if (ierr /= SIONLIB_noerr) exit
          else if (trim(category) == 'cur') then
-            call decode(handle % metadata_buffer, handle % metadata_cursor, test_start_cursor)
+            call mpas_decode(handle % metadata_buffer, handle % metadata_cursor, test_start_cursor)
 #ifdef SIONLIB_DEBUG
             call mpas_log_write('Reading start_cursor metadata for consistency checking ... ')
             call mpas_log_write('stored start_cursor      = $i', intArgs=(/ int(test_start_cursor) /) )
