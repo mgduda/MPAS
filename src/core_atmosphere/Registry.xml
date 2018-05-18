@@ -1421,10 +1421,10 @@
                 <var name="a_tri" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="implicit tridiagonal solve coefficients"/>
 
-                <var name="alpha_tri" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                <var name="b_tri" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="implicit tridiagonal solve coefficients"/>
 
-                <var name="gamma_tri" type="real" dimensions="nVertLevels nCells Time" units="unitless"
+                <var name="c_tri" type="real" dimensions="nVertLevels nCells Time" units="unitless"
                      description="implicit tridiagonal solve coefficients"/>
 
                 <!-- state variables diagnosed from prognostic state -->

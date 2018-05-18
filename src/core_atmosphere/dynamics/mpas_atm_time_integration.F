@@ -1467,7 +1467,7 @@ module atm_time_integration
    ! Input: state - current model state
    !        mesh - grid metadata
    !
-   ! Output: diag - cofrz, cofwr, cofwz, coftz, cofwt, a, alpha and gamma
+   ! Output: diag - cofrz, cofwr, cofwz, coftz, cofwt, a, b, and c
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       implicit none
@@ -1483,7 +1483,7 @@ module atm_time_integration
 
 
       real (kind=RKIND), dimension(:,:), pointer :: zz, cqw, p, t, rb, rtb, pb, rt
-      real (kind=RKIND), dimension(:,:), pointer :: cofwr, cofwz, coftz, cofwt, a_tri, alpha_tri, gamma_tri
+      real (kind=RKIND), dimension(:,:), pointer :: cofwr, cofwz, coftz, cofwt, a_tri, b_tri, c_tri
       real (kind=RKIND), dimension(:), pointer :: cofrz, rdzw, fzm, fzp, rdzu
       real (kind=RKIND), dimension(:,:,:), pointer :: scalars
 
@@ -1507,9 +1507,9 @@ module atm_time_integration
       call mpas_pool_get_array(diag, 'rtheta_base', rtb)
       call mpas_pool_get_array(diag, 'rho_base', rb)
 
-      call mpas_pool_get_array(diag, 'alpha_tri', alpha_tri)
-      call mpas_pool_get_array(diag, 'gamma_tri', gamma_tri)
       call mpas_pool_get_array(diag, 'a_tri', a_tri)
+      call mpas_pool_get_array(diag, 'b_tri', b_tri)
+      call mpas_pool_get_array(diag, 'c_tri', c_tri)
       call mpas_pool_get_array(diag, 'cofwr', cofwr)
       call mpas_pool_get_array(diag, 'cofwz', cofwz)
       call mpas_pool_get_array(diag, 'coftz', coftz)
@@ -1526,7 +1526,7 @@ module atm_time_integration
 
       call atm_compute_vert_imp_coefs_work(nCells, moist_start, moist_end, dts, epssm, &
                                    zz, cqw, p, t, rb, rtb, pb, rt, cofwr, cofwz, coftz, cofwt, &
-                                   a_tri, alpha_tri, gamma_tri, cofrz, rdzw, fzm, fzp, rdzu, scalars, &
+                                   a_tri, b_tri, c_tri, cofrz, rdzw, fzm, fzp, rdzu, scalars, &
                                    cellStart, cellEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd)
 
@@ -1536,7 +1536,7 @@ module atm_time_integration
 
    subroutine atm_compute_vert_imp_coefs_work(nCells, moist_start, moist_end, dts, epssm, &
                                    zz, cqw, p, t, rb, rtb, pb, rt, cofwr, cofwz, coftz, cofwt, &
-                                   a_tri, alpha_tri, gamma_tri, cofrz, rdzw, fzm, fzp, rdzu, scalars, &
+                                   a_tri, b_tri, c_tri, cofrz, rdzw, fzm, fzp, rdzu, scalars, &
                                    cellStart, cellEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, edgeSolveStart, edgeSolveEnd)
 
@@ -1565,8 +1565,8 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels+1,nCells+1) :: coftz
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: cofwt
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: a_tri
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: alpha_tri
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: gamma_tri
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: b_tri
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: c_tri
       real (kind=RKIND), dimension(nVertLevels) :: cofrz
       real (kind=RKIND), dimension(nVertLevels) :: rdzw
       real (kind=RKIND), dimension(nVertLevels) :: fzm
@@ -1583,7 +1583,6 @@ module atm_time_integration
       !
       integer :: iCell, k, iq
       real (kind=RKIND) :: dtseps, c2, qtotal, rcv
-      real (kind=RKIND), dimension( nVertLevels ) :: b_tri, c_tri
 
 
       !  set coefficients
@@ -1625,30 +1624,23 @@ module atm_time_integration
          end do
 
          a_tri(1,iCell) = 0.  ! note, this value is never used
-         b_tri(1) = 1.    ! note, this value is never used
-         c_tri(1) = 0.    ! note, this value is never used
-         gamma_tri(1,iCell) = 0.
-         alpha_tri(1,iCell) = 0.  ! note, this value is never used
+         b_tri(1,iCell) = 1.    ! note, this value is never used
+         c_tri(1,iCell) = 0.    ! note, this value is never used
 
 !DIR$ IVDEP
          do k=2,nVertLevels
             a_tri(k,iCell) = -cofwz(k  ,iCell)* coftz(k-1,iCell)*rdzw(k-1)*zz(k-1,iCell)   &
                          +cofwr(k  ,iCell)* cofrz(k-1  )                       &
                          -cofwt(k-1,iCell)* coftz(k-1,iCell)*rdzw(k-1)
-            b_tri(k) = 1.                                                  &
+            b_tri(k,iCell) = 1.                                                  &
                          +cofwz(k  ,iCell)*(coftz(k  ,iCell)*rdzw(k  )*zz(k  ,iCell)   &
                                       +coftz(k  ,iCell)*rdzw(k-1)*zz(k-1,iCell))   &
                          -coftz(k  ,iCell)*(cofwt(k  ,iCell)*rdzw(k  )             &
                                        -cofwt(k-1,iCell)*rdzw(k-1))            &
                          +cofwr(k,  iCell)*(cofrz(k    )-cofrz(k-1))
-            c_tri(k) =   -cofwz(k  ,iCell)* coftz(k+1,iCell)*rdzw(k  )*zz(k  ,iCell)   &
+            c_tri(k,iCell) = -cofwz(k  ,iCell)* coftz(k+1,iCell)*rdzw(k  )*zz(k  ,iCell)   &
                          -cofwr(k  ,iCell)* cofrz(k    )                       &
                          +cofwt(k  ,iCell)* coftz(k+1,iCell)*rdzw(k  )
-         end do
-!MGD VECTOR DEPENDENCE
-         do k=2,nVertLevels
-            alpha_tri(k,iCell) = 1./(b_tri(k)-a_tri(k,iCell)*gamma_tri(k-1,iCell))
-            gamma_tri(k,iCell) = c_tri(k)*alpha_tri(k,iCell)
          end do
 
       end do ! loop over cells
@@ -1852,7 +1844,7 @@ module atm_time_integration
       real (kind=RKIND), dimension(:,:), pointer :: rho_zz, theta_m, ru_p, rw_p, rtheta_pp,  &
                                                     rtheta_pp_old, zz, exner, cqu, ruAvg, &
                                                     wwAvg, rho_pp, cofwt, coftz, zxu,        &
-                                                    a_tri, alpha_tri, gamma_tri, dss,        &
+                                                    a_tri, b_tri, c_tri, dss,        &
                                                     tend_ru, tend_rho, tend_rt, tend_rw,     &
                                                     zgrid, cofwr, cofwz, w
 
@@ -1902,8 +1894,8 @@ module atm_time_integration
       call mpas_pool_get_array(diag, 'cofwr', cofwr)
       call mpas_pool_get_array(diag, 'cofwz', cofwz)
       call mpas_pool_get_array(diag, 'a_tri', a_tri)
-      call mpas_pool_get_array(diag, 'alpha_tri', alpha_tri)
-      call mpas_pool_get_array(diag, 'gamma_tri', gamma_tri)
+      call mpas_pool_get_array(diag, 'b_tri', b_tri)
+      call mpas_pool_get_array(diag, 'c_tri', c_tri)
 
       call mpas_pool_get_array(mesh, 'dss', dss)
 
@@ -1943,7 +1935,7 @@ module atm_time_integration
       call atm_advance_acoustic_step_work(nCells, nEdges, nCellsSolve, cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd, &
                                    rho_zz, theta_m, ru_p, rw_p, rtheta_pp, rtheta_pp_old, zz, exner, cqu, ruAvg, wwAvg, &
-                                   rho_pp, cofwt, coftz, zxu, a_tri, alpha_tri, gamma_tri, dss, tend_ru, tend_rho, tend_rt, &
+                                   rho_pp, cofwt, coftz, zxu, a_tri, b_tri, c_tri, dss, tend_ru, tend_rho, tend_rt, &
                                    tend_rw, zgrid, cofwr, cofwz, w, ru, ru_save, rw, rw_save, fzm, fzp, rdzw, dcEdge, invDcEdge, &
                                    invAreaCell, cofrz, dvEdge, nEdgesOnCell, cellsOnEdge, edgesOnCell, edgesOnCell_sign, &
                                    dts, small_step, epssm, cf1, cf2, cf3 &
@@ -1955,7 +1947,7 @@ module atm_time_integration
    subroutine atm_advance_acoustic_step_work(nCells, nEdges, nCellsSolve, cellStart, cellEnd, vertexStart, vertexEnd, edgeStart, edgeEnd, &
                                    cellSolveStart, cellSolveEnd, vertexSolveStart, vertexSolveEnd, edgeSolveStart, edgeSolveEnd, &
                                    rho_zz, theta_m, ru_p, rw_p, rtheta_pp, rtheta_pp_old, zz, exner, cqu, ruAvg, wwAvg, &
-                                   rho_pp, cofwt, coftz, zxu, a_tri, alpha_tri, gamma_tri, dss, tend_ru, tend_rho, tend_rt, &
+                                   rho_pp, cofwt, coftz, zxu, a_tri, b_tri, c_tri, dss, tend_ru, tend_rho, tend_rt, &
                                    tend_rw, zgrid, cofwr, cofwz, w, ru, ru_save, rw, rw_save, fzm, fzp, rdzw, dcEdge, invDcEdge, &
                                    invAreaCell, cofrz, dvEdge, nEdgesOnCell, cellsOnEdge, edgesOnCell, edgesOnCell_sign, &
                                    dts, small_step, epssm, cf1, cf2, cf3 &
@@ -1991,8 +1983,8 @@ module atm_time_integration
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: zxu
 
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: a_tri
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: alpha_tri
-      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: gamma_tri
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: b_tri
+      real (kind=RKIND), dimension(nVertLevels,nCells+1) :: c_tri
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: dss
       real (kind=RKIND), dimension(nVertLevels,nEdges+1) :: tend_ru
       real (kind=RKIND), dimension(nVertLevels,nCells+1) :: tend_rho
@@ -2025,6 +2017,8 @@ module atm_time_integration
       integer, intent(in) :: small_step
       real (kind=RKIND), intent(in) :: dts, epssm,cf1, cf2, cf3
       real (kind=RKIND), dimension(nVertLevels) :: ts, rs
+
+      real (kind=RKIND), dimension(nVertLevels) :: alpha_tri, gamma_tri
 
   
       !
@@ -2169,16 +2163,24 @@ module atm_time_integration
                        + cofwt(k-1,iCell)*(ts(k-1)+resm*rtheta_pp(k-1,iCell))
          end do
 
+         gamma_tri(1) = 0.
+         alpha_tri(1) = 0.  ! note, this value is never used
+!MGD VECTOR DEPENDENCE
+         do k=2,nVertLevels
+            alpha_tri(k) = 1./(b_tri(k,iCell)-a_tri(k,iCell)*gamma_tri(k-1))
+            gamma_tri(k) = c_tri(k,iCell)*alpha_tri(k)
+         end do
+
          ! tridiagonal solve sweeping up and then down the column
 
 !MGD VECTOR DEPENDENCE
          do k=2,nVertLevels
-            rw_p(k,iCell) = (rw_p(k,iCell)-a_tri(k,iCell)*rw_p(k-1,iCell))*alpha_tri(k,iCell)
+            rw_p(k,iCell) = (rw_p(k,iCell)-a_tri(k,iCell)*rw_p(k-1,iCell))*alpha_tri(k)
          end do
 
 !MGD VECTOR DEPENDENCE
          do k=nVertLevels,1,-1
-            rw_p(k,iCell) = rw_p(k,iCell) - gamma_tri(k,iCell)*rw_p(k+1,iCell)     
+            rw_p(k,iCell) = rw_p(k,iCell) - gamma_tri(k)*rw_p(k+1,iCell)     
          end do
 
          ! the implicit Rayleigh damping on w (gravity-wave absorbing) 
