@@ -123,7 +123,7 @@ module mpas_pool_routines
    integer :: currentErrorLevel = MPAS_POOL_SILENT
 
 #ifdef CORE_ATMOSPHERE
-    integer, parameter, private :: ROLE_INTEGRATE = 0, ROLE_RADIATION = 1
+    integer, parameter, private :: ROLE_INTEGRATE = ibset(0,0)
 #endif
 
    contains
@@ -4276,7 +4276,7 @@ module mpas_pool_routines
       nullify(scalar)
       if (associated(field)) then 
               scalar => field % scalar
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%scalar)
               end if
       end if
@@ -4331,7 +4331,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4386,7 +4386,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4443,7 +4443,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4498,7 +4498,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4554,7 +4554,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4610,7 +4610,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               scalar => field % scalar
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%scalar)
               end if
       end if
@@ -4666,7 +4666,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4722,7 +4722,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4778,7 +4778,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
@@ -4834,7 +4834,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               string => field % scalar
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%scalar)
               end if
       end if
@@ -4890,7 +4890,7 @@ module mpas_pool_routines
       if (associated(field)) then 
               coupler => field%block%domain%mpas_cpl
               array => field % array
-              if(coupler%role() == ROLE_INTEGRATE) then
+              if (coupler%role() == ROLE_INTEGRATE) then
                       !$acc enter data copyin(field%array)
               end if
       end if
