@@ -121,7 +121,10 @@ module mpas_pool_routines
    end interface
 
    integer :: currentErrorLevel = MPAS_POOL_SILENT
-   integer, parameter, private :: ROLE_INTEGRATE = 0, ROLE_RADIATION = 1
+
+#ifdef CORE_ATMOSPHERE
+    integer, parameter, private :: ROLE_INTEGRATE = 0, ROLE_RADIATION = 1
+#endif
 
    contains
 
